@@ -15,6 +15,7 @@ class OpenScan extends StatelessWidget {
     return MaterialApp(
       initialRoute: HomeScreen.route,
       routes: {
+        HomeScreen.route: (context) => HomeScreen(),
         ViewDocument.route: (context) => ViewDocument(),
         ScanDocument.route: (context) => ScanDocument(),
         ShareDocument.route: (context) => ShareDocument(),
