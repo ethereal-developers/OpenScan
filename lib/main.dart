@@ -13,6 +13,7 @@ class OpenScan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData.dark(),
       initialRoute: HomeScreen.route,
       routes: {
         HomeScreen.route: (context) => HomeScreen(),
