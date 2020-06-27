@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import 'package:directory_picker/directory_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:image_cropper/image_cropper.dart';
 
 class ScanDocument extends StatefulWidget {
@@ -16,11 +18,34 @@ class ScanDocument extends StatefulWidget {
 
 class _ScanDocumentState extends State<ScanDocument> {
   File imageFile;
+  Directory selectedDirectory;
 
   @override
   void initState() {
     super.initState();
     imageFile = widget.image;
+  }
+
+  Future<void> _pickDirectory(BuildContext context) async {
+    Directory directory = selectedDirectory;
+    if (directory == null) {
+      directory = await getExternalStorageDirectory();
+    }
+
+    Directory newDirectory = await DirectoryPicker.pick(
+      allowFolderCreation: true,
+      context: context,
+      rootDirectory: directory,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(
+          Radius.circular(10),
+        ),
+      ),
+    );
+
+    setState(() {
+      selectedDirectory = newDirectory;
+    });
   }
 
   @override
@@ -55,9 +80,11 @@ class _ScanDocumentState extends State<ScanDocument> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: RaisedButton(
-                      onPressed: () {},
+                      onPressed: () async {
+                        _pickDirectory(context);
+                      },
                       color: Colors.lightGreen,
-                      child: Text("Done"),
+                      child: Text("Save as PDF"),
                     ),
                   ),
                 ),
