@@ -32,6 +32,40 @@ class _ScanDocumentState extends State<ScanDocument> {
     imageFile = widget.image;
   }
 
+  Future<void> displayDialog() async {
+    String displayText;
+
+    if (_status == "PDF Generated (${_pdfStat.size ~/ 1024}kb)")
+      displayText = "Success. File stored in the Downloads folder.";
+    else if (_status.startsWith("Failed to generate pdf"))
+      displayText = "Failed to generate pdf. Try Again.";
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Alert'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('$displayText'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('Ok'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _createPdf() async {
     try {
       this.setState(() => _generating = true);
@@ -66,7 +100,6 @@ class _ScanDocumentState extends State<ScanDocument> {
     } finally {
       this.setState(() => _generating = false);
     }
-    print(_status);
   }
 
   @override
@@ -103,6 +136,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                     child: RaisedButton(
                       onPressed: () async {
                         await _createPdf();
+                        await displayDialog();
                         Navigator.pop(context);
                       },
                       color: Colors.lightGreen,
