@@ -30,14 +30,40 @@ class _ScanDocumentState extends State<ScanDocument> {
         appBar: AppBar(
           title: Text("Scan Document"),
         ),
-        body: Center(
-          child: Image.file(imageFile),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            _cropImage();
-          },
-          child: Icon(Icons.crop),
+        body: Column(
+          children: <Widget>[
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Image.file(imageFile),
+              ),
+            ),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: RaisedButton(
+                      onPressed: () {
+                        _cropImage();
+                      },
+                      child: Icon(Icons.crop),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: RaisedButton(
+                      onPressed: () {},
+                      color: Colors.lightGreen,
+                      child: Text("Done"),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
