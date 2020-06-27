@@ -5,9 +5,7 @@ import 'dart:core';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'package:directory_picker/directory_picker.dart';
 import 'package:images_to_pdf/images_to_pdf.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:image_cropper/image_cropper.dart';
 
 class ScanDocument extends StatefulWidget {
