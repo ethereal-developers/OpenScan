@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'dart:ui';
+import 'dart:core';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'package:directory_picker/directory_picker.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:images_to_pdf/images_to_pdf.dart';
 import 'package:image_cropper/image_cropper.dart';
 
 class ScanDocument extends StatefulWidget {
@@ -18,7 +19,10 @@ class ScanDocument extends StatefulWidget {
 
 class _ScanDocumentState extends State<ScanDocument> {
   File imageFile;
-  Directory selectedDirectory;
+  File _pdfFile;
+  String _status = "Not created";
+  FileStat _pdfStat;
+  bool _generating = false;
 
   @override
   void initState() {
@@ -26,26 +30,40 @@ class _ScanDocumentState extends State<ScanDocument> {
     imageFile = widget.image;
   }
 
-  Future<void> _pickDirectory(BuildContext context) async {
-    Directory directory = selectedDirectory;
-    if (directory == null) {
-      directory = await getExternalStorageDirectory();
+  Future<void> _createPdf() async {
+    try {
+      this.setState(() => _generating = true);
+      final output = File("/storage/emulated/0/Downloads/example.pdf");
+
+      var images = [imageFile];
+      var decodedImage = await decodeImageFromList(imageFile.readAsBytesSync());
+
+      this.setState(() => _status = 'Generating PDF');
+      await ImagesToPdf.createPdf(
+        pages: images
+            .map(
+              (file) => PdfPage(
+                imageFile: file,
+                size: Size(decodedImage.width.toDouble(),
+                    decodedImage.height.toDouble()),
+                compressionQuality: 0.5,
+              ),
+            )
+            .toList(),
+        output: output,
+      );
+      _pdfStat = await output.stat();
+      this.setState(() {
+        _pdfFile = output;
+        _status = 'PDF Generated (${_pdfStat.size ~/ 1024}kb)';
+      });
+      print(output);
+    } catch (e) {
+      this.setState(() => _status = 'Failed to generate pdf: $e".');
+    } finally {
+      this.setState(() => _generating = false);
     }
-
-    Directory newDirectory = await DirectoryPicker.pick(
-      allowFolderCreation: true,
-      context: context,
-      rootDirectory: directory,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(
-          Radius.circular(10),
-        ),
-      ),
-    );
-
-    setState(() {
-      selectedDirectory = newDirectory;
-    });
+    print(_status);
   }
 
   @override
@@ -81,7 +99,8 @@ class _ScanDocumentState extends State<ScanDocument> {
                     padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: RaisedButton(
                       onPressed: () async {
-                        _pickDirectory(context);
+                        await _createPdf();
+                        Navigator.pop(context);
                       },
                       color: Colors.lightGreen,
                       child: Text("Save as PDF"),
