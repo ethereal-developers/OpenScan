@@ -37,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
     var picture = await _picker.getImage(source: ImageSource.camera);
     setState(() {
       final requiredPicture = File(picture.path);
+      print(picture.path);
       image = requiredPicture;
     });
   }
@@ -53,13 +54,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
-            await _openCamera();
-            if (image != null) {
+//            await _openCamera();
+            if (image == null) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ScanDocument(
-                    image: image,
+//                    image: image,
                   ),
                 ),
               );

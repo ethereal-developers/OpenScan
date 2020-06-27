@@ -1,17 +1,17 @@
 import 'dart:io';
 import 'dart:ui';
 import 'dart:core';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import 'package:images_to_pdf/images_to_pdf.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ScanDocument extends StatefulWidget {
   static String route = "ScanDocument";
-  final image;
-  ScanDocument({this.image});
+//  final image;
+//  ScanDocument({this.image});
 
   @override
   _ScanDocumentState createState() => _ScanDocumentState();
@@ -19,15 +19,32 @@ class ScanDocument extends StatefulWidget {
 
 class _ScanDocumentState extends State<ScanDocument> {
   File imageFile;
+  List<Widget> imageFiles;
   File _pdfFile;
   String _status = "Not created";
   FileStat _pdfStat;
   bool _generating = false;
+  String appName = 'OpenScan';
+  String appPath;
 
   @override
-  void initState() {
+  void initState(){
     super.initState();
-    imageFile = widget.image;
+//    imageFile = widget.image;
+    imageFiles = [];
+  }
+
+  Future<String> getAppPath() async{
+    final Directory _appDocDir = await getApplicationDocumentsDirectory();
+    final Directory _appDocDirFolder =  Directory('${_appDocDir.path}/$appName/');
+
+    if(await _appDocDirFolder.exists()){
+      return _appDocDirFolder.path;
+    }
+    else{
+      final Directory _appDocDirNewFolder=await _appDocDirFolder.create(recursive: true);
+      return _appDocDirNewFolder.path;
+    }
   }
 
   Future<void> displayDialog() async {
@@ -100,77 +117,27 @@ class _ScanDocumentState extends State<ScanDocument> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text("Scan Document"),
-        ),
-        body: Column(
-          children: <Widget>[
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Image.file(imageFile),
-              ),
-            ),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: RaisedButton(
-                      onPressed: () {
-                        _cropImage();
-                      },
-                      child: Icon(Icons.crop),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: RaisedButton(
-                      onPressed: () async {
-                        await _createPdf();
-                        await displayDialog();
-                        Navigator.pop(context);
-                      },
-                      color: Colors.lightGreen,
-                      child: Text("Save as PDF"),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<Null> _cropImage() async {
+  Future<void> _cropImage(imageFile) async {
     File croppedFile = await ImageCropper.cropImage(
         sourcePath: imageFile.path,
         aspectRatioPresets: Platform.isAndroid
             ? [
-                CropAspectRatioPreset.square,
-                CropAspectRatioPreset.ratio3x2,
-                CropAspectRatioPreset.original,
-                CropAspectRatioPreset.ratio4x3,
-                CropAspectRatioPreset.ratio16x9
-              ]
+          CropAspectRatioPreset.square,
+          CropAspectRatioPreset.ratio3x2,
+          CropAspectRatioPreset.original,
+          CropAspectRatioPreset.ratio4x3,
+          CropAspectRatioPreset.ratio16x9
+        ]
             : [
-                CropAspectRatioPreset.original,
-                CropAspectRatioPreset.square,
-                CropAspectRatioPreset.ratio3x2,
-                CropAspectRatioPreset.ratio4x3,
-                CropAspectRatioPreset.ratio5x3,
-                CropAspectRatioPreset.ratio5x4,
-                CropAspectRatioPreset.ratio7x5,
-                CropAspectRatioPreset.ratio16x9
-              ],
+          CropAspectRatioPreset.original,
+          CropAspectRatioPreset.square,
+          CropAspectRatioPreset.ratio3x2,
+          CropAspectRatioPreset.ratio4x3,
+          CropAspectRatioPreset.ratio5x3,
+          CropAspectRatioPreset.ratio5x4,
+          CropAspectRatioPreset.ratio7x5,
+          CropAspectRatioPreset.ratio16x9
+        ],
         androidUiSettings: AndroidUiSettings(
             toolbarTitle: 'Cropper',
             toolbarColor: Colors.deepOrange,
@@ -186,7 +153,109 @@ class _ScanDocumentState extends State<ScanDocument> {
       });
     }
   }
+
+  Future<void> _saveImage() async{
+    appPath = await getAppPath();
+    // TODO: save images in separate folders
+  }
+
+  var image;
+  Future _openCamera() async {
+    final _picker = ImagePicker();
+    var picture = await _picker.getImage(source: ImageSource.camera);
+    setState(() {
+      final requiredPicture = File(picture.path);
+      print(picture.path);
+      image = requiredPicture;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print(imageFiles.length);
+    Size size = MediaQuery.of(context).size;
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("Scan Document"),
+        ),
+        body: ListView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: imageFiles.length,
+          itemBuilder: (context, index){
+            return imageFiles[index];
+          },
+        ),
+        bottomNavigationBar: Row(
+          children: <Widget>[
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: RaisedButton(
+                  onPressed: () {
+//                    _cropImage();
+                  },
+                  child: Container(
+                    height: 50,
+                    child: Icon(Icons.crop),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: RaisedButton(
+                  onPressed: () async {
+//                    await _createPdf();
+//                    await displayDialog();
+                    _saveImage();
+                    Navigator.pop(context);
+                  },
+                  color: Colors.lightGreen,
+                  child: Container(
+                    alignment: Alignment.center,
+                    height: 50,
+                    child: Text("Save as PDF"),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            await _openCamera();
+            if (image != null) {
+              _cropImage(image);
+              imageFiles.add(Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Image.file(image, width: size.width*0.4,),
+              ));
+              setState(() {});
+            }
+          },
+          child: Icon(Icons.camera),
+        ),
+      ),
+    );
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //class TakePictureScreen extends StatefulWidget {
 //  static String route = "TakePicture";
