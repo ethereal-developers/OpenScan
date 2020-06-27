@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:openscan/screens/scan_document.dart';
 import 'package:image_picker/image_picker.dart';
@@ -30,10 +32,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   var image;
-  Future _openCamera() async{
-    var picture = await ImagePicker.pickImage(source: ImageSource.camera);
+  Future _openCamera() async {
+    final _picker = ImagePicker();
+    var picture = await _picker.getImage(source: ImageSource.camera);
     setState(() {
-      image = picture;
+      final requiredPicture = File(picture.path);
+      image = requiredPicture;
     });
   }
 
@@ -45,13 +49,20 @@ class _HomeScreenState extends State<HomeScreen> {
           title: Text("Home"),
         ),
         body: ListView(
-          children: getDocuments(context: context ,temp: 10),
+          children: getDocuments(context: context, temp: 10),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () async{
+          onPressed: () async {
             await _openCamera();
-            if(image != null){
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ScanDocument(image: image,)));
+            if (image != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ScanDocument(
+                    image: image,
+                  ),
+                ),
+              );
             }
           },
           child: Icon(Icons.camera),
