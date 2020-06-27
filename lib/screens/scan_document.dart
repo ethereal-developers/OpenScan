@@ -5,7 +5,9 @@ import 'dart:core';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import 'package:directory_picker/directory_picker.dart';
 import 'package:images_to_pdf/images_to_pdf.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:image_cropper/image_cropper.dart';
 
 class ScanDocument extends StatefulWidget {
@@ -33,7 +35,8 @@ class _ScanDocumentState extends State<ScanDocument> {
   Future<void> _createPdf() async {
     try {
       this.setState(() => _generating = true);
-      final output = File("/storage/emulated/0/Downloads/example.pdf");
+      final output =
+          File("/storage/emulated/0/Download/OpenScan ${DateTime.now()}.pdf");
 
       var images = [imageFile];
       var decodedImage = await decodeImageFromList(imageFile.readAsBytesSync());
