@@ -1,10 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
-//import 'package:camera/camera.dart';
-//import 'package:path/path.dart' show join;
-import 'package:path_provider/path_provider.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 class ScanDocument extends StatefulWidget {
   static String route = "ScanDocument";
@@ -16,6 +15,13 @@ class ScanDocument extends StatefulWidget {
 }
 
 class _ScanDocumentState extends State<ScanDocument> {
+  File imageFile;
+
+  @override
+  void initState() {
+    super.initState();
+    imageFile = widget.image;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +31,53 @@ class _ScanDocumentState extends State<ScanDocument> {
           title: Text("Scan Document"),
         ),
         body: Center(
-          child: Image.file(widget.image),
+          child: Image.file(imageFile),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _cropImage();
+          },
+          child: Icon(Icons.crop),
         ),
       ),
     );
+  }
+
+  Future<Null> _cropImage() async {
+    File croppedFile = await ImageCropper.cropImage(
+        sourcePath: imageFile.path,
+        aspectRatioPresets: Platform.isAndroid
+            ? [
+                CropAspectRatioPreset.square,
+                CropAspectRatioPreset.ratio3x2,
+                CropAspectRatioPreset.original,
+                CropAspectRatioPreset.ratio4x3,
+                CropAspectRatioPreset.ratio16x9
+              ]
+            : [
+                CropAspectRatioPreset.original,
+                CropAspectRatioPreset.square,
+                CropAspectRatioPreset.ratio3x2,
+                CropAspectRatioPreset.ratio4x3,
+                CropAspectRatioPreset.ratio5x3,
+                CropAspectRatioPreset.ratio5x4,
+                CropAspectRatioPreset.ratio7x5,
+                CropAspectRatioPreset.ratio16x9
+              ],
+        androidUiSettings: AndroidUiSettings(
+            toolbarTitle: 'Cropper',
+            toolbarColor: Colors.deepOrange,
+            toolbarWidgetColor: Colors.black45,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false),
+        iosUiSettings: IOSUiSettings(
+          title: 'Cropper',
+        ));
+    if (croppedFile != null) {
+      setState(() {
+        imageFile = croppedFile;
+      });
+    }
   }
 }
 
