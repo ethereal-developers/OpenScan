@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:openscan/screens/scan_document.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:openscan/screens/view_document.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   static String route = "HomeScreen";
 
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   List<ListTile> getDocuments({@required BuildContext context, int temp}) {
     List<ListTile> documentsList = [];
     for (int i = 0; i < temp; i++) {
@@ -23,6 +29,14 @@ class HomeScreen extends StatelessWidget {
     return documentsList;
   }
 
+  var image;
+  Future _openCamera() async{
+    var picture = await ImagePicker.pickImage(source: ImageSource.camera);
+    setState(() {
+      image = picture;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -34,8 +48,11 @@ class HomeScreen extends StatelessWidget {
           children: getDocuments(context: context ,temp: 10),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.pushNamed(context, ScanDocument.route);
+          onPressed: () async{
+            await _openCamera();
+            if(image != null){
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ScanDocument(image: image,)));
+            }
           },
           child: Icon(Icons.camera),
         ),
