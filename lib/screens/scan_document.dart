@@ -33,7 +33,7 @@ class _ScanDocumentState extends State<ScanDocument> {
 //    imageFile = widget.image;
     imageFiles = <Widget>[
       Container(
-        padding: EdgeInsets.all(8.0),
+        padding: EdgeInsets.only(top: 8.0),
         child: Text(
           "Scroll down to view other photos",
           textAlign: TextAlign.center,
@@ -260,6 +260,20 @@ class _ScanDocumentState extends State<ScanDocument> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    imageFile = null;
+    image = null;
+    imageFiles = null;
+    _pdfFile = null;
+    _status = null;
+    _pdfStat = null;
+    _generating = null;
+    appName = null;
+    appPath = null;
   }
 }
 
