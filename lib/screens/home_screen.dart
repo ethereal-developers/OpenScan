@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(
                   builder: (context) => ScanDocument(
 //                    image: image,
-                  ),
+                      ),
                 ),
               );
             }
