@@ -28,21 +28,22 @@ class _ScanDocumentState extends State<ScanDocument> {
   String appPath;
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
 //    imageFile = widget.image;
     imageFiles = [];
   }
 
-  Future<String> getAppPath() async{
+  Future<String> getAppPath() async {
     final Directory _appDocDir = await getApplicationDocumentsDirectory();
-    final Directory _appDocDirFolder =  Directory('${_appDocDir.path}/$appName/');
+    final Directory _appDocDirFolder =
+        Directory('${_appDocDir.path}/$appName/');
 
-    if(await _appDocDirFolder.exists()){
+    if (await _appDocDirFolder.exists()) {
       return _appDocDirFolder.path;
-    }
-    else{
-      final Directory _appDocDirNewFolder=await _appDocDirFolder.create(recursive: true);
+    } else {
+      final Directory _appDocDirNewFolder =
+          await _appDocDirFolder.create(recursive: true);
       return _appDocDirNewFolder.path;
     }
   }
@@ -117,27 +118,27 @@ class _ScanDocumentState extends State<ScanDocument> {
     }
   }
 
-  Future<void> _cropImage(imageFile) async {
+  Future<File> _cropImage(imageFile) async {
     File croppedFile = await ImageCropper.cropImage(
         sourcePath: imageFile.path,
         aspectRatioPresets: Platform.isAndroid
             ? [
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio16x9
-        ]
+                CropAspectRatioPreset.square,
+                CropAspectRatioPreset.ratio3x2,
+                CropAspectRatioPreset.original,
+                CropAspectRatioPreset.ratio4x3,
+                CropAspectRatioPreset.ratio16x9
+              ]
             : [
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio5x3,
-          CropAspectRatioPreset.ratio5x4,
-          CropAspectRatioPreset.ratio7x5,
-          CropAspectRatioPreset.ratio16x9
-        ],
+                CropAspectRatioPreset.original,
+                CropAspectRatioPreset.square,
+                CropAspectRatioPreset.ratio3x2,
+                CropAspectRatioPreset.ratio4x3,
+                CropAspectRatioPreset.ratio5x3,
+                CropAspectRatioPreset.ratio5x4,
+                CropAspectRatioPreset.ratio7x5,
+                CropAspectRatioPreset.ratio16x9
+              ],
         androidUiSettings: AndroidUiSettings(
             toolbarTitle: 'Cropper',
             toolbarColor: Colors.deepOrange,
@@ -151,10 +152,11 @@ class _ScanDocumentState extends State<ScanDocument> {
       setState(() {
         imageFile = croppedFile;
       });
+      return imageFile;
     }
   }
 
-  Future<void> _saveImage() async{
+  Future<void> _saveImage() async {
     appPath = await getAppPath();
     // TODO: save images in separate folders
   }
@@ -179,12 +181,14 @@ class _ScanDocumentState extends State<ScanDocument> {
         appBar: AppBar(
           title: Text("Scan Document"),
         ),
-        body: ListView.builder(
+        body: ListView.separated(
+          shrinkWrap: true,
           scrollDirection: Axis.vertical,
           itemCount: imageFiles.length,
-          itemBuilder: (context, index){
+          itemBuilder: (context, index) {
             return imageFiles[index];
           },
+          separatorBuilder: (BuildContext context, _) => Divider(),
         ),
         bottomNavigationBar: Row(
           children: <Widget>[
@@ -216,7 +220,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                   child: Container(
                     alignment: Alignment.center,
                     height: 50,
-                    child: Text("Save as PDF"),
+                    child: Text("Done"),
                   ),
                 ),
               ),
@@ -227,35 +231,26 @@ class _ScanDocumentState extends State<ScanDocument> {
           onPressed: () async {
             await _openCamera();
             if (image != null) {
-              _cropImage(image);
-              imageFiles.add(Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Image.file(image, width: size.width*0.4,),
-              ));
+              var imageFile = await _cropImage(image);
+              imageFiles.add(
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Image.file(
+                    imageFile,
+                    // TODO: Why is this line present?
+                    width: size.width * 0.4,
+                  ),
+                ),
+              );
               setState(() {});
             }
           },
-          child: Icon(Icons.camera),
+          child: Icon(Icons.add),
         ),
       ),
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 //class TakePictureScreen extends StatefulWidget {
 //  static String route = "TakePicture";
