@@ -35,7 +35,7 @@ class _ScanDocumentState extends State<ScanDocument> {
       Container(
         padding: EdgeInsets.all(8.0),
         child: Text(
-          "Scroll down to view previous photos",
+          "Scroll down to view other photos",
           textAlign: TextAlign.center,
           style: TextStyle(
               // TODO: Reduce opacity of text
@@ -193,7 +193,6 @@ class _ScanDocumentState extends State<ScanDocument> {
           title: Text("Scan Document"),
         ),
         body: ListView.separated(
-          reverse: true,
           shrinkWrap: true,
           scrollDirection: Axis.vertical,
           itemCount: imageFiles.length,
