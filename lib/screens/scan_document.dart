@@ -170,8 +170,8 @@ class _ScanDocumentState extends State<ScanDocument> {
   }
 
   Future<void> _saveImage() async {
-    appPath = await getAppPath();
-    // TODO: save images in separate folders
+    Directory appDir = await getExternalStorageDirectory();
+    // print(appDir);
   }
 
   var image;
@@ -183,6 +183,20 @@ class _ScanDocumentState extends State<ScanDocument> {
       print(picture.path);
       image = requiredPicture;
     });
+  }
+
+  Future<void> deleteTemporaryFiles() async {
+    // Delete the temporary files created by the image_picker package
+    Directory appDocDir = await getExternalStorageDirectory();
+    String appDocPath = appDocDir.path + "/Pictures/";
+    Directory del = Directory(appDocPath);
+    if (await del.exists()) {
+      del.deleteSync(recursive: true);
+    }
+    print(" something ");
+    print(await del.exists());
+    new Directory(appDocPath).create();
+    print(await del.exists());
   }
 
   @override
@@ -227,6 +241,7 @@ class _ScanDocumentState extends State<ScanDocument> {
 //                    await _createPdf();
 //                    await displayDialog();
                     _saveImage();
+                    await deleteTemporaryFiles();
                     Navigator.pop(context);
                   },
                   color: Colors.lightGreen,
