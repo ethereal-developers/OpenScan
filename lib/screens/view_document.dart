@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openscan/screens/share_document.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
@@ -28,7 +29,9 @@ class _ViewDocumentState extends State<ViewDocument> {
             Placeholder(),
             Placeholder(),
             FlatButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.pushNamed(context, ShareDocument.route);
+              },
               child: Text("Share Document as PDF"),
               color: Colors.green,
             )
