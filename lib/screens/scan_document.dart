@@ -31,6 +31,7 @@ class _ScanDocumentState extends State<ScanDocument> {
   bool _generating = false;
   String appName = 'OpenScan';
   String appPath;
+  String docPath;
 
   @override
   void initState() {
@@ -45,6 +46,7 @@ class _ScanDocumentState extends State<ScanDocument> {
         ),
       ),
     ];
+    createDirectoryName();
   }
 
   Future<String> getAppPath() async {
@@ -180,21 +182,22 @@ class _ScanDocumentState extends State<ScanDocument> {
     });
   }
 
-  Future<void> _saveImage(File image) async {
+  Future<void> createDirectoryName() async {
     Directory appDir = await getExternalStorageDirectory();
     print(appDir);
-    String docPath = "${appDir.path}/OpenScan Doc ${DateTime.now()}";
+    docPath = "${appDir.path}/OpenScan Doc ${DateTime.now()}";
+  }
+
+  Future<void> _saveImage(File image) async {
     if (await Directory(docPath).exists() != true) {
       new Directory(docPath).create();
     }
 
-    File tempPic = File("$docPath/${imageFiles.length - 1}.jpg");
-    var temp = tempPic.openWrite();
-    temp.write(image);
-    temp.close();
+    File tempPic = File("$docPath/${imageFiles.length - 1}.png");
+    image.copy(tempPic.path);
   }
 
-  Future<void> deleteTemporaryFiles() async {
+  Future<void> _deleteTemporaryFiles() async {
     // Delete the temporary files created by the image_picker package
     Directory appDocDir = await getExternalStorageDirectory();
     String appDocPath = "${appDocDir.path}/Pictures/";
@@ -248,7 +251,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                   onPressed: () async {
 //                    await _createPdf();
 //                    await displayDialog();
-                    await deleteTemporaryFiles();
+                    await _deleteTemporaryFiles();
                     Navigator.pop(context);
                   },
                   color: Colors.lightGreen,
