@@ -26,6 +26,11 @@ class _ViewDocumentState extends State<ViewDocument> {
                 style: TextStyle(fontSize: 17.0),
               ),
             ),
+            FlatButton(
+              // TODO: Implement how to change the name of the document
+              onPressed: () {},
+              child: Text("Change the name of the document"),
+            ),
             Placeholder(),
             Placeholder(),
             FlatButton(
