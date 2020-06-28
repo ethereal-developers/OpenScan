@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:core';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:images_to_pdf/images_to_pdf.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -39,9 +42,6 @@ class _ScanDocumentState extends State<ScanDocument> {
         child: Text(
           "Scroll down to view other photos",
           textAlign: TextAlign.center,
-          style: TextStyle(
-              // TODO: Reduce opacity of text
-              ),
         ),
       ),
     ];
@@ -169,11 +169,6 @@ class _ScanDocumentState extends State<ScanDocument> {
     }
   }
 
-  Future<void> _saveImage() async {
-    Directory appDir = await getExternalStorageDirectory();
-    // print(appDir);
-  }
-
   var image;
   Future _openCamera() async {
     final _picker = ImagePicker();
@@ -185,23 +180,36 @@ class _ScanDocumentState extends State<ScanDocument> {
     });
   }
 
+  Future<void> _saveImage(File image) async {
+    Directory appDir = await getExternalStorageDirectory();
+    print(appDir);
+    String docPath = "${appDir.path}/OpenScan Doc ${DateTime.now()}";
+    if (await Directory(docPath).exists() != true) {
+      new Directory(docPath).create();
+    }
+
+    File tempPic = File("$docPath/${imageFiles.length - 1}.jpg");
+    var temp = tempPic.openWrite();
+    temp.write(image);
+    temp.close();
+  }
+
   Future<void> deleteTemporaryFiles() async {
     // Delete the temporary files created by the image_picker package
     Directory appDocDir = await getExternalStorageDirectory();
-    String appDocPath = appDocDir.path + "/Pictures/";
+    String appDocPath = "${appDocDir.path}/Pictures/";
     Directory del = Directory(appDocPath);
     if (await del.exists()) {
       del.deleteSync(recursive: true);
     }
-    print(" something ");
-    print(await del.exists());
+    // print(" something ");
+    // print(await del.exists());
     new Directory(appDocPath).create();
-    print(await del.exists());
+    // print(await del.exists());
   }
 
   @override
   Widget build(BuildContext context) {
-    print(imageFiles.length);
     Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
@@ -240,7 +248,6 @@ class _ScanDocumentState extends State<ScanDocument> {
                   onPressed: () async {
 //                    await _createPdf();
 //                    await displayDialog();
-                    _saveImage();
                     await deleteTemporaryFiles();
                     Navigator.pop(context);
                   },
@@ -270,6 +277,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                   ),
                 ),
               );
+              await _saveImage(image);
               setState(() {});
             }
           },
