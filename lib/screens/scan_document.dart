@@ -31,7 +31,18 @@ class _ScanDocumentState extends State<ScanDocument> {
   void initState() {
     super.initState();
 //    imageFile = widget.image;
-    imageFiles = [];
+    imageFiles = <Widget>[
+      Container(
+        padding: EdgeInsets.all(8.0),
+        child: Text(
+          "Scroll down to view previous photos",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              // TODO: Reduce opacity of text
+              ),
+        ),
+      ),
+    ];
   }
 
   Future<String> getAppPath() async {
@@ -182,6 +193,7 @@ class _ScanDocumentState extends State<ScanDocument> {
           title: Text("Scan Document"),
         ),
         body: ListView.separated(
+          reverse: true,
           shrinkWrap: true,
           scrollDirection: Axis.vertical,
           itemCount: imageFiles.length,
