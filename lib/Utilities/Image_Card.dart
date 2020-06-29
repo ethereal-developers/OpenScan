@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:focused_menu/modals.dart';
 import 'package:openscan/screens/view_document.dart';
+import 'package:focused_menu/focused_menu.dart';
 
 class ImageCard extends StatelessWidget {
   const ImageCard({
@@ -12,16 +14,27 @@ class ImageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RaisedButton(
-      onPressed: () {
-//        Navigator.pushNamed(context, ViewDocument.route);
-      },
+    return FocusedMenuHolder(
+      onPressed: (){},
+      menuItems: [
+        FocusedMenuItem(
+          title: Text('Crop'),
+          onPressed: (){
+            print('Cropped');
+          },
+        ),
+        FocusedMenuItem(
+          title: Text('Delete'),
+          onPressed: (){},
+          backgroundColor: Colors.redAccent
+        ),
+      ],
       child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 8),
         child: Image.file(imageFile,),
-        height: size.height*0.3,
+        height: size.height*0.25,
         width: size.width*0.4,
       ),
-      color: Colors.transparent,
     );
   }
 }

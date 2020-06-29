@@ -44,6 +44,10 @@ class _ScanDocumentState extends State<ScanDocument> {
     createDirectoryName();
   }
 
+  Future _onWillPop() async{
+    Navigator.popAndPushNamed(context,HomeScreen.route);
+  }
+
   Future<String> getAppPath() async {
     final Directory _appDocDir = await getApplicationDocumentsDirectory();
     final Directory _appDocDirFolder =
@@ -224,75 +228,78 @@ class _ScanDocumentState extends State<ScanDocument> {
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text("Scan Document"),
-        ),
-        body: ListView.separated(
-          shrinkWrap: true,
-          scrollDirection: Axis.vertical,
-          itemCount: imageFiles.length,
-          itemBuilder: (context, index) {
-            return imageFiles[index];
-          },
-          separatorBuilder: (BuildContext context, _) => Divider(),
-        ),
-        bottomNavigationBar: Row(
-          children: <Widget>[
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: RaisedButton(
-                  onPressed: () {
+      child: WillPopScope(
+        onWillPop: _onWillPop,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text("Scan Document"),
+          ),
+          body: ListView.separated(
+            shrinkWrap: true,
+            scrollDirection: Axis.vertical,
+            itemCount: imageFiles.length,
+            itemBuilder: (context, index) {
+              return imageFiles[index];
+            },
+            separatorBuilder: (BuildContext context, _) => Divider(),
+          ),
+          bottomNavigationBar: Row(
+            children: <Widget>[
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: RaisedButton(
+                    onPressed: () {
 //                    _cropImage();
-                  },
-                  child: Container(
-                    height: 50,
-                    child: Icon(Icons.crop),
+                    },
+                    child: Container(
+                      height: 50,
+                      child: Icon(Icons.crop),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: RaisedButton(
-                  onPressed: () async {
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: RaisedButton(
+                    onPressed: () async {
 //                    await _createPdf();
 //                    await displayDialog();
-                    await _deleteTemporaryFiles();
-                    Navigator.popAndPushNamed(context,HomeScreen.route);
-                  },
-                  color: Colors.lightGreen,
-                  child: Container(
-                    alignment: Alignment.center,
-                    height: 50,
-                    child: Text("Done"),
+                      await _deleteTemporaryFiles();
+                      Navigator.popAndPushNamed(context,HomeScreen.route);
+                    },
+                    color: Colors.lightGreen,
+                    child: Container(
+                      alignment: Alignment.center,
+                      height: 50,
+                      child: Text("Done"),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            await _openCamera();
-            if (image != null) {
-              var imageFile = await _cropImage(image);
-              imageFiles.add(
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Image.file(
-                    imageFile,
-                    width: size.width * 0.4,
+            ],
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () async {
+              await _openCamera();
+              if (image != null) {
+                var imageFile = await _cropImage(image);
+                imageFiles.add(
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Image.file(
+                      imageFile,
+                      width: size.width * 0.4,
+                    ),
                   ),
-                ),
-              );
-              await _saveImage(image);
-              setState(() {});
-            }
-          },
-          child: Icon(Icons.add),
+                );
+                await _saveImage(image);
+                setState(() {});
+              }
+            },
+            child: Icon(Icons.add),
+          ),
         ),
       ),
     );

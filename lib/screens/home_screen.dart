@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
       String path = entity.path;
       if(!imageDirPaths.contains(path))
         imageDirPaths.add(path);
-      print(path);
+//      print(path);
 //      int n;
 //      imageFiles = Directory(imageDirPaths[2]).listSync(recursive: false, followLinks: false);
 //      n = imageFiles.length;
