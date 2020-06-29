@@ -66,11 +66,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () async {
                     getDirectoryNames();
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ViewDocument(
-                                  dirPath: imageDirPaths[index],
-                                )));
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ViewDocument(
+                          dirPath: imageDirPaths[index],
+                        ),
+                      ),
+                    );
                   },
                 );
               },
