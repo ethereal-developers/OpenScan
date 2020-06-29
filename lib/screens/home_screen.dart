@@ -14,7 +14,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
 //  var imageFiles;
   var imageDirPaths = [];
   Future getDirectoryNames() async {
@@ -22,11 +21,11 @@ class _HomeScreenState extends State<HomeScreen> {
     Map<String, int> appDetails;
     Directory appDir = await getExternalStorageDirectory();
     Directory appDirPath = Directory("${appDir.path}");
-    appDirPath.list(recursive: false, followLinks: false)
+    appDirPath
+        .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       String path = entity.path;
-      if(!imageDirPaths.contains(path))
-        imageDirPaths.add(path);
+      if (!imageDirPaths.contains(path)) imageDirPaths.add(path);
 //      print(path);
 //      int n;
 //      imageFiles = Directory(imageDirPaths[2]).listSync(recursive: false, followLinks: false);
@@ -49,19 +48,29 @@ class _HomeScreenState extends State<HomeScreen> {
         // TODO: Move to view doc
         body: FutureBuilder(
           future: getDirectoryNames(),
-          builder:(BuildContext context, AsyncSnapshot snapshot) {
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
             return ListView.builder(
               itemCount: imageDirPaths.length,
-              itemBuilder: (context, index){
-                folderName = imageDirPaths[index].substring(imageDirPaths[index].lastIndexOf('/')+1,imageDirPaths[index].length-1);
+              itemBuilder: (context, index) {
+                folderName = imageDirPaths[index].substring(
+                    imageDirPaths[index].lastIndexOf('/') + 1,
+                    imageDirPaths[index].length - 1);
                 return ListTile(
-                  leading: Icon(Icons.landscape,size: 30),
+                  leading: Icon(Icons.landscape, size: 30),
                   title: Text(folderName),
                   subtitle: Text(folderName),
-                  trailing: Icon(Icons.arrow_right,size: 30,),
+                  trailing: Icon(
+                    Icons.arrow_right,
+                    size: 30,
+                  ),
                   onTap: () async {
                     getDirectoryNames();
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => ViewDocument(dirPath: imageDirPaths[index],)));
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ViewDocument(
+                                  dirPath: imageDirPaths[index],
+                                )));
                   },
                 );
               },
@@ -69,12 +78,11 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => Navigator.popAndPushNamed(context, ScanDocument.route),
+          onPressed: () =>
+              Navigator.popAndPushNamed(context, ScanDocument.route),
           child: Icon(Icons.camera),
         ),
       ),
     );
   }
 }
-
-
