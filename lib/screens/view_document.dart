@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:openscan/screens/scan_document.dart';
 import 'package:openscan/screens/share_document.dart';
 import 'package:openscan/Utilities/Image_Card.dart';
 
@@ -14,10 +15,10 @@ class ViewDocument extends StatefulWidget {
 }
 
 class _ViewDocumentState extends State<ViewDocument> {
-
   var imageFiles;
-  Future  getImages() async{
-    imageFiles = Directory(widget.dirPath).listSync(recursive: false, followLinks: false);
+  Future getImages() async {
+    imageFiles = Directory(widget.dirPath)
+        .listSync(recursive: false, followLinks: false);
     return imageFiles;
   }
 
@@ -31,18 +32,22 @@ class _ViewDocumentState extends State<ViewDocument> {
         ),
         body: FutureBuilder(
           future: getImages(),
-          builder:(BuildContext context, AsyncSnapshot snapshot) {
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
             return ListView.builder(
               itemCount: ((imageFiles.length) / 2).round(),
               itemBuilder: (context, index) {
                 return Padding(
-                  padding: EdgeInsets.symmetric(vertical:3.0),
+                  padding: EdgeInsets.symmetric(vertical: 3.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: <Widget>[
-                      ImageCard(imageFile: File(imageFiles[index*2].path), size: size),
-                      if(index * 2 + 1 < imageFiles.length)
-                        ImageCard(imageFile: File(imageFiles[index*2+1].path), size: size),
+                      ImageCard(
+                          imageFile: File(imageFiles[index * 2].path),
+                          size: size),
+                      if (index * 2 + 1 < imageFiles.length)
+                        ImageCard(
+                            imageFile: File(imageFiles[index * 2 + 1].path),
+                            size: size),
                     ],
                   ),
                 );
@@ -69,7 +74,15 @@ class _ViewDocumentState extends State<ViewDocument> {
 //        ),
         bottomNavigationBar: FlatButton(
           onPressed: () {
-            Navigator.pushNamed(context, ShareDocument.route);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ShareDocument(
+                  imageFilesList: imageFiles,
+                  fileName: widget.dirPath,
+                ),
+              ),
+            );
           },
           child: Text("Share Document as PDF"),
           color: Colors.green,
