@@ -14,84 +14,67 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  void getDirectoryNames() async {
-    // TODO: Append values to the map
+
+//  var imageFiles;
+  var imageDirPaths = [];
+  Future getDirectoryNames() async {
+//    imageFiles = [];
     Map<String, int> appDetails;
     Directory appDir = await getExternalStorageDirectory();
     Directory appDirPath = Directory("${appDir.path}");
-    appDirPath
-        .list(recursive: false, followLinks: false)
+    appDirPath.list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       String path = entity.path;
-      int n;
-      var some =
-          Directory(entity.path).listSync(recursive: false, followLinks: false);
-      n = some.length;
-      // path is a string that contains the name of the folder
-      // n is the number of files present inside the folder
-      // This function is triggered when the user clicks on any of the ListTiles
-      print("$path: $n");
+      if(!imageDirPaths.contains(path))
+        imageDirPaths.add(path);
+      print(path);
+//      int n;
+//      imageFiles = Directory(imageDirPaths[2]).listSync(recursive: false, followLinks: false);
+//      n = imageFiles.length;
+//      print("$path: $n");
     });
-    print(appDetails);
-  }
-
-  List<ListTile> getDocuments({@required BuildContext context, int temp}) {
-    List<ListTile> documentsList = [];
-    for (int i = 0; i < temp; i++) {
-      documentsList.add(
-        ListTile(
-          leading: Icon(Icons.landscape),
-          title: Text("Name of the document"),
-          subtitle: Text("Date and size of the file"),
-          trailing: Icon(Icons.arrow_right),
-          onTap: () async {
-            getDirectoryNames();
-            Navigator.pushNamed(context, ViewDocument.route);
-          },
-        ),
-      );
-    }
-    return documentsList;
-  }
-
-  var image;
-  Future _openCamera() async {
-    final _picker = ImagePicker();
-    var picture = await _picker.getImage(source: ImageSource.camera);
-    setState(() {
-      final requiredPicture = File(picture.path);
-      print(picture.path);
-      image = requiredPicture;
-    });
+//    print(imageDirPaths);
+    return imageDirPaths;
   }
 
   @override
   Widget build(BuildContext context) {
+    String folderName;
+    Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
           title: Text("Home"),
         ),
-        body: ListView(
-          children: getDocuments(context: context, temp: 10),
+        // TODO: Move to view doc
+        body: FutureBuilder(
+          future: getDirectoryNames(),
+          builder:(BuildContext context, AsyncSnapshot snapshot) {
+            return ListView.builder(
+              itemCount: imageDirPaths.length,
+              itemBuilder: (context, index){
+                folderName = imageDirPaths[index].substring(imageDirPaths[index].lastIndexOf('/')+1,imageDirPaths[index].length-1);
+                return ListTile(
+                  leading: Icon(Icons.landscape,size: 30),
+                  title: Text(folderName),
+                  subtitle: Text(folderName),
+                  trailing: Icon(Icons.arrow_right,size: 30,),
+                  onTap: () async {
+                    getDirectoryNames();
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => ViewDocument(dirPath: imageDirPaths[index],)));
+                  },
+                );
+              },
+            );
+          },
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-//            await _openCamera();
-            if (image == null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ScanDocument(
-//                    image: image,
-                      ),
-                ),
-              );
-            }
-          },
+          onPressed: () => Navigator.popAndPushNamed(context, ScanDocument.route),
           child: Icon(Icons.camera),
         ),
       ),
     );
   }
 }
+
+

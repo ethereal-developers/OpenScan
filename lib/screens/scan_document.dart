@@ -1,22 +1,18 @@
-import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:core';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:images_to_pdf/images_to_pdf.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ScanDocument extends StatefulWidget {
   static String route = "ScanDocument";
-//  final image;
-//  ScanDocument({this.image});
 
   @override
   _ScanDocumentState createState() => _ScanDocumentState();
@@ -36,7 +32,6 @@ class _ScanDocumentState extends State<ScanDocument> {
   @override
   void initState() {
     super.initState();
-//    imageFile = widget.image;
     imageFiles = <Widget>[
       Container(
         padding: EdgeInsets.only(top: 8.0),
@@ -133,7 +128,7 @@ class _ScanDocumentState extends State<ScanDocument> {
     }
   }
 
-  Future<File> _cropImage(imageFile) async {
+  Future _cropImage(imageFile) async {
     File croppedFile = await ImageCropper.cropImage(
         sourcePath: imageFile.path,
         aspectRatioPresets: Platform.isAndroid
@@ -185,7 +180,7 @@ class _ScanDocumentState extends State<ScanDocument> {
   Future<void> createDirectoryName() async {
     Directory appDir = await getExternalStorageDirectory();
     print(appDir);
-    docPath = "${appDir.path}/OpenScan Doc ${DateTime.now()}";
+    docPath = "${appDir.path}/OpenScan ${DateTime.now()}";
   }
 
   Future<void> _saveImage(File image) async {
@@ -209,6 +204,20 @@ class _ScanDocumentState extends State<ScanDocument> {
     // print(await del.exists());
     new Directory(appDocPath).create();
     // print(await del.exists());
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    imageFile = null;
+    image = null;
+    imageFiles = null;
+    _pdfFile = null;
+    _status = null;
+    _pdfStat = null;
+    _generating = null;
+    appName = null;
+    appPath = null;
   }
 
   @override
@@ -252,7 +261,7 @@ class _ScanDocumentState extends State<ScanDocument> {
 //                    await _createPdf();
 //                    await displayDialog();
                     await _deleteTemporaryFiles();
-                    Navigator.pop(context);
+                    Navigator.popAndPushNamed(context,HomeScreen.route);
                   },
                   color: Colors.lightGreen,
                   child: Container(
@@ -275,7 +284,6 @@ class _ScanDocumentState extends State<ScanDocument> {
                   padding: const EdgeInsets.all(8.0),
                   child: Image.file(
                     imageFile,
-                    // TODO: Why is this line present?
                     width: size.width * 0.4,
                   ),
                 ),
@@ -289,86 +297,5 @@ class _ScanDocumentState extends State<ScanDocument> {
       ),
     );
   }
-
-  @override
-  void dispose() {
-    super.dispose();
-    imageFile = null;
-    image = null;
-    imageFiles = null;
-    _pdfFile = null;
-    _status = null;
-    _pdfStat = null;
-    _generating = null;
-    appName = null;
-    appPath = null;
-  }
 }
 
-//class TakePictureScreen extends StatefulWidget {
-//  static String route = "TakePicture";
-//  final CameraDescription camera;
-//
-//  const TakePictureScreen({@required this.camera});
-//
-//  @override
-//  TakePictureScreenState createState() => TakePictureScreenState();
-//}
-//
-//class TakePictureScreenState extends State<TakePictureScreen> {
-//  CameraController _controller;
-//  Future<void> _initializeControllerFuture;
-//
-//  @override
-//  void initState() {
-//    super.initState();
-//    _controller = CameraController(
-//      widget.camera,
-//      ResolutionPreset.medium,
-//    );
-//
-//  }
-//
-//  @override
-//  void dispose() {
-//    _controller.dispose();
-//    super.dispose();
-//  }
-//
-//  @override
-//  Widget build(BuildContext context) {
-//    return Scaffold(
-//      appBar: AppBar(title: Text('Take a picture')),
-//      body: FutureBuilder<void>(
-//        future: _initializeControllerFuture,
-//        builder: (context, snapshot) {
-//          if (snapshot.connectionState == ConnectionState.done) {
-//            return CameraPreview(_controller);
-//          } else {
-//            return Center(child: CircularProgressIndicator());
-//          }
-//        },
-//      ),
-//      floatingActionButton: FloatingActionButton(
-//        child: Icon(Icons.camera_alt),
-//        onPressed: () async {
-//          try {
-//            await _initializeControllerFuture;
-//            final path = join((await getTemporaryDirectory()).path,'${DateTime.now()}.png',);
-//
-//            await _controller.takePicture(path);
-//
-//            Navigator.push(
-//              context,
-//              MaterialPageRoute(
-//                builder: (context) => ScanDocument(imagePath: path),
-//              ),
-//            );
-//          } catch (e) {
-//            print(e);
-//          }
-//        },
-//      ),
-//    );
-//  }
-//}

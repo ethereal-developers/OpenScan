@@ -17,6 +17,7 @@ dependencies:
   image_picker: ^0.6.4
   image_cropper: ^1.2.3
   images_to_pdf: ^0.0.1
+  focused_menu: ^1.0.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
