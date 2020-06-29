@@ -14,26 +14,30 @@ class ImageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FocusedMenuHolder(
-      onPressed: (){},
-      menuItems: [
-        FocusedMenuItem(
-          title: Text('Crop'),
-          onPressed: (){
-            print('Cropped');
-          },
+    return RaisedButton(
+      color: Colors.black,
+      child: FocusedMenuHolder(
+        menuWidth: MediaQuery.of(context).size.width*0.44,
+        onPressed: (){},
+        menuItems: [
+          FocusedMenuItem(
+            title: Text('Crop', style: TextStyle(color: Colors.black),),
+            onPressed: (){
+              print('Cropped');
+            },
+          ),
+          FocusedMenuItem(
+            title: Text('Delete'),
+            onPressed: (){},
+            backgroundColor: Colors.redAccent
+          ),
+        ],
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Image.file(imageFile,scale: 1.7,),
+          height: size.height*0.25,
+          width: size.width*0.4,
         ),
-        FocusedMenuItem(
-          title: Text('Delete'),
-          onPressed: (){},
-          backgroundColor: Colors.redAccent
-        ),
-      ],
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 8),
-        child: Image.file(imageFile,),
-        height: size.height*0.25,
-        width: size.width*0.4,
       ),
     );
   }

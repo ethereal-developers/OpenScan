@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 
 class ShareDocument extends StatefulWidget {
   static String route = "ShareDocument";
-  List<File> imageFilesList;
+  var imageFilesList;
   String fileName;
 
   ShareDocument({this.imageFilesList, this.fileName});
@@ -26,7 +26,7 @@ class _ShareDocumentState extends State<ShareDocument> {
   bool _generating = false;
 
   String nameOfFile;
-  List<File> images;
+  var images;
 
   @override
   void initState() {
