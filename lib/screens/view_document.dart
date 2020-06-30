@@ -18,7 +18,11 @@ class ViewDocument extends StatefulWidget {
 class _ViewDocumentState extends State<ViewDocument> {
   var imageFiles;
 
-  Future getImages() async {
+  Future<void> _deleteDocument() {
+    Directory(widget.dirPath).deleteSync(recursive: true);
+  }
+
+  Future _getImages() async {
     imageFiles = Directory(widget.dirPath)
         .listSync(recursive: false, followLinks: false);
     return imageFiles;
@@ -45,7 +49,7 @@ class _ViewDocumentState extends State<ViewDocument> {
           ),
         ),
         body: FutureBuilder(
-          future: getImages(),
+          future: _getImages(),
           builder: (BuildContext context, AsyncSnapshot snapshot) {
             return ListView.builder(
               physics: BouncingScrollPhysics(),
@@ -70,23 +74,6 @@ class _ViewDocumentState extends State<ViewDocument> {
             );
           },
         ),
-//        body: ListView(
-//          children: <Widget>[
-//            Padding(
-//              padding: const EdgeInsets.all(8.0),
-//              child: Text(
-//                "Name of the document",
-//                textAlign: TextAlign.center,
-//                style: TextStyle(fontSize: 17.0),
-//              ),
-//            ),
-//            FlatButton(
-//              // TODO: Implement how to change the name of the document
-//              onPressed: () {},
-//              child: Text("Change the name of the document"),
-//            ),
-//          ],
-//        ),
         bottomNavigationBar: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           child: RaisedButton(
