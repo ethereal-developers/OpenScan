@@ -96,6 +96,33 @@ class _ScanDocumentState extends State<ScanDocument> {
     new Directory(appDocPath).create();
   }
 
+  Future<void> _displayDialog() {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Alert'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Success!'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('Ok'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<bool> _onBackPressed() async {
     return (await showDialog(
           context: context,
@@ -186,6 +213,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                   for (int i = 0; i < imageFiles.length; i++) {
                     await _saveImage(imageFiles[i], i + 1);
                   }
+                  await _displayDialog();
                 }
                 await _deleteTemporaryFiles();
                 Navigator.pop(context);
