@@ -59,7 +59,7 @@ class _ScanDocumentState extends State<ScanDocument> {
     });
   }
 
-  Future createImage() async{
+  Future createImage() async {
     await _openCamera();
     if (image != null) {
       Cropper cropper = Cropper();
@@ -75,12 +75,12 @@ class _ScanDocumentState extends State<ScanDocument> {
     docPath = "${appDir.path}/OpenScan ${DateTime.now()}";
   }
 
-  Future<void> _saveImage(File image) async {
+  Future<void> _saveImage(File image, int i) async {
     if (await Directory(docPath).exists() != true) {
       new Directory(docPath).create();
     }
 
-    File tempPic = File("$docPath/${imageFiles.length - 1}.png");
+    File tempPic = File("$docPath/$i.png");
     image.copy(tempPic.path);
   }
 
@@ -92,38 +92,37 @@ class _ScanDocumentState extends State<ScanDocument> {
     if (await del.exists()) {
       del.deleteSync(recursive: true);
     }
-    // print(" something ");
-    // print(await del.exists());
     new Directory(appDocPath).create();
-    // print(await del.exists());
   }
 
   Future<bool> _onBackPressed() async {
     return (await showDialog(
-      context: context,
-      builder: (context){
-        return AlertDialog(
-          title: Text('Do you want to discard the documents?',
-            style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600
-            ),
-          ),
-          backgroundColor: primaryColor,
-          actions: <Widget>[
-            FlatButton(
-              onPressed: () => Navigator.popUntil(context, ModalRoute.withName(HomeScreen.route)),
-              child: Text('Yes'),
-            ),
-            FlatButton(
-              onPressed: () => Navigator.pop(context,false),
-              child: Text('No',
-                style: TextStyle(color: secondaryColor),
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text(
+                'Do you want to discard the documents?',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
               ),
-            ),
-          ],
-        );
-      },) ?? false);
+              backgroundColor: primaryColor,
+              actions: <Widget>[
+                FlatButton(
+                  onPressed: () => Navigator.popUntil(
+                      context, ModalRoute.withName(HomeScreen.route)),
+                  child: Text('Yes'),
+                ),
+                FlatButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(
+                    'No',
+                    style: TextStyle(color: secondaryColor),
+                  ),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false);
   }
 
   @override
@@ -150,16 +149,19 @@ class _ScanDocumentState extends State<ScanDocument> {
             backgroundColor: primaryColor,
             leading: IconButton(
               onPressed: _onBackPressed,
-              icon: Icon(Icons.arrow_back_ios, color: secondaryColor,),
+              icon: Icon(
+                Icons.arrow_back_ios,
+                color: secondaryColor,
+              ),
             ),
-            title:RichText(
+            title: RichText(
               text: TextSpan(
                 text: 'Scan ',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                children: [TextSpan(
-                    text: 'Document',
-                    style: TextStyle(color: secondaryColor)
-                )],
+                children: [
+                  TextSpan(
+                      text: 'Document', style: TextStyle(color: secondaryColor))
+                ],
               ),
             ),
           ),
@@ -186,12 +188,12 @@ class _ScanDocumentState extends State<ScanDocument> {
             },
           ),
           bottomNavigationBar: Padding(
-            padding: const EdgeInsets.symmetric(horizontal:15, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             child: RaisedButton(
               onPressed: () async {
                 await _deleteTemporaryFiles();
-                for(var i in imageFiles)
-                  await _saveImage(i);
+                for (int i = 0; i < imageFiles.length; i++)
+                  await _saveImage(imageFiles[i], i + 1);
                 Navigator.pop(context);
               },
               color: secondaryColor,
@@ -199,12 +201,15 @@ class _ScanDocumentState extends State<ScanDocument> {
               child: Container(
                 alignment: Alignment.center,
                 height: 55,
-                child: Text("Done", style: TextStyle(fontSize: 20),),
+                child: Text(
+                  "Done",
+                  style: TextStyle(fontSize: 20),
+                ),
               ),
             ),
           ),
           floatingActionButton: FloatingActionButton(
-            backgroundColor: secondaryColor ,
+            backgroundColor: secondaryColor,
             onPressed: createImage,
             child: Icon(Icons.add),
           ),
@@ -213,7 +218,6 @@ class _ScanDocumentState extends State<ScanDocument> {
     );
   }
 }
-
 
 //ListView.separated(
 //shrinkWrap: true,
