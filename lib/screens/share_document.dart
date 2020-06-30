@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import 'package:directory_picker/directory_picker.dart';
-import 'package:images_to_pdf/images_to_pdf.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class ShareDocument extends StatefulWidget {
   static String route = "ShareDocument";
@@ -19,14 +20,11 @@ class ShareDocument extends StatefulWidget {
 class _ShareDocumentState extends State<ShareDocument> {
   Directory selectedDirectory;
 
-  File _pdfFile;
-  String _status = "Not created";
-  FileStat _pdfStat;
-  bool _generating = false;
-
   String dirName;
   List<File> images = [];
   String fileName;
+
+  bool _statusSuccess;
 
   @override
   void initState() {
@@ -64,9 +62,9 @@ class _ShareDocumentState extends State<ShareDocument> {
   Future<void> displayDialog() async {
     String displayText;
 
-    if (_status.startsWith("PDF Generated"))
+    if (_statusSuccess)
       displayText = "Success. File stored in the chosen folder.";
-    else if (_status.startsWith("Failed to generate pdf"))
+    else
       displayText = "Failed to generate pdf. Try Again.";
 
     return showDialog<void>(
@@ -97,44 +95,33 @@ class _ShareDocumentState extends State<ShareDocument> {
 
   Future<void> _createPdf() async {
     try {
-      this.setState(() => _generating = true);
-
       final output = File("${selectedDirectory.path}/$fileName.pdf");
 
-      this.setState(() => _status = 'Generating PDF');
-
-      List<Size> dimensionsArr = [];
       int i = 0;
-      var decodedImage;
+
+      final doc = pw.Document();
+      var image;
 
       for (i = 0; i < images.length; i++) {
-        decodedImage = await decodeImageFromList(images[i].readAsBytesSync());
-        dimensionsArr.add(Size(
-            decodedImage.width.toDouble(), decodedImage.height.toDouble()));
+        image = PdfImage.file(
+          doc.document,
+          bytes: images[i].readAsBytesSync(),
+        );
+
+        doc.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat.a4,
+            build: (pw.Context context) => pw.Center(
+              child: pw.Image(image),
+            ),
+          ),
+        );
       }
 
-      i = 0;
-      await ImagesToPdf.createPdf(
-        pages: images
-            .map(
-              (file) => PdfPage(
-                imageFile: file,
-                size: dimensionsArr[i++],
-                compressionQuality: 0.5,
-              ),
-            )
-            .toList(),
-        output: output,
-      );
-      _pdfStat = await output.stat();
-      this.setState(() {
-        _pdfFile = output;
-        _status = 'PDF Generated (${_pdfStat.size ~/ 1024}kb)';
-      });
+      output.writeAsBytesSync(doc.save());
+      _statusSuccess = true;
     } catch (e) {
-      this.setState(() => _status = 'Failed to generate pdf: $e".');
-    } finally {
-      this.setState(() => _generating = false);
+      _statusSuccess = false;
     }
   }
 
