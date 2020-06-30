@@ -98,11 +98,26 @@ class _ShareDocumentState extends State<ShareDocument> {
       final output = File("${selectedDirectory.path}/nameOfFile.pdf");
 
       this.setState(() => _status = 'Generating PDF');
+
+      List<Size> dimensionsArr = [];
+      int i = 0;
+      var decodedImage;
+
+      for (i = 0; i < images.length; i++) {
+        decodedImage = await decodeImageFromList(images[i].readAsBytesSync());
+        dimensionsArr.add(Size(
+            decodedImage.width.toDouble(), decodedImage.height.toDouble()));
+      }
+
+      print(dimensionsArr);
+
+      i = 0;
       await ImagesToPdf.createPdf(
         pages: images
             .map(
               (file) => PdfPage(
                 imageFile: file,
+                size: dimensionsArr[i++],
                 compressionQuality: 0.5,
               ),
             )
