@@ -102,6 +102,7 @@ class _ShareDocumentState extends State<ShareDocument> {
       final doc = pw.Document();
       var image;
 
+      // TODO: Fix bug: Generated document pastes the same image in every page
       for (i = 0; i < images.length; i++) {
         image = PdfImage.file(
           doc.document,
@@ -111,10 +112,9 @@ class _ShareDocumentState extends State<ShareDocument> {
         doc.addPage(
           pw.Page(
             pageFormat: PdfPageFormat.a4,
-            build: (pw.Context context) =>
-                pw.Center(
-                  child: pw.Image(image),
-                ),
+            build: (pw.Context context) => pw.Center(
+              child: pw.Image(image),
+            ),
           ),
         );
       }
