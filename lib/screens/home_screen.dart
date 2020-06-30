@@ -38,7 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
         appBar: AppBar(
           title: Text("Home"),
         ),
-        // TODO: Move to view doc ???????????????????
         body: RefreshIndicator(
           onRefresh: () async {
             imageDirPaths = [];
