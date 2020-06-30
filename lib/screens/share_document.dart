@@ -8,10 +8,9 @@ import 'package:path_provider/path_provider.dart';
 
 class ShareDocument extends StatefulWidget {
   static String route = "ShareDocument";
-  var imageFilesList;
-  String fileName;
+  final String dirName;
 
-  ShareDocument({this.imageFilesList, this.fileName});
+  ShareDocument({this.dirName});
 
   @override
   _ShareDocumentState createState() => _ShareDocumentState();
@@ -26,13 +25,17 @@ class _ShareDocumentState extends State<ShareDocument> {
   bool _generating = false;
 
   String nameOfFile;
-  var images;
+  List<File> images = [];
 
   @override
   void initState() {
     super.initState();
-    images = widget.imageFilesList;
-    nameOfFile = widget.fileName;
+    nameOfFile = widget.dirName;
+    Directory(nameOfFile)
+        .list(recursive: false, followLinks: false)
+        .listen((FileSystemEntity entity) {
+      images.add(File(entity.path));
+    });
   }
 
   Future<void> _pickDirectory(BuildContext context) async {
@@ -58,7 +61,7 @@ class _ShareDocumentState extends State<ShareDocument> {
   Future<void> displayDialog() async {
     String displayText;
 
-    if (_status == "PDF Generated (${_pdfStat.size ~/ 1024}kb)")
+    if (_status.startsWith("PDF Generated"))
       displayText = "Success. File stored in the Downloads folder.";
     else if (_status.startsWith("Failed to generate pdf"))
       displayText = "Failed to generate pdf. Try Again.";
@@ -92,7 +95,7 @@ class _ShareDocumentState extends State<ShareDocument> {
   Future<void> _createPdf() async {
     try {
       this.setState(() => _generating = true);
-      final output = File("$selectedDirectory/$nameOfFile.pdf");
+      final output = File("${selectedDirectory.path}/nameOfFile.pdf");
 
       this.setState(() => _status = 'Generating PDF');
       await ImagesToPdf.createPdf(
@@ -117,6 +120,7 @@ class _ShareDocumentState extends State<ShareDocument> {
     } finally {
       this.setState(() => _generating = false);
     }
+    print(_status);
   }
 
   @override
@@ -133,6 +137,8 @@ class _ShareDocumentState extends State<ShareDocument> {
             FlatButton(
               onPressed: () async {
                 await _pickDirectory(context);
+                await _createPdf();
+                displayDialog();
               },
               child: Text("Save to device"),
             ),
