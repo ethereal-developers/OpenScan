@@ -24,18 +24,21 @@ class _ShareDocumentState extends State<ShareDocument> {
   FileStat _pdfStat;
   bool _generating = false;
 
-  String nameOfFile;
+  String dirName;
   List<File> images = [];
+  String fileName;
 
   @override
   void initState() {
     super.initState();
-    nameOfFile = widget.dirName;
-    Directory(nameOfFile)
+    dirName = widget.dirName;
+    Directory(dirName)
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       images.add(File(entity.path));
     });
+    fileName =
+        dirName.substring(dirName.lastIndexOf("/") + 1, dirName.length - 1);
   }
 
   Future<void> _pickDirectory(BuildContext context) async {
@@ -95,7 +98,8 @@ class _ShareDocumentState extends State<ShareDocument> {
   Future<void> _createPdf() async {
     try {
       this.setState(() => _generating = true);
-      final output = File("${selectedDirectory.path}/nameOfFile.pdf");
+
+      final output = File("${selectedDirectory.path}/$fileName.pdf");
 
       this.setState(() => _status = 'Generating PDF');
 
@@ -108,8 +112,6 @@ class _ShareDocumentState extends State<ShareDocument> {
         dimensionsArr.add(Size(
             decodedImage.width.toDouble(), decodedImage.height.toDouble()));
       }
-
-      print(dimensionsArr);
 
       i = 0;
       await ImagesToPdf.createPdf(
@@ -129,13 +131,11 @@ class _ShareDocumentState extends State<ShareDocument> {
         _pdfFile = output;
         _status = 'PDF Generated (${_pdfStat.size ~/ 1024}kb)';
       });
-      print(output);
     } catch (e) {
       this.setState(() => _status = 'Failed to generate pdf: $e".');
     } finally {
       this.setState(() => _generating = false);
     }
-    print(_status);
   }
 
   @override
