@@ -13,7 +13,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
   var imageDirPaths = [];
   Future getDirectoryNames() async {
     Directory appDir = await getExternalStorageDirectory();
@@ -22,7 +21,9 @@ class _HomeScreenState extends State<HomeScreen> {
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       String path = entity.path;
-      if (!imageDirPaths.contains(path) && path != '/storage/emulated/0/Android/data/com.example.openscan/files/Pictures')
+      if (!imageDirPaths.contains(path) &&
+          path !=
+              '/storage/emulated/0/Android/data/com.example.openscan/files/Pictures')
         imageDirPaths.add(path);
     });
     return imageDirPaths;
@@ -39,10 +40,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         // TODO: Move to view doc ???????????????????
         body: RefreshIndicator(
-          onRefresh: () async{
+          onRefresh: () async {
             imageDirPaths = [];
             imageDirPaths = await getDirectoryNames();
-            setState((){});
+            setState(() {});
           },
           child: FutureBuilder(
             future: getDirectoryNames(),
