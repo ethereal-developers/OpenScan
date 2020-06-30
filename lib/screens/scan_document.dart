@@ -48,30 +48,31 @@ class _ScanDocumentState extends State<ScanDocument> {
     }
   }
 
-  var image;
-  Future _openCamera() async {
+  Future<File> _openCamera() async {
+    File image;
     final _picker = ImagePicker();
     var picture = await _picker.getImage(source: ImageSource.camera);
-    setState(() {
+    if (picture != null) {
       final requiredPicture = File(picture.path);
-      print(picture.path);
       image = requiredPicture;
-    });
+    }
+    return image;
   }
 
   Future createImage() async {
-    await _openCamera();
+    File image = await _openCamera();
     if (image != null) {
       Cropper cropper = Cropper();
       var imageFile = await cropper.cropImage(image);
-      imageFiles.add(imageFile);
-      setState(() {});
+      if (imageFile != null)
+        setState(() {
+          imageFiles.add(imageFile);
+        });
     }
   }
 
   Future<void> createDirectoryName() async {
     Directory appDir = await getExternalStorageDirectory();
-    print(appDir);
     docPath = "${appDir.path}/OpenScan ${DateTime.now()}";
   }
 
@@ -123,16 +124,6 @@ class _ScanDocumentState extends State<ScanDocument> {
           },
         ) ??
         false);
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    imageFile = null;
-    image = null;
-    imageFiles = null;
-    appName = null;
-    appPath = null;
   }
 
   @override
@@ -191,9 +182,12 @@ class _ScanDocumentState extends State<ScanDocument> {
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             child: RaisedButton(
               onPressed: () async {
+                if (imageFiles.length != 0) {
+                  for (int i = 0; i < imageFiles.length; i++) {
+                    await _saveImage(imageFiles[i], i + 1);
+                  }
+                }
                 await _deleteTemporaryFiles();
-                for (int i = 0; i < imageFiles.length; i++)
-                  await _saveImage(imageFiles[i], i + 1);
                 Navigator.pop(context);
               },
               color: secondaryColor,
