@@ -50,76 +50,6 @@ class _ScanDocumentState extends State<ScanDocument> {
     }
   }
 
-  Future<void> displayDialog() async {
-    String displayText;
-
-    if (_status == "PDF Generated (${_pdfStat.size ~/ 1024}kb)")
-      displayText = "Success. File stored in the Downloads folder.";
-    else if (_status.startsWith("Failed to generate pdf"))
-      displayText = "Failed to generate pdf. Try Again.";
-
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Alert'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text('$displayText'),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            FlatButton(
-              child: Text('Ok'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _createPdf() async {
-    try {
-      this.setState(() => _generating = true);
-      final output =
-          File("/storage/emulated/0/Download/OpenScan ${DateTime.now()}.pdf");
-
-      var images = [imageFile];
-      var decodedImage = await decodeImageFromList(imageFile.readAsBytesSync());
-
-      this.setState(() => _status = 'Generating PDF');
-      await ImagesToPdf.createPdf(
-        pages: images
-            .map(
-              (file) => PdfPage(
-                imageFile: file,
-                size: Size(decodedImage.width.toDouble(),
-                    decodedImage.height.toDouble()),
-                compressionQuality: 0.5,
-              ),
-            )
-            .toList(),
-        output: output,
-      );
-      _pdfStat = await output.stat();
-      this.setState(() {
-        _pdfFile = output;
-        _status = 'PDF Generated (${_pdfStat.size ~/ 1024}kb)';
-      });
-      print(output);
-    } catch (e) {
-      this.setState(() => _status = 'Failed to generate pdf: $e".');
-    } finally {
-      this.setState(() => _generating = false);
-    }
-  }
-
   Future _cropImage(imageFile) async {
     File croppedFile = await ImageCropper.cropImage(
         sourcePath: imageFile.path,
@@ -263,11 +193,11 @@ class _ScanDocumentState extends State<ScanDocument> {
                   padding: const EdgeInsets.all(8.0),
                   child: Image.file(
                     imageFile,
-                    width: size.width * 0.4,
+                    // width: size.width * 0.4,
                   ),
                 ),
               );
-              await _saveImage(image);
+              await _saveImage(imageFile);
               setState(() {});
             }
           },
@@ -277,4 +207,3 @@ class _ScanDocumentState extends State<ScanDocument> {
     );
   }
 }
-
