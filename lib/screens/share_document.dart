@@ -62,7 +62,7 @@ class _ShareDocumentState extends State<ShareDocument> {
     String displayText;
 
     if (_status.startsWith("PDF Generated"))
-      displayText = "Success. File stored in the Downloads folder.";
+      displayText = "Success. File stored in the chosen folder.";
     else if (_status.startsWith("Failed to generate pdf"))
       displayText = "Failed to generate pdf. Try Again.";
 
