@@ -16,6 +16,7 @@ class ViewDocument extends StatefulWidget {
 
 class _ViewDocumentState extends State<ViewDocument> {
   var imageFiles;
+
   Future getImages() async {
     imageFiles = Directory(widget.dirPath)
         .listSync(recursive: false, followLinks: false);
@@ -78,8 +79,7 @@ class _ViewDocumentState extends State<ViewDocument> {
               context,
               MaterialPageRoute(
                 builder: (context) => ShareDocument(
-                  imageFilesList: imageFiles,
-                  fileName: widget.dirPath,
+                  dirName: widget.dirPath,
                 ),
               ),
             );
