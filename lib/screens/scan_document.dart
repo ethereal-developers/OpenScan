@@ -9,6 +9,9 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:openscan/Utilities/cropper.dart';
+import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/Utilities/Image_Card.dart';
 
 class ScanDocument extends StatefulWidget {
   static String route = "ScanDocument";
@@ -19,7 +22,7 @@ class ScanDocument extends StatefulWidget {
 
 class _ScanDocumentState extends State<ScanDocument> {
   File imageFile;
-  List<Widget> imageFiles;
+  List<File> imageFiles = [];
   String appName = 'OpenScan';
   String appPath;
   String docPath;
@@ -27,8 +30,8 @@ class _ScanDocumentState extends State<ScanDocument> {
   @override
   void initState() {
     super.initState();
-    imageFiles = <Widget>[];
     createDirectoryName();
+    createImage();
   }
 
   Future<String> getAppPath() async {
@@ -45,44 +48,6 @@ class _ScanDocumentState extends State<ScanDocument> {
     }
   }
 
-  Future _cropImage(imageFile) async {
-    File croppedFile = await ImageCropper.cropImage(
-        sourcePath: imageFile.path,
-        aspectRatioPresets: Platform.isAndroid
-            ? [
-                CropAspectRatioPreset.square,
-                CropAspectRatioPreset.ratio3x2,
-                CropAspectRatioPreset.original,
-                CropAspectRatioPreset.ratio4x3,
-                CropAspectRatioPreset.ratio16x9
-              ]
-            : [
-                CropAspectRatioPreset.original,
-                CropAspectRatioPreset.square,
-                CropAspectRatioPreset.ratio3x2,
-                CropAspectRatioPreset.ratio4x3,
-                CropAspectRatioPreset.ratio5x3,
-                CropAspectRatioPreset.ratio5x4,
-                CropAspectRatioPreset.ratio7x5,
-                CropAspectRatioPreset.ratio16x9
-              ],
-        androidUiSettings: AndroidUiSettings(
-            toolbarTitle: 'Cropper',
-            toolbarColor: Colors.deepOrange,
-            toolbarWidgetColor: Colors.black45,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false),
-        iosUiSettings: IOSUiSettings(
-          title: 'Cropper',
-        ));
-    if (croppedFile != null) {
-      setState(() {
-        imageFile = croppedFile;
-      });
-      return imageFile;
-    }
-  }
-
   var image;
   Future _openCamera() async {
     final _picker = ImagePicker();
@@ -92,6 +57,16 @@ class _ScanDocumentState extends State<ScanDocument> {
       print(picture.path);
       image = requiredPicture;
     });
+  }
+
+  Future createImage() async{
+    await _openCamera();
+    if (image != null) {
+      Cropper cropper = Cropper();
+      var imageFile = await cropper.cropImage(image);
+      imageFiles.add(imageFile);
+      setState(() {});
+    }
   }
 
   Future<void> createDirectoryName() async {
@@ -123,6 +98,34 @@ class _ScanDocumentState extends State<ScanDocument> {
     // print(await del.exists());
   }
 
+  Future<bool> _onBackPressed() async {
+    return (await showDialog(
+      context: context,
+      builder: (context){
+        return AlertDialog(
+          title: Text('Do you want to discard the documents?',
+            style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600
+            ),
+          ),
+          backgroundColor: primaryColor,
+          actions: <Widget>[
+            FlatButton(
+              onPressed: () => Navigator.popUntil(context, ModalRoute.withName(HomeScreen.route)),
+              child: Text('Yes'),
+            ),
+            FlatButton(
+              onPressed: () => Navigator.pop(context,false),
+              child: Text('No',
+                style: TextStyle(color: secondaryColor),
+              ),
+            ),
+          ],
+        );
+      },) ?? false);
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -137,64 +140,87 @@ class _ScanDocumentState extends State<ScanDocument> {
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text("Scan Document"),
-        ),
-        // TODO: Use Image Card
-        body: ListView.separated(
-          shrinkWrap: true,
-          scrollDirection: Axis.vertical,
-          itemCount: imageFiles.length,
-          itemBuilder: (context, index) {
-            return imageFiles[index];
-          },
-          separatorBuilder: (BuildContext context, _) => Divider(),
-        ),
-        bottomNavigationBar: Row(
-          children: <Widget>[
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: RaisedButton(
-                  onPressed: () async {
-//                    await _createPdf();
-//                    await displayDialog();
-                    await _deleteTemporaryFiles();
-                    Navigator.pop(context);
-                  },
-                  color: Colors.lightGreen,
-                  child: Container(
-                    alignment: Alignment.center,
-                    height: 50,
-                    child: Text("Done"),
-                  ),
-                ),
+      child: WillPopScope(
+        onWillPop: _onBackPressed,
+        child: Scaffold(
+          backgroundColor: primaryColor,
+          appBar: AppBar(
+            elevation: 0,
+            centerTitle: true,
+            backgroundColor: primaryColor,
+            leading: IconButton(
+              onPressed: _onBackPressed,
+              icon: Icon(Icons.arrow_back_ios, color: secondaryColor,),
+            ),
+            title:RichText(
+              text: TextSpan(
+                text: 'Scan ',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                children: [TextSpan(
+                    text: 'Document',
+                    style: TextStyle(color: secondaryColor)
+                )],
               ),
             ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            await _openCamera();
-            if (image != null) {
-              var imageFile = await _cropImage(image);
-              imageFiles.add(
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Image.file(
-                    imageFile,
-                    // width: size.width * 0.4,
-                  ),
+          ),
+          // TODO: Use Image Card
+          body: ListView.builder(
+            physics: BouncingScrollPhysics(),
+            itemCount: ((imageFiles.length) / 2).round(),
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 3.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    ImageCard(
+                      imageWidget: Image.file(imageFiles[index * 2]),
+                    ),
+                    if (index * 2 + 1 < imageFiles.length)
+                      ImageCard(
+                        imageWidget: Image.file(imageFiles[index * 2 + 1]),
+                      ),
+                  ],
                 ),
               );
-              await _saveImage(imageFile);
-              setState(() {});
-            }
-          },
-          child: Icon(Icons.add),
+            },
+          ),
+          bottomNavigationBar: Padding(
+            padding: const EdgeInsets.symmetric(horizontal:15, vertical: 10),
+            child: RaisedButton(
+              onPressed: () async {
+                await _deleteTemporaryFiles();
+                for(var i in imageFiles)
+                  await _saveImage(i);
+                Navigator.pop(context);
+              },
+              color: secondaryColor,
+              textColor: primaryColor,
+              child: Container(
+                alignment: Alignment.center,
+                height: 55,
+                child: Text("Done", style: TextStyle(fontSize: 20),),
+              ),
+            ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            backgroundColor: secondaryColor ,
+            onPressed: createImage,
+            child: Icon(Icons.add),
+          ),
         ),
       ),
     );
   }
 }
+
+
+//ListView.separated(
+//shrinkWrap: true,
+//scrollDirection: Axis.vertical,
+//itemCount: imageFiles.length,
+//itemBuilder: (context, index) {
+//return Container(child: imageFiles[index]);
+//},
+//separatorBuilder: (BuildContext context, _) => Divider(),
+//),

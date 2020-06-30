@@ -111,9 +111,10 @@ class _ShareDocumentState extends State<ShareDocument> {
         doc.addPage(
           pw.Page(
             pageFormat: PdfPageFormat.a4,
-            build: (pw.Context context) => pw.Center(
-              child: pw.Image(image),
-            ),
+            build: (pw.Context context) =>
+                pw.Center(
+                  child: pw.Image(image),
+                ),
           ),
         );
       }

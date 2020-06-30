@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/scan_document.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
@@ -14,6 +15,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   var imageDirPaths = [];
+
   Future getDirectoryNames() async {
     Directory appDir = await getExternalStorageDirectory();
     Directory appDirPath = Directory("${appDir.path}");
@@ -32,13 +34,26 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     String folderName;
-    Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
+        backgroundColor: primaryColor,
         appBar: AppBar(
-          title: Text("Home"),
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: primaryColor,
+          title: RichText(
+            text: TextSpan(
+              text: 'Open',
+              style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
+              children: [
+                TextSpan(text: 'Scan', style: TextStyle(color: secondaryColor))
+              ],
+            ),
+          ),
         ),
         body: RefreshIndicator(
+          backgroundColor: primaryColor,
+          color: secondaryColor,
           onRefresh: () async {
             imageDirPaths = [];
             imageDirPaths = await getDirectoryNames();
@@ -54,12 +69,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       imageDirPaths[index].lastIndexOf('/') + 1,
                       imageDirPaths[index].length - 1);
                   return ListTile(
-                    leading: Icon(Icons.landscape, size: 30),
+                    // TODO : Add sample image
+                    leading: Icon(
+                      Icons.landscape,
+                      size: 30,
+                      color: secondaryColor,
+                    ),
                     title: Text(folderName),
                     subtitle: Text(folderName),
                     trailing: Icon(
                       Icons.arrow_right,
                       size: 30,
+                      color: secondaryColor,
                     ),
                     onTap: () async {
                       getDirectoryNames();
@@ -82,7 +103,11 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () {
             Navigator.pushNamed(context, ScanDocument.route);
           },
-          child: Icon(Icons.camera),
+          backgroundColor: secondaryColor,
+          child: Icon(
+            Icons.camera,
+            color: primaryColor,
+          ),
         ),
       ),
     );

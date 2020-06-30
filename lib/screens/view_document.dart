@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:openscan/screens/scan_document.dart';
 import 'package:openscan/screens/share_document.dart';
 import 'package:openscan/Utilities/Image_Card.dart';
+import 'package:openscan/Utilities/constants.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
@@ -29,12 +30,25 @@ class _ViewDocumentState extends State<ViewDocument> {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text("View Document"),
+          elevation: 0,
+          centerTitle: true,
+          backgroundColor: primaryColor,
+          title:RichText(
+            text: TextSpan(
+              text: 'View ',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              children: [TextSpan(
+                  text: 'Document',
+                  style: TextStyle(color: secondaryColor)
+              )],
+            ),
+          ),
         ),
         body: FutureBuilder(
           future: getImages(),
           builder: (BuildContext context, AsyncSnapshot snapshot) {
             return ListView.builder(
+              physics: BouncingScrollPhysics(),
               itemCount: ((imageFiles.length) / 2).round(),
               itemBuilder: (context, index) {
                 return Padding(
@@ -44,11 +58,11 @@ class _ViewDocumentState extends State<ViewDocument> {
                     children: <Widget>[
                       ImageCard(
                           imageFile: File(imageFiles[index * 2].path),
-                          size: size),
+                          ),
                       if (index * 2 + 1 < imageFiles.length)
                         ImageCard(
                             imageFile: File(imageFiles[index * 2 + 1].path),
-                            size: size),
+                            ),
                     ],
                   ),
                 );
@@ -73,21 +87,31 @@ class _ViewDocumentState extends State<ViewDocument> {
 //            ),
 //          ],
 //        ),
-        bottomNavigationBar: FlatButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ShareDocument(
-                  dirName: widget.dirPath,
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.symmetric(horizontal:15, vertical: 10),
+          child: RaisedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ShareDocument(
+                    dirName: widget.dirPath,
+                  ),
                 ),
-              ),
-            );
-          },
-          child: Text("Share Document as PDF"),
-          color: Colors.green,
+              );
+            },
+            color: secondaryColor,
+            textColor: primaryColor,
+            child: Container(
+              alignment: Alignment.center,
+              height: 55,
+              child: Text("Share Document as PDF", style: TextStyle(fontSize: 18),),
+            ),
+          ),
         ),
       ),
     );
   }
 }
+
+
