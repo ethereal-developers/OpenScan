@@ -5,7 +5,6 @@ import 'dart:core';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'package:images_to_pdf/images_to_pdf.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
@@ -21,10 +20,6 @@ class ScanDocument extends StatefulWidget {
 class _ScanDocumentState extends State<ScanDocument> {
   File imageFile;
   List<Widget> imageFiles;
-  File _pdfFile;
-  String _status = "Not created";
-  FileStat _pdfStat;
-  bool _generating = false;
   String appName = 'OpenScan';
   String appPath;
   String docPath;
@@ -134,10 +129,6 @@ class _ScanDocumentState extends State<ScanDocument> {
     imageFile = null;
     image = null;
     imageFiles = null;
-    _pdfFile = null;
-    _status = null;
-    _pdfStat = null;
-    _generating = null;
     appName = null;
     appPath = null;
   }
