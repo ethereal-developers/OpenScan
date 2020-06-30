@@ -61,7 +61,8 @@ class ImageCard extends StatelessWidget {
           FocusedMenuItem(
               title: Text('Delete'),
               onPressed: () {
-                //TODO: Delete image
+                // TODO: Deletion done, update the state of the image in ViewDocument
+                imageFile.deleteSync();
               },
               backgroundColor: Colors.redAccent),
         ],
