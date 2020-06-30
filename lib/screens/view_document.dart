@@ -33,14 +33,14 @@ class _ViewDocumentState extends State<ViewDocument> {
           elevation: 0,
           centerTitle: true,
           backgroundColor: primaryColor,
-          title:RichText(
+          title: RichText(
             text: TextSpan(
               text: 'View ',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              children: [TextSpan(
-                  text: 'Document',
-                  style: TextStyle(color: secondaryColor)
-              )],
+              children: [
+                TextSpan(
+                    text: 'Document', style: TextStyle(color: secondaryColor))
+              ],
             ),
           ),
         ),
@@ -57,12 +57,12 @@ class _ViewDocumentState extends State<ViewDocument> {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: <Widget>[
                       ImageCard(
-                          imageFile: File(imageFiles[index * 2].path),
-                          ),
+                        imageFile: File(imageFiles[index * 2].path),
+                      ),
                       if (index * 2 + 1 < imageFiles.length)
                         ImageCard(
-                            imageFile: File(imageFiles[index * 2 + 1].path),
-                            ),
+                          imageFile: File(imageFiles[index * 2 + 1].path),
+                        ),
                     ],
                   ),
                 );
@@ -88,7 +88,7 @@ class _ViewDocumentState extends State<ViewDocument> {
 //          ],
 //        ),
         bottomNavigationBar: Padding(
-          padding: const EdgeInsets.symmetric(horizontal:15, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           child: RaisedButton(
             onPressed: () {
               Navigator.push(
@@ -105,7 +105,10 @@ class _ViewDocumentState extends State<ViewDocument> {
             child: Container(
               alignment: Alignment.center,
               height: 55,
-              child: Text("Share Document as PDF", style: TextStyle(fontSize: 18),),
+              child: Text(
+                "Share Document as PDF",
+                style: TextStyle(fontSize: 18),
+              ),
             ),
           ),
         ),
@@ -113,5 +116,3 @@ class _ViewDocumentState extends State<ViewDocument> {
     );
   }
 }
-
-
