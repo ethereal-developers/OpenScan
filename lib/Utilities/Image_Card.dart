@@ -47,6 +47,11 @@ class _ImageCardState extends State<ImageCard> {
   }
 
   @override
+  void dispose() {
+    imageFile = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return RaisedButton(
@@ -80,8 +85,14 @@ class _ImageCardState extends State<ImageCard> {
               var image = await cropper.cropImage(imageFile);
               if (image != null) {
                 image.copy(imageFile.path);
+                setState(() {
+                  picDispHolder = Image.file(
+                    imageFile,
+                    scale: 1.7,
+                  );
+                });
+                print(picDispHolder);
                 print('Cropped');
-                imageFileEditCallback();
               }
             },
           ),
