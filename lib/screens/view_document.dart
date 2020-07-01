@@ -35,6 +35,12 @@ class _ViewDocumentState extends State<ViewDocument> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _getImages();
+  }
+
+  @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return SafeArea(
@@ -63,30 +69,25 @@ class _ViewDocumentState extends State<ViewDocument> {
             _getImages();
             setState(() {});
           },
-          child: FutureBuilder(
-            future: _getImages(),
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
-              return ListView.builder(
-                itemCount: ((imageFiles.length) / 2).round(),
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: EdgeInsets.symmetric(vertical: 3.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: <Widget>[
-                        ImageCard(
-                          imageFile: File(imageFiles[index * 2].path),
-                          imageFileEditCallback: imageEditCallback,
-                        ),
-                        if (index * 2 + 1 < imageFiles.length)
-                          ImageCard(
-                            imageFile: File(imageFiles[index * 2 + 1].path),
-                            imageFileEditCallback: imageEditCallback,
-                          ),
-                      ],
+          child: ListView.builder(
+            itemCount: ((imageFiles.length) / 2).round(),
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 3.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    ImageCard(
+                      imageFile: File(imageFiles[index * 2].path),
+                      imageFileEditCallback: imageEditCallback,
                     ),
-                  );
-                },
+                    if (index * 2 + 1 < imageFiles.length)
+                      ImageCard(
+                        imageFile: File(imageFiles[index * 2 + 1].path),
+                        imageFileEditCallback: imageEditCallback,
+                      ),
+                  ],
+                ),
               );
             },
           ),
