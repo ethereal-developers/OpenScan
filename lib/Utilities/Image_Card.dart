@@ -51,7 +51,6 @@ class ImageCard extends StatelessWidget {
               style: TextStyle(color: Colors.black),
             ),
             onPressed: () async {
-              // TODO: Cropping done, update the state of the image in ViewDocument
               Cropper cropper = Cropper();
               var image = await cropper.cropImage(imageFile);
               if (image != null) {

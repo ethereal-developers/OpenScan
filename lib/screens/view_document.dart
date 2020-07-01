@@ -17,21 +17,20 @@ class ViewDocument extends StatefulWidget {
 class _ViewDocumentState extends State<ViewDocument> {
   var imageFiles;
 
-  Future<void> _deleteDocument() {
+  void _deleteDocument() {
     Directory(widget.dirPath).deleteSync(recursive: true);
   }
 
   void imageEditCallback() {
-    setState(() {
-      _getImages();
-      print('Image Edited');
-    });
+    _getImages();
+    print('Image Deleted');
   }
 
-  Future _getImages() async {
-    imageFiles = Directory(widget.dirPath)
-        .listSync(recursive: false, followLinks: false);
-    return imageFiles;
+  void _getImages() {
+    setState(() {
+      imageFiles = Directory(widget.dirPath)
+          .listSync(recursive: false, followLinks: false);
+    });
   }
 
   @override
@@ -67,7 +66,6 @@ class _ViewDocumentState extends State<ViewDocument> {
           color: secondaryColor,
           onRefresh: () async {
             _getImages();
-            setState(() {});
           },
           child: ListView.builder(
             itemCount: ((imageFiles.length) / 2).round(),
