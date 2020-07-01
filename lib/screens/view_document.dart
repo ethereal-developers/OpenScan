@@ -23,7 +23,6 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   void imageEditCallback() {
     _getImages();
-    print('Image Deleted');
   }
 
   void _getImages() {
@@ -31,6 +30,7 @@ class _ViewDocumentState extends State<ViewDocument> {
       imageFiles = Directory(widget.dirPath)
           .listSync(recursive: false, followLinks: false);
     });
+    print(imageFiles);
   }
 
   @override
