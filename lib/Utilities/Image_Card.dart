@@ -8,43 +8,13 @@ import 'package:focused_menu/modals.dart';
 import 'constants.dart';
 import 'cropper.dart';
 
-class ImageCard extends StatefulWidget {
+class ImageCard extends StatelessWidget {
   const ImageCard(
-      {this.imageFile,
-      this.imageWidget,
-      this.imageFileEditCallback,
-      this.imageFileDeleteCallback});
+      {this.imageFile, this.imageWidget, this.imageFileEditCallback});
 
   final File imageFile;
   final Widget imageWidget;
   final Function imageFileEditCallback;
-  final Function imageFileDeleteCallback;
-
-  @override
-  _ImageCardState createState() => _ImageCardState();
-}
-
-class _ImageCardState extends State<ImageCard> {
-  File imageFile;
-  Widget imageWidget;
-  Function imageFileEditCallback;
-  Function imageFileDeleteCallback;
-
-  Image picDispHolder;
-
-  @override
-  void initState() {
-    super.initState();
-    imageFile = widget.imageFile;
-    imageWidget = widget.imageWidget;
-    imageFileEditCallback = widget.imageFileEditCallback;
-    imageFileDeleteCallback = widget.imageFileDeleteCallback;
-
-    picDispHolder = Image.file(
-      imageFile,
-      scale: 1.7,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +34,12 @@ class _ImageCardState extends State<ImageCard> {
                   backgroundColor: primaryColor,
                   child: Container(
                     width: size.width * 0.95,
-                    child: picDispHolder,
+                    child: (imageFile != null)
+                        ? Image.file(
+                            imageFile,
+                            scale: 1.7,
+                          )
+                        : imageWidget,
                   ),
                 );
               });
@@ -76,27 +51,31 @@ class _ImageCardState extends State<ImageCard> {
               style: TextStyle(color: Colors.black),
             ),
             onPressed: () async {
+              // TODO: Cropping done, update the state of the image in ViewDocument
               Cropper cropper = Cropper();
               var image = await cropper.cropImage(imageFile);
               if (image != null) {
                 image.copy(imageFile.path);
-                print('Cropped');
-                imageFileEditCallback();
               }
+              imageFileEditCallback();
+              print('Cropped');
             },
           ),
           FocusedMenuItem(
-            title: Text('Delete'),
-            onPressed: () {
-              var temp = imageFile;
-              imageFile.deleteSync();
-              imageFileDeleteCallback(temp);
-            },
-            backgroundColor: Colors.redAccent,
-          ),
+              title: Text('Delete'),
+              onPressed: () {
+                // TODO: Deletion done, update the state of the image in ViewDocument
+                imageFile.deleteSync();
+              },
+              backgroundColor: Colors.redAccent),
         ],
         child: Container(
-          child: picDispHolder,
+          child: (imageFile != null)
+              ? Image.file(
+                  imageFile,
+                  scale: 1.7,
+                )
+              : imageWidget,
           height: size.height * 0.25,
           width: size.width * 0.4,
         ),

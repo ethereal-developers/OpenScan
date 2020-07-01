@@ -15,25 +15,23 @@ class ViewDocument extends StatefulWidget {
 }
 
 class _ViewDocumentState extends State<ViewDocument> {
-  List imageFiles;
+  var imageFiles;
 
   Future<void> _deleteDocument() {
     Directory(widget.dirPath).deleteSync(recursive: true);
   }
 
-  void imageFileDeleteCallback(image) {
+  void imageEditCallback() {
     setState(() {
-      imageFiles.remove(image);
+      _getImages();
+      print('Image Edited');
     });
   }
 
-  void imageEditCallback(image) {
-    setState(() {});
-  }
-
-  Future _getImages() {
+  Future _getImages() async {
     imageFiles = Directory(widget.dirPath)
         .listSync(recursive: false, followLinks: false);
+    return imageFiles;
   }
 
   @override
@@ -65,9 +63,9 @@ class _ViewDocumentState extends State<ViewDocument> {
             _getImages();
             setState(() {});
           },
-          child: Builder(
-            builder: (BuildContext context) {
-              _getImages();
+          child: FutureBuilder(
+            future: _getImages(),
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
               return ListView.builder(
                 itemCount: ((imageFiles.length) / 2).round(),
                 itemBuilder: (context, index) {
