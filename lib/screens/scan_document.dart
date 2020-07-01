@@ -1,17 +1,15 @@
+import 'dart:core';
 import 'dart:io';
 import 'dart:ui';
-import 'dart:core';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
-import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:openscan/Utilities/Image_Card.dart';
+import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:openscan/Utilities/cropper.dart';
-import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/Utilities/Image_Card.dart';
 
 class ScanDocument extends StatefulWidget {
   static String route = "ScanDocument";
@@ -31,7 +29,7 @@ class _ScanDocumentState extends State<ScanDocument> {
   void initState() {
     super.initState();
     createDirectoryName();
-    createImage();
+    _createImage();
   }
 
   Future<String> getAppPath() async {
@@ -59,7 +57,7 @@ class _ScanDocumentState extends State<ScanDocument> {
     return image;
   }
 
-  Future createImage() async {
+  Future _createImage() async {
     File image = await _openCamera();
     if (image != null) {
       Cropper cropper = Cropper();
@@ -94,33 +92,6 @@ class _ScanDocumentState extends State<ScanDocument> {
       del.deleteSync(recursive: true);
     }
     new Directory(appDocPath).create();
-  }
-
-  Future<void> _displayDialog() {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Alert'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text('Success!'),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            FlatButton(
-              child: Text('Ok'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<bool> _onBackPressed() async {
@@ -183,7 +154,6 @@ class _ScanDocumentState extends State<ScanDocument> {
               ),
             ),
           ),
-          // TODO: Use Image Card
           body: ListView.builder(
             physics: BouncingScrollPhysics(),
             itemCount: ((imageFiles.length) / 2).round(),
@@ -213,10 +183,9 @@ class _ScanDocumentState extends State<ScanDocument> {
                   for (int i = 0; i < imageFiles.length; i++) {
                     await _saveImage(imageFiles[i], i + 1);
                   }
-                  await _displayDialog();
                 }
                 await _deleteTemporaryFiles();
-                Navigator.pop(context);
+                Navigator.pop(context, true);
               },
               color: secondaryColor,
               textColor: primaryColor,
@@ -232,7 +201,7 @@ class _ScanDocumentState extends State<ScanDocument> {
           ),
           floatingActionButton: FloatingActionButton(
             backgroundColor: secondaryColor,
-            onPressed: createImage,
+            onPressed: _createImage,
             child: Icon(Icons.add),
           ),
         ),

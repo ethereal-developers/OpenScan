@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/screens/scan_document.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
+
+import 'scan_document.dart';
 
 class HomeScreen extends StatefulWidget {
   static String route = "HomeScreen";
@@ -33,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     String folderName;
     return SafeArea(
       child: Scaffold(
@@ -49,6 +52,44 @@ class _HomeScreenState extends State<HomeScreen> {
                 TextSpan(text: 'Scan', style: TextStyle(color: secondaryColor))
               ],
             ),
+          ),
+        ),
+        drawer: Container(
+          width: size.width * 0.6,
+          color: primaryColor,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Spacer(),
+              Material(
+                color: primaryColor,
+                shape: CircleBorder(),
+                elevation: 20,
+                child: CircleAvatar(
+                  backgroundColor: secondaryColor,
+                  radius: size.width * 0.2,
+                ),
+              ),
+              Spacer(),
+              Divider(
+                thickness: 0.2,
+                indent: 6,
+                endIndent: 6,
+                color: Colors.white,
+              ),
+              MenuButton(text: 'Menu', size: size),
+              MenuButton(text: 'Settings', size: size),
+              MenuButton(text: 'About', size: size),
+              Spacer(
+                flex: 10,
+              ),
+              IconButton(
+                icon: Icon(Icons.arrow_back_ios),
+                onPressed: () => Navigator.pop(context),
+                color: secondaryColor,
+              ),
+              Spacer(),
+            ],
           ),
         ),
         body: RefreshIndicator(
@@ -73,7 +114,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     leading: Icon(
                       Icons.landscape,
                       size: 30,
-                      color: secondaryColor,
                     ),
                     title: Text(folderName),
                     subtitle: Text(folderName),
@@ -99,17 +139,76 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.pushNamed(context, ScanDocument.route);
-          },
-          backgroundColor: secondaryColor,
-          child: Icon(
-            Icons.camera,
-            color: primaryColor,
+        floatingActionButton: Builder(builder: (context) {
+          return FloatingActionButton(
+            onPressed: () {
+              Navigator.pushNamed(context, ScanDocument.route)
+                  .then((value) => Scaffold.of(context).showSnackBar(SnackBar(
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10))),
+                        backgroundColor: primaryColor,
+                        duration: Duration(seconds: 1),
+                        content: Container(
+                          decoration: BoxDecoration(),
+                          alignment: Alignment.center,
+                          height: 15,
+                          width: size.width * 0.3,
+                          child: Text(
+                            (value) ? 'Saved' : 'Discarded',
+                            style: TextStyle(
+                              color: secondaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      )));
+            },
+            backgroundColor: secondaryColor,
+            child: Icon(
+              Icons.camera,
+              color: primaryColor,
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class MenuButton extends StatelessWidget {
+  const MenuButton({this.size, this.text});
+
+  final String text;
+  final Size size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6.0, vertical: 0),
+          child: GestureDetector(
+            onTap: () {},
+            child: Container(
+              color: primaryColor,
+              height: size.height * 0.06,
+              alignment: Alignment.center,
+              child: Text(
+                text,
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ),
           ),
         ),
-      ),
+        Divider(
+          thickness: 0.2,
+          indent: 6,
+          endIndent: 6,
+          color: Colors.white,
+        ),
+      ],
     );
   }
 }

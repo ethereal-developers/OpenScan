@@ -9,10 +9,11 @@ import 'constants.dart';
 import 'cropper.dart';
 
 class ImageCard extends StatelessWidget {
-  const ImageCard({this.imageFile, this.imageWidget});
+  const ImageCard({this.imageFile, this.imageWidget,this.imageFileEditCallback});
 
   final File imageFile;
   final Widget imageWidget;
+  final Function imageFileEditCallback;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +56,7 @@ class ImageCard extends StatelessWidget {
               if (image != null) {
                 image.copy(imageFile.path);
               }
+              imageFileEditCallback();
               print('Cropped');
             },
           ),

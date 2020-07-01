@@ -1,15 +1,14 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:openscan/screens/scan_document.dart';
-import 'package:openscan/screens/share_document.dart';
 import 'package:openscan/Utilities/Image_Card.dart';
 import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/screens/share_document.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
-  final String dirPath;
+
   ViewDocument({this.dirPath});
+  final String dirPath;
 
   @override
   _ViewDocumentState createState() => _ViewDocumentState();
@@ -20,6 +19,13 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   Future<void> _deleteDocument() {
     Directory(widget.dirPath).deleteSync(recursive: true);
+  }
+
+  void imageEditCallback() {
+    setState(() {
+      _getImages();
+      print('Image Edited');
+    });
   }
 
   Future _getImages() async {
@@ -43,36 +49,47 @@ class _ViewDocumentState extends State<ViewDocument> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
               children: [
                 TextSpan(
-                    text: 'Document', style: TextStyle(color: secondaryColor))
+                  text: 'Document',
+                  style: TextStyle(color: secondaryColor),
+                ),
               ],
             ),
           ),
         ),
-        body: FutureBuilder(
-          future: _getImages(),
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            return ListView.builder(
-              physics: BouncingScrollPhysics(),
-              itemCount: ((imageFiles.length) / 2).round(),
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(vertical: 3.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: <Widget>[
-                      ImageCard(
-                        imageFile: File(imageFiles[index * 2].path),
-                      ),
-                      if (index * 2 + 1 < imageFiles.length)
-                        ImageCard(
-                          imageFile: File(imageFiles[index * 2 + 1].path),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            );
+        body: RefreshIndicator(
+          backgroundColor: primaryColor,
+          color: secondaryColor,
+          onRefresh: () async {
+            _getImages();
+            setState(() {});
           },
+          child: FutureBuilder(
+            future: _getImages(),
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              return ListView.builder(
+                itemCount: ((imageFiles.length) / 2).round(),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(vertical: 3.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: <Widget>[
+                        ImageCard(
+                          imageFile: File(imageFiles[index * 2].path),
+                          imageFileEditCallback: imageEditCallback,
+                        ),
+                        if (index * 2 + 1 < imageFiles.length)
+                          ImageCard(
+                            imageFile: File(imageFiles[index * 2 + 1].path),
+                            imageFileEditCallback: imageEditCallback,
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
         bottomNavigationBar: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
