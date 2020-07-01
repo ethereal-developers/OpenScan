@@ -1,15 +1,15 @@
 import 'dart:core';
 import 'dart:io';
 import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:openscan/Utilities/Image_Card.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:focused_menu/focused_menu.dart';
+import 'package:focused_menu/modals.dart';
 
 class ScanDocument extends StatefulWidget {
   static String route = "ScanDocument";
@@ -99,7 +99,10 @@ class _ScanDocumentState extends State<ScanDocument> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: Text(
+              // TODO: Do you want changes?
+              title: Center(child: Text('Note')),
+              contentPadding: EdgeInsets.fromLTRB(20, 40, 20, 30),
+              content: Text(
                 'Do you want to discard the documents?',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
               ),
@@ -114,7 +117,6 @@ class _ScanDocumentState extends State<ScanDocument> {
                   onPressed: () => Navigator.pop(context, false),
                   child: Text(
                     'No',
-                    style: TextStyle(color: secondaryColor),
                   ),
                 ),
               ],
@@ -122,6 +124,12 @@ class _ScanDocumentState extends State<ScanDocument> {
           },
         ) ??
         false);
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      imageFiles.removeAt(index);
+    });
   }
 
   @override
@@ -149,13 +157,12 @@ class _ScanDocumentState extends State<ScanDocument> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                 children: [
                   TextSpan(
-                      text: 'Document', style: TextStyle(color: secondaryColor))
+                      text: 'Document', style: TextStyle(color: secondaryColor),),
                 ],
               ),
             ),
           ),
           body: ListView.builder(
-            physics: BouncingScrollPhysics(),
             itemCount: ((imageFiles.length) / 2).round(),
             itemBuilder: (context, index) {
               return Padding(
@@ -163,12 +170,104 @@ class _ScanDocumentState extends State<ScanDocument> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: <Widget>[
-                    ImageCard(
-                      imageWidget: Image.file(imageFiles[index * 2]),
+                    RaisedButton(
+                      elevation: 20,
+                      color: primaryColor,
+                      onPressed: () {},
+                      child: FocusedMenuHolder(
+                        menuWidth: size.width * 0.44,
+                        onPressed: () {
+                          showCupertinoDialog(
+                              context: context,
+                              builder: (context) {
+                                return Dialog(
+                                  elevation: 20,
+                                  backgroundColor: primaryColor,
+                                  child: Container(
+                                    width: size.width * 0.95,
+                                    child: Image.file(imageFiles[index * 2]),
+                                  ),
+                                );
+                              });
+                        },
+                        menuItems: [
+                          FocusedMenuItem(
+                            title: Text(
+                              'Crop',
+                              style: TextStyle(color: Colors.black),
+                            ),
+                            onPressed: () async {
+                              Cropper cropper = Cropper();
+                              var image = await cropper.cropImage(imageFiles[index * 2]);
+                              imageFiles.removeAt(index * 2);
+                              // TODO: Avoid change in order
+                              setState(() {
+                                imageFiles.add(image);
+                              });
+                            },
+                          ),
+                          FocusedMenuItem(
+                              title: Text('Remove'),
+                              // TODO : Alert Dialog confirmation
+                              onPressed: () => _removeImage(index * 2),
+                              backgroundColor: Colors.redAccent),
+                        ],
+                        child: Container(
+                          child: Image.file(imageFiles[index * 2]),
+                          height: size.height * 0.25,
+                          width: size.width * 0.4,
+                        ),
+                      ),
                     ),
                     if (index * 2 + 1 < imageFiles.length)
-                      ImageCard(
-                        imageWidget: Image.file(imageFiles[index * 2 + 1]),
+                      RaisedButton(
+                        elevation: 20,
+                        color: primaryColor,
+                        onPressed: () {},
+                        child: FocusedMenuHolder(
+                          menuWidth: size.width * 0.44,
+                          onPressed: () {
+                            showCupertinoDialog(
+                                context: context,
+                                builder: (context) {
+                                  return Dialog(
+                                    elevation: 20,
+                                    backgroundColor: primaryColor,
+                                    child: Container(
+                                      width: size.width * 0.95,
+                                      child: Image.file(imageFiles[index * 2 + 1]),
+                                    ),
+                                  );
+                                });
+                          },
+                          menuItems: [
+                            FocusedMenuItem(
+                              title: Text(
+                                'Crop',
+                                style: TextStyle(color: Colors.black),
+                              ),
+                              onPressed: () async {
+                                Cropper cropper = Cropper();
+                                var image = await cropper.cropImage(imageFiles[index * 2 + 1]);
+                                imageFiles.removeAt(index * 2 + 1);
+                                // TODO: Avoid change in order
+                                setState(() {
+                                  imageFiles.add(image);
+                                });
+                              },
+                            ),
+                            FocusedMenuItem(
+                                title: Text('Remove'),
+                                // TODO : Alert Dialog confirmation
+                                onPressed: () => _removeImage(index * 2),
+                                backgroundColor: Colors.redAccent),
+                          ],
+                          child: Container(
+                            child: Image.file(imageFiles[index * 2 + 1]),
+                            height: size.height * 0.25,
+                            width: size.width * 0.4,
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -210,12 +309,3 @@ class _ScanDocumentState extends State<ScanDocument> {
   }
 }
 
-//ListView.separated(
-//shrinkWrap: true,
-//scrollDirection: Axis.vertical,
-//itemCount: imageFiles.length,
-//itemBuilder: (context, index) {
-//return Container(child: imageFiles[index]);
-//},
-//separatorBuilder: (BuildContext context, _) => Divider(),
-//),

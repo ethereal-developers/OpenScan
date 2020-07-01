@@ -58,18 +58,10 @@ class _HomeScreenState extends State<HomeScreen> {
           width: size.width * 0.6,
           color: primaryColor,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+//            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Spacer(),
-              Material(
-                color: primaryColor,
-                shape: CircleBorder(),
-                elevation: 20,
-                child: CircleAvatar(
-                  backgroundColor: secondaryColor,
-                  radius: size.width * 0.2,
-                ),
-              ),
+              Image.asset('assets/scan_g.jpeg', scale: 6,),
               Spacer(),
               Divider(
                 thickness: 0.2,
@@ -109,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   folderName = imageDirPaths[index].substring(
                       imageDirPaths[index].lastIndexOf('/') + 1,
                       imageDirPaths[index].length - 1);
+                  // TODO: Add FocusedMenu
                   return ListTile(
                     // TODO : Add sample image
                     leading: Icon(

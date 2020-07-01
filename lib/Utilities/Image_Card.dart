@@ -9,11 +9,9 @@ import 'constants.dart';
 import 'cropper.dart';
 
 class ImageCard extends StatelessWidget {
-  const ImageCard(
-      {this.imageFile, this.imageWidget, this.imageFileEditCallback});
+  const ImageCard({this.imageFile, this.imageFileEditCallback});
 
   final File imageFile;
-  final Widget imageWidget;
   final Function imageFileEditCallback;
 
   @override
@@ -34,12 +32,10 @@ class ImageCard extends StatelessWidget {
                   backgroundColor: primaryColor,
                   child: Container(
                     width: size.width * 0.95,
-                    child: (imageFile != null)
-                        ? Image.file(
-                            imageFile,
-                            scale: 1.7,
-                          )
-                        : imageWidget,
+                    child: Image.file(
+                      imageFile,
+                      scale: 1.7,
+                    ),
                   ),
                 );
               });
@@ -63,24 +59,23 @@ class ImageCard extends StatelessWidget {
               if (image != null) {
                 image.copy(temp.path);
               }
-              await imageFileEditCallback();
+              imageFileEditCallback();
             },
           ),
           FocusedMenuItem(
               title: Text('Delete'),
-              onPressed: () async {
+              onPressed: () {
+                // TODO : Alert Dialog confirmation
                 imageFile.deleteSync();
-                await imageFileEditCallback();
+                imageFileEditCallback();
               },
               backgroundColor: Colors.redAccent),
         ],
         child: Container(
-          child: (imageFile != null)
-              ? Image.file(
-                  imageFile,
-                  scale: 1.7,
-                )
-              : imageWidget,
+          child: Image.file(
+            imageFile,
+            scale: 1.7,
+          ),
           height: size.height * 0.25,
           width: size.width * 0.4,
         ),

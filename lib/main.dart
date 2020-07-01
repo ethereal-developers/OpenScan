@@ -13,6 +13,7 @@ void main() async{
 class OpenScan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // TODO: Add Flash Screen
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
