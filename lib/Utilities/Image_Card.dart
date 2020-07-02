@@ -61,6 +61,10 @@ class ImageCard extends StatelessWidget {
               }
               imageFileEditCallback();
             },
+            trailingIcon: Icon(
+              Icons.crop,
+              color: Colors.black,
+            ),
           ),
           FocusedMenuItem(
               title: Text('Delete'),
@@ -71,8 +75,7 @@ class ImageCard extends StatelessWidget {
                   builder: (context) {
                     return AlertDialog(
                       title: Text('Delete'),
-                      content:
-                      Text('Do you really want to delete image?'),
+                      content: Text('Do you really want to delete image?'),
                       actions: <Widget>[
                         FlatButton(
                           onPressed: () => Navigator.pop(context),
@@ -84,7 +87,10 @@ class ImageCard extends StatelessWidget {
                             imageFileEditCallback();
                             Navigator.pop(context);
                           },
-                          child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
+                          child: Text(
+                            'Delete',
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
                         ),
                       ],
                     );
