@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:openscan/Utilities/constants.dart';
-import 'package:url_launcher/url_launcher.dart' as url;
+// import 'package:url_launcher/url_launcher.dart' as url;
 
 class AboutScreen extends StatelessWidget {
   final String route = "AboutScreen";
@@ -10,13 +10,13 @@ class AboutScreen extends StatelessWidget {
   final String vikramlink = "https://github.com/vikram0230";
 
   // TODO: fix dumb bug
-  void lauchWebsite(String urlString) async {
-    if (await url.canLaunch(urlString)) {
-      await url.launch(urlString);
-    } else {
-      print("Couldn't lauch the url");
-    }
-  }
+  // void lauchWebsite(String urlString) async {
+  //   if (await url.canLaunch(urlString)) {
+  //     await url.launch(urlString);
+  //   } else {
+  //     print("Couldn't lauch the url");
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +76,7 @@ class AboutScreen extends StatelessWidget {
                   color: ThemeData.dark().primaryColor,
                   child: Text("Checkout the Source Code here"),
                   onPressed: () {
-                    lauchWebsite('https://github.com/veejayts/openscan');
+                    // lauchWebsite('https://github.com/veejayts/openscan');
                   },
                 ),
               ),
@@ -163,13 +163,13 @@ class ContactCard extends StatelessWidget {
 
   const ContactCard({Key key, this.link, this.name, this.avatar});
 
-  void lauchWebsite(String urlString) async {
-    if (await url.canLaunch(urlString)) {
-      await url.launch(urlString);
-    } else {
-      print("Couldn't lauch the url");
-    }
-  }
+  // void lauchWebsite(String urlString) async {
+  //   if (await url.canLaunch(urlString)) {
+  //     await url.launch(urlString);
+  //   } else {
+  //     print("Couldn't lauch the url");
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +179,7 @@ class ContactCard extends StatelessWidget {
         padding: const EdgeInsets.all(8.0),
         child: InkWell(
           onTap: () {
-            lauchWebsite("$link");
+            // lauchWebsite("$link");
           },
           child: Container(
             height: 150.0,
