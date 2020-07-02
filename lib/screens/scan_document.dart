@@ -4,13 +4,19 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
+
 import 'package:image_picker/image_picker.dart';
+
+import 'package:path_provider/path_provider.dart';
+
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
+import 'package:openscan/Utilities/file_operations.dart';
+
 import 'package:openscan/screens/home_screen.dart';
-import 'package:path_provider/path_provider.dart';
 
 class ScanDocument extends StatefulWidget {
   static String route = "ScanDocument";
@@ -22,7 +28,6 @@ class ScanDocument extends StatefulWidget {
 class _ScanDocumentState extends State<ScanDocument> {
   File imageFile;
   List<File> imageFiles = [];
-  String appName = 'OpenScan';
   String appPath;
   String docPath;
 
@@ -31,20 +36,6 @@ class _ScanDocumentState extends State<ScanDocument> {
     super.initState();
     createDirectoryName();
     _createImage();
-  }
-
-  Future<String> getAppPath() async {
-    final Directory _appDocDir = await getApplicationDocumentsDirectory();
-    final Directory _appDocDirFolder =
-        Directory('${_appDocDir.path}/$appName/');
-
-    if (await _appDocDirFolder.exists()) {
-      return _appDocDirFolder.path;
-    } else {
-      final Directory _appDocDirNewFolder =
-          await _appDocDirFolder.create(recursive: true);
-      return _appDocDirNewFolder.path;
-    }
   }
 
   Future<File> _openCamera() async {
@@ -67,6 +58,17 @@ class _ScanDocumentState extends State<ScanDocument> {
         setState(() {
           imageFiles.add(imageFile);
         });
+    }
+  }
+
+  void _reCropImage(index) async {
+    Cropper cropper = Cropper();
+    var image = await cropper.cropImage(imageFiles[index]);
+    if (image != null) {
+      imageFiles.removeAt(index);
+      setState(() {
+        imageFiles.insert(index, image);
+      });
     }
   }
 
@@ -101,7 +103,9 @@ class _ScanDocumentState extends State<ScanDocument> {
           builder: (context) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(10),),
+                borderRadius: BorderRadius.all(
+                  Radius.circular(10),
+                ),
               ),
               title: Text('Discard'),
               titlePadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
@@ -121,7 +125,10 @@ class _ScanDocumentState extends State<ScanDocument> {
                 FlatButton(
                   onPressed: () => Navigator.popUntil(
                       context, ModalRoute.withName(HomeScreen.route)),
-                  child: Text('Discard', style: TextStyle(color: Colors.redAccent),),
+                  child: Text(
+                    'Discard',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
                 ),
               ],
             );
@@ -204,47 +211,48 @@ class _ScanDocumentState extends State<ScanDocument> {
                               style: TextStyle(color: Colors.black),
                             ),
                             onPressed: () async {
-                              Cropper cropper = Cropper();
-                              var image = await cropper
-                                  .cropImage(imageFiles[index * 2]);
-                              imageFiles.removeAt(index * 2);
-                              // TODO: Avoid change in order
-                              setState(() {
-                                imageFiles.add(image);
-                              });
+                              int tempIndex = index * 2;
+                              await _reCropImage(tempIndex);
                             },
                           ),
                           FocusedMenuItem(
-                              title: Text('Remove'),
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(Radius.circular(10),),
+                            title: Text('Remove'),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(10),
                                       ),
-                                      title: Text('Delete'),
-                                      content:
-                                          Text('Do you really want to remove image?'),
-                                      actions: <Widget>[
-                                        FlatButton(
-                                          onPressed: () => Navigator.pop(context),
-                                          child: Text('Cancel'),
+                                    ),
+                                    title: Text('Delete'),
+                                    content: Text(
+                                        'Do you really want to remove image?'),
+                                    actions: <Widget>[
+                                      FlatButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: Text('Cancel'),
+                                      ),
+                                      FlatButton(
+                                        onPressed: () {
+                                          _removeImage(index * 2);
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                              color: Colors.redAccent),
                                         ),
-                                        FlatButton(
-                                          onPressed: () {
-                                            _removeImage(index * 2);
-                                            Navigator.pop(context);
-                                          },
-                                          child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                              backgroundColor: Colors.redAccent),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                            backgroundColor: Colors.redAccent,
+                          ),
                         ],
                         child: Container(
                           child: Image.file(imageFiles[index * 2]),
@@ -262,18 +270,19 @@ class _ScanDocumentState extends State<ScanDocument> {
                           menuWidth: size.width * 0.44,
                           onPressed: () {
                             showCupertinoDialog(
-                                context: context,
-                                builder: (context) {
-                                  return Dialog(
-                                    elevation: 20,
-                                    backgroundColor: primaryColor,
-                                    child: Container(
-                                      width: size.width * 0.95,
-                                      child:
-                                          Image.file(imageFiles[index * 2 + 1]),
-                                    ),
-                                  );
-                                });
+                              context: context,
+                              builder: (context) {
+                                return Dialog(
+                                  elevation: 20,
+                                  backgroundColor: primaryColor,
+                                  child: Container(
+                                    width: size.width * 0.95,
+                                    child:
+                                        Image.file(imageFiles[index * 2 + 1]),
+                                  ),
+                                );
+                              },
+                            );
                           },
                           menuItems: [
                             FocusedMenuItem(
@@ -282,47 +291,49 @@ class _ScanDocumentState extends State<ScanDocument> {
                                 style: TextStyle(color: Colors.black),
                               ),
                               onPressed: () async {
-                                Cropper cropper = Cropper();
-                                var image = await cropper
-                                    .cropImage(imageFiles[index * 2 + 1]);
-                                imageFiles.removeAt(index * 2 + 1);
-                                // TODO: Avoid change in order
-                                setState(() {
-                                  imageFiles.add(image);
-                                });
+                                int tempIndex = index * 2 + 1;
+                                _reCropImage(tempIndex);
                               },
                             ),
                             FocusedMenuItem(
-                                title: Text('Remove'),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(Radius.circular(10),),
+                              title: Text('Remove'),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(10),
                                         ),
-                                        title: Text('Delete'),
-                                        content:
-                                        Text('Do you really want to remove image?'),
-                                        actions: <Widget>[
-                                          FlatButton(
-                                            onPressed: () => Navigator.pop(context),
-                                            child: Text('Cancel'),
+                                      ),
+                                      title: Text('Delete'),
+                                      content: Text(
+                                          'Do you really want to remove image?'),
+                                      actions: <Widget>[
+                                        FlatButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: Text('Cancel'),
+                                        ),
+                                        FlatButton(
+                                          onPressed: () {
+                                            _removeImage(index * 2 + 1);
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            'Delete',
+                                            style: TextStyle(
+                                                color: Colors.redAccent),
                                           ),
-                                          FlatButton(
-                                            onPressed: () {
-                                              _removeImage(index * 2 + 1);
-                                              Navigator.pop(context);
-                                            },
-                                            child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                },
-                                backgroundColor: Colors.redAccent),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              backgroundColor: Colors.redAccent,
+                            ),
                           ],
                           child: Container(
                             child: Image.file(imageFiles[index * 2 + 1]),
