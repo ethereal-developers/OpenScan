@@ -17,10 +17,6 @@ class ViewDocument extends StatefulWidget {
 class _ViewDocumentState extends State<ViewDocument> {
   var imageFiles;
 
-  void _deleteDocument() {
-    Directory(widget.dirPath).deleteSync(recursive: true);
-  }
-
   void imageEditCallback() {
     _getImages();
   }
@@ -48,6 +44,7 @@ class _ViewDocumentState extends State<ViewDocument> {
           elevation: 0,
           centerTitle: true,
           backgroundColor: primaryColor,
+          // TODO: add share icon, menu, bottom sheet...  
           title: RichText(
             text: TextSpan(
               text: 'View ',
