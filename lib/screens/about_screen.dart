@@ -53,19 +53,22 @@ class AboutScreen extends StatelessWidget {
                 "No ads. We don't collect any data. We respect your privacy.",
               ),
               Padding(
-                padding: const EdgeInsets.only(top: 50.0),
-                child: Row(
-                  children: <Widget>[
-                    ContactCard(
-                      name: "Vijay",
-                      link: vjlink,
-                    ),
-                    ContactCard(
-                      name: "Vikram",
-                      link: vikramlink,
-                    ),
-                  ],
+                padding: const EdgeInsets.only(top: 50.0, bottom: 15.0),
+                child: Text(
+                  "Developed by:",
                 ),
+              ),
+              Row(
+                children: <Widget>[
+                  ContactCard(
+                    name: "Vijay",
+                    link: vjlink,
+                  ),
+                  ContactCard(
+                    name: "Vikram",
+                    link: vikramlink,
+                  ),
+                ],
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10.0),
