@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/Image_Card.dart';
 import 'package:openscan/Utilities/constants.dart';
@@ -8,6 +9,7 @@ class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
 
   ViewDocument({this.dirPath});
+
   final String dirPath;
 
   @override
@@ -26,7 +28,6 @@ class _ViewDocumentState extends State<ViewDocument> {
       imageFiles = Directory(widget.dirPath)
           .listSync(recursive: false, followLinks: false);
     });
-    print(imageFiles);
   }
 
   @override
@@ -37,14 +38,13 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
           centerTitle: true,
           backgroundColor: primaryColor,
-          // TODO: add share icon, menu, bottom sheet...  
+          // TODO: add bottom sheet...
           title: RichText(
             text: TextSpan(
               text: 'View ',
@@ -57,6 +57,30 @@ class _ViewDocumentState extends State<ViewDocument> {
               ],
             ),
           ),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.picture_as_pdf),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ShareDocument(
+                      dirName: widget.dirPath,
+                    ),
+                  ),
+                );
+              },
+            ),
+            Builder(builder: (context) {
+              return IconButton(
+                icon: Icon(Icons.more_vert),
+                onPressed: () {
+                  showModalBottomSheet(
+                      context: context, builder: _buildBottomSheet);
+                },
+              );
+            }),
+          ],
         ),
         body: RefreshIndicator(
           backgroundColor: primaryColor,
@@ -87,31 +111,73 @@ class _ViewDocumentState extends State<ViewDocument> {
             },
           ),
         ),
-        bottomNavigationBar: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-          child: RaisedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ShareDocument(
-                    dirName: widget.dirPath,
-                  ),
+      ),
+    );
+  }
+
+  Widget _buildBottomSheet(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
+    String folderName = widget.dirPath.substring(
+        widget.dirPath.lastIndexOf('/') + 1, widget.dirPath.length - 1);
+    return Container(
+      height: size.height * 0.45,
+      color: primaryColor,
+      child: Column(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15, 20, 15, 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(
+                  folderName,
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              );
-            },
-            color: secondaryColor,
-            textColor: primaryColor,
-            child: Container(
-              alignment: Alignment.center,
-              height: 55,
-              child: Text(
-                "Share Document as PDF",
-                style: TextStyle(fontSize: 18),
-              ),
+                GestureDetector(
+                  child: Icon(Icons.edit),
+                  onTap: (){
+                    // TODO: Rename folder
+                  },
+                ),
+              ],
             ),
           ),
-        ),
+          Divider(
+            thickness: 0.2,
+            indent: 8,
+            endIndent: 8,
+            color: Colors.white,
+          ),
+          ListTile(
+            leading: Icon(Icons.add_a_photo),
+            title: Text('Add Image'),
+            onTap: (){
+              //TODO: Call Cropper
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.phone_android),
+            title: Text('Save to device'),
+            onTap: (){
+              // TODO: Save PDF to downloads
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.picture_as_pdf),
+            title: Text('Share as PDF'),
+            onTap: (){
+              // TODO: Share
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.image),
+            title: Text('Share as image'),
+            onTap: (){
+              //TODO: Share
+            },
+          ),
+        ],
       ),
     );
   }
