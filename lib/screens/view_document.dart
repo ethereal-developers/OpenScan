@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:openscan/Utilities/cropper.dart';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:directory_picker/directory_picker.dart';
@@ -54,8 +56,8 @@ class _ViewDocumentState extends State<ViewDocument> {
   @override
   void initState() {
     super.initState();
-    _getImages();
     dirName = widget.dirPath;
+    _getImages();
     fileName =
         dirName.substring(dirName.lastIndexOf("/") + 1, dirName.length - 1);
   }
@@ -142,6 +144,38 @@ class _ViewDocumentState extends State<ViewDocument> {
     } catch (e) {
       _statusSuccess = false;
     }
+  }
+
+  Future<File> _openCamera() async {
+    File image;
+    final _picker = ImagePicker();
+    var picture = await _picker.getImage(source: ImageSource.camera);
+    if (picture != null) {
+      final requiredPicture = File(picture.path);
+      image = requiredPicture;
+    }
+    return image;
+  }
+
+  Future _createImage() async {
+    File image = await _openCamera();
+    if (image != null) {
+      Cropper cropper = Cropper();
+      var imageFile = await cropper.cropImage(image);
+      if (imageFile != null)
+        setState(() {
+          imageFiles.add(imageFile);
+        });
+    }
+  }
+
+  Future<void> _saveImage(File image, int i) async {
+    if (await Directory(dirName).exists() != true) {
+      new Directory(dirName).create();
+    }
+
+    File tempPic = File("$dirName/$i.jpg");
+    image.copy(tempPic.path);
   }
 
   @override
@@ -260,8 +294,10 @@ class _ViewDocumentState extends State<ViewDocument> {
           ListTile(
             leading: Icon(Icons.add_a_photo),
             title: Text('Add Image'),
-            onTap: () {
+            onTap: () async {
               // TODO; Implement add image functionality
+              await _createImage();
+              await _saveImage(imageFiles.last, imageFiles.length);
             },
           ),
           ListTile(
