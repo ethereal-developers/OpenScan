@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:focused_menu/focused_menu.dart';
+import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:focused_menu/focused_menu.dart';
-import 'package:focused_menu/modals.dart';
 
 import 'scan_document.dart';
 
@@ -61,7 +61,6 @@ class _HomeScreenState extends State<HomeScreen> {
           width: size.width * 0.6,
           color: primaryColor,
           child: Column(
-//            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Spacer(),
               Image.asset(
@@ -75,9 +74,60 @@ class _HomeScreenState extends State<HomeScreen> {
                 endIndent: 6,
                 color: Colors.white,
               ),
-              MenuButton(text: 'Menu', size: size),
-              MenuButton(text: 'Settings', size: size),
-              MenuButton(text: 'About', size: size),
+              ListTile(
+                title: Center(
+                  child: Text(
+                    'Menu',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ),
+                onTap: (){},
+              ),
+              Divider(
+                thickness: 0.2,
+                indent: 6,
+                endIndent: 6,
+                color: Colors.white,
+              ),
+              ListTile(
+                title: Center(
+                  child: Text(
+                    'Settings',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ),
+                onTap: (){},
+              ),
+              Divider(
+                thickness: 0.2,
+                indent: 6,
+                endIndent: 6,
+                color: Colors.white,
+              ),
+              ListTile(
+                title: Center(
+                  child: Text(
+                    'About',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ),
+                onTap: (){},
+              ),
+              Divider(
+                thickness: 0.2,
+                indent: 6,
+                endIndent: 6,
+                color: Colors.white,
+              ),
               Spacer(
                 flex: 10,
               ),
@@ -146,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               return AlertDialog(
                                 title: Text('Delete'),
                                 content:
-                                Text('Do you really want to delete image?'),
+                                    Text('Do you really want to delete image?'),
                                 actions: <Widget>[
                                   FlatButton(
                                     onPressed: () => Navigator.pop(context),
@@ -155,10 +205,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   FlatButton(
                                     onPressed: () {
                                       //TODO : Reload
-                                      Directory(imageDirPaths[index]).deleteSync(recursive: true);
+                                      Directory(imageDirPaths[index])
+                                          .deleteSync(recursive: true);
                                       Navigator.pop(context);
                                     },
-                                    child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
+                                    child: Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.redAccent),
+                                    ),
                                   ),
                                 ],
                               );
@@ -177,13 +231,14 @@ class _HomeScreenState extends State<HomeScreen> {
           return FloatingActionButton(
             onPressed: () {
               Navigator.pushNamed(context, ScanDocument.route).then(
-                (value){
+                (value) {
                   setState(() {
                     Scaffold.of(context).showSnackBar(
                       SnackBar(
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(10))),
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10))),
                         backgroundColor: Colors.white,
                         duration: Duration(seconds: 1),
                         content: Container(
@@ -213,42 +268,6 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }),
       ),
-    );
-  }
-}
-
-class MenuButton extends StatelessWidget {
-  const MenuButton({this.size, this.text});
-
-  final String text;
-  final Size size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 6.0, vertical: 0),
-          child: GestureDetector(
-            onTap: () {},
-            child: Container(
-              color: primaryColor,
-              height: size.height * 0.06,
-              alignment: Alignment.center,
-              child: Text(
-                text,
-                style: TextStyle(color: Colors.white, fontSize: 18),
-              ),
-            ),
-          ),
-        ),
-        Divider(
-          thickness: 0.2,
-          indent: 8,
-          endIndent: 8,
-          color: Colors.white,
-        ),
-      ],
     );
   }
 }
