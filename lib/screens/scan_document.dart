@@ -82,7 +82,7 @@ class _ScanDocumentState extends State<ScanDocument> {
       new Directory(docPath).create();
     }
 
-    File tempPic = File("$docPath/$i.png");
+    File tempPic = File("$docPath/$i.jpg");
     image.copy(tempPic.path);
   }
 
