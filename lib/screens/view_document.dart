@@ -62,24 +62,35 @@ class _ViewDocumentState extends State<ViewDocument> {
         dirName.substring(dirName.lastIndexOf("/") + 1, dirName.length - 1);
   }
 
-  Future<void> _pickDirectory(BuildContext context) async {
-    Directory directory = selectedDirectory;
-    if (Platform.isAndroid) {
-      directory = Directory("/storage/emulated/0/");
-    } else {
-      directory = await getExternalStorageDirectory();
+  // CREATE PDF
+  Future<void> _createPdf() async {
+    try {
+      final output = File("${selectedDirectory.path}/$fileName.pdf");
+      print(output);
+      print(images);
+
+      int i = 0;
+
+      final doc = pw.Document();
+
+      for (i = 0; i < images.length; i++) {
+        final image = PdfImage.file(
+          doc.document,
+          bytes: images[i].readAsBytesSync(),
+        );
+
+        doc.addPage(pw.Page(build: (pw.Context context) {
+          return pw.Center(
+            child: pw.Image(image),
+          ); // Center
+        }));
+      }
+
+      output.writeAsBytesSync(doc.save());
+      _statusSuccess = true;
+    } catch (e) {
+      _statusSuccess = false;
     }
-
-    Directory newDirectory = await DirectoryPicker.pick(
-        allowFolderCreation: true,
-        context: context,
-        rootDirectory: directory,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10))));
-
-    setState(() {
-      selectedDirectory = newDirectory;
-    });
   }
 
   Future<void> displayDialog() async {
@@ -116,36 +127,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     );
   }
 
-  Future<void> _createPdf() async {
-    try {
-      final output = File("${selectedDirectory.path}/$fileName.pdf");
-      print(output);
-      print(images);
-
-      int i = 0;
-
-      final doc = pw.Document();
-
-      for (i = 0; i < images.length; i++) {
-        final image = PdfImage.file(
-          doc.document,
-          bytes: images[i].readAsBytesSync(),
-        );
-
-        doc.addPage(pw.Page(build: (pw.Context context) {
-          return pw.Center(
-            child: pw.Image(image),
-          ); // Center
-        }));
-      }
-
-      output.writeAsBytesSync(doc.save());
-      _statusSuccess = true;
-    } catch (e) {
-      _statusSuccess = false;
-    }
-  }
-
+  // ADD IMAGES
   Future<File> _openCamera() async {
     File image;
     final _picker = ImagePicker();
@@ -176,6 +158,41 @@ class _ViewDocumentState extends State<ViewDocument> {
 
     File tempPic = File("$dirName/$i.jpg");
     image.copy(tempPic.path);
+  }
+
+  // SAVE TO DEVICE
+  Future<void> _pickDirectory(BuildContext context) async {
+    Directory directory = selectedDirectory;
+    if (Platform.isAndroid) {
+      directory = Directory("/storage/emulated/0/");
+    } else {
+      directory = await getExternalStorageDirectory();
+    }
+
+    Directory newDirectory = await DirectoryPicker.pick(
+        allowFolderCreation: true,
+        context: context,
+        rootDirectory: directory,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10))));
+
+    setState(() {
+      selectedDirectory = newDirectory;
+    });
+  }
+
+  void _saveToDevice() async {
+    Directory openscanDir = Directory("/storage/emulated/0/OpenScan");
+    if (Platform.isAndroid) {
+      if (!openscanDir.existsSync()) {
+        openscanDir.createSync();
+      }
+      selectedDirectory = openscanDir;
+    } else {
+      await _pickDirectory(context);
+    }
+    await _createPdf();
+    displayDialog();
   }
 
   @override
@@ -303,17 +320,8 @@ class _ViewDocumentState extends State<ViewDocument> {
           ListTile(
             leading: Icon(Icons.phone_android),
             title: Text('Save to device'),
-            onTap: () async {
-              if (Platform.isAndroid) {
-                if (!Directory("/storage/emulated/0/OpenScan").existsSync()) {
-                  Directory("/storage/emulated/0/OpenScan").createSync();
-                }
-                selectedDirectory = Directory("/storage/emulated/0/OpenScan");
-              } else {
-                await _pickDirectory(context);
-              }
-              await _createPdf();
-              displayDialog();
+            onTap: () {
+              _saveToDevice();
             },
           ),
           ListTile(
