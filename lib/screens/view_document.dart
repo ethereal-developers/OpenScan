@@ -42,8 +42,8 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   void _getImages() {
     setState(() {
-      imageFiles = Directory(widget.dirPath)
-          .listSync(recursive: false, followLinks: false);
+      imageFiles =
+          Directory(dirName).listSync(recursive: false, followLinks: false);
       images = [];
       Directory(dirName)
           .list(recursive: false, followLinks: false)
@@ -195,6 +195,13 @@ class _ViewDocumentState extends State<ViewDocument> {
     displayDialog();
   }
 
+  // RENAME FOLDER
+  void _renameFolder(String newName) {
+    String name = "OpenScan $newName";
+    // TODO: DOES NOT RENAME BECAUSE FILES ARE PRESENT
+    Directory temp = Directory(dirName).renameSync(name);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -224,7 +231,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ShareDocument(
-                      dirName: widget.dirPath,
+                      dirName: dirName,
                     ),
                   ),
                 );
@@ -276,8 +283,8 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   Widget _buildBottomSheet(BuildContext context) {
     Size size = MediaQuery.of(context).size;
-    String folderName = widget.dirPath.substring(
-        widget.dirPath.lastIndexOf('/') + 1, widget.dirPath.length - 1);
+    String folderName =
+        dirName.substring(dirName.lastIndexOf('/') + 1, dirName.length - 1);
     return Container(
       height: size.height * 0.45,
       color: primaryColor,
@@ -297,6 +304,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                   child: Icon(Icons.edit),
                   onTap: () {
                     // TODO: Rename folder
+                    _renameFolder("Something 123");
                   },
                 ),
               ],
@@ -312,7 +320,6 @@ class _ViewDocumentState extends State<ViewDocument> {
             leading: Icon(Icons.add_a_photo),
             title: Text('Add Image'),
             onTap: () async {
-              // TODO; Implement add image functionality
               await _createImage();
               await _saveImage(imageFiles.last, imageFiles.length);
             },
