@@ -84,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                onTap: (){},
+                onTap: () {},
               ),
               Divider(
                 thickness: 0.2,
@@ -102,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                onTap: (){},
+                onTap: () {},
               ),
               Divider(
                 thickness: 0.2,
@@ -120,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                onTap: (){},
+                onTap: () {},
               ),
               Divider(
                 thickness: 0.2,
@@ -158,6 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       imageDirPaths[index].lastIndexOf('/') + 1,
                       imageDirPaths[index].length - 1);
                   return FocusedMenuHolder(
+                    onPressed: () {},
                     menuWidth: size.width * 0.44,
                     child: ListTile(
                       // TODO : Add sample image
