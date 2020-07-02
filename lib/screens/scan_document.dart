@@ -212,7 +212,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                             ),
                             onPressed: () async {
                               int tempIndex = index * 2;
-                              await _reCropImage(tempIndex);
+                              _reCropImage(tempIndex);
                             },
                           ),
                           FocusedMenuItem(
