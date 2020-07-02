@@ -72,11 +72,6 @@ class _ScanDocumentState extends State<ScanDocument> {
     }
   }
 
-  Future<void> createDirectoryName() async {
-    Directory appDir = await getExternalStorageDirectory();
-    docPath = "${appDir.path}/OpenScan ${DateTime.now()}";
-  }
-
   Future<void> _saveImage(File image, int i) async {
     if (await Directory(docPath).exists() != true) {
       new Directory(docPath).create();
@@ -84,6 +79,11 @@ class _ScanDocumentState extends State<ScanDocument> {
 
     File tempPic = File("$docPath/$i.jpg");
     image.copy(tempPic.path);
+  }
+
+  Future<void> createDirectoryName() async {
+    Directory appDir = await getExternalStorageDirectory();
+    docPath = "${appDir.path}/OpenScan ${DateTime.now()}";
   }
 
   Future<void> _deleteTemporaryFiles() async {
