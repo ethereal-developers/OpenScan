@@ -64,10 +64,32 @@ class ImageCard extends StatelessWidget {
           ),
           FocusedMenuItem(
               title: Text('Delete'),
+              trailingIcon: Icon(Icons.delete),
               onPressed: () {
-                // TODO : Alert Dialog confirmation
-                imageFile.deleteSync();
-                imageFileEditCallback();
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('Delete'),
+                      content:
+                      Text('Do you really want to delete image?'),
+                      actions: <Widget>[
+                        FlatButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('Cancel'),
+                        ),
+                        FlatButton(
+                          onPressed: () {
+                            imageFile.deleteSync();
+                            imageFileEditCallback();
+                            Navigator.pop(context);
+                          },
+                          child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
+                        ),
+                      ],
+                    );
+                  },
+                );
               },
               backgroundColor: Colors.redAccent),
         ],

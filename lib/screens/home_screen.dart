@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:focused_menu/focused_menu.dart';
+import 'package:focused_menu/modals.dart';
 
 import 'scan_document.dart';
 
@@ -21,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future getDirectoryNames() async {
     Directory appDir = await getExternalStorageDirectory();
     Directory appDirPath = Directory("${appDir.path}");
+    //TODO: Get other details and preview image
     appDirPath
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
@@ -61,7 +64,10 @@ class _HomeScreenState extends State<HomeScreen> {
 //            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Spacer(),
-              Image.asset('assets/scan_g.jpeg', scale: 6,),
+              Image.asset(
+                'assets/scan_g.jpeg',
+                scale: 6,
+              ),
               Spacer(),
               Divider(
                 thickness: 0.2,
@@ -101,31 +107,66 @@ class _HomeScreenState extends State<HomeScreen> {
                   folderName = imageDirPaths[index].substring(
                       imageDirPaths[index].lastIndexOf('/') + 1,
                       imageDirPaths[index].length - 1);
-                  // TODO: Add FocusedMenu
-                  return ListTile(
-                    // TODO : Add sample image
-                    leading: Icon(
-                      Icons.landscape,
-                      size: 30,
-                    ),
-                    title: Text(folderName),
-                    subtitle: Text(folderName),
-                    trailing: Icon(
-                      Icons.arrow_right,
-                      size: 30,
-                      color: secondaryColor,
-                    ),
-                    onTap: () async {
-                      getDirectoryNames();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ViewDocument(
-                            dirPath: imageDirPaths[index],
+                  return FocusedMenuHolder(
+                    menuWidth: size.width * 0.44,
+                    child: ListTile(
+                      // TODO : Add sample image
+                      leading: Icon(
+                        Icons.landscape,
+                        size: 30,
+                      ),
+                      title: Text(folderName),
+                      subtitle: Text(folderName),
+                      trailing: Icon(
+                        Icons.arrow_right,
+                        size: 30,
+                        color: secondaryColor,
+                      ),
+                      onTap: () async {
+                        getDirectoryNames();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ViewDocument(
+                              dirPath: imageDirPaths[index],
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
+                    menuItems: [
+                      FocusedMenuItem(
+                        title: Text('Delete'),
+                        trailingIcon: Icon(Icons.delete),
+                        backgroundColor: Colors.redAccent,
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text('Delete'),
+                                content:
+                                Text('Do you really want to delete image?'),
+                                actions: <Widget>[
+                                  FlatButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text('Cancel'),
+                                  ),
+                                  FlatButton(
+                                    onPressed: () {
+                                      //TODO : Reload
+                                      Directory(imageDirPaths[index]).deleteSync(recursive: true);
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
                   );
                 },
               );
@@ -135,13 +176,15 @@ class _HomeScreenState extends State<HomeScreen> {
         floatingActionButton: Builder(builder: (context) {
           return FloatingActionButton(
             onPressed: () {
-              Navigator.pushNamed(context, ScanDocument.route)
-                  .then((value) => Scaffold.of(context).showSnackBar(SnackBar(
+              Navigator.pushNamed(context, ScanDocument.route).then(
+                (value){
+                  setState(() {
+                    Scaffold.of(context).showSnackBar(
+                      SnackBar(
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10))),
-                        backgroundColor: primaryColor,
+                            borderRadius: BorderRadius.all(Radius.circular(10))),
+                        backgroundColor: Colors.white,
                         duration: Duration(seconds: 1),
                         content: Container(
                           decoration: BoxDecoration(),
@@ -156,7 +199,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                      )));
+                      ),
+                    );
+                  });
+                },
+              );
             },
             backgroundColor: secondaryColor,
             child: Icon(
@@ -197,8 +244,8 @@ class MenuButton extends StatelessWidget {
         ),
         Divider(
           thickness: 0.2,
-          indent: 6,
-          endIndent: 6,
+          indent: 8,
+          endIndent: 8,
           color: Colors.white,
         ),
       ],

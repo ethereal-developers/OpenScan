@@ -1,15 +1,16 @@
 import 'dart:core';
 import 'dart:io';
 import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:focused_menu/focused_menu.dart';
+import 'package:focused_menu/modals.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:focused_menu/focused_menu.dart';
-import 'package:focused_menu/modals.dart';
 
 class ScanDocument extends StatefulWidget {
   static String route = "ScanDocument";
@@ -99,9 +100,12 @@ class _ScanDocumentState extends State<ScanDocument> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              // TODO: Do you want changes?
-              title: Center(child: Text('Note')),
-              contentPadding: EdgeInsets.fromLTRB(20, 40, 20, 30),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10),),
+              ),
+              title: Text('Discard'),
+              titlePadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+              contentPadding: EdgeInsets.fromLTRB(20, 20, 20, 30),
               content: Text(
                 'Do you want to discard the documents?',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
@@ -109,15 +113,15 @@ class _ScanDocumentState extends State<ScanDocument> {
               backgroundColor: primaryColor,
               actions: <Widget>[
                 FlatButton(
-                  onPressed: () => Navigator.popUntil(
-                      context, ModalRoute.withName(HomeScreen.route)),
-                  child: Text('Yes'),
-                ),
-                FlatButton(
                   onPressed: () => Navigator.pop(context, false),
                   child: Text(
-                    'No',
+                    'Cancel',
                   ),
+                ),
+                FlatButton(
+                  onPressed: () => Navigator.popUntil(
+                      context, ModalRoute.withName(HomeScreen.route)),
+                  child: Text('Discard', style: TextStyle(color: Colors.redAccent),),
                 ),
               ],
             );
@@ -157,12 +161,15 @@ class _ScanDocumentState extends State<ScanDocument> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                 children: [
                   TextSpan(
-                      text: 'Document', style: TextStyle(color: secondaryColor),),
+                    text: 'Document',
+                    style: TextStyle(color: secondaryColor),
+                  ),
                 ],
               ),
             ),
           ),
           body: ListView.builder(
+            physics: BouncingScrollPhysics(),
             itemCount: ((imageFiles.length) / 2).round(),
             itemBuilder: (context, index) {
               return Padding(
@@ -198,7 +205,8 @@ class _ScanDocumentState extends State<ScanDocument> {
                             ),
                             onPressed: () async {
                               Cropper cropper = Cropper();
-                              var image = await cropper.cropImage(imageFiles[index * 2]);
+                              var image = await cropper
+                                  .cropImage(imageFiles[index * 2]);
                               imageFiles.removeAt(index * 2);
                               // TODO: Avoid change in order
                               setState(() {
@@ -208,8 +216,34 @@ class _ScanDocumentState extends State<ScanDocument> {
                           ),
                           FocusedMenuItem(
                               title: Text('Remove'),
-                              // TODO : Alert Dialog confirmation
-                              onPressed: () => _removeImage(index * 2),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(Radius.circular(10),),
+                                      ),
+                                      title: Text('Delete'),
+                                      content:
+                                          Text('Do you really want to remove image?'),
+                                      actions: <Widget>[
+                                        FlatButton(
+                                          onPressed: () => Navigator.pop(context),
+                                          child: Text('Cancel'),
+                                        ),
+                                        FlatButton(
+                                          onPressed: () {
+                                            _removeImage(index * 2);
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
                               backgroundColor: Colors.redAccent),
                         ],
                         child: Container(
@@ -235,7 +269,8 @@ class _ScanDocumentState extends State<ScanDocument> {
                                     backgroundColor: primaryColor,
                                     child: Container(
                                       width: size.width * 0.95,
-                                      child: Image.file(imageFiles[index * 2 + 1]),
+                                      child:
+                                          Image.file(imageFiles[index * 2 + 1]),
                                     ),
                                   );
                                 });
@@ -248,7 +283,8 @@ class _ScanDocumentState extends State<ScanDocument> {
                               ),
                               onPressed: () async {
                                 Cropper cropper = Cropper();
-                                var image = await cropper.cropImage(imageFiles[index * 2 + 1]);
+                                var image = await cropper
+                                    .cropImage(imageFiles[index * 2 + 1]);
                                 imageFiles.removeAt(index * 2 + 1);
                                 // TODO: Avoid change in order
                                 setState(() {
@@ -258,8 +294,34 @@ class _ScanDocumentState extends State<ScanDocument> {
                             ),
                             FocusedMenuItem(
                                 title: Text('Remove'),
-                                // TODO : Alert Dialog confirmation
-                                onPressed: () => _removeImage(index * 2),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(Radius.circular(10),),
+                                        ),
+                                        title: Text('Delete'),
+                                        content:
+                                        Text('Do you really want to remove image?'),
+                                        actions: <Widget>[
+                                          FlatButton(
+                                            onPressed: () => Navigator.pop(context),
+                                            child: Text('Cancel'),
+                                          ),
+                                          FlatButton(
+                                            onPressed: () {
+                                              _removeImage(index * 2 + 1);
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
                                 backgroundColor: Colors.redAccent),
                           ],
                           child: Container(
@@ -284,6 +346,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                   }
                 }
                 await _deleteTemporaryFiles();
+                // TODO: Navigate to View
                 Navigator.pop(context, true);
               },
               color: secondaryColor,
@@ -301,11 +364,10 @@ class _ScanDocumentState extends State<ScanDocument> {
           floatingActionButton: FloatingActionButton(
             backgroundColor: secondaryColor,
             onPressed: _createImage,
-            child: Icon(Icons.add),
+            child: Icon(Icons.camera_alt),
           ),
         ),
       ),
     );
   }
 }
-
