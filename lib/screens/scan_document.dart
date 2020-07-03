@@ -38,8 +38,7 @@ class _ScanDocumentState extends State<ScanDocument> {
     if (image != null) {
       Cropper cropper = Cropper();
       var imageFile = await cropper.cropImage(image);
-      if (imageFile != null)
-        imageFiles.add(imageFile);
+      if (imageFile != null) imageFiles.add(imageFile);
     }
     setState(() {});
   }
@@ -348,7 +347,7 @@ class _ScanDocumentState extends State<ScanDocument> {
           ),
           floatingActionButton: FloatingActionButton(
             backgroundColor: secondaryColor,
-            onPressed: () async{
+            onPressed: () async {
               await createImage();
             },
             child: Icon(Icons.camera_alt),

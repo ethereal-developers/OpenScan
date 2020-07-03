@@ -310,6 +310,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                   );
                 },
               );
+              Directory(dirName).deleteSync(recursive: true);
+              Navigator.pop(context);
             },
           ),
         ],

@@ -11,7 +11,7 @@ import 'package:openscan/Utilities/constants.dart';
 import 'screens/splash_screen.dart';
 import 'package:flutter/services.dart';
 
-void main() async{
+void main() async {
   runApp(OpenScan());
 }
 
