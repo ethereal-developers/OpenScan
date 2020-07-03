@@ -17,7 +17,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
   var imageDirPaths = [];
 
   Future getDirectoryNames() async {
@@ -211,7 +210,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             context: context,
                             builder: (context) {
                               return AlertDialog(
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10),),),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(10),
+                                  ),
+                                ),
                                 title: Text('Delete'),
                                 content:
                                     Text('Do you really want to delete file?'),
