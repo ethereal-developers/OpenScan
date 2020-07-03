@@ -76,8 +76,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     if (image != null) {
       Cropper cropper = Cropper();
       var imageFile = await cropper.cropImage(image);
-      if (imageFile != null)
-        imageFiles.add(imageFile);
+      if (imageFile != null) imageFiles.add(imageFile);
     }
   }
 
@@ -167,7 +166,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     String folderName =
         dirName.substring(dirName.lastIndexOf('/') + 1, dirName.length - 1);
     return Container(
-      height: size.height * 0.45,
+      height: size.height * 0.6,
       color: primaryColor,
       child: Column(
         children: <Widget>[
@@ -286,6 +285,7 @@ class _ViewDocumentState extends State<ViewDocument> {
             ),
             onTap: () {
               Directory(dirName).deleteSync(recursive: true);
+              Navigator.pop(context);
             },
           ),
         ],
