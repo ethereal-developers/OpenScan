@@ -1,21 +1,15 @@
 import 'dart:core';
 import 'dart:io';
 import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-
 import 'package:image_picker/image_picker.dart';
-
 import 'package:path_provider/path_provider.dart';
-
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
-
 import 'package:openscan/screens/home_screen.dart';
 
 class ScanDocument extends StatefulWidget {
@@ -26,6 +20,7 @@ class ScanDocument extends StatefulWidget {
 }
 
 class _ScanDocumentState extends State<ScanDocument> {
+  FileOperations fileOperations = FileOperations();
   File imageFile;
   List<File> imageFiles = [];
   String appPath;
@@ -35,30 +30,7 @@ class _ScanDocumentState extends State<ScanDocument> {
   void initState() {
     super.initState();
     createDirectoryName();
-    _createImage();
-  }
-
-  Future<File> _openCamera() async {
-    File image;
-    final _picker = ImagePicker();
-    var picture = await _picker.getImage(source: ImageSource.camera);
-    if (picture != null) {
-      final requiredPicture = File(picture.path);
-      image = requiredPicture;
-    }
-    return image;
-  }
-
-  Future _createImage() async {
-    File image = await _openCamera();
-    if (image != null) {
-      Cropper cropper = Cropper();
-      var imageFile = await cropper.cropImage(image);
-      if (imageFile != null)
-        setState(() {
-          imageFiles.add(imageFile);
-        });
-    }
+    fileOperations.createImage();
   }
 
   void _reCropImage(index) async {
@@ -72,29 +44,9 @@ class _ScanDocumentState extends State<ScanDocument> {
     }
   }
 
-  Future<void> _saveImage(File image, int i) async {
-    if (await Directory(docPath).exists() != true) {
-      new Directory(docPath).create();
-    }
-
-    File tempPic = File("$docPath/$i.jpg");
-    image.copy(tempPic.path);
-  }
-
   Future<void> createDirectoryName() async {
     Directory appDir = await getExternalStorageDirectory();
     docPath = "${appDir.path}/OpenScan ${DateTime.now()}";
-  }
-
-  Future<void> _deleteTemporaryFiles() async {
-    // Delete the temporary files created by the image_picker package
-    Directory appDocDir = await getExternalStorageDirectory();
-    String appDocPath = "${appDocDir.path}/Pictures/";
-    Directory del = Directory(appDocPath);
-    if (await del.exists()) {
-      del.deleteSync(recursive: true);
-    }
-    new Directory(appDocPath).create();
   }
 
   Future<bool> _onBackPressed() async {
@@ -210,13 +162,15 @@ class _ScanDocumentState extends State<ScanDocument> {
                               'Crop',
                               style: TextStyle(color: Colors.black),
                             ),
+                            trailingIcon: Icon(Icons.crop),
                             onPressed: () async {
                               int tempIndex = index * 2;
                               _reCropImage(tempIndex);
                             },
                           ),
                           FocusedMenuItem(
-                            title: Text('Remove'),
+                            title: Text('Delete'),
+                            trailingIcon: Icon(Icons.delete),
                             onPressed: () {
                               showDialog(
                                 context: context,
@@ -228,8 +182,9 @@ class _ScanDocumentState extends State<ScanDocument> {
                                       ),
                                     ),
                                     title: Text('Delete'),
+
                                     content: Text(
-                                        'Do you really want to remove image?'),
+                                        'Do you really want to delete image?'),
                                     actions: <Widget>[
                                       FlatButton(
                                         onPressed: () => Navigator.pop(context),
@@ -290,6 +245,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                                 'Crop',
                                 style: TextStyle(color: Colors.black),
                               ),
+                              trailingIcon: Icon(Icons.crop),
                               onPressed: () async {
                                 int tempIndex = index * 2 + 1;
                                 _reCropImage(tempIndex);
@@ -297,6 +253,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                             ),
                             FocusedMenuItem(
                               title: Text('Remove'),
+                              trailingIcon: Icon(Icons.delete),
                               onPressed: () {
                                 showDialog(
                                   context: context,
@@ -309,7 +266,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                                       ),
                                       title: Text('Delete'),
                                       content: Text(
-                                          'Do you really want to remove image?'),
+                                          'Do you really want to delete image?'),
                                       actions: <Widget>[
                                         FlatButton(
                                           onPressed: () =>
@@ -353,10 +310,10 @@ class _ScanDocumentState extends State<ScanDocument> {
               onPressed: () async {
                 if (imageFiles.length != 0) {
                   for (int i = 0; i < imageFiles.length; i++) {
-                    await _saveImage(imageFiles[i], i + 1);
+                    await fileOperations.saveImage(image: imageFiles[i],i: i + 1, dirName: docPath);
                   }
                 }
-                await _deleteTemporaryFiles();
+                await fileOperations.deleteTemporaryFiles();
                 // TODO: Navigate to View
                 Navigator.pop(context, true);
               },
@@ -374,7 +331,7 @@ class _ScanDocumentState extends State<ScanDocument> {
           ),
           floatingActionButton: FloatingActionButton(
             backgroundColor: secondaryColor,
-            onPressed: _createImage,
+            onPressed: () => fileOperations.createImage(imageFiles: imageFiles),
             child: Icon(Icons.camera_alt),
           ),
         ),

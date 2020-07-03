@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -77,14 +78,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 title: Center(
                   child: Text(
-                    'Menu',
+                    'Home',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.normal,
                     ),
                   ),
                 ),
-                onTap: () {},
+                onTap: () => Navigator.pop(context),
               ),
               Divider(
                 thickness: 0.2,
@@ -120,7 +121,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                onTap: () {},
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, AboutScreen.route);
+                },
               ),
               Divider(
                 thickness: 0.2,
@@ -195,9 +199,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             context: context,
                             builder: (context) {
                               return AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10),),),
                                 title: Text('Delete'),
                                 content:
-                                    Text('Do you really want to delete image?'),
+                                    Text('Do you really want to delete file?'),
                                 actions: <Widget>[
                                   FlatButton(
                                     onPressed: () => Navigator.pop(context),
@@ -240,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         shape: RoundedRectangleBorder(
                             borderRadius:
                                 BorderRadius.all(Radius.circular(10))),
-                        backgroundColor: Colors.white,
+                        backgroundColor: primaryColor,
                         duration: Duration(seconds: 1),
                         content: Container(
                           decoration: BoxDecoration(),
@@ -250,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Text(
                             (value) ? 'Saved' : 'Discarded',
                             style: TextStyle(
-                              color: secondaryColor,
+                              color: Colors.white,
                               fontWeight: FontWeight.w600,
                             ),
                           ),

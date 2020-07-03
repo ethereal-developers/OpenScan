@@ -1,18 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:openscan/Utilities/cropper.dart';
-
-import 'package:path_provider/path_provider.dart';
-import 'package:directory_picker/directory_picker.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-
 import 'package:openscan/Utilities/Image_Card.dart';
 import 'package:openscan/Utilities/constants.dart';
-
+import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/screens/share_document.dart';
+import 'package:share_extend/share_extend.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
@@ -26,186 +19,64 @@ class ViewDocument extends StatefulWidget {
 }
 
 class _ViewDocumentState extends State<ViewDocument> {
+  final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
   List<FileSystemEntity> imageFiles;
+  List<String> imageFilesPath;
+  FileOperations fileOperations;
 
   String dirName;
   Directory selectedDirectory;
 
-  List<File> images = [];
   String fileName;
 
   bool _statusSuccess;
 
   void imageEditCallback() {
-    _getImages();
+    getImages();
   }
 
-  void _getImages() {
-    setState(() {
-      imageFiles =
-          Directory(dirName).listSync(recursive: false, followLinks: false);
-      images = [];
-      Directory(dirName)
-          .list(recursive: false, followLinks: false)
-          .listen((FileSystemEntity entity) {
-        images.add(File(entity.path));
-      });
-    });
+  Future<void> displayDialog(BuildContext context) async {
+    String displayText;
+    (_statusSuccess)
+        ? displayText = "Success. File stored in the OpenScan folder."
+        : displayText = "Failed to generate pdf. Try Again.";
+    Scaffold.of(context).showSnackBar(
+      SnackBar(content: Text(displayText)),
+    );
   }
 
   @override
   void initState() {
     super.initState();
+    fileOperations = FileOperations();
     dirName = widget.dirPath;
-    _getImages();
+    getImages();
     fileName =
         dirName.substring(dirName.lastIndexOf("/") + 1, dirName.length - 1);
   }
 
-  // CREATE PDF
-  Future<void> _createPdf() async {
-    try {
-      final output = File("${selectedDirectory.path}/$fileName.pdf");
-      print(output);
-      print(images);
-
-      int i = 0;
-
-      final doc = pw.Document();
-
-      for (i = 0; i < images.length; i++) {
-        final image = PdfImage.file(
-          doc.document,
-          bytes: images[i].readAsBytesSync(),
-        );
-
-        doc.addPage(pw.Page(build: (pw.Context context) {
-          return pw.Center(
-            child: pw.Image(image),
-          ); // Center
-        }));
-      }
-
-      output.writeAsBytesSync(doc.save());
-      _statusSuccess = true;
-    } catch (e) {
-      _statusSuccess = false;
-    }
-  }
-
-  Future<void> displayDialog() async {
-    String displayText;
-
-    if (_statusSuccess)
-      displayText = "Success. File stored in the OpenScan folder.";
-    else
-      displayText = "Failed to generate pdf. Try Again.";
-
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // user must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Alert'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text('$displayText'),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            FlatButton(
-              child: Text('Ok'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // ADD IMAGES
-  Future<File> _openCamera() async {
-    File image;
-    final _picker = ImagePicker();
-    var picture = await _picker.getImage(source: ImageSource.camera);
-    if (picture != null) {
-      final requiredPicture = File(picture.path);
-      image = requiredPicture;
-    }
-    return image;
-  }
-
-  Future _createImage() async {
-    File image = await _openCamera();
-    if (image != null) {
-      Cropper cropper = Cropper();
-      var imageFile = await cropper.cropImage(image);
-      if (imageFile != null)
-        setState(() {
-          imageFiles.add(imageFile);
-        });
-    }
-  }
-
-  Future<void> _saveImage(File image, int i) async {
-    if (await Directory(dirName).exists() != true) {
-      new Directory(dirName).create();
-    }
-
-    File tempPic = File("$dirName/$i.jpg");
-    image.copy(tempPic.path);
-  }
-
-  // SAVE TO DEVICE
-  Future<void> _pickDirectory(BuildContext context) async {
-    Directory directory = selectedDirectory;
-    if (Platform.isAndroid) {
-      directory = Directory("/storage/emulated/0/");
-    } else {
-      directory = await getExternalStorageDirectory();
-    }
-
-    Directory newDirectory = await DirectoryPicker.pick(
-        allowFolderCreation: true,
-        context: context,
-        rootDirectory: directory,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10))));
-
+  void getImages() {
     setState(() {
-      selectedDirectory = newDirectory;
-    });
-  }
-
-  void _saveToDevice() async {
-    Directory openscanDir = Directory("/storage/emulated/0/OpenScan");
-    if (Platform.isAndroid) {
-      if (!openscanDir.existsSync()) {
-        openscanDir.createSync();
+      imageFiles =
+          Directory(dirName).listSync(recursive: false, followLinks: false);
+//      images = [];
+//      Directory(dirName)
+//          .list(recursive: false, followLinks: false)
+//          .listen((FileSystemEntity entity) {
+//        images.add(File(entity.path));
+//      });
+      imageFilesPath = [];
+      for (var i in imageFiles) {
+        imageFilesPath.add(i.path);
       }
-      selectedDirectory = openscanDir;
-    } else {
-      await _pickDirectory(context);
-    }
-    await _createPdf();
-    displayDialog();
-  }
-
-  // RENAME FOLDER
-  void _renameFolder(String newName) {
-    String name = "OpenScan $newName";
-    // TODO: DOES NOT RENAME BECAUSE FILES ARE PRESENT
-    Directory temp = Directory(dirName).renameSync(name);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        key: scaffoldKey,
         appBar: AppBar(
           elevation: 0,
           centerTitle: true,
@@ -252,7 +123,7 @@ class _ViewDocumentState extends State<ViewDocument> {
           backgroundColor: primaryColor,
           color: secondaryColor,
           onRefresh: () async {
-            _getImages();
+            getImages();
           },
           child: ListView.builder(
             itemCount: ((imageFiles.length) / 2).round(),
@@ -282,6 +153,7 @@ class _ViewDocumentState extends State<ViewDocument> {
   }
 
   Widget _buildBottomSheet(BuildContext context) {
+    FileOperations fileOperations = FileOperations();
     Size size = MediaQuery.of(context).size;
     String folderName =
         dirName.substring(dirName.lastIndexOf('/') + 1, dirName.length - 1);
@@ -304,7 +176,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                   child: Icon(Icons.edit),
                   onTap: () {
                     // TODO: Rename folder
-                    _renameFolder("Something 123");
+                    fileOperations.renameFolder(
+                        newName: "Something 123", dirName: dirName);
                   },
                 ),
               ],
@@ -320,29 +193,90 @@ class _ViewDocumentState extends State<ViewDocument> {
             leading: Icon(Icons.add_a_photo),
             title: Text('Add Image'),
             onTap: () async {
-              await _createImage();
-              await _saveImage(imageFiles.last, imageFiles.length);
+              Navigator.pop(context);
+              await fileOperations.createImage(imageFiles: imageFiles);
+              setState(() {});
+              await fileOperations.saveImage(
+                  image: imageFiles.last,
+                  i: imageFiles.length,
+                  dirName: dirName);
             },
           ),
           ListTile(
             leading: Icon(Icons.phone_android),
             title: Text('Save to device'),
-            onTap: () {
-              _saveToDevice();
+            onTap: () async {
+              _statusSuccess = await fileOperations.saveToDevice(
+                context: context,
+                selectedDirectory: selectedDirectory,
+                fileName: fileName,
+                images: imageFiles,
+              );
+              String displayText;
+              (_statusSuccess)
+                  ? displayText = "Saved at /storage/emulated/0/OpenScan/PDF/"
+                  : displayText = "Failed to generate pdf. Try Again.";
+              scaffoldKey.currentState.showSnackBar(
+                SnackBar(
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10))),
+                  backgroundColor: primaryColor,
+                  duration: Duration(seconds: 1),
+                  content: Container(
+                    decoration: BoxDecoration(),
+                    alignment: Alignment.center,
+                    height: 15,
+                    width: size.width * 0.3,
+                    child: Text(
+                      displayText,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              Navigator.pop(context);
             },
           ),
           ListTile(
             leading: Icon(Icons.picture_as_pdf),
             title: Text('Share as PDF'),
-            onTap: () {
-              // TODO: Share
+            onTap: () async {
+              print(dirName);
+              Navigator.pop(context);
+              _statusSuccess = await fileOperations.saveToDevice(
+                context: context,
+                selectedDirectory: selectedDirectory,
+                fileName: fileName,
+                images: imageFiles,
+              );
+              ShareExtend.share(
+                  '/storage/emulated/0/OpenScan/PDF/$fileName.pdf', 'file');
             },
           ),
           ListTile(
             leading: Icon(Icons.image),
             title: Text('Share as image'),
             onTap: () {
-              //TODO: Share
+              print(imageFiles);
+              ShareExtend.shareMultiple(imageFilesPath, 'file');
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.delete,
+              color: Colors.redAccent,
+            ),
+            title: Text(
+              'Delete',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+            onTap: () {
+              Directory(dirName).deleteSync(recursive: true);
             },
           ),
         ],

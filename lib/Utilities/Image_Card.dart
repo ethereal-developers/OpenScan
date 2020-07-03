@@ -74,6 +74,7 @@ class ImageCard extends StatelessWidget {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10),),),
                       title: Text('Delete'),
                       content: Text('Do you really want to delete image?'),
                       actions: <Widget>[

@@ -2,10 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/screens/home_screen.dart';
 // import 'package:url_launcher/url_launcher.dart' as url;
 
 class AboutScreen extends StatelessWidget {
-  final String route = "AboutScreen";
+  static String route = "AboutScreen";
   final String vjlink = "https://github.com/veejayts";
   final String vikramlink = "https://github.com/vikram0230";
 
@@ -34,54 +35,10 @@ class AboutScreen extends StatelessWidget {
               style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
             ),
           ),
-        ),
-        body: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20.0),
-                child: Text(
-                  "OpenScan is an open-source app that enables users to scan hard copies of documents or notes and covert it into a PDF file.",
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              Text(
-                "No ads. We don't collect any data. We respect your privacy.",
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 50.0, bottom: 15.0),
-                child: Text(
-                  "Developed by:",
-                ),
-              ),
-              Row(
-                children: <Widget>[
-                  ContactCard(
-                    name: "Vijay",
-                    link: vjlink,
-                  ),
-                  ContactCard(
-                    name: "Vikram",
-                    link: vikramlink,
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10.0),
-                child: RaisedButton(
-                  color: ThemeData.dark().primaryColor,
-                  child: Text("Checkout the Source Code here"),
-                  onPressed: () {
-                    // lauchWebsite('https://github.com/veejayts/openscan');
-                  },
-                ),
-              ),
-            ],
-          ),
+//          leading: IconButton(
+//            icon: Icon(Icons.arrow_back_ios),
+//            onPressed: () => Navigator.pop(context),
+//          ),
         ),
         drawer: Container(
           width: size.width * 0.6,
@@ -100,9 +57,62 @@ class AboutScreen extends StatelessWidget {
                 endIndent: 6,
                 color: Colors.white,
               ),
-              MenuButton(text: 'Menu', size: size),
-              MenuButton(text: 'Settings', size: size),
-              MenuButton(text: 'About', size: size),
+              ListTile(
+                title: Center(
+                  child: Text(
+                    'Home',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ),
+                onTap: () => Navigator.popUntil(context, ModalRoute.withName(HomeScreen.route)),
+              ),
+              Divider(
+                thickness: 0.2,
+                indent: 6,
+                endIndent: 6,
+                color: Colors.white,
+              ),
+              ListTile(
+                title: Center(
+                  child: Text(
+                    'Settings',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ),
+                onTap: () {},
+              ),
+              Divider(
+                thickness: 0.2,
+                indent: 6,
+                endIndent: 6,
+                color: Colors.white,
+              ),
+              ListTile(
+                title: Center(
+                  child: Text(
+                    'About',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              Divider(
+                thickness: 0.2,
+                indent: 6,
+                endIndent: 6,
+                color: Colors.white,
+              ),
               Spacer(
                 flex: 10,
               ),
@@ -115,43 +125,80 @@ class AboutScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class MenuButton extends StatelessWidget {
-  const MenuButton({this.size, this.text});
-
-  final String text;
-  final Size size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 6.0, vertical: 0),
-          child: GestureDetector(
-            onTap: () {},
-            child: Container(
-              color: primaryColor,
-              height: size.height * 0.06,
-              alignment: Alignment.center,
-              child: Text(
-                text,
-                style: TextStyle(color: Colors.white, fontSize: 18),
+        body: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Center(
+                child: Image.asset(
+                  'assets/scan_g.jpeg',
+                  scale: 6,
+                ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                child: Text(
+                  "OpenScan is an open-source application which enables user to scan hard copies of documents and convert it into a PDF file.",
+                  textAlign: TextAlign.justify,
+                  style: TextStyle(
+                    fontSize: 15
+                  ),
+                ),
+              ),
+              Text(
+                "No ads. We don't collect any data. We respect your privacy.",
+                style: TextStyle(
+                    fontSize: 14
+                ),
+              ),
+              Spacer(flex: 3,),
+              Text(
+                "Developed by:",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600
+                ),
+              ),
+              Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  ContactCard(
+                    name: "Vijay",
+                    link: vjlink,
+                    // TODO: Use a different image
+                    image: AssetImage('assets/vj.jpg'),
+                  ),
+                  ContactCard(
+                    name: "Vikram",
+                    link: vikramlink,
+                    image: AssetImage('assets/vikkiboi.jpg'),
+                  ),
+                ],
+              ),
+              Spacer(flex: 4,),
+              Center(
+                // TODO: Use a list tile
+                child: RaisedButton(
+                  color: secondaryColor,
+                  child: Row(
+                    children: <Widget>[
+                      Image.asset('assets/github-sign.png', scale: 10,),
+                      Text("OPEN SOURCED ON\n GITHUB",
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                  onPressed: () {
+                    // lauchWebsite('https://github.com/veejayts/openscan');
+                  },
+                ),
+              ),
+            ],
           ),
         ),
-        Divider(
-          thickness: 0.2,
-          indent: 6,
-          endIndent: 6,
-          color: Colors.white,
-        ),
-      ],
+      ),
     );
   }
 }
@@ -159,9 +206,9 @@ class MenuButton extends StatelessWidget {
 class ContactCard extends StatelessWidget {
   final String link;
   final String name;
-  final Image avatar;
+  final AssetImage image;
 
-  const ContactCard({Key key, this.link, this.name, this.avatar});
+  const ContactCard({Key key, this.link, this.name, this.image});
 
   // void lauchWebsite(String urlString) async {
   //   if (await url.canLaunch(urlString)) {
@@ -192,6 +239,7 @@ class ContactCard extends StatelessWidget {
                   backgroundColor: Colors.blueAccent,
                   minRadius: 20.0,
                   maxRadius: 45.0,
+                  backgroundImage: image,
                 ),
                 Text(
                   "Tap to View $name on GitHub",
