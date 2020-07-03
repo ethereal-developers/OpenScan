@@ -11,16 +11,18 @@ import 'package:openscan/Utilities/constants.dart';
 import 'screens/splash_screen.dart';
 import 'package:flutter/services.dart';
 
-void main() async{
-
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitDown, DeviceOrientation.portraitUp]);
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    systemNavigationBarColor: primaryColor,
-    systemNavigationBarIconBrightness: Brightness.light,
-    statusBarColor: primaryColor,
-    statusBarBrightness: Brightness.light,
-  ));
-
+void main() async {
+  // SystemChrome.setPreferredOrientations(
+  //   [DeviceOrientation.portraitDown, DeviceOrientation.portraitUp],
+  // );
+  // SystemChrome.setSystemUIOverlayStyle(
+  //   SystemUiOverlayStyle(
+  //     systemNavigationBarColor: primaryColor,
+  //     systemNavigationBarIconBrightness: Brightness.light,
+  //     statusBarColor: primaryColor,
+  //     statusBarBrightness: Brightness.light,
+  //   ),
+  // );
   runApp(OpenScan());
 }
 
