@@ -1,16 +1,19 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/Image_Card.dart';
 import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
+import 'package:openscan/screens/home_screen.dart';
 import 'package:openscan/screens/share_document.dart';
 import 'package:share_extend/share_extend.dart';
-import 'package:openscan/Utilities/cropper.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
 
   ViewDocument({this.dirPath});
+
   final String dirPath;
 
   @override
@@ -76,8 +79,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     if (image != null) {
       Cropper cropper = Cropper();
       var imageFile = await cropper.cropImage(image);
-      if (imageFile != null)
-        imageFiles.add(imageFile);
+      if (imageFile != null) imageFiles.add(imageFile);
     }
   }
 
@@ -91,6 +93,13 @@ class _ViewDocumentState extends State<ViewDocument> {
           elevation: 0,
           centerTitle: true,
           backgroundColor: primaryColor,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios),
+            onPressed: () {
+              Navigator.pop(context, true);
+              //TODO : Reload home
+            },
+          ),
           title: RichText(
             text: TextSpan(
               text: 'View ',
@@ -167,29 +176,17 @@ class _ViewDocumentState extends State<ViewDocument> {
     String folderName =
         dirName.substring(dirName.lastIndexOf('/') + 1, dirName.length - 1);
     return Container(
-      height: size.height * 0.45,
       color: primaryColor,
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(15, 20, 15, 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  folderName,
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                GestureDetector(
-                  child: Icon(Icons.edit),
-                  onTap: () {
-                    // TODO: Rename folder
-                    fileOperations.renameFolder(
-                        newName: "Something 123", dirName: dirName);
-                  },
-                ),
-              ],
+            padding: EdgeInsets.fromLTRB(15, 20, 15, 15),
+            child: Text(
+              folderName,
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Divider(
@@ -254,8 +251,8 @@ class _ViewDocumentState extends State<ViewDocument> {
             leading: Icon(Icons.picture_as_pdf),
             title: Text('Share as PDF'),
             onTap: () async {
-              print(dirName);
               Navigator.pop(context);
+              // TODO: Ask for rename file
               _statusSuccess = await fileOperations.saveToDevice(
                 context: context,
                 selectedDirectory: selectedDirectory,
@@ -285,7 +282,34 @@ class _ViewDocumentState extends State<ViewDocument> {
               style: TextStyle(color: Colors.redAccent),
             ),
             onTap: () {
-              Directory(dirName).deleteSync(recursive: true);
+              Navigator.pop(context);
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10),),),
+                    title: Text('Delete'),
+                    content:
+                    Text('Do you really want to delete file?'),
+                    actions: <Widget>[
+                      FlatButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Cancel'),
+                      ),
+                      FlatButton(
+                        onPressed: () {
+                          Directory(dirName).deleteSync(recursive: true);
+                          Navigator.popUntil(context, ModalRoute.withName(HomeScreen.route));
+                        },
+                        child: Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.redAccent),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
             },
           ),
         ],

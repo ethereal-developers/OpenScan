@@ -12,15 +12,6 @@ import 'screens/splash_screen.dart';
 import 'package:flutter/services.dart';
 
 void main() async{
-
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitDown, DeviceOrientation.portraitUp]);
-  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    systemNavigationBarColor: primaryColor,
-    systemNavigationBarIconBrightness: Brightness.light,
-    statusBarColor: primaryColor,
-    statusBarBrightness: Brightness.light,
-  ));
-
   runApp(OpenScan());
 }
 
@@ -32,6 +23,15 @@ class OpenScan extends StatefulWidget {
 class _OpenScanState extends State<OpenScan> {
   @override
   Widget build(BuildContext context) {
+
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      systemNavigationBarColor: primaryColor,
+      systemNavigationBarIconBrightness: Brightness.light,
+      statusBarColor: primaryColor,
+      statusBarBrightness: Brightness.light,
+    ));
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitDown, DeviceOrientation.portraitUp]);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),

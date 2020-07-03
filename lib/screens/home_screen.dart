@@ -198,7 +198,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               dirPath: imageDirPaths[index],
                             ),
                           ),
-                        );
+                        ).whenComplete(() => (){
+                          print('Completed');
+                        });
                       },
                     ),
                     menuItems: [
@@ -222,10 +224,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   FlatButton(
                                     onPressed: () {
-                                      //TODO : Reload
                                       Directory(imageDirPaths[index])
                                           .deleteSync(recursive: true);
                                       Navigator.pop(context);
+                                      getData();
                                     },
                                     child: Text(
                                       'Delete',
@@ -248,35 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
         floatingActionButton: Builder(builder: (context) {
           return FloatingActionButton(
             onPressed: () {
-              Navigator.pushNamed(context, ScanDocument.route).then(
-                (value) {
-                  setState(() {
-                    Scaffold.of(context).showSnackBar(
-                      SnackBar(
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10))),
-                        backgroundColor: primaryColor,
-                        duration: Duration(seconds: 1),
-                        content: Container(
-                          decoration: BoxDecoration(),
-                          alignment: Alignment.center,
-                          height: 15,
-                          width: size.width * 0.3,
-                          child: Text(
-                            (value) ? 'Saved' : 'Discarded',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  });
-                },
-              );
+              Navigator.pushNamed(context, ScanDocument.route);
             },
             backgroundColor: secondaryColor,
             child: Icon(
