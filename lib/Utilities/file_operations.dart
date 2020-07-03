@@ -76,7 +76,8 @@ class FileOperations {
   }
 
   // SAVE TO DEVICE
-  Future<void> pickDirectory(BuildContext context, selectedDirectory) async {
+  Future<Directory> pickDirectory(
+      BuildContext context, selectedDirectory) async {
     Directory directory = selectedDirectory;
     if (Platform.isAndroid) {
       directory = Directory("/storage/emulated/0/");
@@ -91,12 +92,11 @@ class FileOperations {
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(10))));
 
-//    setState(() {
-//      selectedDirectory = newDirectory;
-//    });
+    return newDirectory;
   }
 
-  Future<bool> saveToDevice({BuildContext context, selectedDirectory, fileName, images}) async {
+  Future<bool> saveToDevice(
+      {BuildContext context, selectedDirectory, fileName, images}) async {
     Directory openscanDir = Directory("/storage/emulated/0/OpenScan/PDF");
     if (Platform.isAndroid) {
       if (!openscanDir.existsSync()) {
@@ -104,9 +104,12 @@ class FileOperations {
       }
       selectedDirectory = openscanDir;
     } else {
-      await pickDirectory(context, selectedDirectory);
+      selectedDirectory = await pickDirectory(context, selectedDirectory);
     }
-    pdfStatus = await createPdf(selectedDirectory: selectedDirectory, fileName: fileName, images: images);
+    pdfStatus = await createPdf(
+        selectedDirectory: selectedDirectory,
+        fileName: fileName,
+        images: images);
     return pdfStatus;
   }
 
