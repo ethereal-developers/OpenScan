@@ -5,12 +5,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/screens/home_screen.dart';
+import 'package:path_provider/path_provider.dart';
+import 'view_document.dart';
 
 class ScanDocument extends StatefulWidget {
   static String route = "ScanDocument";
@@ -30,7 +30,18 @@ class _ScanDocumentState extends State<ScanDocument> {
   void initState() {
     super.initState();
     createDirectoryName();
-    fileOperations.createImage();
+    createImage();
+  }
+
+  Future createImage() async {
+    File image = await fileOperations.openCamera();
+    if (image != null) {
+      Cropper cropper = Cropper();
+      var imageFile = await cropper.cropImage(image);
+      if (imageFile != null)
+        imageFiles.add(imageFile);
+    }
+    setState(() {});
   }
 
   void _reCropImage(index) async {
@@ -182,7 +193,6 @@ class _ScanDocumentState extends State<ScanDocument> {
                                       ),
                                     ),
                                     title: Text('Delete'),
-
                                     content: Text(
                                         'Do you really want to delete image?'),
                                     actions: <Widget>[
@@ -310,12 +320,19 @@ class _ScanDocumentState extends State<ScanDocument> {
               onPressed: () async {
                 if (imageFiles.length != 0) {
                   for (int i = 0; i < imageFiles.length; i++) {
-                    await fileOperations.saveImage(image: imageFiles[i],i: i + 1, dirName: docPath);
+                    await fileOperations.saveImage(
+                        image: imageFiles[i], i: i + 1, dirName: docPath);
                   }
                 }
                 await fileOperations.deleteTemporaryFiles();
-                // TODO: Navigate to View
-                Navigator.pop(context, true);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ViewDocument(
+                      dirPath: docPath,
+                    ),
+                  ),
+                );
               },
               color: secondaryColor,
               textColor: primaryColor,
@@ -331,7 +348,9 @@ class _ScanDocumentState extends State<ScanDocument> {
           ),
           floatingActionButton: FloatingActionButton(
             backgroundColor: secondaryColor,
-            onPressed: () => fileOperations.createImage(imageFiles: imageFiles),
+            onPressed: () async{
+              await createImage();
+            },
             child: Icon(Icons.camera_alt),
           ),
         ),

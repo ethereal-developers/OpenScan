@@ -66,16 +66,6 @@ class FileOperations {
     return image;
   }
 
-  Future createImage({imageFiles}) async {
-    File image = await openCamera();
-    if (image != null) {
-      Cropper cropper = Cropper();
-      var imageFile = await cropper.cropImage(image);
-      if (imageFile != null)
-        imageFiles.add(imageFile);
-    }
-  }
-
   Future<void> saveImage({File image, int i, dirName}) async {
     if (await Directory(dirName).exists() != true) {
       new Directory(dirName).create();

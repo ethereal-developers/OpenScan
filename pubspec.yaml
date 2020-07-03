@@ -18,7 +18,7 @@ dependencies:
   directory_picker: ^1.0.0
   pdf: ^1.9.0
   share_extend: ^1.1.9
-
+  url_launcher: ^5.4.11
   cupertino_icons: ^0.1.3
 
 dev_dependencies:

@@ -1,17 +1,16 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/Image_Card.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/screens/share_document.dart';
 import 'package:share_extend/share_extend.dart';
+import 'package:openscan/Utilities/cropper.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
 
   ViewDocument({this.dirPath});
-
   final String dirPath;
 
   @override
@@ -72,16 +71,26 @@ class _ViewDocumentState extends State<ViewDocument> {
     });
   }
 
+  Future createImage({imageFiles}) async {
+    File image = await fileOperations.openCamera();
+    if (image != null) {
+      Cropper cropper = Cropper();
+      var imageFile = await cropper.cropImage(image);
+      if (imageFile != null)
+        imageFiles.add(imageFile);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        backgroundColor: primaryColor,
         key: scaffoldKey,
         appBar: AppBar(
           elevation: 0,
           centerTitle: true,
           backgroundColor: primaryColor,
-          // TODO: add bottom sheet...
           title: RichText(
             text: TextSpan(
               text: 'View ',
@@ -194,7 +203,7 @@ class _ViewDocumentState extends State<ViewDocument> {
             title: Text('Add Image'),
             onTap: () async {
               Navigator.pop(context);
-              await fileOperations.createImage(imageFiles: imageFiles);
+              await createImage(imageFiles: imageFiles);
               setState(() {});
               await fileOperations.saveImage(
                   image: imageFiles.last,

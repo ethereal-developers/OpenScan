@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
@@ -8,7 +7,6 @@ import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
-
 import 'scan_document.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+
   var imageDirPaths = [];
 
   Future getDirectoryNames() async {
@@ -35,6 +34,22 @@ class _HomeScreenState extends State<HomeScreen> {
         imageDirPaths.add(path);
     });
     return imageDirPaths;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getData();
+  }
+
+  Future _onRefresh() async {
+    imageDirPaths = [];
+    imageDirPaths = await getDirectoryNames();
+    setState(() {});
+  }
+
+  void getData() {
+    _onRefresh();
   }
 
   @override
@@ -147,11 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
         body: RefreshIndicator(
           backgroundColor: primaryColor,
           color: secondaryColor,
-          onRefresh: () async {
-            imageDirPaths = [];
-            imageDirPaths = await getDirectoryNames();
-            setState(() {});
-          },
+          onRefresh: _onRefresh,
           child: FutureBuilder(
             future: getDirectoryNames(),
             builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -162,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       imageDirPaths[index].lastIndexOf('/') + 1,
                       imageDirPaths[index].length - 1);
                   return FocusedMenuHolder(
-                    onPressed: () {},
+                    onPressed: null,
                     menuWidth: size.width * 0.44,
                     child: ListTile(
                       // TODO : Add sample image
@@ -179,6 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       onTap: () async {
                         getDirectoryNames();
+                        print(imageDirPaths[index]);
                         Navigator.push(
                           context,
                           MaterialPageRoute(

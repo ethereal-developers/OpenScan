@@ -1,27 +1,23 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/screens/home_screen.dart';
-// import 'package:url_launcher/url_launcher.dart' as url;
+import 'package:url_launcher/url_launcher.dart';
+
+void launchWebsite(String urlString) async {
+  if (await canLaunch(urlString)) {
+    await launch(urlString);
+  } else {
+    print("Couldn't launch the url");
+  }
+}
 
 class AboutScreen extends StatelessWidget {
   static String route = "AboutScreen";
   final String vjlink = "https://github.com/veejayts";
-  final String vikramlink = "https://github.com/vikram0230";
-
-  // TODO: fix dumb bug
-  // void lauchWebsite(String urlString) async {
-  //   if (await url.canLaunch(urlString)) {
-  //     await url.launch(urlString);
-  //   } else {
-  //     print("Couldn't lauch the url");
-  //   }
-  // }
+  final String vikramlink = "https://www.linkedin.com/in/vikram-harikrishnan/";
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
         backgroundColor: primaryColor,
@@ -35,94 +31,9 @@ class AboutScreen extends StatelessWidget {
               style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
             ),
           ),
-//          leading: IconButton(
-//            icon: Icon(Icons.arrow_back_ios),
-//            onPressed: () => Navigator.pop(context),
-//          ),
-        ),
-        drawer: Container(
-          width: size.width * 0.6,
-          color: primaryColor,
-          child: Column(
-            children: <Widget>[
-              Spacer(),
-              Image.asset(
-                'assets/scan_g.jpeg',
-                scale: 6,
-              ),
-              Spacer(),
-              Divider(
-                thickness: 0.2,
-                indent: 6,
-                endIndent: 6,
-                color: Colors.white,
-              ),
-              ListTile(
-                title: Center(
-                  child: Text(
-                    'Home',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                ),
-                onTap: () => Navigator.popUntil(context, ModalRoute.withName(HomeScreen.route)),
-              ),
-              Divider(
-                thickness: 0.2,
-                indent: 6,
-                endIndent: 6,
-                color: Colors.white,
-              ),
-              ListTile(
-                title: Center(
-                  child: Text(
-                    'Settings',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                ),
-                onTap: () {},
-              ),
-              Divider(
-                thickness: 0.2,
-                indent: 6,
-                endIndent: 6,
-                color: Colors.white,
-              ),
-              ListTile(
-                title: Center(
-                  child: Text(
-                    'About',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              Divider(
-                thickness: 0.2,
-                indent: 6,
-                endIndent: 6,
-                color: Colors.white,
-              ),
-              Spacer(
-                flex: 10,
-              ),
-              IconButton(
-                icon: Icon(Icons.arrow_back_ios),
-                onPressed: () => Navigator.pop(context),
-                color: secondaryColor,
-              ),
-              Spacer(),
-            ],
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
         body: Padding(
@@ -138,26 +49,38 @@ class AboutScreen extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20.0),
-                child: Text(
-                  "OpenScan is an open-source application which enables user to scan hard copies of documents and convert it into a PDF file.",
+                child: RichText(
                   textAlign: TextAlign.justify,
-                  style: TextStyle(
-                    fontSize: 15
+                  text: TextSpan(
+                    text: 'Open',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    children: [
+                      TextSpan(
+                          text: 'Scan',
+                          style: TextStyle(color: secondaryColor)),
+                      TextSpan(
+                        text:
+                            ' is an open-source app which enables user to scan hard copies of documents and convert it into a PDF file.',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
               Text(
                 "No ads. We don't collect any data. We respect your privacy.",
-                style: TextStyle(
-                    fontSize: 14
-                ),
+                style: TextStyle(fontSize: 14),
               ),
-              Spacer(flex: 3,),
-              Text(
-                "Developed by:",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600
+              Spacer(
+                flex: 3,
+              ),
+              Center(
+                child: Text(
+                  "Developers",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
               ),
               Spacer(),
@@ -168,7 +91,7 @@ class AboutScreen extends StatelessWidget {
                     name: "Vijay",
                     link: vjlink,
                     // TODO: Use a different image
-                    image: AssetImage('assets/vj.jpg'),
+//                    image: AssetImage('assets/vj.jpg'),
                   ),
                   ContactCard(
                     name: "Vikram",
@@ -177,22 +100,40 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              Spacer(flex: 4,),
+              Spacer(
+                flex: 4,
+              ),
               Center(
-                // TODO: Use a list tile
-                child: RaisedButton(
-                  color: secondaryColor,
-                  child: Row(
-                    children: <Widget>[
-                      Image.asset('assets/github-sign.png', scale: 10,),
-                      Text("OPEN SOURCED ON\n GITHUB",
-                        textAlign: TextAlign.center,
+                child: GestureDetector(
+                  onTap: () =>
+                      launchWebsite('https://github.com/veejayts/openscan'),
+                  child: Container(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 2, 7, 2),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Padding(
+                            padding: EdgeInsets.only(bottom: 5.0),
+                            child: Image.asset(
+                              'assets/github-sign.png',
+                              scale: 3.5,
+                            ),
+                          ),
+                          Text(
+                            "OPEN SOURCED ON\n GITHUB",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                      color: Colors.black,
+                    ),
                   ),
-                  onPressed: () {
-                    // lauchWebsite('https://github.com/veejayts/openscan');
-                  },
                 ),
               ),
             ],
@@ -210,43 +151,36 @@ class ContactCard extends StatelessWidget {
 
   const ContactCard({Key key, this.link, this.name, this.image});
 
-  // void lauchWebsite(String urlString) async {
-  //   if (await url.canLaunch(urlString)) {
-  //     await url.launch(urlString);
-  //   } else {
-  //     print("Couldn't lauch the url");
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 10.0,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: InkWell(
-          onTap: () {
-            // lauchWebsite("$link");
-          },
-          child: Container(
-            height: 150.0,
-            width: 150.0,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                CircleAvatar(
-                  // TODO: add image
-                  backgroundColor: Colors.blueAccent,
-                  minRadius: 20.0,
-                  maxRadius: 45.0,
-                  backgroundImage: image,
-                ),
-                Text(
-                  "Tap to View $name on GitHub",
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+    Size size = MediaQuery.of(context).size;
+    return GestureDetector(
+      onTap: () => launchWebsite(link),
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(10),
+          ),
+        ),
+        elevation: 10.0,
+        child: Container(
+          margin: EdgeInsets.all(8.0),
+          height: size.width * 0.35,
+          width: size.width * 0.35,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              CircleAvatar(
+                backgroundColor: secondaryColor,
+                radius: size.width * 0.13,
+                backgroundImage: image,
+              ),
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ],
           ),
         ),
       ),
