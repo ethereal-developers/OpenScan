@@ -67,7 +67,11 @@ class AboutScreen extends StatelessWidget {
                         ),
                       ),
                       //TODO: Content Writing
-                      TextSpan(text: '\n                               Add more content', style: TextStyle(color: Colors.redAccent),),
+                      TextSpan(
+                        text:
+                            '\n                               Add more content',
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
                     ],
                   ),
                 ),
@@ -88,8 +92,7 @@ class AboutScreen extends StatelessWidget {
                   ContactCard(
                     name: "Vijay",
                     link: vjlink,
-                    // TODO: Use a different image
-//                    image: AssetImage('assets/vj.jpg'),
+                    image: AssetImage('assets/vj.jpg'),
                   ),
                   ContactCard(
                     name: "Vikram",
@@ -98,7 +101,9 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              Spacer(flex: 2,),
+              Spacer(
+                flex: 2,
+              ),
               Center(
                 child: Text(
                   "No ads. We don't collect any data.\n We respect your privacy.",
