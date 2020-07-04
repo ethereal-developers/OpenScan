@@ -31,12 +31,15 @@ class _HomeScreenState extends State<HomeScreen> {
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       String path = entity.path;
-      if (!imageDirPaths.contains(path) && path != '/storage/emulated/0/Android/data/com.example.openscan/files/Pictures') {
+      if (!imageDirPaths.contains(path) &&
+          path !=
+              '/storage/emulated/0/Android/data/com.example.openscan/files/Pictures') {
         imageDirPaths.add(path);
         getDirectoryDetails(path);
       }
-      imageDirectories.sort((a,b) => a['modified'].compareTo(b['modified']));
+      imageDirectories.sort((a, b) => a['modified'].compareTo(b['modified']));
     });
+    imageDirectories = imageDirectories.reversed.toList();
     return imageDirectories;
   }
 
@@ -192,7 +195,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       title: Text(folderName),
                       //TODO: Add date, no. of images
-                      subtitle: Text('Last Modified: ${imageDirectories[index]['modified'].day}-${imageDirectories[index]['modified'].month}-${imageDirectories[index]['modified'].year}'),
+                      subtitle: Text(
+                          'Last Modified: ${imageDirectories[index]['modified'].day}-${imageDirectories[index]['modified'].month}-${imageDirectories[index]['modified'].year}'),
                       trailing: Icon(
                         Icons.arrow_right,
                         size: 30,
