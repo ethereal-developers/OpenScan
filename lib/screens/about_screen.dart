@@ -66,13 +66,11 @@ class AboutScreen extends StatelessWidget {
                           fontWeight: FontWeight.normal,
                         ),
                       ),
+                      //TODO: Content Writing
+                      TextSpan(text: '\n                               Add more content', style: TextStyle(color: Colors.redAccent),),
                     ],
                   ),
                 ),
-              ),
-              Text(
-                "No ads. We don't collect any data. We respect your privacy.",
-                style: TextStyle(fontSize: 14),
               ),
               Spacer(
                 flex: 3,
@@ -100,9 +98,15 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              Spacer(
-                flex: 4,
+              Spacer(flex: 2,),
+              Center(
+                child: Text(
+                  "No ads. We don't collect any data.\n We respect your privacy.",
+                  style: TextStyle(fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
               ),
+              Spacer(),
               Center(
                 child: GestureDetector(
                   onTap: () =>

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
@@ -7,6 +8,7 @@ import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
+
 import 'scan_document.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,7 +19,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<Map<String, dynamic>> imageDirectories = [];
   var imageDirPaths = [];
+  var imageDirModDate = [];
 
   Future getDirectoryNames() async {
     Directory appDir = await getExternalStorageDirectory();
@@ -27,12 +31,18 @@ class _HomeScreenState extends State<HomeScreen> {
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       String path = entity.path;
-      if (!imageDirPaths.contains(path) &&
-          path !=
-              '/storage/emulated/0/Android/data/com.example.openscan/files/Pictures')
+      if (!imageDirPaths.contains(path) && path != '/storage/emulated/0/Android/data/com.example.openscan/files/Pictures') {
         imageDirPaths.add(path);
+        getDirectoryDetails(path);
+      }
+      imageDirectories.sort((a,b) => a['modified'].compareTo(b['modified']));
     });
-    return imageDirPaths;
+    return imageDirectories;
+  }
+
+  Future getDirectoryDetails(String path) async {
+    FileStat fileStat = FileStat.statSync(path);
+    imageDirectories.add({'path': path, 'modified': fileStat.modified});
   }
 
   @override
@@ -42,8 +52,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future _onRefresh() async {
-    imageDirPaths = [];
-    imageDirPaths = await getDirectoryNames();
+    imageDirectories = [];
+    imageDirectories = await getDirectoryNames();
     setState(() {});
   }
 
@@ -166,11 +176,11 @@ class _HomeScreenState extends State<HomeScreen> {
             future: getDirectoryNames(),
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               return ListView.builder(
-                itemCount: imageDirPaths.length,
+                itemCount: imageDirectories.length,
                 itemBuilder: (context, index) {
-                  folderName = imageDirPaths[index].substring(
-                      imageDirPaths[index].lastIndexOf('/') + 1,
-                      imageDirPaths[index].length - 1);
+                  folderName = imageDirectories[index]['path'].substring(
+                      imageDirectories[index]['path'].lastIndexOf('/') + 1,
+                      imageDirectories[index]['path'].length - 1);
                   return FocusedMenuHolder(
                     onPressed: null,
                     menuWidth: size.width * 0.44,
@@ -181,7 +191,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 30,
                       ),
                       title: Text(folderName),
-                      subtitle: Text(folderName),
+                      //TODO: Add date, no. of images
+                      subtitle: Text('Last Modified: ${imageDirectories[index]['modified'].day}-${imageDirectories[index]['modified'].month}-${imageDirectories[index]['modified'].year}'),
                       trailing: Icon(
                         Icons.arrow_right,
                         size: 30,
@@ -189,17 +200,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       onTap: () async {
                         getDirectoryNames();
-                        print(imageDirPaths[index]);
+                        print(imageDirectories[index]);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => ViewDocument(
-                              dirPath: imageDirPaths[index],
+                              dirPath: imageDirectories[index]['path'],
                             ),
                           ),
-                        ).whenComplete(() => (){
-                          print('Completed');
-                        });
+                        ).whenComplete(() => () {
+                              print('Completed');
+                            });
                       },
                     ),
                     menuItems: [
@@ -227,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   FlatButton(
                                     onPressed: () {
-                                      Directory(imageDirPaths[index])
+                                      Directory(imageDirectories[index]['path'])
                                           .deleteSync(recursive: true);
                                       Navigator.pop(context);
                                       getData();
