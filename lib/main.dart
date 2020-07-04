@@ -7,6 +7,7 @@ import 'package:openscan/screens/scan_document.dart';
 import 'package:openscan/screens/share_document.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:openscan/Utilities/constants.dart';
+import 'screens/pdf_screen.dart';
 import 'screens/splash_screen.dart';
 import 'package:flutter/services.dart';
 
@@ -39,6 +40,7 @@ class _OpenScanState extends State<OpenScan> {
         SplashScreen.route: (context) => SplashScreen(),
         HomeScreen.route: (context) => HomeScreen(),
         ViewDocument.route: (context) => ViewDocument(),
+        PDFScreen.route: (context) => PDFScreen(),
         ScanDocument.route: (context) => ScanDocument(),
         ShareDocument.route: (context) => ShareDocument(),
         AboutScreen.route: (context) => AboutScreen(),

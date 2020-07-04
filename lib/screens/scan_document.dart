@@ -1,6 +1,7 @@
 import 'dart:core';
 import 'dart:io';
 import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
@@ -10,6 +11,7 @@ import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
+
 import 'view_document.dart';
 
 class ScanDocument extends StatefulWidget {
@@ -172,7 +174,10 @@ class _ScanDocumentState extends State<ScanDocument> {
                               'Crop',
                               style: TextStyle(color: Colors.black),
                             ),
-                            trailingIcon: Icon(Icons.crop, color: Colors.black,),
+                            trailingIcon: Icon(
+                              Icons.crop,
+                              color: Colors.black,
+                            ),
                             onPressed: () async {
                               int tempIndex = index * 2;
                               _reCropImage(tempIndex);

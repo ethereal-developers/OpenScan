@@ -49,7 +49,7 @@ class ImageCard extends StatelessWidget {
             onPressed: () async {
               Cropper cropper = Cropper();
               var image = await cropper.cropImage(imageFile);
-              // TODO: make the renaming switch between adding a "c" if it isn't present and removing a "c" if it is present in the name of the image
+              //  make the renaming switch between adding a "c" if it isn't present and removing a "c" if it is present in the name of the image
               // eg: if the name of the file is ../OpenScan Datetime/2.jpg, it has to become ../OpenScan Datetime/2c.jpg
               // eg: if the name of the file is ../OpenScan Datetime/2c.jpg, it has to become ../OpenScan Datetime/2.jpg
               File temp = File(

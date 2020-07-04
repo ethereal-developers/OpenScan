@@ -1,10 +1,11 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+
 import 'package:directory_picker/directory_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:image_picker/image_picker.dart';
 
 class FileOperations {
   String appName = 'OpenScan';
@@ -125,11 +126,10 @@ class FileOperations {
   }
 
   // RENAME FOLDER
-  void renameFolder({String newName, dirName}) {
-    String name = "OpenScan $newName";
-    // TODO: DOES NOT RENAME BECAUSE FILES ARE PRESENT
-    Directory temp = Directory(dirName).renameSync(name);
-  }
+//  void renameFolder({String newName, dirName}) {
+//    String name = "OpenScan $newName";
+//    Directory temp = Directory(dirName).renameSync(name);
+//  }
 
   Future<void> deleteTemporaryFiles() async {
     // Delete the temporary files created by the image_picker package

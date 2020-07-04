@@ -6,6 +6,7 @@ import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/screens/home_screen.dart';
+import 'package:openscan/screens/pdf_screen.dart';
 import 'package:openscan/screens/share_document.dart';
 import 'package:share_extend/share_extend.dart';
 
@@ -128,8 +129,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ShareDocument(
-                      dirName: dirName,
+                    builder: (context) => PDFScreen(
+                      path: dirName,
                     ),
                   ),
                 );
@@ -225,39 +226,76 @@ class _ViewDocumentState extends State<ViewDocument> {
             leading: Icon(Icons.phone_android),
             title: Text('Save to device'),
             onTap: () async {
-              _statusSuccess = await fileOperations.saveToDevice(
-                context: context,
-                selectedDirectory: selectedDirectory,
-                fileName: fileName,
-                images: imageFilesWithDate,
-              );
-              String displayText;
-              (_statusSuccess)
-                  ? displayText = "Saved at /storage/emulated/0/OpenScan/PDF/"
-                  : displayText = "Failed to generate pdf. Try Again.";
-              scaffoldKey.currentState.showSnackBar(
-                SnackBar(
-                  behavior: SnackBarBehavior.floating,
+              Navigator.pop(context);
+              showDialog(context: context,builder: (context){
+                return AlertDialog(
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10))),
-                  backgroundColor: primaryColor,
-                  duration: Duration(seconds: 1),
-                  content: Container(
-                    decoration: BoxDecoration(),
-                    alignment: Alignment.center,
-                    height: 15,
-                    width: size.width * 0.3,
-                    child: Text(
-                      displayText,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(10),
                     ),
                   ),
-                ),
-              );
-              Navigator.pop(context);
+                  title: Text('Save as PDF'),
+                  content:TextField(
+                    onChanged: (value){
+                      fileName = '$value OpenScan';
+                    },
+                    controller: TextEditingController(text: fileName.substring(8,fileName.length)),
+                    cursorColor: secondaryColor,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: InputDecoration(
+                      prefixStyle: TextStyle(color: Colors.white),
+                      suffixText: ' OpenScan.pdf',
+                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: secondaryColor)),
+                    ),
+                  ),
+                  actions: <Widget>[
+                    FlatButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('Cancel'),
+                    ),
+                    FlatButton(
+                      onPressed: () async {
+                        _statusSuccess = await fileOperations.saveToDevice(
+                          context: context,
+                          selectedDirectory: selectedDirectory,
+                          fileName: fileName,
+                          images: imageFilesWithDate,
+                        );
+                        String displayText;
+                        (_statusSuccess)
+                            ? displayText = "Saved at /storage/emulated/0/OpenScan/PDF/"
+                            : displayText = "Failed to generate pdf. Try Again.";
+                        scaffoldKey.currentState.showSnackBar(
+                          SnackBar(
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(10))),
+                            backgroundColor: primaryColor,
+                            duration: Duration(seconds: 1),
+                            content: Container(
+                              decoration: BoxDecoration(),
+                              alignment: Alignment.center,
+                              height: 15,
+                              width: size.width * 0.3,
+                              child: Text(
+                                displayText,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        'Save',
+                      ),
+                    ),
+                  ],
+                );
+              });
             },
           ),
           ListTile(
@@ -265,15 +303,51 @@ class _ViewDocumentState extends State<ViewDocument> {
             title: Text('Share as PDF'),
             onTap: () async {
               Navigator.pop(context);
-              // TODO: Ask for rename file
-              _statusSuccess = await fileOperations.saveToDevice(
-                context: context,
-                selectedDirectory: selectedDirectory,
-                fileName: fileName,
-                images: imageFilesWithDate,
-              );
-              ShareExtend.share(
-                  '/storage/emulated/0/OpenScan/PDF/$fileName.pdf', 'file');
+              showDialog(context: context,builder: (context){
+                return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(10),
+                    ),
+                  ),
+                  title: Text('Share as PDF'),
+                  content:TextField(
+                    onChanged: (value){
+                      fileName = '$value OpenScan';
+                    },
+                    controller: TextEditingController(text: fileName.substring(8,fileName.length)),
+                    cursorColor: secondaryColor,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: InputDecoration(
+                      prefixStyle: TextStyle(color: Colors.white),
+                      suffixText: ' OpenScan.pdf',
+                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: secondaryColor)),
+                    ),
+                  ),
+                  actions: <Widget>[
+                    FlatButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('Cancel'),
+                    ),
+                    FlatButton(
+                      onPressed: () async {
+                        _statusSuccess = await fileOperations.saveToDevice(
+                          context: context,
+                          selectedDirectory: selectedDirectory,
+                          fileName: fileName,
+                          images: imageFilesWithDate,
+                        );
+                        ShareExtend.share(
+                            '/storage/emulated/0/OpenScan/PDF/$fileName.pdf', 'file');
+                        Navigator.pop(context);
+                      },
+                      child: Text(
+                        'Share',
+                      ),
+                    ),
+                  ],
+                );
+              });
             },
           ),
           ListTile(

@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> imageDirectories = [];
   var imageDirPaths = [];
   var imageDirModDate = [];
+  var imageCount = 0;
 
   Future getDirectoryNames() async {
     Directory appDir = await getExternalStorageDirectory();
@@ -34,18 +35,21 @@ class _HomeScreenState extends State<HomeScreen> {
           path !=
               '/storage/emulated/0/Android/data/com.example.openscan/files/Pictures') {
         imageDirPaths.add(path);
-        getDirectoryDetails(path);
+        Directory(path)
+            .list(recursive: false, followLinks: false)
+            .listen((FileSystemEntity entity){
+              print(entity.path);
+              imageCount++;
+              print(imageCount);
+        });
+        FileStat fileStat = FileStat.statSync(path);
+        imageDirectories.add(
+            {'path': path, 'modified': fileStat.modified, 'size': fileStat.size, 'count': imageCount});
       }
       imageDirectories.sort((a, b) => a['modified'].compareTo(b['modified']));
       imageDirectories = imageDirectories.reversed.toList();
     });
     return imageDirectories;
-  }
-
-  void getDirectoryDetails(String path) {
-    FileStat fileStat = FileStat.statSync(path);
-    imageDirectories.add(
-        {'path': path, 'modified': fileStat.modified, 'size': fileStat.size});
   }
 
   @override
@@ -199,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: <Widget>[
                           Text(
                               'Last Modified: ${imageDirectories[index]['modified'].day}-${imageDirectories[index]['modified'].month}-${imageDirectories[index]['modified'].year}'),
-                          Text('Size: ${imageDirectories[index]['size']}')
+//                          Text('Size: ${imageDirectories[index]['count']}')
                         ],
                       ),
                       trailing: Icon(
