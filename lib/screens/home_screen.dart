@@ -26,7 +26,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future getDirectoryNames() async {
     Directory appDir = await getExternalStorageDirectory();
     Directory appDirPath = Directory("${appDir.path}");
-    //TODO: Get other details and preview image
     appDirPath
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
@@ -38,14 +37,14 @@ class _HomeScreenState extends State<HomeScreen> {
         getDirectoryDetails(path);
       }
       imageDirectories.sort((a, b) => a['modified'].compareTo(b['modified']));
+      imageDirectories = imageDirectories.reversed.toList();
     });
-    imageDirectories = imageDirectories.reversed.toList();
     return imageDirectories;
   }
 
-  Future getDirectoryDetails(String path) async {
+  void getDirectoryDetails(String path) {
     FileStat fileStat = FileStat.statSync(path);
-    imageDirectories.add({'path': path, 'modified': fileStat.modified});
+    imageDirectories.add({'path': path, 'modified': fileStat.modified, 'size': fileStat.size});
   }
 
   @override
@@ -55,7 +54,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future _onRefresh() async {
-    imageDirectories = [];
     imageDirectories = await getDirectoryNames();
     setState(() {});
   }
@@ -184,6 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   folderName = imageDirectories[index]['path'].substring(
                       imageDirectories[index]['path'].lastIndexOf('/') + 1,
                       imageDirectories[index]['path'].length - 1);
+                  print(imageDirectories[index]['size']);
                   return FocusedMenuHolder(
                     onPressed: null,
                     menuWidth: size.width * 0.44,
@@ -194,9 +193,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 30,
                       ),
                       title: Text(folderName),
-                      //TODO: Add date, no. of images
-                      subtitle: Text(
-                          'Last Modified: ${imageDirectories[index]['modified'].day}-${imageDirectories[index]['modified'].month}-${imageDirectories[index]['modified'].year}'),
+                      subtitle: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Text(
+                              'Last Modified: ${imageDirectories[index]['modified'].day}-${imageDirectories[index]['modified'].month}-${imageDirectories[index]['modified'].year}'),
+                          Text('Size: ${imageDirectories[index]['size']}')
+                        ],
+                      ),
                       trailing: Icon(
                         Icons.arrow_right,
                         size: 30,
@@ -204,7 +208,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       onTap: () async {
                         getDirectoryNames();
-                        print(imageDirectories[index]);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
