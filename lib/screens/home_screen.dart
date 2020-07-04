@@ -44,7 +44,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void getDirectoryDetails(String path) {
     FileStat fileStat = FileStat.statSync(path);
-    imageDirectories.add({'path': path, 'modified': fileStat.modified, 'size': fileStat.size});
+    imageDirectories.add(
+        {'path': path, 'modified': fileStat.modified, 'size': fileStat.size});
   }
 
   @override

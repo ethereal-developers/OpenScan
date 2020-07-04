@@ -6,7 +6,6 @@ import 'package:openscan/screens/home_screen.dart';
 import 'package:openscan/screens/scan_document.dart';
 import 'package:openscan/screens/share_document.dart';
 import 'package:openscan/screens/view_document.dart';
-import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'screens/splash_screen.dart';
 import 'package:flutter/services.dart';
@@ -23,14 +22,14 @@ class OpenScan extends StatefulWidget {
 class _OpenScanState extends State<OpenScan> {
   @override
   Widget build(BuildContext context) {
-
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       systemNavigationBarColor: primaryColor,
       systemNavigationBarIconBrightness: Brightness.light,
       statusBarColor: primaryColor,
       statusBarBrightness: Brightness.light,
     ));
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitDown, DeviceOrientation.portraitUp]);
+    SystemChrome.setPreferredOrientations(
+        [DeviceOrientation.portraitDown, DeviceOrientation.portraitUp]);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,

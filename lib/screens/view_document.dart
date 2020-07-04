@@ -22,8 +22,10 @@ class ViewDocument extends StatefulWidget {
 
 class _ViewDocumentState extends State<ViewDocument> {
   final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
-  List<FileSystemEntity> imageFiles;
-  List<String> imageFilesPath;
+
+  List<Map<String, dynamic>> imageFilesWithDate = [];
+  List<String> imageFilesPath = [];
+
   FileOperations fileOperations;
 
   String dirName;
@@ -32,6 +34,30 @@ class _ViewDocumentState extends State<ViewDocument> {
   String fileName;
 
   bool _statusSuccess;
+
+  void getImages() {
+    imageFilesPath = [];
+    imageFilesWithDate = [];
+
+    Directory(dirName)
+        .list(recursive: false, followLinks: false)
+        .listen((FileSystemEntity entity) {
+      List<String> temp = entity.path.split(" ");
+      imageFilesWithDate.add({
+        "file": entity,
+        "creationDate": DateTime.parse("${temp[3]} ${temp[4]}")
+      });
+
+      setState(() {
+        imageFilesWithDate
+            .sort((a, b) => a["creationDate"].compareTo(b["creationDate"]));
+
+        for (var image in imageFilesWithDate) {
+          imageFilesPath.add(image["path"]);
+        }
+      });
+    });
+  }
 
   void imageEditCallback() {
     getImages();
@@ -57,29 +83,12 @@ class _ViewDocumentState extends State<ViewDocument> {
         dirName.substring(dirName.lastIndexOf("/") + 1, dirName.length - 1);
   }
 
-  void getImages() {
-    setState(() {
-      imageFiles =
-          Directory(dirName).listSync(recursive: false, followLinks: false);
-//      images = [];
-//      Directory(dirName)
-//          .list(recursive: false, followLinks: false)
-//          .listen((FileSystemEntity entity) {
-//        images.add(File(entity.path));
-//      });
-      imageFilesPath = [];
-      for (var i in imageFiles) {
-        imageFilesPath.add(i.path);
-      }
-    });
-  }
-
-  Future createImage({imageFiles}) async {
+  Future<dynamic> createImage() async {
     File image = await fileOperations.openCamera();
     if (image != null) {
       Cropper cropper = Cropper();
       var imageFile = await cropper.cropImage(image);
-      if (imageFile != null) imageFiles.add(imageFile);
+      if (imageFile != null) return imageFile;
     }
   }
 
@@ -144,7 +153,7 @@ class _ViewDocumentState extends State<ViewDocument> {
             getImages();
           },
           child: ListView.builder(
-            itemCount: ((imageFiles.length) / 2).round(),
+            itemCount: ((imageFilesWithDate.length) / 2).round(),
             itemBuilder: (context, index) {
               return Padding(
                 padding: EdgeInsets.symmetric(vertical: 3.0),
@@ -152,12 +161,14 @@ class _ViewDocumentState extends State<ViewDocument> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: <Widget>[
                     ImageCard(
-                      imageFile: File(imageFiles[index * 2].path),
+                      imageFile:
+                          File(imageFilesWithDate[index * 2]["file"].path),
                       imageFileEditCallback: imageEditCallback,
                     ),
-                    if (index * 2 + 1 < imageFiles.length)
+                    if (index * 2 + 1 < imageFilesWithDate.length)
                       ImageCard(
-                        imageFile: File(imageFiles[index * 2 + 1].path),
+                        imageFile: File(
+                            imageFilesWithDate[index * 2 + 1]["file"].path),
                         imageFileEditCallback: imageEditCallback,
                       ),
                   ],
@@ -200,12 +211,14 @@ class _ViewDocumentState extends State<ViewDocument> {
             title: Text('Add Image'),
             onTap: () async {
               Navigator.pop(context);
-              await createImage(imageFiles: imageFiles);
+              var image = await createImage();
               setState(() {});
               await fileOperations.saveImage(
-                  image: imageFiles.last,
-                  i: imageFiles.length,
-                  dirName: dirName);
+                image: image,
+                i: imageFilesWithDate.length,
+                dirName: dirName,
+              );
+              getImages();
             },
           ),
           ListTile(
@@ -216,7 +229,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                 context: context,
                 selectedDirectory: selectedDirectory,
                 fileName: fileName,
-                images: imageFiles,
+                images: imageFilesWithDate,
               );
               String displayText;
               (_statusSuccess)
@@ -257,7 +270,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                 context: context,
                 selectedDirectory: selectedDirectory,
                 fileName: fileName,
-                images: imageFiles,
+                images: imageFilesWithDate,
               );
               ShareExtend.share(
                   '/storage/emulated/0/OpenScan/PDF/$fileName.pdf', 'file');
@@ -267,7 +280,6 @@ class _ViewDocumentState extends State<ViewDocument> {
             leading: Icon(Icons.image),
             title: Text('Share as image'),
             onTap: () {
-              print(imageFiles);
               ShareExtend.shareMultiple(imageFilesPath, 'file');
               Navigator.pop(context);
             },
@@ -287,10 +299,13 @@ class _ViewDocumentState extends State<ViewDocument> {
                 context: context,
                 builder: (context) {
                   return AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10),),),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(10),
+                      ),
+                    ),
                     title: Text('Delete'),
-                    content:
-                    Text('Do you really want to delete file?'),
+                    content: Text('Do you really want to delete file?'),
                     actions: <Widget>[
                       FlatButton(
                         onPressed: () => Navigator.pop(context),
@@ -299,7 +314,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                       FlatButton(
                         onPressed: () {
                           Directory(dirName).deleteSync(recursive: true);
-                          Navigator.popUntil(context, ModalRoute.withName(HomeScreen.route));
+                          Navigator.popUntil(
+                              context, ModalRoute.withName(HomeScreen.route));
                         },
                         child: Text(
                           'Delete',

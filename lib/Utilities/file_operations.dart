@@ -5,7 +5,6 @@ import 'package:directory_picker/directory_picker.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:image_picker/image_picker.dart';
-import 'package:openscan/Utilities/cropper.dart';
 
 class FileOperations {
   String appName = 'OpenScan';
@@ -71,7 +70,7 @@ class FileOperations {
       new Directory(dirName).create();
     }
 
-    File tempPic = File("$dirName/$i.jpg");
+    File tempPic = File("$dirName/ ${DateTime.now()} $i .jpg");
     image.copy(tempPic.path);
   }
 
@@ -96,7 +95,10 @@ class FileOperations {
   }
 
   Future<bool> saveToDevice(
-      {BuildContext context, selectedDirectory, fileName, images}) async {
+      {BuildContext context,
+      Directory selectedDirectory,
+      String fileName,
+      dynamic images}) async {
     Directory openscanDir = Directory("/storage/emulated/0/OpenScan/PDF");
     if (Platform.isAndroid) {
       if (!openscanDir.existsSync()) {
@@ -106,10 +108,19 @@ class FileOperations {
     } else {
       selectedDirectory = await pickDirectory(context, selectedDirectory);
     }
+    List<Map<String, dynamic>> foo = [];
+    if (images.runtimeType == foo.runtimeType) {
+      var tempImages = [];
+      for (var image in images) {
+        tempImages.add(image["file"]);
+      }
+      images = tempImages;
+    }
     pdfStatus = await createPdf(
-        selectedDirectory: selectedDirectory,
-        fileName: fileName,
-        images: images);
+      selectedDirectory: selectedDirectory,
+      fileName: fileName,
+      images: images,
+    );
     return pdfStatus;
   }
 
