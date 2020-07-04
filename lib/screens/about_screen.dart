@@ -13,7 +13,7 @@ void launchWebsite(String urlString) async {
 
 class AboutScreen extends StatelessWidget {
   static String route = "AboutScreen";
-  final String vjlink = "https://github.com/veejayts";
+  final String vjlink = "https://www.linkedin.com/in/vijay-t-s-888b421aa/";
   final String vikramlink = "https://www.linkedin.com/in/vikram-harikrishnan/";
 
   @override
@@ -68,8 +68,7 @@ class AboutScreen extends StatelessWidget {
                       ),
                       //TODO: Content Writing
                       TextSpan(
-                        text:
-                            '\n                               Add more content',
+                        text: '',
                         style: TextStyle(color: Colors.redAccent),
                       ),
                     ],
