@@ -2,23 +2,30 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   static String route = 'SplashScreen';
+  SplashScreen({this.visitingFlag});
+  final bool visitingFlag;
 
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+
+
   @override
   void initState() {
     super.initState();
-    Timer(
-      Duration(seconds: 1),
-      () => Navigator.of(context).pushReplacementNamed(HomeScreen.route),
-    );
+    Timer(Duration(seconds: 1), () {
+      (widget.visitingFlag)
+          ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
+          : Navigator.of(context)
+              .pushReplacementNamed(GettingStartedScreen.route);
+    });
   }
 
   @override

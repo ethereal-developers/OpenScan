@@ -332,7 +332,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                   }
                 }
                 await fileOperations.deleteTemporaryFiles();
-                Navigator.pushReplacement(
+                (imageFiles.length == 0) ? Navigator.pop(context):Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ViewDocument(
