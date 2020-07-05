@@ -33,4 +33,9 @@ final slideList = [
     title: 'It\'s Just the Beginning',
     description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec dapibus tincidunt bibendum. Maecenas eu viverra orci. Duis diam leo, porta at justo vitae, euismod aliquam nulla.',
   ),
+  Slide(
+    imageUrl: 'assets/view2.jpg',
+    title: 'It\'s Just the Beginning',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec dapibus tincidunt bibendum. Maecenas eu viverra orci. Duis diam leo, porta at justo vitae, euismod aliquam nulla.',
+  ),
 ];

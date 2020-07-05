@@ -8,18 +8,17 @@ class SlideItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Container(
-          width: 200,
-          height: 200,
+          width: size.width,
+          height: size.height*0.8,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
             image: DecorationImage(
               image: AssetImage(slideList[index].imageUrl),
-              fit: BoxFit.cover,
             ),
           ),
         ),

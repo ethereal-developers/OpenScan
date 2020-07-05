@@ -56,13 +56,11 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
         elevation: 0,
         centerTitle: true,
         backgroundColor: primaryColor,
-        title: RichText(
-          text: TextSpan(
-            text: 'Open',
-            style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
-            children: [
-              TextSpan(text: 'Scan', style: TextStyle(color: secondaryColor))
-            ],
+        title: Text(
+          'How to use the app?',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
           ),
         ),
         actions: <Widget>[
@@ -71,14 +69,14 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
               Navigator.of(context).pushReplacementNamed(HomeScreen.route);
             },
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 0, 10, 0),
+              padding: const EdgeInsets.fromLTRB(0, 4, 10, 0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   Center(
                       child: Text(
                     'Skip',
-                    style: TextStyle(color: secondaryColor, fontSize: 15),
+                    style: TextStyle(color: secondaryColor, fontSize: 13),
                   )),
                   Icon(
                     Icons.arrow_forward_ios,
@@ -103,18 +101,18 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                   child: Stack(
                     alignment: AlignmentDirectional.bottomCenter,
                     children: <Widget>[
-                    Theme(
-                      data: Theme.of(context).copyWith(
-                        accentColor: primaryColor,
+                      Theme(
+                        data: Theme.of(context).copyWith(
+                          accentColor: primaryColor,
+                        ),
+                        child: PageView.builder(
+                          scrollDirection: Axis.horizontal,
+                          controller: _pageController,
+                          onPageChanged: _onPageChanged,
+                          itemCount: slideList.length,
+                          itemBuilder: (ctx, i) => SlideItem(i),
+                        ),
                       ),
-                      child: PageView.builder(
-                        scrollDirection: Axis.horizontal,
-                        controller: _pageController,
-                        onPageChanged: _onPageChanged,
-                        itemCount: slideList.length,
-                        itemBuilder: (ctx, i) => SlideItem(i),
-                      ),
-                    ),
                       Stack(
                         alignment: AlignmentDirectional.topStart,
                         children: <Widget>[
