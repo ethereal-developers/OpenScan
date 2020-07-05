@@ -8,6 +8,7 @@ import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'scan_document.dart';
 
@@ -37,14 +38,16 @@ class _HomeScreenState extends State<HomeScreen> {
         imageDirPaths.add(path);
         Directory(path)
             .list(recursive: false, followLinks: false)
-            .listen((FileSystemEntity entity){
-//              print(entity.path);
-              imageCount++;
-//              print(imageCount);
+            .listen((FileSystemEntity entity) {
+          imageCount++;
         });
         FileStat fileStat = FileStat.statSync(path);
-        imageDirectories.add(
-            {'path': path, 'modified': fileStat.modified, 'size': fileStat.size, 'count': imageCount});
+        imageDirectories.add({
+          'path': path,
+          'modified': fileStat.modified,
+          'size': fileStat.size,
+          'count': imageCount
+        });
       }
       imageDirectories.sort((a, b) => a['modified'].compareTo(b['modified']));
       imageDirectories = imageDirectories.reversed.toList();
@@ -56,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     getData();
+    askPermission();
   }
 
   Future _onRefresh() async {
@@ -67,10 +71,25 @@ class _HomeScreenState extends State<HomeScreen> {
     _onRefresh();
   }
 
+  Future<bool> _requestPermission() async {
+    final PermissionHandler _permissionHandler = PermissionHandler();
+    var result =
+        await _permissionHandler.requestPermissions([PermissionGroup.storage]);
+    if (result[PermissionGroup.storage] == PermissionStatus.granted) {
+      return true;
+    }
+    return false;
+  }
+
+  void askPermission() async {
+    await _requestPermission();
+  }
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     String folderName;
+
     return SafeArea(
       child: Scaffold(
         backgroundColor: primaryColor,
@@ -126,24 +145,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 title: Center(
                   child: Text(
-                    'Settings',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                ),
-                onTap: () {},
-              ),
-              Divider(
-                thickness: 0.2,
-                indent: 6,
-                endIndent: 6,
-                color: Colors.white,
-              ),
-              ListTile(
-                title: Center(
-                  child: Text(
                     'About',
                     style: TextStyle(
                       fontSize: 18,
@@ -189,7 +190,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     folderName = imageDirectories[index]['path'].substring(
                         imageDirectories[index]['path'].lastIndexOf('/') + 1,
                         imageDirectories[index]['path'].length - 1);
-//                  print(imageDirectories[index]['size']);
                     return FocusedMenuHolder(
                       onPressed: null,
                       menuWidth: size.width * 0.44,
@@ -243,8 +243,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   title: Text('Delete'),
-                                  content:
-                                      Text('Do you really want to delete file?'),
+                                  content: Text(
+                                      'Do you really want to delete file?'),
                                   actions: <Widget>[
                                     FlatButton(
                                       onPressed: () => Navigator.pop(context),
@@ -252,14 +252,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     FlatButton(
                                       onPressed: () {
-                                        Directory(imageDirectories[index]['path'])
+                                        Directory(
+                                                imageDirectories[index]['path'])
                                             .deleteSync(recursive: true);
                                         Navigator.pop(context);
                                         getData();
                                       },
                                       child: Text(
                                         'Delete',
-                                        style: TextStyle(color: Colors.redAccent),
+                                        style:
+                                            TextStyle(color: Colors.redAccent),
                                       ),
                                     ),
                                   ],

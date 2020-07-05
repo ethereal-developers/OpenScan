@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/constants.dart';
 
 class SlideDots extends StatelessWidget {
-  bool isActive;
+  final bool isActive;
   SlideDots(this.isActive);
 
   @override

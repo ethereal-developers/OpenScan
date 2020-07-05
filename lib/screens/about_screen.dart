@@ -55,14 +55,15 @@ class AboutScreen extends StatelessWidget {
                     textAlign: TextAlign.justify,
                     text: TextSpan(
                       text: 'Open',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                       children: [
                         TextSpan(
                             text: 'Scan',
                             style: TextStyle(color: secondaryColor)),
                         TextSpan(
                           text:
-                              ' is an open-source app which enables user to scan hard copies of documents and convert it into a PDF file. We don\'t add watermark or label in PDF.',
+                              ' is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file. We don\'t add watermark or label in PDF.',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.normal,
@@ -77,14 +78,18 @@ class AboutScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: size.height*0.03,),
+                SizedBox(
+                  height: size.height * 0.03,
+                ),
                 Center(
                   child: Text(
                     "Developers",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                 ),
-                SizedBox(height: size.height*0.03,),
+                SizedBox(
+                  height: size.height * 0.03,
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: <Widget>[
@@ -100,7 +105,9 @@ class AboutScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: size.height*0.07,),
+                SizedBox(
+                  height: size.height * 0.07,
+                ),
                 Center(
                   child: Text(
                     "No ads. We don't collect any data.\n We respect your privacy.",
@@ -108,7 +115,9 @@ class AboutScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                SizedBox(height: size.height*0.03,),
+                SizedBox(
+                  height: size.height * 0.03,
+                ),
                 Center(
                   child: GestureDetector(
                     onTap: () =>
@@ -183,14 +192,17 @@ class ContactCard extends StatelessWidget {
                 backgroundImage: image,
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(0,8.0,0,0),
+                padding: const EdgeInsets.fromLTRB(0, 8.0, 0, 0),
                 child: Text(
                   name,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
-              Text('Tap for more',style: TextStyle(color: Colors.grey[700], fontSize: 12),),
+              Text(
+                'Tap for more',
+                style: TextStyle(color: Colors.grey[700], fontSize: 12),
+              ),
             ],
           ),
         ),
