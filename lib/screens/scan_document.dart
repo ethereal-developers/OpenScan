@@ -139,98 +139,17 @@ class _ScanDocumentState extends State<ScanDocument> {
               ),
             ),
           ),
-          body: ListView.builder(
-            physics: BouncingScrollPhysics(),
-            itemCount: ((imageFiles.length) / 2).round(),
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: EdgeInsets.symmetric(vertical: 3.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    RaisedButton(
-                      elevation: 20,
-                      color: primaryColor,
-                      onPressed: () {},
-                      child: FocusedMenuHolder(
-                        menuWidth: size.width * 0.44,
-                        onPressed: () {
-                          showCupertinoDialog(
-                              context: context,
-                              builder: (context) {
-                                return Dialog(
-                                  elevation: 20,
-                                  backgroundColor: primaryColor,
-                                  child: Container(
-                                    width: size.width * 0.95,
-                                    child: Image.file(imageFiles[index * 2]),
-                                  ),
-                                );
-                              });
-                        },
-                        menuItems: [
-                          FocusedMenuItem(
-                            title: Text(
-                              'Crop',
-                              style: TextStyle(color: Colors.black),
-                            ),
-                            trailingIcon: Icon(
-                              Icons.crop,
-                              color: Colors.black,
-                            ),
-                            onPressed: () async {
-                              int tempIndex = index * 2;
-                              _reCropImage(tempIndex);
-                            },
-                          ),
-                          FocusedMenuItem(
-                            title: Text('Delete'),
-                            trailingIcon: Icon(Icons.delete),
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(10),
-                                      ),
-                                    ),
-                                    title: Text('Delete'),
-                                    content: Text(
-                                        'Do you really want to delete image?'),
-                                    actions: <Widget>[
-                                      FlatButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: Text('Cancel'),
-                                      ),
-                                      FlatButton(
-                                        onPressed: () {
-                                          _removeImage(index * 2);
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          'Delete',
-                                          style: TextStyle(
-                                              color: Colors.redAccent),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                            backgroundColor: Colors.redAccent,
-                          ),
-                        ],
-                        child: Container(
-                          child: Image.file(imageFiles[index * 2]),
-                          height: size.height * 0.25,
-                          width: size.width * 0.4,
-                        ),
-                      ),
-                    ),
-                    if (index * 2 + 1 < imageFiles.length)
+          body: Theme(
+            data: Theme.of(context).copyWith(accentColor: primaryColor),
+            child: ListView.builder(
+              physics: BouncingScrollPhysics(),
+              itemCount: ((imageFiles.length) / 2).round(),
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(vertical: 3.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
                       RaisedButton(
                         elevation: 20,
                         color: primaryColor,
@@ -239,19 +158,17 @@ class _ScanDocumentState extends State<ScanDocument> {
                           menuWidth: size.width * 0.44,
                           onPressed: () {
                             showCupertinoDialog(
-                              context: context,
-                              builder: (context) {
-                                return Dialog(
-                                  elevation: 20,
-                                  backgroundColor: primaryColor,
-                                  child: Container(
-                                    width: size.width * 0.95,
-                                    child:
-                                        Image.file(imageFiles[index * 2 + 1]),
-                                  ),
-                                );
-                              },
-                            );
+                                context: context,
+                                builder: (context) {
+                                  return Dialog(
+                                    elevation: 20,
+                                    backgroundColor: primaryColor,
+                                    child: Container(
+                                      width: size.width * 0.95,
+                                      child: Image.file(imageFiles[index * 2]),
+                                    ),
+                                  );
+                                });
                           },
                           menuItems: [
                             FocusedMenuItem(
@@ -259,14 +176,17 @@ class _ScanDocumentState extends State<ScanDocument> {
                                 'Crop',
                                 style: TextStyle(color: Colors.black),
                               ),
-                              trailingIcon: Icon(Icons.crop),
+                              trailingIcon: Icon(
+                                Icons.crop,
+                                color: Colors.black,
+                              ),
                               onPressed: () async {
-                                int tempIndex = index * 2 + 1;
+                                int tempIndex = index * 2;
                                 _reCropImage(tempIndex);
                               },
                             ),
                             FocusedMenuItem(
-                              title: Text('Remove'),
+                              title: Text('Delete'),
                               trailingIcon: Icon(Icons.delete),
                               onPressed: () {
                                 showDialog(
@@ -283,13 +203,12 @@ class _ScanDocumentState extends State<ScanDocument> {
                                           'Do you really want to delete image?'),
                                       actions: <Widget>[
                                         FlatButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
+                                          onPressed: () => Navigator.pop(context),
                                           child: Text('Cancel'),
                                         ),
                                         FlatButton(
                                           onPressed: () {
-                                            _removeImage(index * 2 + 1);
+                                            _removeImage(index * 2);
                                             Navigator.pop(context);
                                           },
                                           child: Text(
@@ -307,16 +226,100 @@ class _ScanDocumentState extends State<ScanDocument> {
                             ),
                           ],
                           child: Container(
-                            child: Image.file(imageFiles[index * 2 + 1]),
+                            child: Image.file(imageFiles[index * 2]),
                             height: size.height * 0.25,
                             width: size.width * 0.4,
                           ),
                         ),
                       ),
-                  ],
-                ),
-              );
-            },
+                      if (index * 2 + 1 < imageFiles.length)
+                        RaisedButton(
+                          elevation: 20,
+                          color: primaryColor,
+                          onPressed: () {},
+                          child: FocusedMenuHolder(
+                            menuWidth: size.width * 0.44,
+                            onPressed: () {
+                              showCupertinoDialog(
+                                context: context,
+                                builder: (context) {
+                                  return Dialog(
+                                    elevation: 20,
+                                    backgroundColor: primaryColor,
+                                    child: Container(
+                                      width: size.width * 0.95,
+                                      child:
+                                          Image.file(imageFiles[index * 2 + 1]),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            menuItems: [
+                              FocusedMenuItem(
+                                title: Text(
+                                  'Crop',
+                                  style: TextStyle(color: Colors.black),
+                                ),
+                                trailingIcon: Icon(Icons.crop),
+                                onPressed: () async {
+                                  int tempIndex = index * 2 + 1;
+                                  _reCropImage(tempIndex);
+                                },
+                              ),
+                              FocusedMenuItem(
+                                title: Text('Remove'),
+                                trailingIcon: Icon(Icons.delete),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(10),
+                                          ),
+                                        ),
+                                        title: Text('Delete'),
+                                        content: Text(
+                                            'Do you really want to delete image?'),
+                                        actions: <Widget>[
+                                          FlatButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: Text('Cancel'),
+                                          ),
+                                          FlatButton(
+                                            onPressed: () {
+                                              _removeImage(index * 2 + 1);
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text(
+                                              'Delete',
+                                              style: TextStyle(
+                                                  color: Colors.redAccent),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            ],
+                            child: Container(
+                              child: Image.file(imageFiles[index * 2 + 1]),
+                              height: size.height * 0.25,
+                              width: size.width * 0.4,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
           bottomNavigationBar: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),

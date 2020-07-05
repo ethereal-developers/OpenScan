@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:openscan/Utilities/Image_Card.dart';
+import 'file:///F:/git/Not%20Mine/openscan/lib/Widgets/Image_Card.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
@@ -52,9 +52,10 @@ class _ViewDocumentState extends State<ViewDocument> {
       setState(() {
         imageFilesWithDate
             .sort((a, b) => a["creationDate"].compareTo(b["creationDate"]));
-
         for (var image in imageFilesWithDate) {
-          imageFilesPath.add(image["path"]);
+          if(!imageFilesPath.contains(image['file'].path))
+            imageFilesPath.add(image["file"].path);
+          print(imageFilesPath);
         }
       });
     });
@@ -125,12 +126,18 @@ class _ViewDocumentState extends State<ViewDocument> {
           actions: <Widget>[
             IconButton(
               icon: Icon(Icons.picture_as_pdf),
-              onPressed: () {
+              onPressed: () async {
+                _statusSuccess = await fileOperations.saveToDevice(
+                  context: context,
+                  selectedDirectory: selectedDirectory,
+                  fileName: fileName,
+                  images: imageFilesWithDate,
+                );
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => PDFScreen(
-                      path: dirName,
+                      path: '/storage/emulated/0/OpenScan/PDF/$fileName.pdf',
                     ),
                   ),
                 );
@@ -153,29 +160,32 @@ class _ViewDocumentState extends State<ViewDocument> {
           onRefresh: () async {
             getImages();
           },
-          child: ListView.builder(
-            itemCount: ((imageFilesWithDate.length) / 2).round(),
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: EdgeInsets.symmetric(vertical: 3.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: <Widget>[
-                    ImageCard(
-                      imageFile:
-                          File(imageFilesWithDate[index * 2]["file"].path),
-                      imageFileEditCallback: imageEditCallback,
-                    ),
-                    if (index * 2 + 1 < imageFilesWithDate.length)
+          child: Theme(
+            data: Theme.of(context).copyWith(accentColor: primaryColor),
+            child: ListView.builder(
+              itemCount: ((imageFilesWithDate.length) / 2).round(),
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(vertical: 3.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
                       ImageCard(
-                        imageFile: File(
-                            imageFilesWithDate[index * 2 + 1]["file"].path),
+                        imageFile:
+                            File(imageFilesWithDate[index * 2]["file"].path),
                         imageFileEditCallback: imageEditCallback,
                       ),
-                  ],
-                ),
-              );
-            },
+                      if (index * 2 + 1 < imageFilesWithDate.length)
+                        ImageCard(
+                          imageFile: File(
+                              imageFilesWithDate[index * 2 + 1]["file"].path),
+                          imageFileEditCallback: imageEditCallback,
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -216,7 +226,7 @@ class _ViewDocumentState extends State<ViewDocument> {
               setState(() {});
               await fileOperations.saveImage(
                 image: image,
-                i: imageFilesWithDate.length,
+                i: imageFilesWithDate.length+1,
                 dirName: dirName,
               );
               getImages();
@@ -227,75 +237,38 @@ class _ViewDocumentState extends State<ViewDocument> {
             title: Text('Save to device'),
             onTap: () async {
               Navigator.pop(context);
-              showDialog(context: context,builder: (context){
-                return AlertDialog(
+              _statusSuccess = await fileOperations.saveToDevice(
+                context: context,
+                selectedDirectory: selectedDirectory,
+                fileName: fileName,
+                images: imageFilesWithDate,
+              );
+              String displayText;
+              (_statusSuccess)
+                  ? displayText = "Saved at /storage/emulated/0/OpenScan/PDF/"
+                  : displayText = "Failed to generate pdf. Try Again.";
+              scaffoldKey.currentState.showSnackBar(
+                SnackBar(
+                  behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(10),
-                    ),
-                  ),
-                  title: Text('Save as PDF'),
-                  content:TextField(
-                    onChanged: (value){
-                      fileName = '$value OpenScan';
-                    },
-                    controller: TextEditingController(text: fileName.substring(8,fileName.length)),
-                    cursorColor: secondaryColor,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: InputDecoration(
-                      prefixStyle: TextStyle(color: Colors.white),
-                      suffixText: ' OpenScan.pdf',
-                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: secondaryColor)),
-                    ),
-                  ),
-                  actions: <Widget>[
-                    FlatButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('Cancel'),
-                    ),
-                    FlatButton(
-                      onPressed: () async {
-                        _statusSuccess = await fileOperations.saveToDevice(
-                          context: context,
-                          selectedDirectory: selectedDirectory,
-                          fileName: fileName,
-                          images: imageFilesWithDate,
-                        );
-                        String displayText;
-                        (_statusSuccess)
-                            ? displayText = "Saved at /storage/emulated/0/OpenScan/PDF/"
-                            : displayText = "Failed to generate pdf. Try Again.";
-                        scaffoldKey.currentState.showSnackBar(
-                          SnackBar(
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(10))),
-                            backgroundColor: primaryColor,
-                            duration: Duration(seconds: 1),
-                            content: Container(
-                              decoration: BoxDecoration(),
-                              alignment: Alignment.center,
-                              height: 15,
-                              width: size.width * 0.3,
-                              child: Text(
-                                displayText,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        'Save',
+                      borderRadius: BorderRadius.all(Radius.circular(10))),
+                  backgroundColor: primaryColor,
+                  duration: Duration(seconds: 1),
+                  content: Container(
+                    decoration: BoxDecoration(),
+                    alignment: Alignment.center,
+                    height: 15,
+                    width: size.width * 0.3,
+                    child: Text(
+                      displayText,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ],
-                );
-              });
+                  ),
+                ),
+              );
             },
           ),
           ListTile(
@@ -400,8 +373,6 @@ class _ViewDocumentState extends State<ViewDocument> {
                   );
                 },
               );
-              Directory(dirName).deleteSync(recursive: true);
-              Navigator.pop(context);
             },
           ),
         ],

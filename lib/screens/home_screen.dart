@@ -38,9 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
         Directory(path)
             .list(recursive: false, followLinks: false)
             .listen((FileSystemEntity entity){
-              print(entity.path);
+//              print(entity.path);
               imageCount++;
-              print(imageCount);
+//              print(imageCount);
         });
         FileStat fileStat = FileStat.statSync(path);
         imageDirectories.add(
@@ -181,94 +181,97 @@ class _HomeScreenState extends State<HomeScreen> {
           child: FutureBuilder(
             future: getDirectoryNames(),
             builder: (BuildContext context, AsyncSnapshot snapshot) {
-              return ListView.builder(
-                itemCount: imageDirectories.length,
-                itemBuilder: (context, index) {
-                  folderName = imageDirectories[index]['path'].substring(
-                      imageDirectories[index]['path'].lastIndexOf('/') + 1,
-                      imageDirectories[index]['path'].length - 1);
-                  print(imageDirectories[index]['size']);
-                  return FocusedMenuHolder(
-                    onPressed: null,
-                    menuWidth: size.width * 0.44,
-                    child: ListTile(
-                      // TODO : Add sample image
-                      leading: Icon(
-                        Icons.landscape,
-                        size: 30,
-                      ),
-                      title: Text(folderName),
-                      subtitle: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          Text(
-                              'Last Modified: ${imageDirectories[index]['modified'].day}-${imageDirectories[index]['modified'].month}-${imageDirectories[index]['modified'].year}'),
+              return Theme(
+                data: Theme.of(context).copyWith(accentColor: primaryColor),
+                child: ListView.builder(
+                  itemCount: imageDirectories.length,
+                  itemBuilder: (context, index) {
+                    folderName = imageDirectories[index]['path'].substring(
+                        imageDirectories[index]['path'].lastIndexOf('/') + 1,
+                        imageDirectories[index]['path'].length - 1);
+//                  print(imageDirectories[index]['size']);
+                    return FocusedMenuHolder(
+                      onPressed: null,
+                      menuWidth: size.width * 0.44,
+                      child: ListTile(
+                        // TODO : Add sample image
+                        leading: Icon(
+                          Icons.landscape,
+                          size: 30,
+                        ),
+                        title: Text(folderName),
+                        subtitle: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text(
+                                'Last Modified: ${imageDirectories[index]['modified'].day}-${imageDirectories[index]['modified'].month}-${imageDirectories[index]['modified'].year}'),
 //                          Text('Size: ${imageDirectories[index]['count']}')
-                        ],
-                      ),
-                      trailing: Icon(
-                        Icons.arrow_right,
-                        size: 30,
-                        color: secondaryColor,
-                      ),
-                      onTap: () async {
-                        getDirectoryNames();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ViewDocument(
-                              dirPath: imageDirectories[index]['path'],
+                          ],
+                        ),
+                        trailing: Icon(
+                          Icons.arrow_right,
+                          size: 30,
+                          color: secondaryColor,
+                        ),
+                        onTap: () async {
+                          getDirectoryNames();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ViewDocument(
+                                dirPath: imageDirectories[index]['path'],
+                              ),
                             ),
-                          ),
-                        ).whenComplete(() => () {
-                              print('Completed');
-                            });
-                      },
-                    ),
-                    menuItems: [
-                      FocusedMenuItem(
-                        title: Text('Delete'),
-                        trailingIcon: Icon(Icons.delete),
-                        backgroundColor: Colors.redAccent,
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(10),
-                                  ),
-                                ),
-                                title: Text('Delete'),
-                                content:
-                                    Text('Do you really want to delete file?'),
-                                actions: <Widget>[
-                                  FlatButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: Text('Cancel'),
-                                  ),
-                                  FlatButton(
-                                    onPressed: () {
-                                      Directory(imageDirectories[index]['path'])
-                                          .deleteSync(recursive: true);
-                                      Navigator.pop(context);
-                                      getData();
-                                    },
-                                    child: Text(
-                                      'Delete',
-                                      style: TextStyle(color: Colors.redAccent),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
+                          ).whenComplete(() => () {
+                                print('Completed');
+                              });
                         },
                       ),
-                    ],
-                  );
-                },
+                      menuItems: [
+                        FocusedMenuItem(
+                          title: Text('Delete'),
+                          trailingIcon: Icon(Icons.delete),
+                          backgroundColor: Colors.redAccent,
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.all(
+                                      Radius.circular(10),
+                                    ),
+                                  ),
+                                  title: Text('Delete'),
+                                  content:
+                                      Text('Do you really want to delete file?'),
+                                  actions: <Widget>[
+                                    FlatButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text('Cancel'),
+                                    ),
+                                    FlatButton(
+                                      onPressed: () {
+                                        Directory(imageDirectories[index]['path'])
+                                            .deleteSync(recursive: true);
+                                        Navigator.pop(context);
+                                        getData();
+                                      },
+                                      child: Text(
+                                        'Delete',
+                                        style: TextStyle(color: Colors.redAccent),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                ),
               );
             },
           ),
