@@ -101,12 +101,12 @@ class FileOperations {
       String fileName,
       dynamic images}) async {
     Directory openscanDir = Directory("/storage/emulated/0/OpenScan/PDF");
-    if (Platform.isAndroid) {
+    try {
       if (!openscanDir.existsSync()) {
         openscanDir.createSync();
       }
       selectedDirectory = openscanDir;
-    } else {
+    } catch (e) {
       selectedDirectory = await pickDirectory(context, selectedDirectory);
     }
     List<Map<String, dynamic>> foo = [];

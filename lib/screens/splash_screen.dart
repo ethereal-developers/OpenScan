@@ -27,7 +27,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     getFlag();
     Timer(Duration(seconds: 1), () {
-      (!visitingFlag)
+      (visitingFlag)
           ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
           : Navigator.of(context)
               .pushReplacementNamed(GettingStartedScreen.route);

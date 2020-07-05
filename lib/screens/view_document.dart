@@ -53,9 +53,8 @@ class _ViewDocumentState extends State<ViewDocument> {
         imageFilesWithDate
             .sort((a, b) => a["creationDate"].compareTo(b["creationDate"]));
         for (var image in imageFilesWithDate) {
-          if(!imageFilesPath.contains(image['file'].path))
+          if (!imageFilesPath.contains(image['file'].path))
             imageFilesPath.add(image["file"].path);
-          print(imageFilesPath);
         }
       });
     });
@@ -226,7 +225,7 @@ class _ViewDocumentState extends State<ViewDocument> {
               setState(() {});
               await fileOperations.saveImage(
                 image: image,
-                i: imageFilesWithDate.length+1,
+                i: imageFilesWithDate.length + 1,
                 dirName: dirName,
               );
               getImages();
@@ -276,51 +275,56 @@ class _ViewDocumentState extends State<ViewDocument> {
             title: Text('Share as PDF'),
             onTap: () async {
               Navigator.pop(context);
-              showDialog(context: context,builder: (context){
-                return AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(10),
-                    ),
-                  ),
-                  title: Text('Share as PDF'),
-                  content:TextField(
-                    onChanged: (value){
-                      fileName = '$value OpenScan';
-                    },
-                    controller: TextEditingController(text: fileName.substring(8,fileName.length)),
-                    cursorColor: secondaryColor,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: InputDecoration(
-                      prefixStyle: TextStyle(color: Colors.white),
-                      suffixText: ' OpenScan.pdf',
-                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: secondaryColor)),
-                    ),
-                  ),
-                  actions: <Widget>[
-                    FlatButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('Cancel'),
-                    ),
-                    FlatButton(
-                      onPressed: () async {
-                        _statusSuccess = await fileOperations.saveToDevice(
-                          context: context,
-                          selectedDirectory: selectedDirectory,
-                          fileName: fileName,
-                          images: imageFilesWithDate,
-                        );
-                        ShareExtend.share(
-                            '/storage/emulated/0/OpenScan/PDF/$fileName.pdf', 'file');
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        'Share',
+              showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(10),
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              });
+                      title: Text('Share as PDF'),
+                      content: TextField(
+                        onChanged: (value) {
+                          fileName = '$value OpenScan';
+                        },
+                        controller: TextEditingController(
+                            text: fileName.substring(8, fileName.length)),
+                        cursorColor: secondaryColor,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          prefixStyle: TextStyle(color: Colors.white),
+                          suffixText: ' OpenScan.pdf',
+                          focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(color: secondaryColor)),
+                        ),
+                      ),
+                      actions: <Widget>[
+                        FlatButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('Cancel'),
+                        ),
+                        FlatButton(
+                          onPressed: () async {
+                            _statusSuccess = await fileOperations.saveToDevice(
+                              context: context,
+                              selectedDirectory: selectedDirectory,
+                              fileName: fileName,
+                              images: imageFilesWithDate,
+                            );
+                            ShareExtend.share(
+                                '/storage/emulated/0/OpenScan/PDF/$fileName.pdf',
+                                'file');
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            'Share',
+                          ),
+                        ),
+                      ],
+                    );
+                  });
             },
           ),
           ListTile(
