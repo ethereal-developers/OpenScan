@@ -96,7 +96,7 @@ class AboutScreen extends StatelessWidget {
                     ContactCard(
                       name: "Vijay",
                       link: vjlink,
-                      image: AssetImage('assets/vj.jpg'),
+                      image: AssetImage('assets/vj.JPG'),
                     ),
                     ContactCard(
                       name: "Vikram",
