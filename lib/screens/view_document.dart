@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'file:///F:/git/Not%20Mine/openscan/lib/Widgets/Image_Card.dart';
+import 'package:openscan/Widgets/Image_Card.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';

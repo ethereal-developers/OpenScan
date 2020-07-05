@@ -4,24 +4,30 @@ import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/home_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   static String route = 'SplashScreen';
-  SplashScreen({this.visitingFlag});
-  final bool visitingFlag;
 
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool visitingFlag;
 
+  getFlag() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    visitingFlag = preferences.getBool("alreadyVisited") ?? false;
+    preferences.setBool('alreadyVisited', true);
+  }
 
   @override
   void initState() {
     super.initState();
+    getFlag();
     Timer(Duration(seconds: 1), () {
-      (widget.visitingFlag)
+      (visitingFlag)
           ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
           : Navigator.of(context)
               .pushReplacementNamed(GettingStartedScreen.route);
