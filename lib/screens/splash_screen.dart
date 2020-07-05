@@ -27,7 +27,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     getFlag();
     Timer(Duration(seconds: 1), () {
-      (visitingFlag)
+      (!visitingFlag)
           ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
           : Navigator.of(context)
               .pushReplacementNamed(GettingStartedScreen.route);
@@ -57,7 +57,7 @@ class _SplashScreenState extends State<SplashScreen> {
             RichText(
               text: TextSpan(
                 text: 'Open',
-                style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
                 children: [
                   TextSpan(
                       text: 'Scan', style: TextStyle(color: secondaryColor))
@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen> {
               child: Text(
                 'Made with ❤ in India',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 11,
                   fontWeight: FontWeight.normal,
                   color: Colors.grey[300],
                 ),

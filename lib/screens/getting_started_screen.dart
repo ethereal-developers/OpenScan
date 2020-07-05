@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/slide.dart';
@@ -94,12 +95,14 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
         color: primaryColor,
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            children: <Widget>[
-              Expanded(
-                child: Stack(
-                  alignment: AlignmentDirectional.bottomCenter,
-                  children: <Widget>[
+          child: Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Expanded(
+                  child: Stack(
+                    alignment: AlignmentDirectional.bottomCenter,
+                    children: <Widget>[
                     Theme(
                       data: Theme.of(context).copyWith(
                         accentColor: primaryColor,
@@ -112,28 +115,29 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                         itemBuilder: (ctx, i) => SlideItem(i),
                       ),
                     ),
-                    Stack(
-                      alignment: AlignmentDirectional.topStart,
-                      children: <Widget>[
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              for (int i = 0; i < slideList.length; i++)
-                                (i == _currentPage)
-                                    ? SlideDots(true)
-                                    : SlideDots(false)
-                            ],
-                          ),
-                        )
-                      ],
-                    )
-                  ],
+                      Stack(
+                        alignment: AlignmentDirectional.topStart,
+                        children: <Widget>[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 0),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                for (int i = 0; i < slideList.length; i++)
+                                  (i == _currentPage)
+                                      ? SlideDots(true)
+                                      : SlideDots(false)
+                              ],
+                            ),
+                          )
+                        ],
+                      )
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

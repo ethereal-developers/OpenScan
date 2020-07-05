@@ -106,12 +106,12 @@ class AboutScreen extends StatelessWidget {
                   ],
                 ),
                 SizedBox(
-                  height: size.height * 0.07,
+                  height: size.height * 0.03,
                 ),
                 Center(
                   child: Text(
                     "No ads. We don't collect any data.\n We respect your privacy.",
-                    style: TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 12),
                     textAlign: TextAlign.center,
                   ),
                 ),
