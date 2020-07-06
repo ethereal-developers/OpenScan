@@ -14,24 +14,37 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool visitingFlag;
+  bool visitingFlag = false;
 
-  getFlag() async {
+  Future<void> getFlag() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
-    visitingFlag = preferences.getBool("alreadyVisited") ?? false;
-    preferences.setBool('alreadyVisited', true);
+    if (preferences.getBool("alreadyVisited") == null) {
+      preferences.setBool("counter", false);
+      visitingFlag = false;
+    } else {
+      visitingFlag = true;
+    }
+    await preferences.setBool('alreadyVisited', true);
   }
 
-  @override
-  void initState() {
-    super.initState();
-    getFlag();
-    Timer(Duration(seconds: 1), () {
+  Timer getTimerWid() {
+    return Timer(Duration(seconds: 1), () {
       (visitingFlag)
           ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
           : Navigator.of(context)
               .pushReplacementNamed(GettingStartedScreen.route);
     });
+  }
+
+  getFlagInfo() async {
+    await getFlag();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getFlagInfo();
+    getTimerWid();
   }
 
   @override

@@ -22,10 +22,8 @@ class OpenScan extends StatefulWidget {
 }
 
 class _OpenScanState extends State<OpenScan> {
-
   @override
   Widget build(BuildContext context) {
-
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       systemNavigationBarColor: primaryColor,
       systemNavigationBarIconBrightness: Brightness.light,
