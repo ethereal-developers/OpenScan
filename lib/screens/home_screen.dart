@@ -6,6 +6,7 @@ import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
+import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -163,6 +164,34 @@ class _HomeScreenState extends State<HomeScreen> {
                 endIndent: 6,
                 color: Colors.white,
               ),
+              ListTile(
+                title: Center(
+                  child: Text(
+                    'Demo',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GettingStartedScreen(
+                        showSkip: false,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              Divider(
+                thickness: 0.2,
+                indent: 6,
+                endIndent: 6,
+                color: Colors.white,
+              ),
               Spacer(
                 flex: 10,
               ),
@@ -181,19 +210,26 @@ class _HomeScreenState extends State<HomeScreen> {
           onRefresh: _onRefresh,
           child: Column(
             children: <Widget>[
-              Text('Drag down to refresh', style: TextStyle(color: Colors.grey[700], fontSize: 11),),
+              Text(
+                'Drag down to refresh',
+                style: TextStyle(color: Colors.grey[700], fontSize: 11),
+              ),
               Expanded(
                 child: FutureBuilder(
                   future: getDirectoryNames(),
                   builder: (BuildContext context, AsyncSnapshot snapshot) {
                     return Theme(
-                      data: Theme.of(context).copyWith(accentColor: primaryColor),
+                      data:
+                          Theme.of(context).copyWith(accentColor: primaryColor),
                       child: ListView.builder(
                         itemCount: imageDirectories.length,
                         itemBuilder: (context, index) {
-                          folderName = imageDirectories[index]['path'].substring(
-                              imageDirectories[index]['path'].lastIndexOf('/') + 1,
-                              imageDirectories[index]['path'].length - 1);
+                          folderName = imageDirectories[index]['path']
+                              .substring(
+                                  imageDirectories[index]['path']
+                                          .lastIndexOf('/') +
+                                      1,
+                                  imageDirectories[index]['path'].length - 1);
                           return FocusedMenuHolder(
                             onPressed: null,
                             menuWidth: size.width * 0.44,
@@ -251,21 +287,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                             'Do you really want to delete file?'),
                                         actions: <Widget>[
                                           FlatButton(
-                                            onPressed: () => Navigator.pop(context),
+                                            onPressed: () =>
+                                                Navigator.pop(context),
                                             child: Text('Cancel'),
                                           ),
                                           FlatButton(
                                             onPressed: () {
-                                              Directory(
-                                                      imageDirectories[index]['path'])
+                                              Directory(imageDirectories[index]
+                                                      ['path'])
                                                   .deleteSync(recursive: true);
                                               Navigator.pop(context);
                                               getData();
                                             },
                                             child: Text(
                                               'Delete',
-                                              style:
-                                                  TextStyle(color: Colors.redAccent),
+                                              style: TextStyle(
+                                                  color: Colors.redAccent),
                                             ),
                                           ),
                                         ],

@@ -30,8 +30,13 @@ class _SplashScreenState extends State<SplashScreen> {
     return Timer(Duration(seconds: 1), () {
       (visitingFlag)
           ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
-          : Navigator.of(context)
-              .pushReplacementNamed(GettingStartedScreen.route);
+          : Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => GettingStartedScreen(
+                  showSkip: true,
+                ),
+              ),
+            );
     });
   }
 
