@@ -3,6 +3,7 @@ import 'package:openscan/Utilities/constants.dart';
 
 class SlideDots extends StatelessWidget {
   final bool isActive;
+
   SlideDots(this.isActive);
 
   @override

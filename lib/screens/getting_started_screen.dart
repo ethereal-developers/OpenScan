@@ -29,14 +29,17 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: primaryColor,
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
         backgroundColor: primaryColor,
-        leading: (!widget.showSkip) ? IconButton(
-          icon: Icon(Icons.arrow_back_ios),
-          onPressed: () => Navigator.pop(context),
-        ) : null,
+        leading: (!widget.showSkip)
+            ? IconButton(
+                icon: Icon(Icons.arrow_back_ios),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: Text(
           'How to use the app?',
           style: TextStyle(
@@ -77,48 +80,46 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
         color: primaryColor,
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Expanded(
-                  child: Stack(
-                    alignment: AlignmentDirectional.bottomCenter,
-                    children: <Widget>[
-                      Theme(
-                        data: Theme.of(context).copyWith(
-                          accentColor: primaryColor,
-                        ),
-                        child: PageView.builder(
-                          scrollDirection: Axis.horizontal,
-                          onPageChanged: _onPageChanged,
-                          itemCount: slideList.length,
-                          itemBuilder: (ctx, i) => SlideItem(i),
-                        ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(
+                child: Stack(
+                  alignment: AlignmentDirectional.bottomCenter,
+                  children: <Widget>[
+                    Theme(
+                      data: Theme.of(context).copyWith(
+                        accentColor: primaryColor,
                       ),
-                      Stack(
-                        alignment: AlignmentDirectional.topStart,
-                        children: <Widget>[
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 0),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: <Widget>[
-                                for (int i = 0; i < slideList.length; i++)
-                                  (i == _currentPage)
-                                      ? SlideDots(true)
-                                      : SlideDots(false)
-                              ],
-                            ),
-                          )
-                        ],
-                      )
-                    ],
-                  ),
+                      child: PageView.builder(
+                        scrollDirection: Axis.horizontal,
+                        onPageChanged: _onPageChanged,
+                        itemCount: slideList.length,
+                        itemBuilder: (ctx, i) => SlideItem(i),
+                      ),
+                    ),
+                    Stack(
+                      alignment: AlignmentDirectional.topStart,
+                      children: <Widget>[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              for (int i = 0; i < slideList.length; i++)
+                                (i == _currentPage)
+                                    ? SlideDots(true)
+                                    : SlideDots(false)
+                            ],
+                          ),
+                        )
+                      ],
+                    )
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

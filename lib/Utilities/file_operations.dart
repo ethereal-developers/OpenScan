@@ -96,9 +96,7 @@ class FileOperations {
   }
 
   Future<String> saveToDevice(
-      {BuildContext context,
-      String fileName,
-      dynamic images}) async {
+      {BuildContext context, String fileName, dynamic images}) async {
     Directory selectedDirectory;
     Directory openscanDir = Directory("/storage/emulated/0/OpenScan/PDF");
     try {
@@ -122,13 +120,11 @@ class FileOperations {
       fileName: fileName,
       images: images,
     );
-    return (pdfStatus)? selectedDirectory.path : null;
+    return (pdfStatus) ? selectedDirectory.path : null;
   }
 
   Future<bool> saveToAppDirectory(
-      {BuildContext context,
-        String fileName,
-        dynamic images}) async {
+      {BuildContext context, String fileName, dynamic images}) async {
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
 
     List<Map<String, dynamic>> foo = [];
@@ -146,12 +142,6 @@ class FileOperations {
     );
     return pdfStatus;
   }
-
-  // RENAME FOLDER
-//  void renameFolder({String newName, dirName}) {
-//    String name = "OpenScan $newName";
-//    Directory temp = Directory(dirName).renameSync(name);
-//  }
 
   Future<void> deleteTemporaryFiles() async {
     // Delete the temporary files created by the image_picker package

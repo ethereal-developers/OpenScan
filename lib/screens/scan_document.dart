@@ -203,7 +203,8 @@ class _ScanDocumentState extends State<ScanDocument> {
                                           'Do you really want to delete image?'),
                                       actions: <Widget>[
                                         FlatButton(
-                                          onPressed: () => Navigator.pop(context),
+                                          onPressed: () =>
+                                              Navigator.pop(context),
                                           child: Text('Cancel'),
                                         ),
                                         FlatButton(
@@ -332,14 +333,16 @@ class _ScanDocumentState extends State<ScanDocument> {
                   }
                 }
                 await fileOperations.deleteTemporaryFiles();
-                (imageFiles.length == 0) ? Navigator.pop(context):Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ViewDocument(
-                      dirPath: docPath,
-                    ),
-                  ),
-                );
+                (imageFiles.length == 0)
+                    ? Navigator.pop(context)
+                    : Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ViewDocument(
+                            dirPath: docPath,
+                          ),
+                        ),
+                      );
               },
               color: secondaryColor,
               textColor: primaryColor,

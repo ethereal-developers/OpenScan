@@ -1,14 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:openscan/Widgets/Image_Card.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
+import 'package:openscan/Widgets/Image_Card.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:openscan/screens/pdf_screen.dart';
-import 'package:share_extend/share_extend.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_extend/share_extend.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
@@ -130,7 +130,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                   fileName: fileName,
                   images: imageFilesWithDate,
                 );
-                Directory storedDirectory = await getApplicationDocumentsDirectory();
+                Directory storedDirectory =
+                    await getApplicationDocumentsDirectory();
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -259,10 +260,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                     width: size.width * 0.3,
                     child: Text(
                       displayText,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
                 ),
@@ -306,12 +304,14 @@ class _ViewDocumentState extends State<ViewDocument> {
                         ),
                         FlatButton(
                           onPressed: () async {
-                            _statusSuccess = await fileOperations.saveToAppDirectory(
+                            _statusSuccess =
+                                await fileOperations.saveToAppDirectory(
                               context: context,
                               fileName: fileName,
                               images: imageFilesWithDate,
                             );
-                            Directory storedDirectory = await getApplicationDocumentsDirectory();
+                            Directory storedDirectory =
+                                await getApplicationDocumentsDirectory();
                             ShareExtend.share(
                                 '${storedDirectory.path}/$fileName.pdf',
                                 'file');
@@ -340,7 +340,7 @@ class _ViewDocumentState extends State<ViewDocument> {
               color: Colors.redAccent,
             ),
             title: Text(
-              'Delete',
+              'Delete All',
               style: TextStyle(color: Colors.redAccent),
             ),
             onTap: () {

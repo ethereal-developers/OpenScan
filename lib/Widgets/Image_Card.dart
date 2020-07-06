@@ -49,9 +49,6 @@ class ImageCard extends StatelessWidget {
             onPressed: () async {
               Cropper cropper = Cropper();
               var image = await cropper.cropImage(imageFile);
-              //  make the renaming switch between adding a "c" if it isn't present and removing a "c" if it is present in the name of the image
-              // eg: if the name of the file is ../OpenScan Datetime/2.jpg, it has to become ../OpenScan Datetime/2c.jpg
-              // eg: if the name of the file is ../OpenScan Datetime/2c.jpg, it has to become ../OpenScan Datetime/2.jpg
               File temp = File(
                   imageFile.path.substring(0, imageFile.path.lastIndexOf(".")) +
                       "c.jpg");
@@ -74,7 +71,11 @@ class ImageCard extends StatelessWidget {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10),),),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(10),
+                        ),
+                      ),
                       title: Text('Delete'),
                       content: Text('Do you really want to delete image?'),
                       actions: <Widget>[

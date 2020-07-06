@@ -210,9 +210,12 @@ class _HomeScreenState extends State<HomeScreen> {
           onRefresh: _onRefresh,
           child: Column(
             children: <Widget>[
-              Text(
-                'Drag down to refresh',
-                style: TextStyle(color: Colors.grey[700], fontSize: 11),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5.0),
+                child: Text(
+                  'Drag down to refresh',
+                  style: TextStyle(color: Colors.grey[700], fontSize: 11),
+                ),
               ),
               Expanded(
                 child: FutureBuilder(
