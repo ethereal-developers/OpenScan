@@ -7,8 +7,8 @@ import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:openscan/screens/pdf_screen.dart';
-import 'package:openscan/screens/share_document.dart';
 import 'package:share_extend/share_extend.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
@@ -30,7 +30,6 @@ class _ViewDocumentState extends State<ViewDocument> {
   FileOperations fileOperations;
 
   String dirName;
-  Directory selectedDirectory;
 
   String fileName;
 
@@ -126,17 +125,17 @@ class _ViewDocumentState extends State<ViewDocument> {
             IconButton(
               icon: Icon(Icons.picture_as_pdf),
               onPressed: () async {
-                _statusSuccess = await fileOperations.saveToDevice(
+                _statusSuccess = await fileOperations.saveToAppDirectory(
                   context: context,
-                  selectedDirectory: selectedDirectory,
                   fileName: fileName,
                   images: imageFilesWithDate,
                 );
+                Directory storedDirectory = await getApplicationDocumentsDirectory();
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => PDFScreen(
-                      path: '/storage/emulated/0/OpenScan/PDF/$fileName.pdf',
+                      path: '${storedDirectory.path}/$fileName.pdf',
                     ),
                   ),
                 );
@@ -235,16 +234,16 @@ class _ViewDocumentState extends State<ViewDocument> {
             leading: Icon(Icons.phone_android),
             title: Text('Save to device'),
             onTap: () async {
+              String savedDirectory;
               Navigator.pop(context);
-              _statusSuccess = await fileOperations.saveToDevice(
+              savedDirectory = await fileOperations.saveToDevice(
                 context: context,
-                selectedDirectory: selectedDirectory,
                 fileName: fileName,
                 images: imageFilesWithDate,
               );
               String displayText;
-              (_statusSuccess)
-                  ? displayText = "Saved at /storage/emulated/0/OpenScan/PDF/"
+              (savedDirectory != null)
+                  ? displayText = "Saved at $savedDirectory"
                   : displayText = "Failed to generate pdf. Try Again.";
               scaffoldKey.currentState.showSnackBar(
                 SnackBar(
@@ -256,13 +255,13 @@ class _ViewDocumentState extends State<ViewDocument> {
                   content: Container(
                     decoration: BoxDecoration(),
                     alignment: Alignment.center,
-                    height: 15,
+                    height: 20,
                     width: size.width * 0.3,
                     child: Text(
                       displayText,
                       style: TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 12
                       ),
                     ),
                   ),
@@ -307,14 +306,14 @@ class _ViewDocumentState extends State<ViewDocument> {
                         ),
                         FlatButton(
                           onPressed: () async {
-                            _statusSuccess = await fileOperations.saveToDevice(
+                            _statusSuccess = await fileOperations.saveToAppDirectory(
                               context: context,
-                              selectedDirectory: selectedDirectory,
                               fileName: fileName,
                               images: imageFilesWithDate,
                             );
+                            Directory storedDirectory = await getApplicationDocumentsDirectory();
                             ShareExtend.share(
-                                '/storage/emulated/0/OpenScan/PDF/$fileName.pdf',
+                                '${storedDirectory.path}/$fileName.pdf',
                                 'file');
                             Navigator.pop(context);
                           },

@@ -95,11 +95,11 @@ class FileOperations {
     return newDirectory;
   }
 
-  Future<bool> saveToDevice(
+  Future<String> saveToDevice(
       {BuildContext context,
-      Directory selectedDirectory,
       String fileName,
       dynamic images}) async {
+    Directory selectedDirectory;
     Directory openscanDir = Directory("/storage/emulated/0/OpenScan/PDF");
     try {
       if (!openscanDir.existsSync()) {
@@ -109,6 +109,28 @@ class FileOperations {
     } catch (e) {
       selectedDirectory = await pickDirectory(context, selectedDirectory);
     }
+    List<Map<String, dynamic>> foo = [];
+    if (images.runtimeType == foo.runtimeType) {
+      var tempImages = [];
+      for (var image in images) {
+        tempImages.add(image["file"]);
+      }
+      images = tempImages;
+    }
+    pdfStatus = await createPdf(
+      selectedDirectory: selectedDirectory,
+      fileName: fileName,
+      images: images,
+    );
+    return (pdfStatus)? selectedDirectory.path : null;
+  }
+
+  Future<bool> saveToAppDirectory(
+      {BuildContext context,
+        String fileName,
+        dynamic images}) async {
+    Directory selectedDirectory = await getApplicationDocumentsDirectory();
+
     List<Map<String, dynamic>> foo = [];
     if (images.runtimeType == foo.runtimeType) {
       var tempImages = [];

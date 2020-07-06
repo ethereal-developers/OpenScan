@@ -17,31 +17,6 @@ class GettingStartedScreen extends StatefulWidget {
 
 class _GettingStartedScreenState extends State<GettingStartedScreen> {
   int _currentPage = 0;
-  // final PageController _pageController = PageController(initialPage: 0);
-
-  @override
-  void initState() {
-    super.initState();
-    Timer.periodic(Duration(seconds: 5), (Timer timer) {
-      if (_currentPage < 2) {
-        _currentPage++;
-      } else {
-        _currentPage = 0;
-      }
-
-      // _pageController.animateToPage(
-      //   _currentPage,
-      //   duration: Duration(milliseconds: 300),
-      //   curve: Curves.easeIn,
-      // );
-    });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    // _pageController.dispose();
-  }
 
   _onPageChanged(int index) {
     setState(() {
@@ -107,7 +82,6 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                         ),
                         child: PageView.builder(
                           scrollDirection: Axis.horizontal,
-                          // controller: _pageController,
                           onPageChanged: _onPageChanged,
                           itemCount: slideList.length,
                           itemBuilder: (ctx, i) => SlideItem(i),

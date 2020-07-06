@@ -19,7 +19,6 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> getFlag() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     if (preferences.getBool("alreadyVisited") == null) {
-      preferences.setBool("counter", false);
       visitingFlag = false;
     } else {
       visitingFlag = true;
