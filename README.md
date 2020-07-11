@@ -2,7 +2,7 @@
 
 An open source app that enables users to scan hardcopies of documents or notes and covert it to a PDF file. No ads. No data collection. We respect your privacy.
 
-![](https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/scan_g.jpeg =500x)
+<img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/scan_g.jpeg" style="width: 500px; height: 500px">
 
 # About this app
 
