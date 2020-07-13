@@ -4,7 +4,7 @@ An open source app that enables users to scan hardcopies of documents or notes a
 
 (Build instructions present at the bottom of the file)
 
-![](https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/scan_g.jpeg)
+<img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/scan_g.jpeg" height=400>
 
 # About this app
 
