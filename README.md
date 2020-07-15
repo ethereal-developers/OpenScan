@@ -14,6 +14,6 @@ An open source app that enables users to scan hardcopies of documents or notes a
 - [ ] Camera Permissions
 
 ## TODO - Features:
-- Reimplemet Crop
-- Implement edge detection using ML
-- Implement image correction
+- [ ] Reimplemet Crop
+- [ ] Implement edge detection using ML
+- [ ] Implement image correction
