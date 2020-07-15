@@ -15,5 +15,6 @@ An open source app that enables users to scan hardcopies of documents or notes a
 
 ## TODO - Features:
 - [ ] Reimplemet Crop
+- [ ] Reimplement Share Document Module
 - [ ] Implement edge detection using ML
 - [ ] Implement image correction
