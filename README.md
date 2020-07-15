@@ -7,7 +7,7 @@ An open source app that enables users to scan hardcopies of documents or notes a
 ## TODO - BUGS:
 - [ ] View document visibility
 - [ ] Hide Picture folder
-- [ ] Crop icon in Scan doc for even images
+- [+] Crop icon in Scan doc for even images
 - [ ] Change to in app cam
 - [ ] Auto reload home after exiting view
 - [ ] Tutorial Clarity
