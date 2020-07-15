@@ -262,7 +262,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                                   'Crop',
                                   style: TextStyle(color: Colors.black),
                                 ),
-                                trailingIcon: Icon(Icons.crop),
+                                trailingIcon: Icon(Icons.crop, color: Colors.black,),
                                 onPressed: () async {
                                   int tempIndex = index * 2 + 1;
                                   _reCropImage(tempIndex);
