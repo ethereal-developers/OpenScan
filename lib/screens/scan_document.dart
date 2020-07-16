@@ -11,6 +11,7 @@ import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:openscan/Utilities/DatabaseHelper.dart';
 
 import 'view_document.dart';
 
@@ -27,6 +28,7 @@ class _ScanDocumentState extends State<ScanDocument> {
   List<File> imageFiles = [];
   String appPath;
   String docPath;
+  DatabaseHelper database = DatabaseHelper();
 
   @override
   void initState() {
@@ -327,9 +329,12 @@ class _ScanDocumentState extends State<ScanDocument> {
             child: RaisedButton(
               onPressed: () async {
                 if (imageFiles.length != 0) {
+                  // TODO: Check if Directory Table already exists
+                  // TODO: If no, create table
                   for (int i = 0; i < imageFiles.length; i++) {
                     await fileOperations.saveImage(
                         image: imageFiles[i], i: i + 1, dirName: docPath);
+                    // TODO: Insert image to table
                   }
                 }
                 await fileOperations.deleteTemporaryFiles();

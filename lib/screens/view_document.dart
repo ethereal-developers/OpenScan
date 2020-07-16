@@ -28,11 +28,8 @@ class _ViewDocumentState extends State<ViewDocument> {
   List<String> imageFilesPath = [];
 
   FileOperations fileOperations;
-
   String dirName;
-
   String fileName;
-
   bool _statusSuccess;
 
   void getImages() {

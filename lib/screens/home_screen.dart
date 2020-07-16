@@ -33,9 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       String path = entity.path;
-      if (!imageDirPaths.contains(path) &&
-          path !=
-              '/storage/emulated/0/Android/data/com.example.openscan/files/Pictures') {
+      if (!imageDirPaths.contains(path) && !path.contains('/files/Pictures')) {
         imageDirPaths.add(path);
         Directory(path)
             .list(recursive: false, followLinks: false)
