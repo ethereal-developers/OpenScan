@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
+import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
@@ -27,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   var imageCount = 0;
 
   Future getDirectoryNames() async {
+    //TODO: Get all details from Tables
     Directory appDir = await getExternalStorageDirectory();
     Directory appDirPath = Directory("${appDir.path}");
     appDirPath
@@ -297,6 +299,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                               Directory(imageDirectories[index]
                                                       ['path'])
                                                   .deleteSync(recursive: true);
+                                              DatabaseHelper()
+                                                    ..deleteDirectory(
+                                                        dirPath:
+                                                            imageDirectories[
+                                                                index]['path']);
                                               Navigator.pop(context);
                                               getData();
                                             },

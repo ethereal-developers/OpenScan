@@ -6,10 +6,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:openscan/Utilities/DatabaseHelper.dart';
+import 'package:openscan/Utilities/Classes.dart';
 
 class FileOperations {
   String appName = 'OpenScan';
   static bool pdfStatus;
+  DatabaseHelper database = DatabaseHelper();
 
   Future<String> getAppPath() async {
     final Directory _appDocDir = await getApplicationDocumentsDirectory();
@@ -66,13 +69,30 @@ class FileOperations {
     return image;
   }
 
-  Future<void> saveImage({File image, int i, dirName}) async {
-    if (await Directory(dirName).exists() != true) {
-      new Directory(dirName).create();
+  Future<void> saveImage({File image, int i,String dirPath}) async {
+    if (await Directory(dirPath).exists() != true) {
+      new Directory(dirPath).create();
+      DirectoryOS directoryOS = DirectoryOS();
+      directoryOS.dirName = dirPath.substring(dirPath.lastIndexOf('/') + 1);
+      directoryOS.dirPath = dirPath;
+      directoryOS.imageCount = 0;
+      directoryOS.created = DateTime.parse(directoryOS.dirName.substring(directoryOS.dirName.indexOf(' ')+1));
+      directoryOS.newName = null;
+      directoryOS.lastModified = directoryOS.created;
+      directoryOS.firstImagePath = null;
+      await database.createDirectory(directory: directoryOS);
     }
 
-    File tempPic = File("$dirName/ ${DateTime.now()} $i .jpg");
+    File tempPic = File("$dirPath/ ${DateTime.now()} $i .jpg");
     image.copy(tempPic.path);
+    ImageOS imageOS = ImageOS();
+    imageOS.imgPath = tempPic.path;
+    imageOS.idx = i;
+    // TODO: If idx = 1, update firstImagePath in master
+    database.createImage(image: imageOS, tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1));
+    if(i == 1){
+      database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
+    }
   }
 
   // SAVE TO DEVICE

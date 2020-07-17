@@ -9,8 +9,6 @@ class DirectoryOS{
 }
 
 class ImageOS{
-  int index;
-  String imgName;
+  int idx;
   String imgPath;
-  DateTime created;
 }

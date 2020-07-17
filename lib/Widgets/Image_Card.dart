@@ -4,18 +4,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
+import 'package:openscan/Utilities/DatabaseHelper.dart';
 
 import '../Utilities/constants.dart';
 import '../Utilities/cropper.dart';
 
 class ImageCard extends StatelessWidget {
-  const ImageCard({this.imageFile, this.imageFileEditCallback});
+  const ImageCard({this.imageFile, this.imageFileEditCallback, this.dirName});
 
   final File imageFile;
   final Function imageFileEditCallback;
+  final String dirName;
 
   @override
   Widget build(BuildContext context) {
+    DatabaseHelper database = DatabaseHelper();
     Size size = MediaQuery.of(context).size;
     return RaisedButton(
       elevation: 20,
@@ -87,6 +90,7 @@ class ImageCard extends StatelessWidget {
                           onPressed: () {
                             imageFile.deleteSync();
                             imageFileEditCallback();
+                            database.deleteImage(imgPath: imageFile.path, tableName: dirName);
                             Navigator.pop(context);
                           },
                           child: Text(

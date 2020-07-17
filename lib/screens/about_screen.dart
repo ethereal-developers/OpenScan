@@ -69,7 +69,6 @@ class AboutScreen extends StatelessWidget {
                             fontWeight: FontWeight.normal,
                           ),
                         ),
-                        //TODO: Content Writing
                         TextSpan(
                           text: '',
                           style: TextStyle(color: Colors.redAccent),

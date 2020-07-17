@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
@@ -28,7 +29,7 @@ class _ViewDocumentState extends State<ViewDocument> {
   List<String> imageFilesPath = [];
 
   FileOperations fileOperations;
-  String dirName;
+  String dirPath;
   String fileName;
   bool _statusSuccess;
 
@@ -36,7 +37,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     imageFilesPath = [];
     imageFilesWithDate = [];
 
-    Directory(dirName)
+    Directory(dirPath)
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       List<String> temp = entity.path.split(" ");
@@ -74,10 +75,9 @@ class _ViewDocumentState extends State<ViewDocument> {
   void initState() {
     super.initState();
     fileOperations = FileOperations();
-    dirName = widget.dirPath;
+    dirPath = widget.dirPath;
     getImages();
-    fileName =
-        dirName.substring(dirName.lastIndexOf("/") + 1, dirName.length - 1);
+    fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
   }
 
   Future<dynamic> createImage() async {
@@ -122,21 +122,24 @@ class _ViewDocumentState extends State<ViewDocument> {
             IconButton(
               icon: Icon(Icons.picture_as_pdf),
               onPressed: () async {
-                _statusSuccess = await fileOperations.saveToAppDirectory(
-                  context: context,
-                  fileName: fileName,
-                  images: imageFilesWithDate,
-                );
-                Directory storedDirectory =
-                    await getApplicationDocumentsDirectory();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PDFScreen(
-                      path: '${storedDirectory.path}/$fileName.pdf',
-                    ),
-                  ),
-                );
+                DatabaseHelper()..queryAll();
+
+
+//                _statusSuccess = await fileOperations.saveToAppDirectory(
+//                  context: context,
+//                  fileName: fileName,
+//                  images: imageFilesWithDate,
+//                );
+//                Directory storedDirectory =
+//                    await getApplicationDocumentsDirectory();
+//                Navigator.push(
+//                  context,
+//                  MaterialPageRoute(
+//                    builder: (context) => PDFScreen(
+//                      path: '${storedDirectory.path}/$fileName.pdf',
+//                    ),
+//                  ),
+//                );
               },
             ),
             Builder(builder: (context) {
@@ -170,12 +173,14 @@ class _ViewDocumentState extends State<ViewDocument> {
                         imageFile:
                             File(imageFilesWithDate[index * 2]["file"].path),
                         imageFileEditCallback: imageEditCallback,
+                        dirName: fileName,
                       ),
                       if (index * 2 + 1 < imageFilesWithDate.length)
                         ImageCard(
                           imageFile: File(
                               imageFilesWithDate[index * 2 + 1]["file"].path),
                           imageFileEditCallback: imageEditCallback,
+                          dirName: fileName,
                         ),
                     ],
                   ),
@@ -192,7 +197,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     FileOperations fileOperations = FileOperations();
     Size size = MediaQuery.of(context).size;
     String folderName =
-        dirName.substring(dirName.lastIndexOf('/') + 1, dirName.length - 1);
+        dirPath.substring(dirPath.lastIndexOf('/') + 1, dirPath.length - 1);
     return Container(
       color: primaryColor,
       child: Column(
@@ -223,7 +228,7 @@ class _ViewDocumentState extends State<ViewDocument> {
               await fileOperations.saveImage(
                 image: image,
                 i: imageFilesWithDate.length + 1,
-                dirName: dirName,
+                dirPath: dirPath,
               );
               getImages();
             },
@@ -360,7 +365,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                       ),
                       FlatButton(
                         onPressed: () {
-                          Directory(dirName).deleteSync(recursive: true);
+                          Directory(dirPath).deleteSync(recursive: true);
+                          DatabaseHelper()..deleteDirectory(dirPath: dirPath);
                           Navigator.popUntil(
                               context, ModalRoute.withName(HomeScreen.route));
                         },

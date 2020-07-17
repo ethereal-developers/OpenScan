@@ -329,12 +329,9 @@ class _ScanDocumentState extends State<ScanDocument> {
             child: RaisedButton(
               onPressed: () async {
                 if (imageFiles.length != 0) {
-                  // TODO: Check if Directory Table already exists
-                  // TODO: If no, create table
                   for (int i = 0; i < imageFiles.length; i++) {
                     await fileOperations.saveImage(
-                        image: imageFiles[i], i: i + 1, dirName: docPath);
-                    // TODO: Insert image to table
+                      image: imageFiles[i], i: i + 1, dirPath: docPath);
                   }
                 }
                 await fileOperations.deleteTemporaryFiles();
