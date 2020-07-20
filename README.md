@@ -12,6 +12,7 @@ An open source app that enables users to scan hardcopies of documents or notes a
 - [x] Auto reload home after exiting view
 - [ ] Tutorial Clarity
 - [ ] Camera Permissions
+- [ ] Clear temporary images after "Add Image" process in View Document
 
 ## TODO - Features:
 - [ ] Reimplement Crop
