@@ -11,6 +11,9 @@ import 'package:openscan/screens/pdf_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_extend/share_extend.dart';
 
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
 

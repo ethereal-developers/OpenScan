@@ -13,6 +13,8 @@ An open source app that enables users to scan hardcopies of documents or notes a
 - [ ] Tutorial Clarity
 - [x] Camera Permissions
 - [x] Clear temporary images after "Add Image" process in View Document
+- [ ] Home doesn't update even after deleting folder from focused menu
+- [ ] Fix wording in popup dialog when deleting directory in HomeScreen
 
 ## TODO - Features:
 - [ ] Reimplement Crop

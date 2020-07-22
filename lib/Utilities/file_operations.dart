@@ -69,14 +69,15 @@ class FileOperations {
     return image;
   }
 
-  Future<void> saveImage({File image, int i,String dirPath}) async {
+  Future<void> saveImage({File image, int i, String dirPath}) async {
     if (await Directory(dirPath).exists() != true) {
       new Directory(dirPath).create();
       DirectoryOS directoryOS = DirectoryOS();
       directoryOS.dirName = dirPath.substring(dirPath.lastIndexOf('/') + 1);
       directoryOS.dirPath = dirPath;
       directoryOS.imageCount = 0;
-      directoryOS.created = DateTime.parse(directoryOS.dirName.substring(directoryOS.dirName.indexOf(' ')+1));
+      directoryOS.created = DateTime.parse(
+          directoryOS.dirName.substring(directoryOS.dirName.indexOf(' ') + 1));
       directoryOS.newName = null;
       directoryOS.lastModified = directoryOS.created;
       directoryOS.firstImagePath = null;
@@ -89,8 +90,10 @@ class FileOperations {
     imageOS.imgPath = tempPic.path;
     imageOS.idx = i;
     // TODO: If idx = 1, update firstImagePath in master
-    database.createImage(image: imageOS, tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1));
-    if(i == 1){
+    database.createImage(
+        image: imageOS,
+        tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1));
+    if (i == 1) {
       database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
     }
   }
