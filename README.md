@@ -11,7 +11,7 @@ An open source app that enables users to scan hardcopies of documents or notes a
 - [ ] Change to in app cam
 - [x] Auto reload home after exiting view
 - [ ] Tutorial Clarity
-- [ ] Camera Permissions
+- [x] Camera Permissions
 - [ ] Clear temporary images after "Add Image" process in View Document
 
 ## TODO - Features:
@@ -19,3 +19,6 @@ An open source app that enables users to scan hardcopies of documents or notes a
 - [ ] Reimplement Share Document Module
 - [ ] Implement edge detection using ML
 - [ ] Implement image correction
+
+## TODO - Testing:
+- [ ] Test Camera Permission on older SDKs
