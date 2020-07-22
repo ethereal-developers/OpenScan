@@ -74,9 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> _requestPermission() async {
     final PermissionHandler _permissionHandler = PermissionHandler();
-    var result =
-        await _permissionHandler.requestPermissions([PermissionGroup.storage]);
-    if (result[PermissionGroup.storage] == PermissionStatus.granted) {
+    var result = await _permissionHandler.requestPermissions(
+        <PermissionGroup>[PermissionGroup.storage, PermissionGroup.camera]);
+    if (result[PermissionGroup.storage] == PermissionStatus.granted &&
+        result[PermissionGroup.camera] == PermissionStatus.granted) {
       return true;
     }
     return false;
@@ -300,10 +301,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       ['path'])
                                                   .deleteSync(recursive: true);
                                               DatabaseHelper()
-                                                    ..deleteDirectory(
-                                                        dirPath:
-                                                            imageDirectories[
-                                                                index]['path']);
+                                                ..deleteDirectory(
+                                                    dirPath:
+                                                        imageDirectories[index]
+                                                            ['path']);
                                               Navigator.pop(context);
                                               getData();
                                             },
