@@ -124,7 +124,6 @@ class _ViewDocumentState extends State<ViewDocument> {
               onPressed: () async {
                 DatabaseHelper()..queryAll();
 
-
 //                _statusSuccess = await fileOperations.saveToAppDirectory(
 //                  context: context,
 //                  fileName: fileName,
@@ -230,6 +229,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                 i: imageFilesWithDate.length + 1,
                 dirPath: dirPath,
               );
+              await fileOperations.deleteTemporaryFiles();
               getImages();
             },
           ),
