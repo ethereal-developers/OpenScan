@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
@@ -84,10 +85,19 @@ class _ViewDocumentState extends State<ViewDocument> {
   }
 
   Future<dynamic> createImage() async {
+    // File image = await fileOperations.openCamera();
+    // if (image != null) {
+    //   Cropper cropper = Cropper();
+    //   var imageFile = await cropper.cropImage(image);
+    //   if (imageFile != null) return imageFile;
+    // }
     File image = await fileOperations.openCamera();
     if (image != null) {
-      Cropper cropper = Cropper();
-      var imageFile = await cropper.cropImage(image);
+      String imageFilePath = await FlutterScannerCropper.openCrop({
+        'src': image.path,
+        'dest': '/data/user/0/com.ethereal.openscan/cache/'
+      });
+      File imageFile = File(imageFilePath);
       if (imageFile != null) return imageFile;
     }
   }

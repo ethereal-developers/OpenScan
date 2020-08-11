@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/constants.dart';
@@ -40,16 +41,32 @@ class _ScanDocumentState extends State<ScanDocument> {
   Future createImage() async {
     File image = await fileOperations.openCamera();
     if (image != null) {
-      Cropper cropper = Cropper();
-      var imageFile = await cropper.cropImage(image);
-      if (imageFile != null) imageFiles.add(imageFile);
+      // Cropper cropper = Cropper();
+      // var imageFile = await cropper.cropImage(image);
+      // if (imageFile != null) imageFiles.add(imageFile);
+      String imageFilePath = await FlutterScannerCropper.openCrop({
+        'src': image.path,
+        'dest': '/data/user/0/com.ethereal.openscan/cache/'
+      });
+      if (imageFilePath != null) imageFiles.add(File(imageFilePath));
     }
     setState(() {});
   }
 
   void _reCropImage(index) async {
-    Cropper cropper = Cropper();
-    var image = await cropper.cropImage(imageFiles[index]);
+    // Cropper cropper = Cropper();
+    // var image = await cropper.cropImage(imageFiles[index]);
+    // if (image != null) {
+    //   imageFiles.removeAt(index);
+    //   setState(() {
+    //     imageFiles.insert(index, image);
+    //   });
+    // }
+    String imageFilePath = await FlutterScannerCropper.openCrop({
+      'src': imageFiles[index].path,
+      'dest': '/data/user/0/com.ethereal.openscan/cache/'
+    });
+    File image = File(imageFilePath);
     if (image != null) {
       imageFiles.removeAt(index);
       setState(() {
@@ -264,7 +281,10 @@ class _ScanDocumentState extends State<ScanDocument> {
                                   'Crop',
                                   style: TextStyle(color: Colors.black),
                                 ),
-                                trailingIcon: Icon(Icons.crop, color: Colors.black,),
+                                trailingIcon: Icon(
+                                  Icons.crop,
+                                  color: Colors.black,
+                                ),
                                 onPressed: () async {
                                   int tempIndex = index * 2 + 1;
                                   _reCropImage(tempIndex);
@@ -331,7 +351,7 @@ class _ScanDocumentState extends State<ScanDocument> {
                 if (imageFiles.length != 0) {
                   for (int i = 0; i < imageFiles.length; i++) {
                     await fileOperations.saveImage(
-                      image: imageFiles[i], i: i + 1, dirPath: docPath);
+                        image: imageFiles[i], i: i + 1, dirPath: docPath);
                   }
                 }
                 await fileOperations.deleteTemporaryFiles();

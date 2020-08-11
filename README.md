@@ -17,7 +17,7 @@ An open source app that enables users to scan hardcopies of documents or notes a
 - [ ] Fix wording in popup dialog when deleting directory in HomeScreen
 
 ## TODO - Features:
-- [ ] Reimplement Crop
+- [x] Reimplement Crop
 - [ ] Reimplement Share Document Module
 - [x] Implement edge detection using ML
 - [x] Implement image correction

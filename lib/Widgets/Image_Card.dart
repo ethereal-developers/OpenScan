@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
@@ -50,8 +51,20 @@ class ImageCard extends StatelessWidget {
               style: TextStyle(color: Colors.black),
             ),
             onPressed: () async {
-              Cropper cropper = Cropper();
-              var image = await cropper.cropImage(imageFile);
+              // Cropper cropper = Cropper();
+              // var image = await cropper.cropImage(imageFile);
+              // File temp = File(
+              //     imageFile.path.substring(0, imageFile.path.lastIndexOf(".")) +
+              //         "c.jpg");
+              // imageFile.deleteSync();
+              // if (image != null) {
+              //   image.copy(temp.path);
+              // }
+              String imageFilePath = await FlutterScannerCropper.openCrop({
+                'src': imageFile.path,
+                'dest': '/data/user/0/com.ethereal.openscan/cache/'
+              });
+              File image = File(imageFilePath);
               File temp = File(
                   imageFile.path.substring(0, imageFile.path.lastIndexOf(".")) +
                       "c.jpg");
@@ -90,7 +103,8 @@ class ImageCard extends StatelessWidget {
                           onPressed: () {
                             imageFile.deleteSync();
                             imageFileEditCallback();
-                            database.deleteImage(imgPath: imageFile.path, tableName: dirName);
+                            database.deleteImage(
+                                imgPath: imageFile.path, tableName: dirName);
                             Navigator.pop(context);
                           },
                           child: Text(
