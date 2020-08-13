@@ -26,7 +26,7 @@ dependencies:
   sqflite: ^1.2.0
 
   flutter_scanner_cropper:
-    git: 
+    git:
       url: https://github.com/Ethereal-Developers-Inc/flutter-scanner-plugin.git
       path: flutter_scanner_cropper/
 

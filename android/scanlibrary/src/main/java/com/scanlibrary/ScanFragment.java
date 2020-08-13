@@ -34,6 +34,7 @@ import java.util.Map;
 public class ScanFragment extends Fragment {
 
     private Button scanButton;
+    private Button rotateButton;
     private ImageView sourceImageView;
     private FrameLayout sourceFrame;
     private PolygonView polygonView;
@@ -65,7 +66,9 @@ public class ScanFragment extends Fragment {
     private void init() {
         sourceImageView = (ImageView) view.findViewById(R.id.sourceImageView);
         scanButton = (Button) view.findViewById(R.id.scanButton);
+        rotateButton = (Button) view.findViewById(R.id.rotateButton);
         scanButton.setOnClickListener(new ScanButtonClickListener());
+        rotateButton.setOnClickListener(new RotateButtonClickListener());
         sourceFrame = (FrameLayout) view.findViewById(R.id.sourceFrame);
         polygonView = (PolygonView) view.findViewById(R.id.polygonView);
         sourceFrame.post(new Runnable() {
@@ -159,6 +162,16 @@ public class ScanFragment extends Fragment {
             } else {
                 showErrorDialog();
             }
+        }
+    }
+
+    private class RotateButtonClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            Matrix matrix = new Matrix();
+            matrix.postRotate(90);
+            original = Bitmap.createBitmap(original, 0, 0, original.getWidth(), original.getHeight(), matrix, true);
+            setBitmap(original);
         }
     }
 

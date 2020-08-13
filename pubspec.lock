@@ -128,11 +128,9 @@ packages:
   flutter_scanner_cropper:
     dependency: "direct main"
     description:
-      path: "flutter_scanner_cropper/"
-      ref: HEAD
-      resolved-ref: "793057cc6d2f39b2ec47342ef6482cef245a0059"
-      url: "https://github.com/Ethereal-Developers-Inc/flutter-scanner-plugin.git"
-    source: git
+      path: "../flutter-scanner-plugin/flutter_scanner_cropper"
+      relative: true
+    source: path
     version: "0.0.1"
   flutter_test:
     dependency: "direct dev"

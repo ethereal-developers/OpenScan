@@ -13,12 +13,22 @@
         android:background="@color/orange"
         android:orientation="horizontal"
         android:padding="@dimen/bottom_bar_padding"
-        android:text="@string/scan"></Button>
+        android:text="@string/scan" />
+
+    <Button
+        android:id="@+id/rotateButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:layout_above="@+id/scanButton"
+        android:orientation="horizontal"
+        android:padding="@dimen/bottom_bar_padding"
+        android:text="@string/rotate_image" />
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/scanButton"
+        android:layout_above="@id/rotateButton"
         android:layout_gravity="center"
         android:layout_margin="@dimen/scanPadding">
 
@@ -42,7 +52,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
-            android:visibility="gone"></com.scanlibrary.PolygonView>
+            android:visibility="gone" >
+
+        </com.scanlibrary.PolygonView>
+
     </FrameLayout>
 
 
