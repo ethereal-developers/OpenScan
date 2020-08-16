@@ -4,16 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/Widgets/Image_Card.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:openscan/screens/pdf_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_extend/share_extend.dart';
-
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
@@ -75,22 +71,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    fileOperations = FileOperations();
-    dirPath = widget.dirPath;
-    getImages();
-    fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
-  }
-
   Future<dynamic> createImage() async {
-    // File image = await fileOperations.openCamera();
-    // if (image != null) {
-    //   Cropper cropper = Cropper();
-    //   var imageFile = await cropper.cropImage(image);
-    //   if (imageFile != null) return imageFile;
-    // }
     File image = await fileOperations.openCamera();
     if (image != null) {
       String imageFilePath = await FlutterScannerCropper.openCrop({
@@ -98,7 +79,33 @@ class _ViewDocumentState extends State<ViewDocument> {
         'dest': '/data/user/0/com.ethereal.openscan/cache/'
       });
       File imageFile = File(imageFilePath);
-      if (imageFile != null) return imageFile;
+      setState(() {});
+      await fileOperations.saveImage(
+        image: imageFile,
+        i: imageFilesWithDate.length + 1,
+        dirPath: dirPath,
+      );
+      await fileOperations.deleteTemporaryFiles();
+      getImages();
+    }
+  }
+
+  Future<void> createDirectoryName() async {
+    Directory appDir = await getExternalStorageDirectory();
+    dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fileOperations = FileOperations();
+    if (widget.dirPath != null) {
+      dirPath = widget.dirPath;
+      getImages();
+      fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
+    } else {
+      createDirectoryName();
+      createImage();
     }
   }
 
@@ -135,23 +142,23 @@ class _ViewDocumentState extends State<ViewDocument> {
             IconButton(
               icon: Icon(Icons.picture_as_pdf),
               onPressed: () async {
-                DatabaseHelper()..queryAll();
+//                DatabaseHelper()..queryAll();
 
-//                _statusSuccess = await fileOperations.saveToAppDirectory(
-//                  context: context,
-//                  fileName: fileName,
-//                  images: imageFilesWithDate,
-//                );
-//                Directory storedDirectory =
-//                    await getApplicationDocumentsDirectory();
-//                Navigator.push(
-//                  context,
-//                  MaterialPageRoute(
-//                    builder: (context) => PDFScreen(
-//                      path: '${storedDirectory.path}/$fileName.pdf',
-//                    ),
-//                  ),
-//                );
+                _statusSuccess = await fileOperations.saveToAppDirectory(
+                  context: context,
+                  fileName: fileName,
+                  images: imageFilesWithDate,
+                );
+                Directory storedDirectory =
+                    await getApplicationDocumentsDirectory();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PDFScreen(
+                      path: '${storedDirectory.path}/$fileName.pdf',
+                    ),
+                  ),
+                );
               },
             ),
             Builder(builder: (context) {
@@ -201,6 +208,14 @@ class _ViewDocumentState extends State<ViewDocument> {
             ),
           ),
         ),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: secondaryColor,
+          onPressed: createImage,
+          child: Icon(
+            Icons.camera_alt,
+            color: primaryColor,
+          ),
+        ),
       ),
     );
   }
@@ -229,22 +244,6 @@ class _ViewDocumentState extends State<ViewDocument> {
             indent: 8,
             endIndent: 8,
             color: Colors.white,
-          ),
-          ListTile(
-            leading: Icon(Icons.add_a_photo),
-            title: Text('Add Image'),
-            onTap: () async {
-              Navigator.pop(context);
-              var image = await createImage();
-              setState(() {});
-              await fileOperations.saveImage(
-                image: image,
-                i: imageFilesWithDate.length + 1,
-                dirPath: dirPath,
-              );
-              await fileOperations.deleteTemporaryFiles();
-              getImages();
-            },
           ),
           ListTile(
             leading: Icon(Icons.phone_android),

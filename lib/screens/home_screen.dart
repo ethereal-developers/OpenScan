@@ -12,8 +12,6 @@ import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'scan_document.dart';
-
 class HomeScreen extends StatefulWidget {
   static String route = "HomeScreen";
 
@@ -110,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         drawer: Container(
-          width: size.width * 0.6,
+          width: size.width * 0.5,
           color: primaryColor,
           child: Column(
             children: <Widget>[
@@ -124,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 thickness: 0.2,
                 indent: 6,
                 endIndent: 6,
-                color: Colors.white,
+                color: Colors.white24,
               ),
               ListTile(
                 title: Center(
@@ -142,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 thickness: 0.2,
                 indent: 6,
                 endIndent: 6,
-                color: Colors.white,
+                color: Colors.white24,
               ),
               ListTile(
                 title: Center(
@@ -163,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 thickness: 0.2,
                 indent: 6,
                 endIndent: 6,
-                color: Colors.white,
+                color: Colors.white24,
               ),
               ListTile(
                 title: Center(
@@ -191,10 +189,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 thickness: 0.2,
                 indent: 6,
                 endIndent: 6,
-                color: Colors.white,
+                color: Colors.white24,
               ),
               Spacer(
-                flex: 10,
+                flex: 9,
               ),
               IconButton(
                 icon: Icon(Icons.arrow_back_ios),
@@ -334,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
         floatingActionButton: Builder(builder: (context) {
           return FloatingActionButton(
             onPressed: () {
-              Navigator.pushNamed(context, ScanDocument.route);
+              Navigator.pushNamed(context, ViewDocument.route);
             },
             backgroundColor: secondaryColor,
             child: Icon(

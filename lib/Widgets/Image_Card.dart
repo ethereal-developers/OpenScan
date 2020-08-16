@@ -103,8 +103,8 @@ class ImageCard extends StatelessWidget {
                           onPressed: () {
                             imageFile.deleteSync();
                             imageFileEditCallback();
-                            database.deleteImage(
-                                imgPath: imageFile.path, tableName: dirName);
+//                            database.deleteImage(
+//                                imgPath: imageFile.path, tableName: dirName);
                             Navigator.pop(context);
                           },
                           child: Text(
