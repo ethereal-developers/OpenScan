@@ -192,14 +192,16 @@ class _ViewDocumentState extends State<ViewDocument> {
                         imageFile:
                             File(imageFilesWithDate[index * 2]["file"].path),
                         imageFileEditCallback: imageEditCallback,
-                        dirName: fileName,
+                        fileName: fileName,
+                        dirPath: dirPath,
                       ),
                       if (index * 2 + 1 < imageFilesWithDate.length)
                         ImageCard(
                           imageFile: File(
                               imageFilesWithDate[index * 2 + 1]["file"].path),
                           imageFileEditCallback: imageEditCallback,
-                          dirName: fileName,
+                          fileName: fileName,
+                          dirPath: dirPath,
                         ),
                     ],
                   ),

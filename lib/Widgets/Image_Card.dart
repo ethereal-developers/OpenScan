@@ -11,16 +11,21 @@ import '../Utilities/constants.dart';
 import '../Utilities/cropper.dart';
 
 class ImageCard extends StatelessWidget {
-  const ImageCard({this.imageFile, this.imageFileEditCallback, this.dirName});
+  const ImageCard(
+      {this.imageFile, this.imageFileEditCallback, this.fileName, this.dirPath});
 
   final File imageFile;
   final Function imageFileEditCallback;
-  final String dirName;
+  final String fileName;
+  final String dirPath;
 
   @override
   Widget build(BuildContext context) {
+    print(dirPath);
     DatabaseHelper database = DatabaseHelper();
-    Size size = MediaQuery.of(context).size;
+    Size size = MediaQuery
+        .of(context)
+        .size;
     return RaisedButton(
       elevation: 20,
       color: primaryColor,
@@ -51,15 +56,6 @@ class ImageCard extends StatelessWidget {
               style: TextStyle(color: Colors.black),
             ),
             onPressed: () async {
-              // Cropper cropper = Cropper();
-              // var image = await cropper.cropImage(imageFile);
-              // File temp = File(
-              //     imageFile.path.substring(0, imageFile.path.lastIndexOf(".")) +
-              //         "c.jpg");
-              // imageFile.deleteSync();
-              // if (image != null) {
-              //   image.copy(temp.path);
-              // }
               String imageFilePath = await FlutterScannerCropper.openCrop({
                 'src': imageFile.path,
                 'dest': '/data/user/0/com.ethereal.openscan/cache/'
@@ -105,6 +101,22 @@ class ImageCard extends StatelessWidget {
                             imageFileEditCallback();
 //                            database.deleteImage(
 //                                imgPath: imageFile.path, tableName: dirName);
+                            print(dirPath);
+                            print(Directory(dirPath).existsSync());
+                            try {
+                              Directory(dirPath).deleteSync(recursive: false);
+                              Navigator.pop(context);
+                            } catch(e){
+                              imageFileEditCallback();
+                            }
+                            print(Directory(dirPath).existsSync());
+//                            if (Directory(dirPath).existsSync()) {
+////                              imageFileEditCallback();
+////                              Navigator.pop(context);
+//                            } else {
+//                              Navigator.pop(context);
+//                            }
+//                            DatabaseHelper()..deleteDirectory(dirPath: dirPath);
                             Navigator.pop(context);
                           },
                           child: Text(

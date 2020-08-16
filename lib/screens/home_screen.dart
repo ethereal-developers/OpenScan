@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
@@ -22,11 +21,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> imageDirectories = [];
   var imageDirPaths = [];
-  var imageDirModDate = [];
+
+//  var imageDirModDate = [];
   var imageCount = 0;
 
   Future getDirectoryNames() async {
     //TODO: Get all details from Tables
+    imageDirectories = [];
+    imageDirPaths = [];
     Directory appDir = await getExternalStorageDirectory();
     Directory appDirPath = Directory("${appDir.path}");
     appDirPath
@@ -295,14 +297,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           FlatButton(
                                             onPressed: () {
+                                              print(imageDirectories[index]
+                                                  ['path']);
                                               Directory(imageDirectories[index]
                                                       ['path'])
                                                   .deleteSync(recursive: true);
-                                              DatabaseHelper()
-                                                ..deleteDirectory(
-                                                    dirPath:
-                                                        imageDirectories[index]
-                                                            ['path']);
+//                                              DatabaseHelper()
+//                                                ..deleteDirectory(
+//                                                    dirPath:
+//                                                        imageDirectories[index]
+//                                                            ['path']);
                                               Navigator.pop(context);
                                               getData();
                                             },
@@ -315,7 +319,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ],
                                       );
                                     },
-                                  );
+                                  ).whenComplete(() {
+                                    setState(() {});
+                                  });
                                 },
                               ),
                             ],
@@ -332,7 +338,9 @@ class _HomeScreenState extends State<HomeScreen> {
         floatingActionButton: Builder(builder: (context) {
           return FloatingActionButton(
             onPressed: () {
-              Navigator.pushNamed(context, ViewDocument.route);
+              Navigator.pushNamed(context, ViewDocument.route).whenComplete(() {
+                setState(() {});
+              });
             },
             backgroundColor: secondaryColor,
             child: Icon(
