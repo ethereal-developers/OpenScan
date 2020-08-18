@@ -13,10 +13,10 @@ import 'package:share_extend/share_extend.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
-
-  ViewDocument({this.dirPath});
-
   final String dirPath;
+  final bool quickScan;
+
+  ViewDocument({this.dirPath, this.quickScan});
 
   @override
   _ViewDocumentState createState() => _ViewDocumentState();
@@ -27,6 +27,8 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   List<Map<String, dynamic>> imageFilesWithDate = [];
   List<String> imageFilesPath = [];
+  List<Widget> imageCards = [];
+  String imageFilePath;
 
   FileOperations fileOperations;
   String dirPath;
@@ -41,18 +43,25 @@ class _ViewDocumentState extends State<ViewDocument> {
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       List<String> temp = entity.path.split(" ");
-      imageFilesWithDate.add({
+      //TODO: Fix delete bug
+      if (!imageFilesWithDate.contains({
         "file": entity,
         "creationDate": DateTime.parse("${temp[3]} ${temp[4]}")
-      });
+      })) {
+        imageFilesWithDate.add({
+          "file": entity,
+          "creationDate": DateTime.parse("${temp[3]} ${temp[4]}")
+        });
+      }
 
+      imageFilesWithDate
+          .sort((a, b) => a["creationDate"].compareTo(b["creationDate"]));
+      for (var image in imageFilesWithDate) {
+        if (!imageFilesPath.contains(image['file'].path))
+          imageFilesPath.add(image["file"].path);
+      }
       setState(() {
-        imageFilesWithDate
-            .sort((a, b) => a["creationDate"].compareTo(b["creationDate"]));
-        for (var image in imageFilesWithDate) {
-          if (!imageFilesPath.contains(image['file'].path))
-            imageFilesPath.add(image["file"].path);
-        }
+        print(imageFilesWithDate);
       });
     });
   }
@@ -74,11 +83,13 @@ class _ViewDocumentState extends State<ViewDocument> {
   Future<dynamic> createImage() async {
     File image = await fileOperations.openCamera();
     if (image != null) {
-      String imageFilePath = await FlutterScannerCropper.openCrop({
-        'src': image.path,
-        'dest': '/data/user/0/com.ethereal.openscan/cache/'
-      });
-      File imageFile = File(imageFilePath);
+      if (!widget.quickScan) {
+        imageFilePath = await FlutterScannerCropper.openCrop({
+          'src': image.path,
+          'dest': '/data/user/0/com.ethereal.openscan/cache/'
+        });
+      }
+      File imageFile = File(imageFilePath ?? image.path);
       setState(() {});
       await fileOperations.saveImage(
         image: imageFile,
@@ -86,6 +97,7 @@ class _ViewDocumentState extends State<ViewDocument> {
         dirPath: dirPath,
       );
       await fileOperations.deleteTemporaryFiles();
+      if (widget.quickScan) createImage();
       getImages();
     }
   }
@@ -93,6 +105,29 @@ class _ViewDocumentState extends State<ViewDocument> {
   Future<void> createDirectoryName() async {
     Directory appDir = await getExternalStorageDirectory();
     dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
+  }
+
+  getImageCards() {
+    imageCards = [];
+//    print(imageFilesWithDate);
+    for (var i in imageFilesWithDate) {
+      if (!imageCards.contains(
+        ImageCard(
+          imageFile: i['file'],
+          fileName: fileName,
+          dirPath: dirPath,
+          imageFileEditCallback: imageEditCallback,
+        ),
+      )) {
+        imageCards.add(ImageCard(
+          imageFile: i['file'],
+          fileName: fileName,
+          dirPath: dirPath,
+          imageFileEditCallback: imageEditCallback,
+        ));
+      }
+    }
+    return imageCards;
   }
 
   @override
@@ -111,9 +146,10 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
-        backgroundColor: primaryColor,
+        backgroundColor: secondaryColor,
         key: scaffoldKey,
         appBar: AppBar(
           elevation: 0,
@@ -123,7 +159,6 @@ class _ViewDocumentState extends State<ViewDocument> {
             icon: Icon(Icons.arrow_back_ios),
             onPressed: () {
               Navigator.pop(context, true);
-              //TODO : Reload home
             },
           ),
           title: RichText(
@@ -178,35 +213,20 @@ class _ViewDocumentState extends State<ViewDocument> {
           onRefresh: () async {
             getImages();
           },
-          child: Theme(
-            data: Theme.of(context).copyWith(accentColor: primaryColor),
-            child: ListView.builder(
-              itemCount: ((imageFilesWithDate.length) / 2).round(),
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(vertical: 3.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: <Widget>[
-                      ImageCard(
-                        imageFile:
-                            File(imageFilesWithDate[index * 2]["file"].path),
-                        imageFileEditCallback: imageEditCallback,
-                        fileName: fileName,
-                        dirPath: dirPath,
-                      ),
-                      if (index * 2 + 1 < imageFilesWithDate.length)
-                        ImageCard(
-                          imageFile: File(
-                              imageFilesWithDate[index * 2 + 1]["file"].path),
-                          imageFileEditCallback: imageEditCallback,
-                          fileName: fileName,
-                          dirPath: dirPath,
-                        ),
-                    ],
+          child: Padding(
+            padding: EdgeInsets.all(5.0),
+            child: Theme(
+              data: Theme.of(context).copyWith(accentColor: primaryColor),
+              child: ListView(
+                children: [
+                  Wrap(
+                    spacing: size.width * 0.015,
+                    runSpacing: size.width * 0.015,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: getImageCards(),
                   ),
-                );
-              },
+                ],
+              ),
             ),
           ),
         ),
@@ -400,3 +420,35 @@ class _ViewDocumentState extends State<ViewDocument> {
     );
   }
 }
+
+//Theme(
+//data: Theme.of(context).copyWith(accentColor: primaryColor),
+//child: ListView.builder(
+//itemCount: ((imageFilesWithDate.length) / 2).round(),
+//itemBuilder: (context, index) {
+//return Padding(
+//padding: EdgeInsets.symmetric(vertical: 3.0),
+//child: Row(
+//mainAxisAlignment: MainAxisAlignment.spaceAround,
+//children: <Widget>[
+//ImageCard(
+//imageFile:
+//File(imageFilesWithDate[index * 2]["file"].path),
+//imageFileEditCallback: imageEditCallback,
+//fileName: fileName,
+//dirPath: dirPath,
+//),
+//if (index * 2 + 1 < imageFilesWithDate.length)
+//ImageCard(
+//imageFile: File(
+//imageFilesWithDate[index * 2 + 1]["file"].path),
+//imageFileEditCallback: imageEditCallback,
+//fileName: fileName,
+//dirPath: dirPath,
+//),
+//],
+//),
+//);
+//},
+//),
+//),

@@ -21,6 +21,7 @@ class ImageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    TransformationController _controller = TransformationController();
     print(dirPath);
     DatabaseHelper database = DatabaseHelper();
     Size size = MediaQuery
@@ -31,7 +32,7 @@ class ImageCard extends StatelessWidget {
       color: primaryColor,
       onPressed: () {},
       child: FocusedMenuHolder(
-        menuWidth: size.width * 0.44,
+        menuWidth: size.width * 0.45,
         onPressed: () {
           showCupertinoDialog(
               context: context,
@@ -39,11 +40,20 @@ class ImageCard extends StatelessWidget {
                 return Dialog(
                   elevation: 20,
                   backgroundColor: primaryColor,
-                  child: Container(
-                    width: size.width * 0.95,
-                    child: Image.file(
-                      imageFile,
-                      scale: 1.7,
+                  child: InteractiveViewer(
+                    transformationController: _controller,
+                    maxScale: 10,
+                    child: GestureDetector(
+                      onDoubleTap: (){
+                        _controller.value = Matrix4.identity();
+                      },
+                      child: Container(
+                        width: size.width * 0.95,
+                        child: Image.file(
+                          imageFile,
+                          scale: 1.7,
+                        ),
+                      ),
                     ),
                   ),
                 );
