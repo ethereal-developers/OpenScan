@@ -15,13 +15,14 @@ An open source app that enables users to scan hardcopies of documents or notes a
 - [x] Clear temporary images after "Add Image" process in View Document
 - [ ] Home doesn't update even after deleting folder from focused menu
 - [ ] Fix wording in popup dialog when deleting directory in HomeScreen
+- [ ] Fix image rotation in custom cropper
 
 ## TODO - Features:
 - [x] Reimplement Crop
 - [ ] Reimplement Share Document Module
 - [x] Implement edge detection using ML
 - [x] Implement image correction
-- [x] Implement image compression
+- [ ] Implement image compression
 
 ## TODO - Testing:
 - [ ] Test Camera Permission on older SDKs
