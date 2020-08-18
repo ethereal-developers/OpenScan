@@ -77,6 +77,7 @@ public class ScanFragment extends Fragment {
                 original = getBitmap();
                 if (original != null) {
                     setBitmap(original);
+                    rotateImage();
                 }
             }
         });
@@ -108,6 +109,13 @@ public class ScanFragment extends Fragment {
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(tempBitmap.getWidth() + 2 * padding, tempBitmap.getHeight() + 2 * padding);
         layoutParams.gravity = Gravity.CENTER;
         polygonView.setLayoutParams(layoutParams);
+    }
+
+    private void rotateImage() {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(90);
+        original = Bitmap.createBitmap(original, 0, 0, original.getWidth(), original.getHeight(), matrix, true);
+        setBitmap(original);
     }
 
     private Map<Integer, PointF> getEdgePoints(Bitmap tempBitmap) {
@@ -168,10 +176,7 @@ public class ScanFragment extends Fragment {
     private class RotateButtonClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            Matrix matrix = new Matrix();
-            matrix.postRotate(90);
-            original = Bitmap.createBitmap(original, 0, 0, original.getWidth(), original.getHeight(), matrix, true);
-            setBitmap(original);
+            rotateImage();
         }
     }
 
