@@ -23,6 +23,7 @@ An open source app that enables users to scan hardcopies of documents or notes a
 - [x] Implement edge detection using ML
 - [x] Implement image correction
 - [ ] Implement image compression
+- [ ] Implement rotate left and right buttons in crop module
 
 ## TODO - Testing:
 - [ ] Test Camera Permission on older SDKs
