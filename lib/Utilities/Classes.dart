@@ -3,7 +3,7 @@ class DirectoryOS{
   String dirPath;
   DateTime created;
   int imageCount;
-  String firstImagePath;
+  String firstImgPath;
   DateTime lastModified;
   String newName;
 }

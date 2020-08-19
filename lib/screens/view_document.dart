@@ -35,6 +35,47 @@ class _ViewDocumentState extends State<ViewDocument> {
   String fileName;
   bool _statusSuccess;
 
+  void imageEditCallback() {
+    getImages();
+  }
+
+  Future<void> displayDialog(BuildContext context) async {
+    String displayText;
+    (_statusSuccess)
+        ? displayText = "Success. File stored in the OpenScan folder."
+        : displayText = "Failed to generate pdf. Try Again.";
+    Scaffold.of(context).showSnackBar(
+      SnackBar(content: Text(displayText)),
+    );
+  }
+
+  Future<void> createDirectoryName() async {
+    Directory appDir = await getExternalStorageDirectory();
+    dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
+  }
+
+  Future<dynamic> createImage() async {
+    File image = await fileOperations.openCamera();
+    if (image != null) {
+      if (!widget.quickScan) {
+        imageFilePath = await FlutterScannerCropper.openCrop({
+          'src': image.path,
+          'dest': '/data/user/0/com.ethereal.openscan/cache/'
+        });
+      }
+      File imageFile = File(imageFilePath ?? image.path);
+      setState(() {});
+      await fileOperations.saveImage(
+        image: imageFile,
+        i: imageFilesWithDate.length + 1,
+        dirPath: dirPath,
+      );
+      await fileOperations.deleteTemporaryFiles();
+      if (widget.quickScan) createImage();
+      getImages();
+    }
+  }
+
   void getImages() {
     imageFilesPath = [];
     imageFilesWithDate = [];
@@ -64,47 +105,6 @@ class _ViewDocumentState extends State<ViewDocument> {
         print(imageFilesWithDate);
       });
     });
-  }
-
-  void imageEditCallback() {
-    getImages();
-  }
-
-  Future<void> displayDialog(BuildContext context) async {
-    String displayText;
-    (_statusSuccess)
-        ? displayText = "Success. File stored in the OpenScan folder."
-        : displayText = "Failed to generate pdf. Try Again.";
-    Scaffold.of(context).showSnackBar(
-      SnackBar(content: Text(displayText)),
-    );
-  }
-
-  Future<dynamic> createImage() async {
-    File image = await fileOperations.openCamera();
-    if (image != null) {
-      if (!widget.quickScan) {
-        imageFilePath = await FlutterScannerCropper.openCrop({
-          'src': image.path,
-          'dest': '/data/user/0/com.ethereal.openscan/cache/'
-        });
-      }
-      File imageFile = File(imageFilePath ?? image.path);
-      setState(() {});
-      await fileOperations.saveImage(
-        image: imageFile,
-        i: imageFilesWithDate.length + 1,
-        dirPath: dirPath,
-      );
-      await fileOperations.deleteTemporaryFiles();
-      if (widget.quickScan) createImage();
-      getImages();
-    }
-  }
-
-  Future<void> createDirectoryName() async {
-    Directory appDir = await getExternalStorageDirectory();
-    dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
   }
 
   getImageCards() {
@@ -214,14 +214,14 @@ class _ViewDocumentState extends State<ViewDocument> {
             getImages();
           },
           child: Padding(
-            padding: EdgeInsets.all(5.0),
+            padding: EdgeInsets.all(size.width*0.01),
             child: Theme(
               data: Theme.of(context).copyWith(accentColor: primaryColor),
               child: ListView(
                 children: [
                   Wrap(
-                    spacing: size.width * 0.015,
-                    runSpacing: size.width * 0.015,
+                    spacing: size.width * 0.013,
+                    runSpacing: size.width * 0.013,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: getImageCards(),
                   ),
@@ -230,6 +230,7 @@ class _ViewDocumentState extends State<ViewDocument> {
             ),
           ),
         ),
+        // TODO: Add photos from gallery
         floatingActionButton: FloatingActionButton(
           backgroundColor: secondaryColor,
           onPressed: createImage,
@@ -420,35 +421,3 @@ class _ViewDocumentState extends State<ViewDocument> {
     );
   }
 }
-
-//Theme(
-//data: Theme.of(context).copyWith(accentColor: primaryColor),
-//child: ListView.builder(
-//itemCount: ((imageFilesWithDate.length) / 2).round(),
-//itemBuilder: (context, index) {
-//return Padding(
-//padding: EdgeInsets.symmetric(vertical: 3.0),
-//child: Row(
-//mainAxisAlignment: MainAxisAlignment.spaceAround,
-//children: <Widget>[
-//ImageCard(
-//imageFile:
-//File(imageFilesWithDate[index * 2]["file"].path),
-//imageFileEditCallback: imageEditCallback,
-//fileName: fileName,
-//dirPath: dirPath,
-//),
-//if (index * 2 + 1 < imageFilesWithDate.length)
-//ImageCard(
-//imageFile: File(
-//imageFilesWithDate[index * 2 + 1]["file"].path),
-//imageFileEditCallback: imageEditCallback,
-//fileName: fileName,
-//dirPath: dirPath,
-//),
-//],
-//),
-//);
-//},
-//),
-//),

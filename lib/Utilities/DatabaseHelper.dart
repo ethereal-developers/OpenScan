@@ -60,7 +60,7 @@ class DatabaseHelper {
       'dir_path': directory.dirPath,
       'created': directory.created.toString(),
       'image_count': directory.imageCount,
-      'first_img_path': directory.firstImagePath,
+      'first_img_path': directory.firstImgPath,
       'last_modified': directory.lastModified.toString(),
       'new_name': directory.newName
     });
@@ -109,7 +109,7 @@ class DatabaseHelper {
   Future<int> updateDirectory({DirectoryOS directory}) async {
     Database db = await instance.database;
     return await db.update(_masterTableName, {
-      'first_img_path': directory.firstImagePath,
+      'first_img_path': directory.firstImgPath,
       'last_modified': directory.lastModified,
       'new_name': directory.newName
     });

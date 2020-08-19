@@ -8,11 +8,13 @@ import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
 
 import '../Utilities/constants.dart';
-import '../Utilities/cropper.dart';
 
 class ImageCard extends StatelessWidget {
   const ImageCard(
-      {this.imageFile, this.imageFileEditCallback, this.fileName, this.dirPath});
+      {this.imageFile,
+      this.imageFileEditCallback,
+      this.fileName,
+      this.dirPath});
 
   final File imageFile;
   final Function imageFileEditCallback;
@@ -24,9 +26,7 @@ class ImageCard extends StatelessWidget {
     TransformationController _controller = TransformationController();
     print(dirPath);
     DatabaseHelper database = DatabaseHelper();
-    Size size = MediaQuery
-        .of(context)
-        .size;
+    Size size = MediaQuery.of(context).size;
     return RaisedButton(
       elevation: 20,
       color: primaryColor,
@@ -44,7 +44,7 @@ class ImageCard extends StatelessWidget {
                     transformationController: _controller,
                     maxScale: 10,
                     child: GestureDetector(
-                      onDoubleTap: (){
+                      onDoubleTap: () {
                         _controller.value = Matrix4.identity();
                       },
                       child: Container(
@@ -60,7 +60,7 @@ class ImageCard extends StatelessWidget {
               });
         },
         menuItems: [
-          FocusedMenuItem(
+          FocusedMenuItem (
             title: Text(
               'Crop',
               style: TextStyle(color: Colors.black),
@@ -116,7 +116,7 @@ class ImageCard extends StatelessWidget {
                             try {
                               Directory(dirPath).deleteSync(recursive: false);
                               Navigator.pop(context);
-                            } catch(e){
+                            } catch (e) {
                               imageFileEditCallback();
                             }
                             print(Directory(dirPath).existsSync());
@@ -142,10 +142,7 @@ class ImageCard extends StatelessWidget {
               backgroundColor: Colors.redAccent),
         ],
         child: Container(
-          child: Image.file(
-            imageFile,
-            scale: 1.7,
-          ),
+          child: Image.file(imageFile),
           height: size.height * 0.25,
           width: size.width * 0.4,
         ),
