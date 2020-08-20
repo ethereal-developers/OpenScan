@@ -19,11 +19,12 @@ An open source app that enables users to scan hardcopies of documents or notes a
 
 ## TODO - Features:
 - [x] Reimplement Crop
-- [ ] Reimplement Share Document Module
 - [x] Implement edge detection using ML
 - [x] Implement image correction
 - [x] Implement image compression
+- [ ] Reimplement or find alternative for PDF viewer
 - [ ] Implement rotate left and right buttons in crop module
+- [ ] Reimplement Share Document Module
 
 ## TODO - Testing:
 - [ ] Test Camera Permission on older SDKs
