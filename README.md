@@ -22,7 +22,7 @@ An open source app that enables users to scan hardcopies of documents or notes a
 - [ ] Reimplement Share Document Module
 - [x] Implement edge detection using ML
 - [x] Implement image correction
-- [ ] Implement image compression
+- [x] Implement image compression
 - [ ] Implement rotate left and right buttons in crop module
 
 ## TODO - Testing:

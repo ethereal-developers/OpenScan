@@ -28,7 +28,7 @@ public class Utils {
         try {
             file = new File(tempDirPath);
             FileOutputStream outStream = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 30, outStream);
             outStream.flush();
             outStream.close();
 
