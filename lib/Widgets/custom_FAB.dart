@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/screens/view_document.dart';
 
 class CustomFAB extends StatefulWidget {
   final Function onPressed;
