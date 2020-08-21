@@ -8,25 +8,27 @@ An open source app that enables users to scan hardcopies of documents or notes a
 - [ ] View document visibility
 - [x] Hide Picture folder
 - [x] Crop icon in Scan doc for even images
-- [ ] Change to in app cam
 - [x] Auto reload home after exiting view
 - [ ] Tutorial Clarity
 - [x] Camera Permissions
 - [x] Clear temporary images after "Add Image" process in View Document
 - [ ] Home doesn't update even after deleting folder from focused menu
 - [ ] Fix wording in popup dialog when deleting directory in HomeScreen
-- [ ] Fix image rotation in custom cropper
+- [x] Fix image rotation in custom cropper
 
 ## TODO - Features:
 - [x] Reimplement Crop
 - [x] Implement edge detection using ML
 - [x] Implement image correction
 - [x] Implement image compression
-- [ ] Reimplement or find alternative for PDF viewer
-- [ ] Implement rotate left and right buttons in crop module
-- [ ] Reimplement Share Document Module
+- [x] Implement rotate left and right buttons in crop module
 
 ## TODO - Testing:
 - [ ] Test Camera Permission on older SDKs
 - [ ] Test image compression
 - [ ] Test crop
+
+### BACKBURNER - For future updates:
+- [ ] Reimplement or find alternative for PDF viewer
+- [ ] Reimplement Share Document Module
+- [ ] Change to in app cam
