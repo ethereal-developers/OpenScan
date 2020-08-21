@@ -81,7 +81,7 @@ class FileOperations {
       directoryOS.newName = null;
       directoryOS.lastModified = directoryOS.created;
       directoryOS.firstImgPath = null;
-      await database.createDirectory(directory: directoryOS);
+//      await database.createDirectory(directory: directoryOS);
     }
 
     File tempPic = File("$dirPath/ ${DateTime.now()} $i .jpg");

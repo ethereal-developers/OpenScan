@@ -149,7 +149,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
-        backgroundColor: secondaryColor,
+        backgroundColor: primaryColor,
         key: scaffoldKey,
         appBar: AppBar(
           elevation: 0,
@@ -401,7 +401,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                       FlatButton(
                         onPressed: () {
                           Directory(dirPath).deleteSync(recursive: true);
-                          DatabaseHelper()..deleteDirectory(dirPath: dirPath);
+//                          DatabaseHelper()..deleteDirectory(dirPath: dirPath);
                           Navigator.popUntil(
                               context, ModalRoute.withName(HomeScreen.route));
                         },
