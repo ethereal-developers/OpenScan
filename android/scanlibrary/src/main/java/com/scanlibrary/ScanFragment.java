@@ -34,7 +34,8 @@ import java.util.Map;
 public class ScanFragment extends Fragment {
 
     private Button scanButton;
-    private Button rotateButton;
+    private Button rotateLeftButton;
+    private Button rotateRightButton;
     private ImageView sourceImageView;
     private FrameLayout sourceFrame;
     private PolygonView polygonView;
@@ -66,9 +67,11 @@ public class ScanFragment extends Fragment {
     private void init() {
         sourceImageView = (ImageView) view.findViewById(R.id.sourceImageView);
         scanButton = (Button) view.findViewById(R.id.scanButton);
-        rotateButton = (Button) view.findViewById(R.id.rotateButton);
+        rotateLeftButton = (Button) view.findViewById(R.id.rotateLeftButton);
+        rotateRightButton = (Button) view.findViewById(R.id.rotateRightButton);
         scanButton.setOnClickListener(new ScanButtonClickListener());
-        rotateButton.setOnClickListener(new RotateButtonClickListener());
+        rotateLeftButton.setOnClickListener(new RotateLeftButtonClickListener());
+        rotateRightButton.setOnClickListener(new RotateRightButtonClickListener());
         sourceFrame = (FrameLayout) view.findViewById(R.id.sourceFrame);
         polygonView = (PolygonView) view.findViewById(R.id.polygonView);
         sourceFrame.post(new Runnable() {
@@ -77,7 +80,7 @@ public class ScanFragment extends Fragment {
                 original = getBitmap();
                 if (original != null) {
                     setBitmap(original);
-                    rotateImage();
+                    rotateImage(90);
                 }
             }
         });
@@ -111,9 +114,9 @@ public class ScanFragment extends Fragment {
         polygonView.setLayoutParams(layoutParams);
     }
 
-    private void rotateImage() {
+    private void rotateImage(int degree) {
         Matrix matrix = new Matrix();
-        matrix.postRotate(90);
+        matrix.postRotate(degree);
         original = Bitmap.createBitmap(original, 0, 0, original.getWidth(), original.getHeight(), matrix, true);
         setBitmap(original);
     }
@@ -173,10 +176,17 @@ public class ScanFragment extends Fragment {
         }
     }
 
-    private class RotateButtonClickListener implements View.OnClickListener {
+    private class RotateLeftButtonClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            rotateImage();
+            rotateImage(-90);
+        }
+    }
+
+    private class RotateRightButtonClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            rotateImage(90);
         }
     }
 

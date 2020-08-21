@@ -15,20 +15,38 @@
         android:padding="@dimen/bottom_bar_padding"
         android:text="@string/scan" />
 
-    <Button
-        android:id="@+id/rotateButton"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
-        android:layout_above="@+id/scanButton"
-        android:orientation="horizontal"
-        android:padding="@dimen/bottom_bar_padding"
-        android:text="@string/rotate_image" />
+        android:id="@+id/rotateButtonContainer"
+        android:layout_above="@+id/scanButton">
+
+        <Button
+            android:id="@+id/rotateLeftButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:background="#FFFFFF"
+            android:orientation="horizontal"
+            android:padding="@dimen/bottom_bar_padding"
+            android:text="@string/rotate_left" />
+
+        <Button
+            android:id="@+id/rotateRightButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:background="#FFFFFF"
+            android:orientation="horizontal"
+            android:padding="@dimen/bottom_bar_padding"
+            android:text="@string/rotate_right" />
+
+    </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/rotateButton"
+        android:layout_above="@id/rotateButtonContainer"
         android:layout_gravity="center"
         android:layout_margin="@dimen/scanPadding">
 
@@ -52,7 +70,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
-            android:visibility="gone" >
+            android:visibility="gone">
 
         </com.scanlibrary.PolygonView>
 

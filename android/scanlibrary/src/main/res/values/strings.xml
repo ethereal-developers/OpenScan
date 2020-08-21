@@ -13,5 +13,6 @@
     <string name="applying_filter">Applying filter</string>
     <string name="low_memory">Low Memory</string>
     <string name="low_memory_message">Your phone is low on memory, you may feel some lags while editing images.</string>
-    <string name="rotate_image">Rotate Image</string>
+    <string name="rotate_left">Rotate Left</string>
+    <string name="rotate_right">Rotate Right</string>
 </resources>

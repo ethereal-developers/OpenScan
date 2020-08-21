@@ -9,6 +9,7 @@
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_above="@+id/doneButton"
         android:layout_gravity="center_vertical">
 
         <Button
@@ -69,8 +70,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/doneButton"
-        android:layout_below="@id/topBar"
+        android:layout_above="@id/topBar"
         android:layout_gravity="center"
         android:layout_margin="@dimen/scanPadding">
 
