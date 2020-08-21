@@ -26,8 +26,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future getDirectoryNames() async {
     //TODO: Get all details from Tables
-    imageDirectories = [];
-    imageDirPaths = [];
+    this.imageDirectories = [];
+    this.imageDirPaths = [];
     Directory appDir = await getExternalStorageDirectory();
     Directory appDirPath = Directory("${appDir.path}");
     appDirPath
@@ -35,22 +35,24 @@ class _HomeScreenState extends State<HomeScreen> {
         .listen((FileSystemEntity entity) {
       String path = entity.path;
       if (!imageDirPaths.contains(path) && !path.contains('/files/Pictures')) {
-        imageDirPaths.add(path);
+        this.imageDirPaths.add(path);
         Directory(path)
             .list(recursive: false, followLinks: false)
             .listen((FileSystemEntity entity) {
           imageCount++;
         });
         FileStat fileStat = FileStat.statSync(path);
-        imageDirectories.add({
+        this.imageDirectories.add({
           'path': path,
           'modified': fileStat.modified,
           'size': fileStat.size,
           'count': imageCount
         });
       }
-      imageDirectories.sort((a, b) => a['modified'].compareTo(b['modified']));
-      imageDirectories = imageDirectories.reversed.toList();
+      this
+          .imageDirectories
+          .sort((a, b) => a['modified'].compareTo(b['modified']));
+      this.imageDirectories = this.imageDirectories.reversed.toList();
     });
     return imageDirectories;
   }
