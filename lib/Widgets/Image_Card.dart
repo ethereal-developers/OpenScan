@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-import 'package:openscan/Utilities/DatabaseHelper.dart';
+// import 'package:openscan/Utilities/DatabaseHelper.dart';
 
 import '../Utilities/constants.dart';
 
@@ -25,7 +25,7 @@ class ImageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     TransformationController _controller = TransformationController();
     print(dirPath);
-    DatabaseHelper database = DatabaseHelper();
+    // DatabaseHelper database = DatabaseHelper();
     Size size = MediaQuery.of(context).size;
     return RaisedButton(
       elevation: 20,
@@ -60,7 +60,7 @@ class ImageCard extends StatelessWidget {
               });
         },
         menuItems: [
-          FocusedMenuItem (
+          FocusedMenuItem(
             title: Text(
               'Crop',
               style: TextStyle(color: Colors.black),

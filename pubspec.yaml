@@ -23,7 +23,7 @@ dependencies:
   flutter_full_pdf_viewer: ^1.0.6
   permission_handler: ^3.2.2
   shared_preferences: ^0.5.7+3
-  sqflite: ^1.2.0
+  flutter_speed_dial: ^1.2.5
 
   flutter_scanner_cropper:
     git:

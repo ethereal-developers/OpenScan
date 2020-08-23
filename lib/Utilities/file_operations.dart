@@ -6,13 +6,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:openscan/Utilities/DatabaseHelper.dart';
+// import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/Classes.dart';
 
 class FileOperations {
   String appName = 'OpenScan';
   static bool pdfStatus;
-  DatabaseHelper database = DatabaseHelper();
+  // DatabaseHelper database = DatabaseHelper();
 
   Future<String> getAppPath() async {
     final Directory _appDocDir = await getApplicationDocumentsDirectory();
