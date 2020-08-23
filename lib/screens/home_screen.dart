@@ -53,6 +53,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future _onRefresh() async {
+    imageDirectories = [];
+    imageDirPaths = [];
     imageDirectories = await getDirectoryNames();
     setState(() {});
   }
