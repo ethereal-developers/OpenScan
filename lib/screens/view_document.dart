@@ -16,7 +16,7 @@ class ViewDocument extends StatefulWidget {
   final String dirPath;
   final bool quickScan;
 
-  ViewDocument({this.dirPath, this.quickScan});
+  ViewDocument({this.dirPath, this.quickScan = false});
 
   @override
   _ViewDocumentState createState() => _ViewDocumentState();
@@ -177,8 +177,6 @@ class _ViewDocumentState extends State<ViewDocument> {
             IconButton(
               icon: Icon(Icons.picture_as_pdf),
               onPressed: () async {
-//                DatabaseHelper()..queryAll();
-
                 _statusSuccess = await fileOperations.saveToAppDirectory(
                   context: context,
                   fileName: fileName,
@@ -186,7 +184,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                 );
                 Directory storedDirectory =
                     await getApplicationDocumentsDirectory();
-                Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => PDFScreen(
@@ -194,6 +192,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                     ),
                   ),
                 );
+                File('${storedDirectory.path}/$fileName.pdf').deleteSync();
               },
             ),
             Builder(builder: (context) {
@@ -214,7 +213,7 @@ class _ViewDocumentState extends State<ViewDocument> {
             getImages();
           },
           child: Padding(
-            padding: EdgeInsets.all(size.width*0.01),
+            padding: EdgeInsets.all(size.width * 0.01),
             child: Theme(
               data: Theme.of(context).copyWith(accentColor: primaryColor),
               child: ListView(
