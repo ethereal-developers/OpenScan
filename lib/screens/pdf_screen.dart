@@ -19,16 +19,20 @@ class _PDFScreenState extends State<PDFScreen> {
     var fileName = widget.path
         .substring(widget.path.lastIndexOf("/") + 1, widget.path.length - 4);
     return PDFViewerScaffold(
-        appBar: AppBar(
-          backgroundColor: primaryColor,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios),
-            onPressed: () {
-              Navigator.pop(context, true);
-            },
-          ),
-          title: Text(fileName, style: TextStyle(fontSize: 16),),
+      appBar: AppBar(
+        backgroundColor: primaryColor,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios),
+          onPressed: () {
+            Navigator.pop(context, true);
+          },
         ),
-        path: widget.path);
+        title: Text(
+          fileName,
+          style: TextStyle(fontSize: 16),
+        ),
+      ),
+      path: widget.path,
+    );
   }
 }
