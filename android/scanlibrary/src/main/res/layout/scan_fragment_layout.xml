@@ -16,16 +16,16 @@
         android:text="@string/scan" />
 
     <LinearLayout
+        android:id="@+id/rotateButtonContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/rotateButtonContainer"
         android:layout_above="@+id/scanButton">
 
         <Button
             android:id="@+id/rotateLeftButton"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:background="#FFFFFF"
             android:orientation="horizontal"
             android:padding="@dimen/bottom_bar_padding"
@@ -34,8 +34,8 @@
         <Button
             android:id="@+id/rotateRightButton"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:background="#FFFFFF"
             android:orientation="horizontal"
             android:padding="@dimen/bottom_bar_padding"
@@ -59,8 +59,8 @@
 
             <ImageView
                 android:id="@+id/sourceImageView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:adjustViewBounds="true" />
         </FrameLayout>
@@ -70,11 +70,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
-            android:visibility="gone">
-
-        </com.scanlibrary.PolygonView>
+            android:visibility="gone" />
 
     </FrameLayout>
-
 
 </RelativeLayout>
