@@ -84,15 +84,15 @@ class _ViewDocumentState extends State<ViewDocument> {
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       List<String> temp = entity.path.split(" ");
-      //TODO: Fix delete bug
-      if (!imageFilesWithDate.contains({
+      var imageFileWithDate = {
         "file": entity,
         "creationDate": DateTime.parse("${temp[3]} ${temp[4]}")
-      })) {
-        imageFilesWithDate.add({
-          "file": entity,
-          "creationDate": DateTime.parse("${temp[3]} ${temp[4]}")
-        });
+      };
+      //TODO: Fix delete bug
+      if (!imageFilesWithDate.contains(imageFileWithDate)) {
+        print(imageFilesWithDate.contains(imageFileWithDate));
+        imageFilesWithDate.add(imageFileWithDate);
+        print(imageFileWithDate);
       }
 
       imageFilesWithDate
@@ -102,7 +102,7 @@ class _ViewDocumentState extends State<ViewDocument> {
           imageFilesPath.add(image["file"].path);
       }
       setState(() {
-        print(imageFilesWithDate);
+        print(imageFilesWithDate.length);
       });
     });
   }

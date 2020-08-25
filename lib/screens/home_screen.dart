@@ -301,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       ['path'])
                                                   .deleteSync(recursive: true);
                                               Navigator.pop(context);
-                                              getData();
+                                              _onRefresh();
                                             },
                                             child: Text(
                                               'Delete',

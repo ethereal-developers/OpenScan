@@ -111,15 +111,15 @@ class ImageCard extends StatelessWidget {
                             imageFileEditCallback();
 //                            database.deleteImage(
 //                                imgPath: imageFile.path, tableName: dirName);
-                            print(dirPath);
-                            print(Directory(dirPath).existsSync());
+//                            print(dirPath);
+//                            print(Directory(dirPath).existsSync());
                             try {
                               Directory(dirPath).deleteSync(recursive: false);
                               Navigator.pop(context);
                             } catch (e) {
                               imageFileEditCallback();
                             }
-                            print(Directory(dirPath).existsSync());
+//                            print(Directory(dirPath).existsSync());
 //                            if (Directory(dirPath).existsSync()) {
 ////                              imageFileEditCallback();
 ////                              Navigator.pop(context);
