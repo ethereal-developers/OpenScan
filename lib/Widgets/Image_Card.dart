@@ -2,9 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
+// import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
+import 'package:openscan/Utilities/cropper.dart';
 // import 'package:openscan/Utilities/DatabaseHelper.dart';
 
 import '../Utilities/constants.dart';
@@ -66,11 +67,13 @@ class ImageCard extends StatelessWidget {
               style: TextStyle(color: Colors.black),
             ),
             onPressed: () async {
-              String imageFilePath = await FlutterScannerCropper.openCrop({
-                'src': imageFile.path,
-                'dest': '/data/user/0/com.ethereal.openscan/cache/'
-              });
-              File image = File(imageFilePath);
+              // String imageFilePath = await FlutterScannerCropper.openCrop({
+              //   'src': imageFile.path,
+              //   'dest': '/data/user/0/com.ethereal.openscan/cache/'
+              // });
+              // File image = File(imageFilePath);
+              Cropper cropper = Cropper();
+              var image = await cropper.cropImage(imageFile);
               File temp = File(
                   imageFile.path.substring(0, imageFile.path.lastIndexOf(".")) +
                       "c.jpg");

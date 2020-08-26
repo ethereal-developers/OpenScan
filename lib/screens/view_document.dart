@@ -1,9 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
+// import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/Widgets/Image_Card.dart';
 import 'package:openscan/screens/home_screen.dart';
@@ -58,10 +59,13 @@ class _ViewDocumentState extends State<ViewDocument> {
     File image = await fileOperations.openCamera();
     if (image != null) {
       if (!widget.quickScan) {
-        imageFilePath = await FlutterScannerCropper.openCrop({
-          'src': image.path,
-          'dest': '/data/user/0/com.ethereal.openscan/cache/'
-        });
+        // imageFilePath = await FlutterScannerCropper.openCrop({
+        //   'src': image.path,
+        //   'dest': '/data/user/0/com.ethereal.openscan/cache/'
+        // });
+        Cropper cropper = Cropper();
+        var imageFile = await cropper.cropImage(image);
+        if (imageFile != null) return imageFile;
       }
       File imageFile = File(imageFilePath ?? image.path);
       setState(() {});
