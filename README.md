@@ -40,8 +40,7 @@ We *differentiate* our self from the rest of the apps in the market by:
 * Upload your class notes to your choice of cloud storage instantly.
 
 ## PACKAGES USED
-path_provider: ^1.6.11
-image_pick- path_provider: ^1.6.11
+- path_provider: ^1.6.11
 - image_picker: ^0.6.4
 - image_cropper: ^1.2.3
 - focused_menu: ^1.0.1
