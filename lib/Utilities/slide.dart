@@ -13,6 +13,12 @@ final slideList = [
     imageUrl: 'assets/home.jpg',
   ),
   Slide(
+    imageUrl: 'assets/scan1.jpg',
+  ),
+  Slide(
+    imageUrl: 'assets/scan2.jpg',
+  ),
+  Slide(
     imageUrl: 'assets/view1.jpg',
   ),
   Slide(

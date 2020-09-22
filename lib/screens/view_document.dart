@@ -1,8 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-// import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
-import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
@@ -14,10 +12,10 @@ import 'package:share_extend/share_extend.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
-  final String dirPath;
-  final bool quickScan;
 
-  ViewDocument({this.dirPath, this.quickScan = false});
+  ViewDocument({this.dirPath});
+
+  final String dirPath;
 
   @override
   _ViewDocumentState createState() => _ViewDocumentState();
@@ -28,13 +26,38 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   List<Map<String, dynamic>> imageFilesWithDate = [];
   List<String> imageFilesPath = [];
-  List<Widget> imageCards = [];
-  String imageFilePath;
 
   FileOperations fileOperations;
-  String dirPath;
+
+  String dirName;
+
   String fileName;
+
   bool _statusSuccess;
+
+  void getImages() {
+    imageFilesPath = [];
+    imageFilesWithDate = [];
+
+    Directory(dirName)
+        .list(recursive: false, followLinks: false)
+        .listen((FileSystemEntity entity) {
+      List<String> temp = entity.path.split(" ");
+      imageFilesWithDate.add({
+        "file": entity,
+        "creationDate": DateTime.parse("${temp[3]} ${temp[4]}")
+      });
+
+      setState(() {
+        imageFilesWithDate
+            .sort((a, b) => a["creationDate"].compareTo(b["creationDate"]));
+        for (var image in imageFilesWithDate) {
+          if (!imageFilesPath.contains(image['file'].path))
+            imageFilesPath.add(image["file"].path);
+        }
+      });
+    });
+  }
 
   void imageEditCallback() {
     getImages();
@@ -50,107 +73,27 @@ class _ViewDocumentState extends State<ViewDocument> {
     );
   }
 
-  Future<void> createDirectoryName() async {
-    Directory appDir = await getExternalStorageDirectory();
-    dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
+  @override
+  void initState() {
+    super.initState();
+    fileOperations = FileOperations();
+    dirName = widget.dirPath;
+    getImages();
+    fileName =
+        dirName.substring(dirName.lastIndexOf("/") + 1, dirName.length - 1);
   }
 
   Future<dynamic> createImage() async {
     File image = await fileOperations.openCamera();
     if (image != null) {
-      if (!widget.quickScan) {
-        // imageFilePath = await FlutterScannerCropper.openCrop({
-        //   'src': image.path,
-        //   'dest': '/data/user/0/com.ethereal.openscan/cache/'
-        // });
-        Cropper cropper = Cropper();
-        var imageFile = await cropper.cropImage(image);
-        if (imageFile != null) return imageFile;
-      }
-      File imageFile = File(imageFilePath ?? image.path);
-      setState(() {});
-      await fileOperations.saveImage(
-        image: imageFile,
-        i: imageFilesWithDate.length + 1,
-        dirPath: dirPath,
-      );
-      await fileOperations.deleteTemporaryFiles();
-      if (widget.quickScan) createImage();
-      getImages();
-    }
-  }
-
-  void getImages() {
-    imageFilesPath = [];
-    imageFilesWithDate = [];
-
-    Directory(dirPath)
-        .list(recursive: false, followLinks: false)
-        .listen((FileSystemEntity entity) {
-      List<String> temp = entity.path.split(" ");
-      var imageFileWithDate = {
-        "file": entity,
-        "creationDate": DateTime.parse("${temp[3]} ${temp[4]}")
-      };
-      //TODO: Fix delete bug
-      if (!imageFilesWithDate.contains(imageFileWithDate)) {
-        print(imageFilesWithDate.contains(imageFileWithDate));
-        imageFilesWithDate.add(imageFileWithDate);
-        print(imageFileWithDate);
-      }
-
-      imageFilesWithDate
-          .sort((a, b) => a["creationDate"].compareTo(b["creationDate"]));
-      for (var image in imageFilesWithDate) {
-        if (!imageFilesPath.contains(image['file'].path))
-          imageFilesPath.add(image["file"].path);
-      }
-      setState(() {
-        print(imageFilesWithDate.length);
-      });
-    });
-  }
-
-  getImageCards() {
-    imageCards = [];
-//    print(imageFilesWithDate);
-    for (var i in imageFilesWithDate) {
-      if (!imageCards.contains(
-        ImageCard(
-          imageFile: i['file'],
-          fileName: fileName,
-          dirPath: dirPath,
-          imageFileEditCallback: imageEditCallback,
-        ),
-      )) {
-        imageCards.add(ImageCard(
-          imageFile: i['file'],
-          fileName: fileName,
-          dirPath: dirPath,
-          imageFileEditCallback: imageEditCallback,
-        ));
-      }
-    }
-    return imageCards;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    fileOperations = FileOperations();
-    if (widget.dirPath != null) {
-      dirPath = widget.dirPath;
-      getImages();
-      fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
-    } else {
-      createDirectoryName();
-      createImage();
+      Cropper cropper = Cropper();
+      var imageFile = await cropper.cropImage(image);
+      if (imageFile != null) return imageFile;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
         backgroundColor: primaryColor,
@@ -163,6 +106,7 @@ class _ViewDocumentState extends State<ViewDocument> {
             icon: Icon(Icons.arrow_back_ios),
             onPressed: () {
               Navigator.pop(context, true);
+              //TODO : Reload home
             },
           ),
           title: RichText(
@@ -188,7 +132,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                 );
                 Directory storedDirectory =
                     await getApplicationDocumentsDirectory();
-                await Navigator.push(
+                Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => PDFScreen(
@@ -196,7 +140,6 @@ class _ViewDocumentState extends State<ViewDocument> {
                     ),
                   ),
                 );
-                File('${storedDirectory.path}/$fileName.pdf').deleteSync();
               },
             ),
             Builder(builder: (context) {
@@ -216,30 +159,32 @@ class _ViewDocumentState extends State<ViewDocument> {
           onRefresh: () async {
             getImages();
           },
-          child: Padding(
-            padding: EdgeInsets.all(size.width * 0.01),
-            child: Theme(
-              data: Theme.of(context).copyWith(accentColor: primaryColor),
-              child: ListView(
-                children: [
-                  Wrap(
-                    spacing: size.width * 0.013,
-                    runSpacing: size.width * 0.013,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: getImageCards(),
+          child: Theme(
+            data: Theme.of(context).copyWith(accentColor: primaryColor),
+            child: ListView.builder(
+              itemCount: ((imageFilesWithDate.length) / 2).round(),
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(vertical: 3.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
+                      ImageCard(
+                        imageFile:
+                            File(imageFilesWithDate[index * 2]["file"].path),
+                        imageFileEditCallback: imageEditCallback,
+                      ),
+                      if (index * 2 + 1 < imageFilesWithDate.length)
+                        ImageCard(
+                          imageFile: File(
+                              imageFilesWithDate[index * 2 + 1]["file"].path),
+                          imageFileEditCallback: imageEditCallback,
+                        ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
-          ),
-        ),
-        // TODO: Add photos from gallery
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: secondaryColor,
-          onPressed: createImage,
-          child: Icon(
-            Icons.camera_alt,
-            color: primaryColor,
           ),
         ),
       ),
@@ -250,7 +195,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     FileOperations fileOperations = FileOperations();
     Size size = MediaQuery.of(context).size;
     String folderName =
-        dirPath.substring(dirPath.lastIndexOf('/') + 1, dirPath.length - 1);
+        dirName.substring(dirName.lastIndexOf('/') + 1, dirName.length - 1);
     return Container(
       color: primaryColor,
       child: Column(
@@ -270,6 +215,21 @@ class _ViewDocumentState extends State<ViewDocument> {
             indent: 8,
             endIndent: 8,
             color: Colors.white,
+          ),
+          ListTile(
+            leading: Icon(Icons.add_a_photo),
+            title: Text('Add Image'),
+            onTap: () async {
+              Navigator.pop(context);
+              var image = await createImage();
+              setState(() {});
+              await fileOperations.saveImage(
+                image: image,
+                i: imageFilesWithDate.length + 1,
+                dirName: dirName,
+              );
+              getImages();
+            },
           ),
           ListTile(
             leading: Icon(Icons.phone_android),
@@ -403,8 +363,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                       ),
                       FlatButton(
                         onPressed: () {
-                          Directory(dirPath).deleteSync(recursive: true);
-//                          DatabaseHelper()..deleteDirectory(dirPath: dirPath);
+                          Directory(dirName).deleteSync(recursive: true);
                           Navigator.popUntil(
                               context, ModalRoute.withName(HomeScreen.route));
                         },

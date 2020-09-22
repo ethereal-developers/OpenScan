@@ -69,6 +69,7 @@ class AboutScreen extends StatelessWidget {
                             fontWeight: FontWeight.normal,
                           ),
                         ),
+                        //TODO: Content Writing
                         TextSpan(
                           text: '',
                           style: TextStyle(color: Colors.redAccent),
@@ -120,7 +121,7 @@ class AboutScreen extends StatelessWidget {
                 Center(
                   child: GestureDetector(
                     onTap: () =>
-                        launchWebsite('https://github.com/Ethereal-Developers-Inc/OpenScan'),
+                        launchWebsite('https://github.com/veejayts/openscan'),
                     child: Container(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(0, 2, 7, 2),

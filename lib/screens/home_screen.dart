@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/constants.dart';
@@ -11,6 +10,8 @@ import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import 'scan_document.dart';
 
 class HomeScreen extends StatefulWidget {
   static String route = "HomeScreen";
@@ -22,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> imageDirectories = [];
   var imageDirPaths = [];
+  var imageDirModDate = [];
   var imageCount = 0;
 
   Future getDirectoryNames() async {
@@ -31,7 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
         .list(recursive: false, followLinks: false)
         .listen((FileSystemEntity entity) {
       String path = entity.path;
-      if (!imageDirPaths.contains(path) && !path.contains('/files/Pictures')) {
+      if (!imageDirPaths.contains(path) &&
+          path !=
+              '/storage/emulated/0/Android/data/com.example.openscan/files/Pictures') {
         imageDirPaths.add(path);
         Directory(path)
             .list(recursive: false, followLinks: false)
@@ -52,9 +56,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return imageDirectories;
   }
 
+  @override
+  void initState() {
+    super.initState();
+    getData();
+    askPermission();
+  }
+
   Future _onRefresh() async {
-    imageDirectories = [];
-    imageDirPaths = [];
     imageDirectories = await getDirectoryNames();
     setState(() {});
   }
@@ -65,10 +74,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> _requestPermission() async {
     final PermissionHandler _permissionHandler = PermissionHandler();
-    var result = await _permissionHandler.requestPermissions(
-        <PermissionGroup>[PermissionGroup.storage, PermissionGroup.camera]);
-    if (result[PermissionGroup.storage] == PermissionStatus.granted &&
-        result[PermissionGroup.camera] == PermissionStatus.granted) {
+    var result =
+        await _permissionHandler.requestPermissions([PermissionGroup.storage]);
+    if (result[PermissionGroup.storage] == PermissionStatus.granted) {
       return true;
     }
     return false;
@@ -76,13 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void askPermission() async {
     await _requestPermission();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    getData();
-    askPermission();
   }
 
   @override
@@ -108,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         drawer: Container(
-          width: size.width * 0.55,
+          width: size.width * 0.6,
           color: primaryColor,
           child: Column(
             children: <Widget>[
@@ -122,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 thickness: 0.2,
                 indent: 6,
                 endIndent: 6,
-                color: Colors.white24,
+                color: Colors.white,
               ),
               ListTile(
                 title: Center(
@@ -140,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 thickness: 0.2,
                 indent: 6,
                 endIndent: 6,
-                color: Colors.white24,
+                color: Colors.white,
               ),
               ListTile(
                 title: Center(
@@ -161,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 thickness: 0.2,
                 indent: 6,
                 endIndent: 6,
-                color: Colors.white24,
+                color: Colors.white,
               ),
               ListTile(
                 title: Center(
@@ -189,10 +190,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 thickness: 0.2,
                 indent: 6,
                 endIndent: 6,
-                color: Colors.white24,
+                color: Colors.white,
               ),
               Spacer(
-                flex: 9,
+                flex: 10,
               ),
               IconButton(
                 icon: Icon(Icons.arrow_back_ios),
@@ -295,13 +296,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           FlatButton(
                                             onPressed: () {
-                                              print(imageDirectories[index]
-                                                  ['path']);
                                               Directory(imageDirectories[index]
                                                       ['path'])
                                                   .deleteSync(recursive: true);
                                               Navigator.pop(context);
-                                              _onRefresh();
+                                              getData();
                                             },
                                             child: Text(
                                               'Delete',
@@ -312,9 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ],
                                       );
                                     },
-                                  ).whenComplete(() {
-                                    setState(() {});
-                                  });
+                                  );
                                 },
                               ),
                             ],
@@ -328,68 +325,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        floatingActionButton: SpeedDial(
-          // both default to 16
-          marginRight: 18,
-          marginBottom: 20,
-          animatedIcon: AnimatedIcons.menu_close,
-          animatedIconTheme: IconThemeData(size: 22.0),
-          // this is ignored if animatedIcon is non null
-          // child: Icon(Icons.add),
-          visible: true,
-          // If true user is forced to close dial manually
-          // by tapping main button and overlay is not rendered.
-          closeManually: false,
-          curve: Curves.bounceIn,
-          overlayColor: Colors.black,
-          overlayOpacity: 0.5,
-          // onOpen: () => print('OPENING DIAL'),
-          // onClose: () => print('DIAL CLOSED'),
-          tooltip: 'Scan Options',
-          heroTag: 'speed-dial-hero-tag',
-          backgroundColor: secondaryColor,
-          foregroundColor: Colors.black,
-          elevation: 8.0,
-          shape: CircleBorder(),
-          children: [
-            SpeedDialChild(
-              child: Icon(Icons.camera_alt),
-              backgroundColor: Colors.white,
-              label: 'Normal Scan',
-              labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ViewDocument(
-                      quickScan: false,
-                    ),
-                  ),
-                ).whenComplete(() {
-                  setState(() {});
-                });
-              },
+        floatingActionButton: Builder(builder: (context) {
+          return FloatingActionButton(
+            onPressed: () {
+              Navigator.pushNamed(context, ScanDocument.route);
+            },
+            backgroundColor: secondaryColor,
+            child: Icon(
+              Icons.camera,
+              color: primaryColor,
             ),
-            SpeedDialChild(
-              child: Icon(Icons.camera_roll),
-              backgroundColor: Colors.white,
-              label: 'Quick Scan',
-              labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ViewDocument(
-                      quickScan: true,
-                    ),
-                  ),
-                ).whenComplete(() {
-                  setState(() {});
-                });
-              },
-            ),
-          ],
-        ),
+          );
+        }),
       ),
     );
   }
