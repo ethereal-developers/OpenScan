@@ -1,4 +1,4 @@
-# v2.0.0 - 25/07/2020
+# v2.0.0 - UNRELEASED
 ### Changed
 - New Cropper with more advanced functions
 
@@ -15,7 +15,7 @@
 ### Removed
 - Previous scanner
 - Support for iOS removed
-- Scan Document screen removed. Now directly goes to View Document after clicking one picture.
+- Scan Document screen removed. Now directly goes directly to View Document.
 
 # v1.0.0 - 13/07/2020
 ### Added
