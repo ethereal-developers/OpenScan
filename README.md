@@ -42,7 +42,6 @@ We *differentiate* our self from the rest of the apps in the market by:
 ## PACKAGES USED
 - path_provider: ^1.6.11
 - image_picker: ^0.6.4
-- image_cropper: ^1.2.3
 - focused_menu: ^1.0.1
 - directory_picker: ^1.0.0
 - pdf: ^1.9.0
@@ -52,6 +51,11 @@ We *differentiate* our self from the rest of the apps in the market by:
 - flutter_full_pdf_viewer: ^1.0.6
 - permission_handler: ^3.2.2
 - shared_preferences: ^0.5.7+3
+- flutter_speed_dial: ^1.2.5
+- flutter_scanner_cropper:
+    - git:
+        - url: https://github.com/Ethereal-Developers-Inc/flutter-scanner-plugin.git
+        - path: flutter_scanner_cropper/
 
 # BUILD INSTRUCTIONS
 
