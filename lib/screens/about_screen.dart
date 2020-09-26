@@ -63,13 +63,12 @@ class AboutScreen extends StatelessWidget {
                             style: TextStyle(color: secondaryColor)),
                         TextSpan(
                           text:
-                              ' is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file. We don\'t add watermark or label in PDF.',
+                              ' is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file.',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.normal,
                           ),
                         ),
-                        //TODO: Content Writing
                         TextSpan(
                           text: '',
                           style: TextStyle(color: Colors.redAccent),
@@ -120,8 +119,8 @@ class AboutScreen extends StatelessWidget {
                 ),
                 Center(
                   child: GestureDetector(
-                    onTap: () =>
-                        launchWebsite('https://github.com/veejayts/openscan'),
+                    onTap: () => launchWebsite(
+                        'https://github.com/Ethereal-Developers-Inc/OpenScan'),
                     child: Container(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(0, 2, 7, 2),

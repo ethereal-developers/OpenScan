@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:orientation="vertical">
+
+    <Button
+        android:id="@+id/scanButton"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@color/orange"
+        android:orientation="horizontal"
+        android:padding="@dimen/bottom_bar_padding"
+        android:text="@string/scan" />
+
+    <LinearLayout
+        android:id="@+id/rotateButtonContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/scanButton">
+
+        <Button
+            android:id="@+id/rotateLeftButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="#FFFFFF"
+            android:orientation="horizontal"
+            android:padding="@dimen/bottom_bar_padding"
+            android:text="@string/rotate_left" />
+
+        <Button
+            android:id="@+id/rotateRightButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="#FFFFFF"
+            android:orientation="horizontal"
+            android:padding="@dimen/bottom_bar_padding"
+            android:text="@string/rotate_right" />
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/rotateButtonContainer"
+        android:layout_gravity="center"
+        android:layout_margin="@dimen/scanPadding">
+
+        <FrameLayout
+            android:id="@+id/sourceFrame"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_margin="@dimen/scanPadding">
+
+            <ImageView
+                android:id="@+id/sourceImageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:adjustViewBounds="true" />
+        </FrameLayout>
+
+        <com.scanlibrary.PolygonView
+            android:id="@+id/polygonView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+</RelativeLayout>
