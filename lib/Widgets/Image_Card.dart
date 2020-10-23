@@ -108,7 +108,7 @@ class ImageCard extends StatelessWidget {
                         FlatButton(
                           onPressed: () {
                             imageFile.deleteSync();
-                            imageFileEditCallback();
+                            // imageFileEditCallback();
 //                            database.deleteImage(
 //                                imgPath: imageFile.path, tableName: dirName);
 //                            print(dirPath);
