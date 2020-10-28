@@ -27,7 +27,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Timer getTimerWid() {
-    return Timer(Duration(seconds: 1), () {
+    return Timer(Duration(milliseconds: 500), () {
       (visitingFlag)
           ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
           : Navigator.of(context).pushReplacement(

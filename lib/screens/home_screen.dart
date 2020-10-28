@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
+import 'package:openscan/Utilities/Classes.dart';
+import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
@@ -23,6 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> imageDirectories = [];
   var imageDirPaths = [];
   var imageCount = 0;
+  DatabaseHelper database = DatabaseHelper();
+  List<Map<String, dynamic>> masterData;
+  List<DirectoryOS> masterDirectories = [];
 
   Future getDirectoryNames() async {
     Directory appDir = await getExternalStorageDirectory();
@@ -49,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
       imageDirectories.sort((a, b) => a['modified'].compareTo(b['modified']));
       imageDirectories = imageDirectories.reversed.toList();
     });
+    // print(imageDirectories);
     return imageDirectories;
   }
 
@@ -78,11 +84,31 @@ class _HomeScreenState extends State<HomeScreen> {
     await _requestPermission();
   }
 
+  void getMasterData() async {
+    masterData = await database.getMasterData();
+    print('Master Table => $masterData');
+    for (var directory in masterData) {
+      masterDirectories.add(
+        DirectoryOS(
+          dirName: directory['dir_name'],
+          dirPath: directory['dir_path'],
+          // created: directory['created'],
+          imageCount: directory['image_count'],
+          firstImgPath: directory['first_img_path'],
+          // lastModified: directory['last_modified'],
+          newName: directory['newName'],
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    getData();
     askPermission();
+    // getMasterData();
+    getData();
+    database.temp();
   }
 
   @override
@@ -226,11 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: ListView.builder(
                         itemCount: imageDirectories.length,
                         itemBuilder: (context, index) {
-                          folderName = imageDirectories[index]['path']
-                              .substring(
-                                  imageDirectories[index]['path']
-                                          .lastIndexOf('/') +
-                                      1,
+                          folderName = imageDirectories[index]['path'].substring(imageDirectories[index]['path'].lastIndexOf('/') + 1,
                                   imageDirectories[index]['path'].length - 1);
                           return FocusedMenuHolder(
                             onPressed: null,
@@ -295,8 +317,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           FlatButton(
                                             onPressed: () {
-                                              print(imageDirectories[index]
-                                                  ['path']);
+                                              // print(imageDirectories[index]
+                                              //     ['path']);
                                               Directory(imageDirectories[index]
                                                       ['path'])
                                                   .deleteSync(recursive: true);

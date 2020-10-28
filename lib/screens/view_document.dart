@@ -2,13 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
+import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/Widgets/Image_Card.dart';
 import 'package:openscan/screens/home_screen.dart';
-import 'package:openscan/screens/pdf_screen.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:reorderables/reorderables.dart';
 import 'package:share_extend/share_extend.dart';
 
 class ViewDocument extends StatefulWidget {
@@ -24,7 +25,7 @@ class ViewDocument extends StatefulWidget {
 
 class _ViewDocumentState extends State<ViewDocument> {
   final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
-
+  DatabaseHelper database = DatabaseHelper();
   List<Map<String, dynamic>> imageFilesWithDate = [];
   List<String> imageFilesPath = [];
   List<Widget> imageCards = [];
@@ -34,6 +35,8 @@ class _ViewDocumentState extends State<ViewDocument> {
   String dirPath;
   String fileName;
   bool _statusSuccess;
+  List<Map<String, dynamic>> directoryData;
+  List<ImageOS> directoryImages = [];
 
   void imageEditCallback() {
     getImages();
@@ -49,7 +52,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     );
   }
 
-  Future<void> createDirectoryName() async {
+  Future<void> createDirectoryPath() async {
     Directory appDir = await getExternalStorageDirectory();
     dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
   }
@@ -68,7 +71,7 @@ class _ViewDocumentState extends State<ViewDocument> {
       setState(() {});
       await fileOperations.saveImage(
         image: imageFile,
-        i: imageFilesWithDate.length + 1,
+        index: imageFilesWithDate.length + 1,
         dirPath: dirPath,
       );
       await fileOperations.deleteTemporaryFiles();
@@ -87,13 +90,14 @@ class _ViewDocumentState extends State<ViewDocument> {
       List<String> temp = entity.path.split(" ");
       var imageFileWithDate = {
         "file": entity,
-        "creationDate": DateTime.parse("${temp[3]} ${temp[4]}")
+        "creationDate": DateTime.parse(
+            "${temp[3]} ${temp[4].split('.')[0]}.${temp[4].split('.')[1]}")
       };
       //TODO: Fix delete bug
       if (!imageFilesWithDate.contains(imageFileWithDate)) {
-        print(imageFilesWithDate.contains(imageFileWithDate));
+        // print(imageFilesWithDate.contains(imageFileWithDate));
         imageFilesWithDate.add(imageFileWithDate);
-        print(imageFileWithDate);
+        // print(imageFileWithDate);
       }
 
       imageFilesWithDate
@@ -103,7 +107,7 @@ class _ViewDocumentState extends State<ViewDocument> {
           imageFilesPath.add(image["file"].path);
       }
       setState(() {
-        print(imageFilesWithDate.length);
+        // print(imageFilesWithDate.length);
       });
     });
   }
@@ -112,23 +116,37 @@ class _ViewDocumentState extends State<ViewDocument> {
     imageCards = [];
 //    print(imageFilesWithDate);
     for (var i in imageFilesWithDate) {
-      if (!imageCards.contains(
-        ImageCard(
-          imageFile: i['file'],
-          fileName: fileName,
-          dirPath: dirPath,
-          imageFileEditCallback: imageEditCallback,
-        ),
-      )) {
-        imageCards.add(ImageCard(
-          imageFile: i['file'],
-          fileName: fileName,
-          dirPath: dirPath,
-          imageFileEditCallback: imageEditCallback,
-        ));
+      ImageCard imageCard = ImageCard(
+        imageFile: i['file'],
+        fileName: fileName,
+        dirPath: dirPath,
+        imageFileEditCallback: imageEditCallback,
+      );
+      if (!imageCards.contains(imageCard)) {
+        imageCards.add(imageCard);
       }
     }
     return imageCards;
+  }
+
+  void _onReorder(int oldIndex, int newIndex) {
+    setState(() {
+      Widget row = imageCards.removeAt(oldIndex);
+      imageCards.insert(newIndex, row);
+    });
+  }
+
+  void getDirectoryData() async {
+    directoryData = await database.getDirectoryData(fileName);
+    print('Directory table[$fileName] => $directoryData');
+    for (var image in directoryData) {
+      directoryImages.add(
+        ImageOS(
+          idx: image['idx'],
+          imgPath: image['img_path'],
+        ),
+      );
+    }
   }
 
   @override
@@ -137,10 +155,11 @@ class _ViewDocumentState extends State<ViewDocument> {
     fileOperations = FileOperations();
     if (widget.dirPath != null) {
       dirPath = widget.dirPath;
-      getImages();
       fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
+      getImages();
+      getDirectoryData();
     } else {
-      createDirectoryName();
+      createDirectoryPath();
       createImage();
     }
   }
@@ -185,15 +204,21 @@ class _ViewDocumentState extends State<ViewDocument> {
                 );
                 Directory storedDirectory =
                     await getApplicationDocumentsDirectory();
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PDFScreen(
-                      path: '${storedDirectory.path}/$fileName.pdf',
-                    ),
-                  ),
-                );
-                File('${storedDirectory.path}/$fileName.pdf').deleteSync();
+                // await Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) => PDFScreen(
+                //       path: '${storedDirectory.path}/$fileName.pdf',
+                //     ),
+                //   ),
+                // );
+                // File('${storedDirectory.path}/$fileName.pdf').deleteSync();
+                // final result = await OpenFile.open('${storedDirectory.path}/$fileName.pdf');
+
+                // setState(() {
+                //   _openResult = "type=${result.type}  message=${result.message}";
+                //   print(_openResult);
+                // });
               },
             ),
             Builder(builder: (context) {
@@ -219,11 +244,22 @@ class _ViewDocumentState extends State<ViewDocument> {
               data: Theme.of(context).copyWith(accentColor: primaryColor),
               child: ListView(
                 children: [
-                  Wrap(
-                    spacing: size.width * 0.013,
-                    runSpacing: size.width * 0.013,
+                  ReorderableWrap(
+                    //TODO: Check
+                    spacing: 10,
+                    runSpacing: 10,
+                    minMainAxisCount: 2,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: getImageCards(),
+                    onReorder: _onReorder,
+                    onNoReorder: (int index) {
+                      debugPrint(
+                          '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:$index');
+                    },
+                    onReorderStarted: (int index) {
+                      debugPrint(
+                          '${DateTime.now().toString().substring(5, 22)} reorder started: index:$index');
+                    },
                   ),
                 ],
               ),

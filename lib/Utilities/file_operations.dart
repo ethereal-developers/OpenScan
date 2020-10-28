@@ -3,16 +3,16 @@ import 'dart:io';
 import 'package:directory_picker/directory_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:openscan/Utilities/Classes.dart';
+import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-// import 'package:openscan/Utilities/DatabaseHelper.dart';
-import 'package:openscan/Utilities/Classes.dart';
 
 class FileOperations {
   String appName = 'OpenScan';
   static bool pdfStatus;
-  // DatabaseHelper database = DatabaseHelper();
+  DatabaseHelper database = DatabaseHelper();
 
   Future<String> getAppPath() async {
     final Directory _appDocDir = await getApplicationDocumentsDirectory();
@@ -69,32 +69,37 @@ class FileOperations {
     return image;
   }
 
-  Future<void> saveImage({File image, int i, String dirPath}) async {
-    if (await Directory(dirPath).exists() == false) {
+  Future<void> saveImage({File image, int index, String dirPath}) async {
+    if (!await Directory(dirPath).exists()) {
       new Directory(dirPath).create();
-      DirectoryOS directoryOS = DirectoryOS();
-      directoryOS.dirName = dirPath.substring(dirPath.lastIndexOf('/') + 1);
-      directoryOS.dirPath = dirPath;
-      directoryOS.imageCount = 0;
-      directoryOS.created = DateTime.parse(
-          directoryOS.dirName.substring(directoryOS.dirName.indexOf(' ') + 1));
-      directoryOS.newName = null;
-      directoryOS.lastModified = directoryOS.created;
-      directoryOS.firstImgPath = null;
-//      await database.createDirectory(directory: directoryOS);
+      await database.createDirectory(
+        directory: DirectoryOS(
+          dirName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
+          dirPath: dirPath,
+          imageCount: 0,
+          //TODO: Change this to while adding images from gallery : Don't use dirPath
+          created: DateTime.parse(dirPath.substring(dirPath.lastIndexOf('/') + 1)
+              .substring(dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') + 1)),
+          newName: null,
+          lastModified: DateTime.parse(dirPath.substring(dirPath.lastIndexOf('/') + 1)
+              .substring(dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') + 1)),
+          firstImgPath: null,
+        ),
+      );
     }
 
-    File tempPic = File("$dirPath/ ${DateTime.now()} $i .jpg");
+    /// Removed Index in image path
+    File tempPic = File("$dirPath/ ${DateTime.now()}.jpg");
     image.copy(tempPic.path);
     ImageOS imageOS = ImageOS();
     imageOS.imgPath = tempPic.path;
-    imageOS.idx = i;
-    // TODO: If idx = 1, update firstImagePath in master
-//    database.createImage(
-//        image: imageOS,
-//        tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1));
-    if (i == 1) {
-//      database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
+    imageOS.idx = index;
+    database.createImage(
+      image: imageOS,
+      tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
+    );
+    if (index == 1) {
+      database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
     }
   }
 
