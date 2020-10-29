@@ -78,11 +78,17 @@ class FileOperations {
           dirPath: dirPath,
           imageCount: 0,
           //TODO: Change this to while adding images from gallery : Don't use dirPath
-          created: DateTime.parse(dirPath.substring(dirPath.lastIndexOf('/') + 1)
-              .substring(dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') + 1)),
+          created: DateTime.parse(dirPath
+              .substring(dirPath.lastIndexOf('/') + 1)
+              .substring(
+                  dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
+                      1)),
           newName: null,
-          lastModified: DateTime.parse(dirPath.substring(dirPath.lastIndexOf('/') + 1)
-              .substring(dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') + 1)),
+          lastModified: DateTime.parse(dirPath
+              .substring(dirPath.lastIndexOf('/') + 1)
+              .substring(
+                  dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
+                      1)),
           firstImgPath: null,
         ),
       );
@@ -91,11 +97,11 @@ class FileOperations {
     /// Removed Index in image path
     File tempPic = File("$dirPath/ ${DateTime.now()}.jpg");
     image.copy(tempPic.path);
-    ImageOS imageOS = ImageOS();
-    imageOS.imgPath = tempPic.path;
-    imageOS.idx = index;
     database.createImage(
-      image: imageOS,
+      image: ImageOS(
+        imgPath: tempPic.path,
+        idx: index,
+      ),
       tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
     );
     if (index == 1) {

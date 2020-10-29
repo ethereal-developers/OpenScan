@@ -106,9 +106,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     askPermission();
-    // getMasterData();
+    getMasterData();
     getData();
-    database.temp();
   }
 
   @override
@@ -252,7 +251,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: ListView.builder(
                         itemCount: imageDirectories.length,
                         itemBuilder: (context, index) {
-                          folderName = imageDirectories[index]['path'].substring(imageDirectories[index]['path'].lastIndexOf('/') + 1,
+                          folderName = imageDirectories[index]['path']
+                              .substring(
+                                  imageDirectories[index]['path']
+                                          .lastIndexOf('/') +
+                                      1,
                                   imageDirectories[index]['path'].length - 1);
                           return FocusedMenuHolder(
                             onPressed: null,
@@ -322,6 +325,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                               Directory(imageDirectories[index]
                                                       ['path'])
                                                   .deleteSync(recursive: true);
+                                              database.deleteDirectory(
+                                                  dirPath:
+                                                      imageDirectories[index]
+                                                          ['path']);
                                               Navigator.pop(context);
                                               _onRefresh();
                                             },
