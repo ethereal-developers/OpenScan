@@ -11,7 +11,6 @@ import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/view_document.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -29,44 +28,13 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> masterData;
   List<DirectoryOS> masterDirectories = [];
 
-  Future getDirectoryNames() async {
-    Directory appDir = await getExternalStorageDirectory();
-    Directory appDirPath = Directory("${appDir.path}");
-    appDirPath
-        .list(recursive: false, followLinks: false)
-        .listen((FileSystemEntity entity) {
-      String path = entity.path;
-      if (!imageDirPaths.contains(path) && !path.contains('/files/Pictures')) {
-        imageDirPaths.add(path);
-        Directory(path)
-            .list(recursive: false, followLinks: false)
-            .listen((FileSystemEntity entity) {
-          imageCount++;
-        });
-        FileStat fileStat = FileStat.statSync(path);
-        imageDirectories.add({
-          'path': path,
-          'modified': fileStat.modified,
-          'size': fileStat.size,
-          'count': imageCount
-        });
-      }
-      imageDirectories.sort((a, b) => a['modified'].compareTo(b['modified']));
-      imageDirectories = imageDirectories.reversed.toList();
-    });
-    // print(imageDirectories);
-    return imageDirectories;
-  }
-
-  Future _onRefresh() async {
-    imageDirectories = [];
-    imageDirPaths = [];
-    imageDirectories = await getDirectoryNames();
+  Future homeRefresh() async {
+    await getMasterData();
     setState(() {});
   }
 
   void getData() {
-    _onRefresh();
+    homeRefresh();
   }
 
   Future<bool> _requestPermission() async {
@@ -84,22 +52,33 @@ class _HomeScreenState extends State<HomeScreen> {
     await _requestPermission();
   }
 
-  void getMasterData() async {
+  Future<List<DirectoryOS>> getMasterData() async {
+    masterDirectories = [];
     masterData = await database.getMasterData();
     print('Master Table => $masterData');
     for (var directory in masterData) {
-      masterDirectories.add(
-        DirectoryOS(
-          dirName: directory['dir_name'],
-          dirPath: directory['dir_path'],
-          // created: directory['created'],
-          imageCount: directory['image_count'],
-          firstImgPath: directory['first_img_path'],
-          // lastModified: directory['last_modified'],
-          newName: directory['newName'],
-        ),
-      );
+      var flag = false;
+      for (var dir in masterDirectories) {
+        if (dir.dirPath == directory['dir_path']) {
+          flag = true;
+        }
+      }
+      if (!flag) {
+        masterDirectories.add(
+          DirectoryOS(
+            dirName: directory['dir_name'],
+            dirPath: directory['dir_path'],
+            created: DateTime.parse(directory['created']),
+            imageCount: directory['image_count'],
+            firstImgPath: directory['first_img_path'],
+            lastModified: DateTime.parse(directory['last_modified']),
+            newName: directory['newName'],
+          ),
+        );
+      }
     }
+    masterDirectories = masterDirectories.reversed.toList();
+    return masterDirectories;
   }
 
   @override
@@ -113,8 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
-    String folderName;
-
     return SafeArea(
       child: Scaffold(
         backgroundColor: primaryColor,
@@ -231,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
         body: RefreshIndicator(
           backgroundColor: primaryColor,
           color: secondaryColor,
-          onRefresh: _onRefresh,
+          onRefresh: homeRefresh,
           child: Column(
             children: <Widget>[
               Padding(
@@ -243,36 +220,30 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Expanded(
                 child: FutureBuilder(
-                  future: getDirectoryNames(),
+                  future: getMasterData(),
                   builder: (BuildContext context, AsyncSnapshot snapshot) {
                     return Theme(
                       data:
                           Theme.of(context).copyWith(accentColor: primaryColor),
                       child: ListView.builder(
-                        itemCount: imageDirectories.length,
+                        itemCount: masterDirectories.length,
                         itemBuilder: (context, index) {
-                          folderName = imageDirectories[index]['path']
-                              .substring(
-                                  imageDirectories[index]['path']
-                                          .lastIndexOf('/') +
-                                      1,
-                                  imageDirectories[index]['path'].length - 1);
                           return FocusedMenuHolder(
                             onPressed: null,
                             menuWidth: size.width * 0.44,
                             child: ListTile(
-                              // TODO : Add sample image
-                              leading: Icon(
-                                Icons.landscape,
-                                size: 30,
+                              leading: Image.file(
+                                File(masterDirectories[index].firstImgPath),
+                                width: 50,
+                                height: 50,
                               ),
                               title: Text(
-                                folderName,
+                                masterDirectories[index].dirName,
                                 style: TextStyle(fontSize: 14),
-                                overflow: TextOverflow.visible,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               subtitle: Text(
-                                'Last Modified: ${imageDirectories[index]['modified'].day}-${imageDirectories[index]['modified'].month}-${imageDirectories[index]['modified'].year}',
+                                'Last Modified: ${masterDirectories[index].lastModified.day}-${masterDirectories[index].lastModified.month}-${masterDirectories[index].lastModified.year}',
                                 style: TextStyle(fontSize: 11),
                               ),
                               trailing: Icon(
@@ -281,20 +252,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: secondaryColor,
                               ),
                               onTap: () async {
-                                getDirectoryNames();
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => ViewDocument(
-                                      dirPath: imageDirectories[index]['path'],
+                                      dirPath: masterDirectories[index].dirPath,
                                     ),
                                   ),
-                                ).whenComplete(() => () {
-                                      print('Completed');
-                                    });
+                                ).then((value) {
+                                  print(value);
+                                  // if(value){
+                                  //   _onRefresh();
+                                  // }
+                                });
                               },
                             ),
                             menuItems: [
+                              //TODO: Rename Directory
                               FocusedMenuItem(
                                 title: Text('Delete'),
                                 trailingIcon: Icon(Icons.delete),
@@ -320,8 +294,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           FlatButton(
                                             onPressed: () {
-                                              // print(imageDirectories[index]
-                                              //     ['path']);
                                               Directory(imageDirectories[index]
                                                       ['path'])
                                                   .deleteSync(recursive: true);
@@ -330,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       imageDirectories[index]
                                                           ['path']);
                                               Navigator.pop(context);
-                                              _onRefresh();
+                                              homeRefresh();
                                             },
                                             child: Text(
                                               'Delete',

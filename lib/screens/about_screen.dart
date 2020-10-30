@@ -13,8 +13,8 @@ void launchWebsite(String urlString) async {
 
 class AboutScreen extends StatelessWidget {
   static String route = "AboutScreen";
-  final String vjlink = "https://www.linkedin.com/in/vijay-t-s/";
-  final String vikramlink = "https://www.linkedin.com/in/vikram-harikrishnan/";
+  final String vjLink = "https://www.linkedin.com/in/vijay-t-s/";
+  final String vikramLink = "https://www.linkedin.com/in/vikram-harikrishnan/";
 
   @override
   Widget build(BuildContext context) {
@@ -94,12 +94,12 @@ class AboutScreen extends StatelessWidget {
                   children: <Widget>[
                     ContactCard(
                       name: "Vijay",
-                      link: vjlink,
+                      link: vjLink,
                       image: AssetImage('assets/vj_jpg.JPG'),
                     ),
                     ContactCard(
                       name: "Vikram",
-                      link: vikramlink,
+                      link: vikramLink,
                       image: AssetImage('assets/vikkiboi.jpg'),
                     ),
                   ],
@@ -120,7 +120,8 @@ class AboutScreen extends StatelessWidget {
                 Center(
                   child: GestureDetector(
                     onTap: () => launchWebsite(
-                        'https://github.com/Ethereal-Developers-Inc/OpenScan'),
+                      'https://github.com/Ethereal-Developers-Inc/OpenScan',
+                    ),
                     child: Container(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(0, 2, 7, 2),

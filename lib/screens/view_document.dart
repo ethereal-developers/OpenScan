@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
+import 'package:open_file/open_file.dart';
 import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
@@ -213,12 +214,12 @@ class _ViewDocumentState extends State<ViewDocument> {
                 //   ),
                 // );
                 // File('${storedDirectory.path}/$fileName.pdf').deleteSync();
-                // final result = await OpenFile.open('${storedDirectory.path}/$fileName.pdf');
+                final result = await OpenFile.open('${storedDirectory.path}/$fileName.pdf');
 
-                // setState(() {
-                //   _openResult = "type=${result.type}  message=${result.message}";
-                //   print(_openResult);
-                // });
+                setState(() {
+                  String _openResult = "type=${result.type}  message=${result.message}";
+                  print(_openResult);
+                });
               },
             ),
             Builder(builder: (context) {

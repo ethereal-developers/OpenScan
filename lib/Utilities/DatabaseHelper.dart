@@ -50,8 +50,6 @@ class DatabaseHelper {
       last_modified TEXT,
       new_name TEXT)
       ''');
-
-    // TODO: Create tables for existing directories (for old users)
   }
 
   Future createDirectory({DirectoryOS directory}) async {
@@ -107,18 +105,10 @@ class DatabaseHelper {
         where: 'dir_path == ?', whereArgs: [dirPath]);
   }
 
-  // For Renaming Directory
-  Future<int> updateDirectory({DirectoryOS directory}) async {
+  Future<int> renameDirectory({DirectoryOS directory}) async {
     Database db = await instance.database;
-    return await db.update(
-        _masterTableName,
-        {
-          // 'first_img_path': directory.firstImgPath,
-          // 'last_modified': directory.lastModified,
-          'new_name': directory.newName
-        },
-        where: 'dir_name == ?',
-        whereArgs: [directory.dirName]);
+    return await db.update(_masterTableName, {'new_name': directory.newName},
+        where: 'dir_name == ?', whereArgs: [directory.dirName]);
   }
 
   // For Reordering Images
@@ -149,12 +139,18 @@ class DatabaseHelper {
     //TODO: Check if image index is 1, then change first_img_path in master
     await db
         .delete(_dirTableName, where: 'img_path == ?', whereArgs: [imgPath]);
-    var data = await db.query(_masterTableName,
-        columns: ['image_count'],
-        where: 'dir_name == ?',
-        whereArgs: [tableName]);
-    db.update(_masterTableName, {'image_count': data[0]['image_count'] - 1},
-        where: 'dir_name == ?', whereArgs: [tableName]);
+    var data = await db.query(
+      _masterTableName,
+      columns: ['image_count'],
+      where: 'dir_name == ?',
+      whereArgs: [tableName],
+    );
+    db.update(
+      _masterTableName,
+      {'image_count': data[0]['image_count'] - 1},
+      where: 'dir_name == ?',
+      whereArgs: [tableName],
+    );
   }
 
   Future getMasterData() async {

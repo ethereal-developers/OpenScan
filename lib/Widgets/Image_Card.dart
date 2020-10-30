@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-// import 'package:openscan/Utilities/DatabaseHelper.dart';
+import 'package:openscan/Utilities/DatabaseHelper.dart';
 
 import '../Utilities/constants.dart';
 
@@ -25,7 +25,7 @@ class ImageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     TransformationController _controller = TransformationController();
     print(dirPath);
-    // DatabaseHelper database = DatabaseHelper();
+    DatabaseHelper database = DatabaseHelper();
     Size size = MediaQuery.of(context).size;
     return RaisedButton(
       elevation: 20,
@@ -109,14 +109,20 @@ class ImageCard extends StatelessWidget {
                           onPressed: () {
                             imageFile.deleteSync();
                             // imageFileEditCallback();
-//                            database.deleteImage(
-//                                imgPath: imageFile.path, tableName: dirName);
-//                            print(dirPath);
-//                            print(Directory(dirPath).existsSync());
+                            database.deleteImage(
+                                imgPath: imageFile.path,
+                                tableName: dirPath
+                                    .substring(dirPath.lastIndexOf("/") + 1));
+                            print(dirPath
+                                .substring(dirPath.lastIndexOf("/") + 1));
+                            print(Directory(dirPath).existsSync());
                             try {
                               Directory(dirPath).deleteSync(recursive: false);
-                              Navigator.pop(context);
-                            } catch (e) {
+                              database.deleteDirectory(dirPath: dirPath);
+                              //TODO: Refresh home
+                              Navigator.pop(context, true);
+                            }
+                            catch (e) {
                               imageFileEditCallback();
                             }
 //                            print(Directory(dirPath).existsSync());
