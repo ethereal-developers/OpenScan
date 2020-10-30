@@ -77,13 +77,12 @@ class FileOperations {
           dirName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
           dirPath: dirPath,
           imageCount: 0,
-          //TODO: Change this while adding images from gallery : Don't use dirPath
           created: DateTime.parse(dirPath
               .substring(dirPath.lastIndexOf('/') + 1)
               .substring(
                   dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
                       1)),
-          newName: null,
+          newName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
           lastModified: DateTime.parse(dirPath
               .substring(dirPath.lastIndexOf('/') + 1)
               .substring(

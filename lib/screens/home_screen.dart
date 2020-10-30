@@ -21,9 +21,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Map<String, dynamic>> imageDirectories = [];
-  var imageDirPaths = [];
-  var imageCount = 0;
   DatabaseHelper database = DatabaseHelper();
   List<Map<String, dynamic>> masterData;
   List<DirectoryOS> masterDirectories = [];
@@ -77,6 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     }
+    //TODO: Check reverse
     masterDirectories = masterDirectories.reversed.toList();
     return masterDirectories;
   }
@@ -268,11 +266,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       directoryOS: masterDirectories[index],
                                     ),
                                   ),
-                                ).then((value) {
-                                  print(value);
-                                  // if(value){
-                                  //   _onRefresh();
-                                  // }
+                                ).whenComplete(() {
+                                  homeRefresh();
                                 });
                               },
                             ),
@@ -357,13 +352,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           FlatButton(
                                             onPressed: () {
-                                              Directory(imageDirectories[index]
-                                                      ['path'])
+                                              Directory(masterDirectories[index].dirPath)
                                                   .deleteSync(recursive: true);
                                               database.deleteDirectory(
-                                                  dirPath:
-                                                      imageDirectories[index]
-                                                          ['path']);
+                                                  dirPath:masterDirectories[index].dirPath);
                                               Navigator.pop(context);
                                               homeRefresh();
                                             },
@@ -427,10 +419,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(
                     builder: (context) => ViewDocument(
                       quickScan: false,
+                      directoryOS: DirectoryOS(),
                     ),
                   ),
                 ).whenComplete(() {
-                  setState(() {});
+                  homeRefresh();
                 });
               },
             ),
@@ -445,10 +438,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(
                     builder: (context) => ViewDocument(
                       quickScan: true,
+                      directoryOS: DirectoryOS(),
                     ),
                   ),
                 ).whenComplete(() {
-                  setState(() {});
+                  homeRefresh();
                 });
               },
             ),

@@ -27,7 +27,6 @@ class ViewDocument extends StatefulWidget {
 class _ViewDocumentState extends State<ViewDocument> {
   final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
   DatabaseHelper database = DatabaseHelper();
-  List<Map<String, dynamic>> imageFilesWithDate = [];
   List<String> imageFilesPath = [];
   List<Widget> imageCards = [];
   String imageFilePath;
@@ -39,9 +38,16 @@ class _ViewDocumentState extends State<ViewDocument> {
   List<Map<String, dynamic>> directoryData;
   List<ImageOS> directoryImages = [];
 
-  void imageEditCallback() {
-    // getImages();
-    getDirectoryData();
+  void imageEditCallback({ImageOS imageOS, ImageOS nextImage}) {
+    bool isFirstImage = false;
+    if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
+      isFirstImage = true;
+    }
+    getDirectoryData(
+      updateFirstImage: isFirstImage,
+      updateIndex: true,
+      startIndexUpdateAt: nextImage,
+    );
   }
 
   Future<void> displayDialog(BuildContext context) async {
@@ -57,6 +63,8 @@ class _ViewDocumentState extends State<ViewDocument> {
   Future<void> createDirectoryPath() async {
     Directory appDir = await getExternalStorageDirectory();
     dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
+    fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
+    widget.directoryOS.dirName = fileName;
   }
 
   Future<dynamic> createImage() async {
@@ -73,7 +81,7 @@ class _ViewDocumentState extends State<ViewDocument> {
       setState(() {});
       await fileOperations.saveImage(
         image: imageFile,
-        index: imageFilesWithDate.length + 1,
+        index: directoryImages.length + 1,
         dirPath: dirPath,
       );
       await fileOperations.deleteTemporaryFiles();
@@ -86,10 +94,13 @@ class _ViewDocumentState extends State<ViewDocument> {
     imageCards = [];
     for (var image in directoryImages) {
       ImageCard imageCard = ImageCard(
-        imageFile: File(image.imgPath),
-        fileName: fileName,
+        imageOS: image,
         dirPath: dirPath,
-        imageFileEditCallback: imageEditCallback,
+        imageFileEditCallback: () {
+          imageEditCallback(
+              imageOS: image,
+              nextImage: directoryImages[directoryImages.indexOf(image) + 1]);
+        },
       );
       if (!imageCards.contains(imageCard)) {
         imageCards.add(imageCard);
@@ -105,17 +116,41 @@ class _ViewDocumentState extends State<ViewDocument> {
     });
   }
 
-  void getDirectoryData() async {
+  void getDirectoryData({
+    bool updateFirstImage = false,
+    bool updateIndex = false,
+    ImageOS startIndexUpdateAt,
+  }) async {
     directoryImages = [];
-    directoryData = await database.getDirectoryData(fileName);
-    print('Directory table[$fileName] => $directoryData');
+    imageFilesPath = [];
+    int index = 1;
+    directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
+    print('Directory table[$widget.directoryOS.dirName] => $directoryData');
     for (var image in directoryData) {
+
+      // Updating first image path after delete
+      if (updateFirstImage) {
+        database.updateFirstImagePath(
+            imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
+        updateFirstImage = false;
+      }
+
+      // Updating index of images after delete
+      if (updateIndex) {
+        //TODO: Update index
+        print(startIndexUpdateAt.imgPath);
+        index += 1;
+      }
+
       directoryImages.add(
         ImageOS(
           idx: image['idx'],
           imgPath: image['img_path'],
         ),
       );
+      imageFilesPath.add(image['img_path']);
+
+      index += 1;
     }
     setState(() {});
   }
@@ -127,7 +162,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     if (widget.directoryOS.dirPath != null) {
       dirPath = widget.directoryOS.dirPath;
       //TODO: Use newName here
-      fileName = widget.directoryOS.dirName;
+      fileName = widget.directoryOS.newName ?? widget.directoryOS.dirName;
       getDirectoryData();
     } else {
       createDirectoryPath();
@@ -177,10 +212,12 @@ class _ViewDocumentState extends State<ViewDocument> {
                     await getApplicationDocumentsDirectory();
                 //TODO: Doubt! Is this line needed??
                 // File('${storedDirectory.path}/$fileName.pdf').deleteSync();
-                final result = await OpenFile.open('${storedDirectory.path}/$fileName.pdf');
+                final result = await OpenFile.open(
+                    '${storedDirectory.path}/$fileName.pdf');
 
                 setState(() {
-                  String _openResult = "type=${result.type}  message=${result.message}";
+                  String _openResult =
+                      "type=${result.type}  message=${result.message}";
                   print(_openResult);
                 });
               },
@@ -324,7 +361,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                           fileName = '$value OpenScan';
                         },
                         controller: TextEditingController(
-                            text: fileName.substring(8, fileName.length)),
+                          text: fileName.substring(8, fileName.length),
+                        ),
                         cursorColor: secondaryColor,
                         textCapitalization: TextCapitalization.words,
                         decoration: InputDecoration(
@@ -401,9 +439,11 @@ class _ViewDocumentState extends State<ViewDocument> {
                       FlatButton(
                         onPressed: () {
                           Directory(dirPath).deleteSync(recursive: true);
-//                          DatabaseHelper()..deleteDirectory(dirPath: dirPath);
+                          DatabaseHelper()..deleteDirectory(dirPath: dirPath);
                           Navigator.popUntil(
-                              context, ModalRoute.withName(HomeScreen.route));
+                            context,
+                            ModalRoute.withName(HomeScreen.route),
+                          );
                         },
                         child: Text(
                           'Delete',

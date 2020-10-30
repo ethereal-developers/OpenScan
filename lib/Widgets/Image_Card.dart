@@ -5,21 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
+import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
 
 import '../Utilities/constants.dart';
 
 class ImageCard extends StatelessWidget {
-  const ImageCard(
-      {this.imageFile,
-      this.imageFileEditCallback,
-      this.fileName,
-      this.dirPath});
-
-  final File imageFile;
   final Function imageFileEditCallback;
-  final String fileName;
   final String dirPath;
+  final ImageOS imageOS;
+
+  const ImageCard({
+    this.imageFileEditCallback,
+    this.dirPath,
+    this.imageOS,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,30 +34,32 @@ class ImageCard extends StatelessWidget {
       child: FocusedMenuHolder(
         menuWidth: size.width * 0.45,
         onPressed: () {
+          //TODO: Change it to stack
           showCupertinoDialog(
-              context: context,
-              builder: (context) {
-                return Dialog(
-                  elevation: 20,
-                  backgroundColor: primaryColor,
-                  child: InteractiveViewer(
-                    transformationController: _controller,
-                    maxScale: 10,
-                    child: GestureDetector(
-                      onDoubleTap: () {
-                        _controller.value = Matrix4.identity();
-                      },
-                      child: Container(
-                        width: size.width * 0.95,
-                        child: Image.file(
-                          imageFile,
-                          scale: 1.7,
-                        ),
+            context: context,
+            builder: (context) {
+              return Dialog(
+                elevation: 20,
+                backgroundColor: primaryColor,
+                child: InteractiveViewer(
+                  transformationController: _controller,
+                  maxScale: 10,
+                  child: GestureDetector(
+                    onDoubleTap: () {
+                      _controller.value = Matrix4.identity();
+                    },
+                    child: Container(
+                      width: size.width * 0.95,
+                      child: Image.file(
+                        File(imageOS.imgPath),
+                        scale: 1.7,
                       ),
                     ),
                   ),
-                );
-              });
+                ),
+              );
+            },
+          );
         },
         menuItems: [
           FocusedMenuItem(
@@ -67,14 +69,14 @@ class ImageCard extends StatelessWidget {
             ),
             onPressed: () async {
               String imageFilePath = await FlutterScannerCropper.openCrop({
-                'src': imageFile.path,
+                'src': imageOS.imgPath,
                 'dest': '/data/user/0/com.ethereal.openscan/cache/'
               });
               File image = File(imageFilePath);
-              File temp = File(
-                  imageFile.path.substring(0, imageFile.path.lastIndexOf(".")) +
-                      "c.jpg");
-              imageFile.deleteSync();
+              File temp = File(imageOS.imgPath
+                      .substring(0, imageOS.imgPath.lastIndexOf(".")) +
+                  "c.jpg");
+              File(imageOS.imgPath).deleteSync();
               if (image != null) {
                 image.copy(temp.path);
               }
@@ -107,32 +109,18 @@ class ImageCard extends StatelessWidget {
                         ),
                         FlatButton(
                           onPressed: () {
-                            imageFile.deleteSync();
-                            // imageFileEditCallback();
+                            File(imageOS.imgPath).deleteSync();
                             database.deleteImage(
-                                imgPath: imageFile.path,
-                                tableName: dirPath
-                                    .substring(dirPath.lastIndexOf("/") + 1));
-                            print(dirPath
-                                .substring(dirPath.lastIndexOf("/") + 1));
-                            print(Directory(dirPath).existsSync());
+                              imgPath: imageOS.imgPath,
+                              tableName: dirPath.substring(dirPath.lastIndexOf("/") + 1),
+                            );
                             try {
                               Directory(dirPath).deleteSync(recursive: false);
                               database.deleteDirectory(dirPath: dirPath);
-                              //TODO: Refresh home
-                              Navigator.pop(context, true);
-                            }
-                            catch (e) {
+                              Navigator.pop(context);
+                            } catch (e) {
                               imageFileEditCallback();
                             }
-//                            print(Directory(dirPath).existsSync());
-//                            if (Directory(dirPath).existsSync()) {
-////                              imageFileEditCallback();
-////                              Navigator.pop(context);
-//                            } else {
-//                              Navigator.pop(context);
-//                            }
-//                            DatabaseHelper()..deleteDirectory(dirPath: dirPath);
                             Navigator.pop(context);
                           },
                           child: Text(
@@ -148,7 +136,7 @@ class ImageCard extends StatelessWidget {
               backgroundColor: Colors.redAccent),
         ],
         child: Container(
-          child: Image.file(imageFile),
+          child: Image.file(File(imageOS.imgPath)),
           height: size.height * 0.25,
           width: size.width * 0.4,
         ),
