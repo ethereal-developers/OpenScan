@@ -15,10 +15,10 @@ import 'package:share_extend/share_extend.dart';
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
-  final String dirPath;
+  final DirectoryOS directoryOS;
   final bool quickScan;
 
-  ViewDocument({this.dirPath, this.quickScan = false});
+  ViewDocument({this.quickScan = false, this.directoryOS});
 
   @override
   _ViewDocumentState createState() => _ViewDocumentState();
@@ -40,7 +40,8 @@ class _ViewDocumentState extends State<ViewDocument> {
   List<ImageOS> directoryImages = [];
 
   void imageEditCallback() {
-    getImages();
+    // getImages();
+    getDirectoryData();
   }
 
   Future<void> displayDialog(BuildContext context) async {
@@ -77,48 +78,15 @@ class _ViewDocumentState extends State<ViewDocument> {
       );
       await fileOperations.deleteTemporaryFiles();
       if (widget.quickScan) createImage();
-      getImages();
+      getDirectoryData();
     }
-  }
-
-  void getImages() {
-    imageFilesPath = [];
-    imageFilesWithDate = [];
-
-    Directory(dirPath)
-        .list(recursive: false, followLinks: false)
-        .listen((FileSystemEntity entity) {
-      List<String> temp = entity.path.split(" ");
-      var imageFileWithDate = {
-        "file": entity,
-        "creationDate": DateTime.parse(
-            "${temp[3]} ${temp[4].split('.')[0]}.${temp[4].split('.')[1]}")
-      };
-      //TODO: Fix delete bug
-      if (!imageFilesWithDate.contains(imageFileWithDate)) {
-        // print(imageFilesWithDate.contains(imageFileWithDate));
-        imageFilesWithDate.add(imageFileWithDate);
-        // print(imageFileWithDate);
-      }
-
-      imageFilesWithDate
-          .sort((a, b) => a["creationDate"].compareTo(b["creationDate"]));
-      for (var image in imageFilesWithDate) {
-        if (!imageFilesPath.contains(image['file'].path))
-          imageFilesPath.add(image["file"].path);
-      }
-      setState(() {
-        // print(imageFilesWithDate.length);
-      });
-    });
   }
 
   getImageCards() {
     imageCards = [];
-//    print(imageFilesWithDate);
-    for (var i in imageFilesWithDate) {
+    for (var image in directoryImages) {
       ImageCard imageCard = ImageCard(
-        imageFile: i['file'],
+        imageFile: File(image.imgPath),
         fileName: fileName,
         dirPath: dirPath,
         imageFileEditCallback: imageEditCallback,
@@ -138,6 +106,7 @@ class _ViewDocumentState extends State<ViewDocument> {
   }
 
   void getDirectoryData() async {
+    directoryImages = [];
     directoryData = await database.getDirectoryData(fileName);
     print('Directory table[$fileName] => $directoryData');
     for (var image in directoryData) {
@@ -148,16 +117,17 @@ class _ViewDocumentState extends State<ViewDocument> {
         ),
       );
     }
+    setState(() {});
   }
 
   @override
   void initState() {
     super.initState();
     fileOperations = FileOperations();
-    if (widget.dirPath != null) {
-      dirPath = widget.dirPath;
-      fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
-      getImages();
+    if (widget.directoryOS.dirPath != null) {
+      dirPath = widget.directoryOS.dirPath;
+      //TODO: Use newName here
+      fileName = widget.directoryOS.dirName;
       getDirectoryData();
     } else {
       createDirectoryPath();
@@ -201,18 +171,11 @@ class _ViewDocumentState extends State<ViewDocument> {
                 _statusSuccess = await fileOperations.saveToAppDirectory(
                   context: context,
                   fileName: fileName,
-                  images: imageFilesWithDate,
+                  images: directoryImages,
                 );
                 Directory storedDirectory =
                     await getApplicationDocumentsDirectory();
-                // await Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => PDFScreen(
-                //       path: '${storedDirectory.path}/$fileName.pdf',
-                //     ),
-                //   ),
-                // );
+                //TODO: Doubt! Is this line needed??
                 // File('${storedDirectory.path}/$fileName.pdf').deleteSync();
                 final result = await OpenFile.open('${storedDirectory.path}/$fileName.pdf');
 
@@ -237,7 +200,7 @@ class _ViewDocumentState extends State<ViewDocument> {
           backgroundColor: primaryColor,
           color: secondaryColor,
           onRefresh: () async {
-            getImages();
+            getDirectoryData();
           },
           child: Padding(
             padding: EdgeInsets.all(size.width * 0.01),
@@ -314,7 +277,7 @@ class _ViewDocumentState extends State<ViewDocument> {
               savedDirectory = await fileOperations.saveToDevice(
                 context: context,
                 fileName: fileName,
-                images: imageFilesWithDate,
+                images: directoryImages,
               );
               String displayText;
               (savedDirectory != null)
@@ -382,7 +345,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                 await fileOperations.saveToAppDirectory(
                               context: context,
                               fileName: fileName,
-                              images: imageFilesWithDate,
+                              images: directoryImages,
                             );
                             Directory storedDirectory =
                                 await getApplicationDocumentsDirectory();

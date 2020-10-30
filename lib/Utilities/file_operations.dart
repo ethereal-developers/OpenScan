@@ -77,7 +77,7 @@ class FileOperations {
           dirName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
           dirPath: dirPath,
           imageCount: 0,
-          //TODO: Change this to while adding images from gallery : Don't use dirPath
+          //TODO: Change this while adding images from gallery : Don't use dirPath
           created: DateTime.parse(dirPath
               .substring(dirPath.lastIndexOf('/') + 1)
               .substring(
@@ -148,11 +148,11 @@ class FileOperations {
       print(e);
       selectedDirectory = await pickDirectory(context, selectedDirectory);
     }
-    List<Map<String, dynamic>> foo = [];
+    List<ImageOS> foo = [];
     if (images.runtimeType == foo.runtimeType) {
       var tempImages = [];
-      for (var image in images) {
-        tempImages.add(image["file"]);
+      for (ImageOS image in images) {
+        tempImages.add(File(image.imgPath));
       }
       images = tempImages;
     }
@@ -167,12 +167,11 @@ class FileOperations {
   Future<bool> saveToAppDirectory(
       {BuildContext context, String fileName, dynamic images}) async {
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
-
-    List<Map<String, dynamic>> foo = [];
+    List<ImageOS> foo = [];
     if (images.runtimeType == foo.runtimeType) {
       var tempImages = [];
-      for (var image in images) {
-        tempImages.add(image["file"]);
+      for (ImageOS image in images) {
+        tempImages.add(File(image.imgPath));
       }
       images = tempImages;
     }

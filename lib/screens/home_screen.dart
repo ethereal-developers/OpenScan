@@ -86,7 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     askPermission();
     getMasterData();
-    getData();
   }
 
   @override
@@ -242,9 +241,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: TextStyle(fontSize: 14),
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              subtitle: Text(
-                                'Last Modified: ${masterDirectories[index].lastModified.day}-${masterDirectories[index].lastModified.month}-${masterDirectories[index].lastModified.year}',
-                                style: TextStyle(fontSize: 11),
+                              subtitle: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Last Modified: ${masterDirectories[index].lastModified.day}-${masterDirectories[index].lastModified.month}-${masterDirectories[index].lastModified.year}',
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                  Text(
+                                    '${masterDirectories[index].imageCount} ${(masterDirectories[index].imageCount == 1) ? 'image' : 'images'}',
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                ],
                               ),
                               trailing: Icon(
                                 Icons.arrow_right,
@@ -256,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => ViewDocument(
-                                      dirPath: masterDirectories[index].dirPath,
+                                      directoryOS: masterDirectories[index],
                                     ),
                                   ),
                                 ).then((value) {
@@ -268,7 +277,61 @@ class _HomeScreenState extends State<HomeScreen> {
                               },
                             ),
                             menuItems: [
-                              //TODO: Rename Directory
+                              FocusedMenuItem(
+                                title: Text(
+                                  'Rename',
+                                  style: TextStyle(color: Colors.black),
+                                ),
+                                trailingIcon: Icon(
+                                  Icons.edit,
+                                  color: Colors.black,
+                                ),
+                                onPressed: () {
+                                  //TODO: Implement Rename Directory
+                                  // showDialog(
+                                  //   context: context,
+                                  //   builder: (context) {
+                                  //     return AlertDialog(
+                                  //       shape: RoundedRectangleBorder(
+                                  //         borderRadius: BorderRadius.all(
+                                  //           Radius.circular(10),
+                                  //         ),
+                                  //       ),
+                                  //       title: Text('Delete'),
+                                  //       content: Text(
+                                  //           'Do you really want to delete file?'),
+                                  //       actions: <Widget>[
+                                  //         FlatButton(
+                                  //           onPressed: () =>
+                                  //               Navigator.pop(context),
+                                  //           child: Text('Cancel'),
+                                  //         ),
+                                  //         FlatButton(
+                                  //           onPressed: () {
+                                  //             Directory(imageDirectories[index]
+                                  //             ['path'])
+                                  //                 .deleteSync(recursive: true);
+                                  //             database.deleteDirectory(
+                                  //                 dirPath:
+                                  //                 imageDirectories[index]
+                                  //                 ['path']);
+                                  //             Navigator.pop(context);
+                                  //             homeRefresh();
+                                  //           },
+                                  //           child: Text(
+                                  //             'Delete',
+                                  //             style: TextStyle(
+                                  //                 color: Colors.redAccent),
+                                  //           ),
+                                  //         ),
+                                  //       ],
+                                  //     );
+                                  //   },
+                                  // ).whenComplete(() {
+                                  //   setState(() {});
+                                  // });
+                                },
+                              ),
                               FocusedMenuItem(
                                 title: Text('Delete'),
                                 trailingIcon: Icon(Icons.delete),
