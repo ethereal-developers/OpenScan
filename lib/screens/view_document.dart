@@ -99,7 +99,10 @@ class _ViewDocumentState extends State<ViewDocument> {
         imageFileEditCallback: () {
           imageEditCallback(
               imageOS: image,
-              nextImage: directoryImages[directoryImages.indexOf(image) + 1]);
+              nextImage:
+                  (directoryImages.length > directoryImages.indexOf(image) + 1)
+                      ? directoryImages[directoryImages.indexOf(image) + 1]
+                      : null);
         },
       );
       if (!imageCards.contains(imageCard)) {
@@ -124,27 +127,42 @@ class _ViewDocumentState extends State<ViewDocument> {
     directoryImages = [];
     imageFilesPath = [];
     int index = 1;
+    var startUpdatingIndex = false;
     directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
     print('Directory table[$widget.directoryOS.dirName] => $directoryData');
     for (var image in directoryData) {
-
       // Updating first image path after delete
       if (updateFirstImage) {
         database.updateFirstImagePath(
             imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
         updateFirstImage = false;
       }
+      var i = image['idx'];
 
       // Updating index of images after delete
-      if (updateIndex) {
-        //TODO: Update index
-        print(startIndexUpdateAt.imgPath);
-        index += 1;
+      /// Applicable for 1 image deletion
+      if (updateIndex && startIndexUpdateAt != null) {
+        print(
+            '$updateIndex ${startIndexUpdateAt.idx}...${startIndexUpdateAt.imgPath}');
+        print('');
+        if (startIndexUpdateAt.imgPath == image['img_path']) {
+          startUpdatingIndex = true;
+        }
+        if (startUpdatingIndex) {
+          i = index;
+          database.updateImageIndex(
+            image: ImageOS(
+              idx: i,
+              imgPath: image['img_path'],
+            ),
+            tableName: widget.directoryOS.dirName,
+          );
+        }
       }
 
       directoryImages.add(
         ImageOS(
-          idx: image['idx'],
+          idx: i,
           imgPath: image['img_path'],
         ),
       );
@@ -161,7 +179,6 @@ class _ViewDocumentState extends State<ViewDocument> {
     fileOperations = FileOperations();
     if (widget.directoryOS.dirPath != null) {
       dirPath = widget.directoryOS.dirPath;
-      //TODO: Use newName here
       fileName = widget.directoryOS.newName ?? widget.directoryOS.dirName;
       getDirectoryData();
     } else {
