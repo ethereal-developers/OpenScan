@@ -38,7 +38,7 @@ class _ViewDocumentState extends State<ViewDocument> {
   List<Map<String, dynamic>> directoryData;
   List<ImageOS> directoryImages = [];
 
-  void imageEditCallback({ImageOS imageOS, ImageOS nextImage}) {
+  void imageEditCallback({ImageOS imageOS}) {
     bool isFirstImage = false;
     if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
       isFirstImage = true;
@@ -46,7 +46,6 @@ class _ViewDocumentState extends State<ViewDocument> {
     getDirectoryData(
       updateFirstImage: isFirstImage,
       updateIndex: true,
-      startIndexUpdateAt: nextImage,
     );
   }
 
@@ -97,12 +96,7 @@ class _ViewDocumentState extends State<ViewDocument> {
         imageOS: image,
         dirPath: dirPath,
         imageFileEditCallback: () {
-          imageEditCallback(
-              imageOS: image,
-              nextImage:
-                  (directoryImages.length > directoryImages.indexOf(image) + 1)
-                      ? directoryImages[directoryImages.indexOf(image) + 1]
-                      : null);
+          imageEditCallback(imageOS: image);
         },
       );
       if (!imageCards.contains(imageCard)) {
@@ -122,15 +116,14 @@ class _ViewDocumentState extends State<ViewDocument> {
   void getDirectoryData({
     bool updateFirstImage = false,
     bool updateIndex = false,
-    ImageOS startIndexUpdateAt,
   }) async {
     directoryImages = [];
     imageFilesPath = [];
     int index = 1;
-    var startUpdatingIndex = false;
     directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
     print('Directory table[$widget.directoryOS.dirName] => $directoryData');
     for (var image in directoryData) {
+
       // Updating first image path after delete
       if (updateFirstImage) {
         database.updateFirstImagePath(
@@ -140,24 +133,15 @@ class _ViewDocumentState extends State<ViewDocument> {
       var i = image['idx'];
 
       // Updating index of images after delete
-      /// Applicable for 1 image deletion
-      if (updateIndex && startIndexUpdateAt != null) {
-        print(
-            '$updateIndex ${startIndexUpdateAt.idx}...${startIndexUpdateAt.imgPath}');
-        print('');
-        if (startIndexUpdateAt.imgPath == image['img_path']) {
-          startUpdatingIndex = true;
-        }
-        if (startUpdatingIndex) {
-          i = index;
-          database.updateImageIndex(
-            image: ImageOS(
-              idx: i,
-              imgPath: image['img_path'],
-            ),
-            tableName: widget.directoryOS.dirName,
-          );
-        }
+      if (updateIndex) {
+        i = index;
+        database.updateImageIndex(
+          image: ImageOS(
+            idx: i,
+            imgPath: image['img_path'],
+          ),
+          tableName: widget.directoryOS.dirName,
+        );
       }
 
       directoryImages.add(
