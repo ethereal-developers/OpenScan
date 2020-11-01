@@ -123,7 +123,6 @@ class _ViewDocumentState extends State<ViewDocument> {
     directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
     print('Directory table[$widget.directoryOS.dirName] => $directoryData');
     for (var image in directoryData) {
-
       // Updating first image path after delete
       if (updateFirstImage) {
         database.updateFirstImagePath(
@@ -155,6 +154,21 @@ class _ViewDocumentState extends State<ViewDocument> {
       index += 1;
     }
     setState(() {});
+  }
+
+  void handleClick(String value) {
+    switch (value) {
+      case 'Reorder':
+        break;
+      case 'Select':
+        break;
+      case 'Share':
+        showModalBottomSheet(
+          context: context,
+          builder: _buildBottomSheet,
+        );
+        break;
+    }
   }
 
   @override
@@ -223,15 +237,21 @@ class _ViewDocumentState extends State<ViewDocument> {
                 });
               },
             ),
-            Builder(builder: (context) {
-              return IconButton(
-                icon: Icon(Icons.more_vert),
-                onPressed: () {
-                  showModalBottomSheet(
-                      context: context, builder: _buildBottomSheet);
-                },
-              );
-            }),
+            PopupMenuButton<String>(
+              onSelected: handleClick,
+              color: primaryColor.withOpacity(0.95),
+              elevation: 30,
+              offset: Offset.fromDirection(20, 20),
+              icon: Icon(Icons.more_vert),
+              itemBuilder: (BuildContext context) {
+                return {'Share', 'Reorder', 'Select'}.map((String choice) {
+                  return PopupMenuItem<String>(
+                    value: choice,
+                    child: Text(choice),
+                  );
+                }).toList();
+              },
+            ),
           ],
         ),
         body: RefreshIndicator(
@@ -284,8 +304,6 @@ class _ViewDocumentState extends State<ViewDocument> {
   Widget _buildBottomSheet(BuildContext context) {
     FileOperations fileOperations = FileOperations();
     Size size = MediaQuery.of(context).size;
-    String folderName =
-        dirPath.substring(dirPath.lastIndexOf('/') + 1, dirPath.length - 1);
     return Container(
       color: primaryColor,
       child: Column(
@@ -295,7 +313,7 @@ class _ViewDocumentState extends State<ViewDocument> {
           Padding(
             padding: EdgeInsets.fromLTRB(15, 20, 15, 15),
             child: Text(
-              folderName,
+              fileName,
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
               overflow: TextOverflow.ellipsis,
             ),
@@ -307,44 +325,8 @@ class _ViewDocumentState extends State<ViewDocument> {
             color: Colors.white,
           ),
           ListTile(
-            leading: Icon(Icons.phone_android),
-            title: Text('Save to device'),
-            onTap: () async {
-              String savedDirectory;
-              Navigator.pop(context);
-              savedDirectory = await fileOperations.saveToDevice(
-                context: context,
-                fileName: fileName,
-                images: directoryImages,
-              );
-              String displayText;
-              (savedDirectory != null)
-                  ? displayText = "Saved at $savedDirectory"
-                  : displayText = "Failed to generate pdf. Try Again.";
-              scaffoldKey.currentState.showSnackBar(
-                SnackBar(
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10))),
-                  backgroundColor: primaryColor,
-                  duration: Duration(seconds: 1),
-                  content: Container(
-                    decoration: BoxDecoration(),
-                    alignment: Alignment.center,
-                    height: 20,
-                    width: size.width * 0.3,
-                    child: Text(
-                      displayText,
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          ListTile(
             leading: Icon(Icons.picture_as_pdf),
-            title: Text('Share as PDF'),
+            title: Text('Share PDF'),
             onTap: () async {
               Navigator.pop(context);
               showDialog(
@@ -356,7 +338,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                           Radius.circular(10),
                         ),
                       ),
-                      title: Text('Share as PDF'),
+                      title: Text('Share PDF'),
                       content: TextField(
                         onChanged: (value) {
                           fileName = '$value OpenScan';
@@ -403,8 +385,44 @@ class _ViewDocumentState extends State<ViewDocument> {
             },
           ),
           ListTile(
+            leading: Icon(Icons.phone_android),
+            title: Text('Save to device'),
+            onTap: () async {
+              String savedDirectory;
+              Navigator.pop(context);
+              savedDirectory = await fileOperations.saveToDevice(
+                context: context,
+                fileName: fileName,
+                images: directoryImages,
+              );
+              String displayText;
+              (savedDirectory != null)
+                  ? displayText = "Saved at $savedDirectory"
+                  : displayText = "Failed to generate pdf. Try Again.";
+              scaffoldKey.currentState.showSnackBar(
+                SnackBar(
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10))),
+                  backgroundColor: primaryColor,
+                  duration: Duration(seconds: 1),
+                  content: Container(
+                    decoration: BoxDecoration(),
+                    alignment: Alignment.center,
+                    height: 20,
+                    width: size.width * 0.3,
+                    child: Text(
+                      displayText,
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          ListTile(
             leading: Icon(Icons.image),
-            title: Text('Share as image'),
+            title: Text('Share images'),
             onTap: () {
               ShareExtend.shareMultiple(imageFilesPath, 'file');
               Navigator.pop(context);
