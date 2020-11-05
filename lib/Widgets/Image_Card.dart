@@ -12,19 +12,19 @@ import '../Utilities/constants.dart';
 
 class ImageCard extends StatelessWidget {
   final Function imageFileEditCallback;
-  final String dirPath;
+  final DirectoryOS directoryOS;
   final ImageOS imageOS;
 
   const ImageCard({
     this.imageFileEditCallback,
-    this.dirPath,
+    this.directoryOS,
     this.imageOS,
   });
 
   @override
   Widget build(BuildContext context) {
     TransformationController _controller = TransformationController();
-    print(dirPath);
+    print(directoryOS.dirPath);
     DatabaseHelper database = DatabaseHelper();
     Size size = MediaQuery.of(context).size;
     return RaisedButton(
@@ -78,7 +78,17 @@ class ImageCard extends StatelessWidget {
                   "c.jpg");
               File(imageOS.imgPath).deleteSync();
               if (image != null) {
-                image.copy(temp.path);
+                image.copySync(temp.path);
+              }
+              imageOS.imgPath = temp.path;
+              print(temp.path);
+              database.updateImagePath(
+                  tableName: directoryOS.dirName, image: imageOS);
+              if (imageOS.idx == 1) {
+                database.updateFirstImagePath(
+                  imagePath: imageOS.imgPath,
+                  dirPath: directoryOS.dirPath,
+                );
               }
               imageFileEditCallback();
             },
@@ -112,11 +122,14 @@ class ImageCard extends StatelessWidget {
                             File(imageOS.imgPath).deleteSync();
                             database.deleteImage(
                               imgPath: imageOS.imgPath,
-                              tableName: dirPath.substring(dirPath.lastIndexOf("/") + 1),
+                              tableName: directoryOS.dirPath.substring(
+                                  directoryOS.dirPath.lastIndexOf("/") + 1),
                             );
                             try {
-                              Directory(dirPath).deleteSync(recursive: false);
-                              database.deleteDirectory(dirPath: dirPath);
+                              Directory(directoryOS.dirPath)
+                                  .deleteSync(recursive: false);
+                              database.deleteDirectory(
+                                  dirPath: directoryOS.dirPath);
                               Navigator.pop(context);
                             } catch (e) {
                               imageFileEditCallback();

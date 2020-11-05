@@ -94,7 +94,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     for (var image in directoryImages) {
       ImageCard imageCard = ImageCard(
         imageOS: image,
-        dirPath: dirPath,
+        directoryOS: widget.directoryOS,
         imageFileEditCallback: () {
           imageEditCallback(imageOS: image);
         },

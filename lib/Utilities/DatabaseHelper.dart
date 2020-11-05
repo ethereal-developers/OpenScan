@@ -69,7 +69,8 @@ class DatabaseHelper {
     db.execute('''
       CREATE TABLE $_dirTableName(
       idx INTEGER,
-      img_path TEXT)
+      img_path TEXT,
+      has_compressed INTEGER)
       ''');
   }
 
@@ -109,6 +110,18 @@ class DatabaseHelper {
     Database db = await instance.database;
     return await db.update(_masterTableName, {'new_name': directory.newName},
         where: 'dir_name == ?', whereArgs: [directory.dirName]);
+  }
+
+  Future<int> updateImagePath({String tableName, ImageOS image}) async {
+    Database db = await instance.database;
+    getDirectoryTableName(tableName);
+    return await db.update(
+        _dirTableName,
+        {
+          'img_path': image.imgPath,
+        },
+        where: 'idx == ?',
+        whereArgs: [image.idx]);
   }
 
   // For Reordering Images

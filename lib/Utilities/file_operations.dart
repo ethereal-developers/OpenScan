@@ -94,7 +94,7 @@ class FileOperations {
     }
 
     /// Removed Index in image path
-    File tempPic = File("$dirPath/ ${DateTime.now()}.jpg");
+    File tempPic = File("$dirPath/${DateTime.now()}.jpg");
     image.copy(tempPic.path);
     database.createImage(
       image: ImageOS(
@@ -136,13 +136,15 @@ class FileOperations {
   Future<String> saveToDevice(
       {BuildContext context, String fileName, dynamic images}) async {
     Directory selectedDirectory;
-    Directory openscanDir = Directory("/storage/emulated/0/OpenScan/PDF");
-    // TODO: Make the device create directory if it is not present
+    Directory openscanDir = Directory("/storage/emulated/0/OpenScan");
+    Directory openscanPdfDir = Directory("/storage/emulated/0/OpenScan/PDF");
+
     try {
       if (!openscanDir.existsSync()) {
         openscanDir.createSync();
+        openscanPdfDir.createSync();
       }
-      selectedDirectory = openscanDir;
+      selectedDirectory = openscanPdfDir;
     } catch (e) {
       print(e);
       selectedDirectory = await pickDirectory(context, selectedDirectory);
@@ -155,6 +157,12 @@ class FileOperations {
       }
       images = tempImages;
     }
+
+    fileName = fileName.replaceAll('-', '');
+    fileName = fileName.replaceAll('.', '');
+    fileName = fileName.replaceAll(' ', '');
+    fileName = fileName.replaceAll(':', '');
+
     pdfStatus = await createPdf(
       selectedDirectory: selectedDirectory,
       fileName: fileName,
