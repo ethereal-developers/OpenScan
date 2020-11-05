@@ -194,7 +194,6 @@ class _ViewDocumentState extends State<ViewDocument> {
         key: scaffoldKey,
         appBar: AppBar(
           elevation: 0,
-          centerTitle: true,
           backgroundColor: primaryColor,
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios),
@@ -202,17 +201,13 @@ class _ViewDocumentState extends State<ViewDocument> {
               Navigator.pop(context, true);
             },
           ),
-          title: RichText(
-            text: TextSpan(
-              text: 'View ',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              children: [
-                TextSpan(
-                  text: 'Document',
-                  style: TextStyle(color: secondaryColor),
-                ),
-              ],
+          title: Text(
+            fileName,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
           actions: <Widget>[
             IconButton(

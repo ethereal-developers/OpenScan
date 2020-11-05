@@ -69,8 +69,7 @@ class DatabaseHelper {
     db.execute('''
       CREATE TABLE $_dirTableName(
       idx INTEGER,
-      img_path TEXT,
-      has_compressed INTEGER)
+      img_path TEXT)
       ''');
   }
 
