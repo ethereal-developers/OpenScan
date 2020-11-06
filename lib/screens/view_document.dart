@@ -13,6 +13,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:share_extend/share_extend.dart';
 
+bool enableSelect = false;
+
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
   final DirectoryOS directoryOS;
@@ -30,15 +32,17 @@ class _ViewDocumentState extends State<ViewDocument> {
   List<String> imageFilesPath = [];
   List<Widget> imageCards = [];
   String imageFilePath;
-
   FileOperations fileOperations;
   String dirPath;
   String fileName;
   bool _statusSuccess;
   List<Map<String, dynamic>> directoryData;
   List<ImageOS> directoryImages = [];
+  List<ImageOS> tempDirectoryImages = [];
+  List<String> tempImageFilesPath = [];
+  bool enableSelectionIcons = false;
 
-  void imageEditCallback({ImageOS imageOS}) {
+  void fileEditCallback({ImageOS imageOS}) {
     bool isFirstImage = false;
     if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
       isFirstImage = true;
@@ -47,6 +51,27 @@ class _ViewDocumentState extends State<ViewDocument> {
       updateFirstImage: isFirstImage,
       updateIndex: true,
     );
+  }
+
+  selectCallback({ImageOS imageOS}) {
+    if(!tempImageFilesPath.contains(imageOS.imgPath)){
+      tempImageFilesPath.add(imageOS.imgPath);
+      tempDirectoryImages.add(imageOS);
+    } else {
+      tempImageFilesPath.remove(imageOS.imgPath);
+      tempDirectoryImages.remove(imageOS);
+    }
+    print(tempImageFilesPath);
+    if(tempImageFilesPath.length != 0){
+      setState(() {
+        enableSelectionIcons = true;
+      });
+    } else {
+      setState(() {
+        enableSelectionIcons = false;
+      });
+    }
+    //TODO: Check if all images exist
   }
 
   Future<void> displayDialog(BuildContext context) async {
@@ -95,8 +120,11 @@ class _ViewDocumentState extends State<ViewDocument> {
       ImageCard imageCard = ImageCard(
         imageOS: image,
         directoryOS: widget.directoryOS,
-        imageFileEditCallback: () {
-          imageEditCallback(imageOS: image);
+        fileEditCallback: () {
+          fileEditCallback(imageOS: image);
+        },
+        selectCallback: () {
+          selectCallback(imageOS: image);
         },
       );
       if (!imageCards.contains(imageCard)) {
@@ -161,6 +189,22 @@ class _ViewDocumentState extends State<ViewDocument> {
       case 'Reorder':
         break;
       case 'Select':
+        setState(() {
+          enableSelect = true;
+        });
+        break;
+      case 'Share':
+        showModalBottomSheet(
+          context: context,
+          builder: _buildBottomSheet,
+        );
+        break;
+    }
+  }
+
+  void handleSelectionClick(String value) {
+    switch (value) {
+      case 'Delete':
         break;
       case 'Share':
         showModalBottomSheet(
@@ -195,12 +239,24 @@ class _ViewDocumentState extends State<ViewDocument> {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: primaryColor,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios),
-            onPressed: () {
-              Navigator.pop(context, true);
-            },
-          ),
+          leading: (enableSelect)
+              ? IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    size: 30,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      enableSelect = false;
+                    });
+                  },
+                )
+              : IconButton(
+                  icon: Icon(Icons.arrow_back_ios),
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                  },
+                ),
           title: Text(
             fileName,
             style: TextStyle(
@@ -210,43 +266,68 @@ class _ViewDocumentState extends State<ViewDocument> {
             overflow: TextOverflow.ellipsis,
           ),
           actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.picture_as_pdf),
-              onPressed: () async {
-                _statusSuccess = await fileOperations.saveToAppDirectory(
-                  context: context,
-                  fileName: fileName,
-                  images: directoryImages,
-                );
-                Directory storedDirectory =
-                    await getApplicationDocumentsDirectory();
-                //TODO: Doubt! Is this line needed??
-                // File('${storedDirectory.path}/$fileName.pdf').deleteSync();
-                final result = await OpenFile.open(
-                    '${storedDirectory.path}/$fileName.pdf');
+            (enableSelect)
+                ? IconButton(
+                    icon: Icon(
+                      Icons.share,
+                      color: (enableSelectionIcons) ? Colors.white : Colors.grey,
+                    ),
+                    onPressed: (enableSelectionIcons) ? () {
+                      //TODO: Share selected images
+                      showModalBottomSheet(
+                        context: context,
+                        builder: _buildBottomSheet,
+                      );
+                    } : (){},
+                  )
+                : IconButton(
+                    icon: Icon(Icons.picture_as_pdf),
+                    onPressed: () async {
+                      _statusSuccess = await fileOperations.saveToAppDirectory(
+                        context: context,
+                        fileName: fileName,
+                        images: directoryImages,
+                      );
+                      Directory storedDirectory =
+                          await getApplicationDocumentsDirectory();
+                      //TODO: Doubt! Is this line needed??
+                      // File('${storedDirectory.path}/$fileName.pdf').deleteSync();
+                      final result = await OpenFile.open(
+                          '${storedDirectory.path}/$fileName.pdf');
 
-                setState(() {
-                  String _openResult =
-                      "type=${result.type}  message=${result.message}";
-                  print(_openResult);
-                });
-              },
-            ),
-            PopupMenuButton<String>(
-              onSelected: handleClick,
-              color: primaryColor.withOpacity(0.95),
-              elevation: 30,
-              offset: Offset.fromDirection(20, 20),
-              icon: Icon(Icons.more_vert),
-              itemBuilder: (BuildContext context) {
-                return {'Share', 'Reorder', 'Select'}.map((String choice) {
-                  return PopupMenuItem<String>(
-                    value: choice,
-                    child: Text(choice),
-                  );
-                }).toList();
-              },
-            ),
+                      setState(() {
+                        String _openResult =
+                            "type=${result.type}  message=${result.message}";
+                        print(_openResult);
+                      });
+                    },
+                  ),
+            (enableSelect)
+                ? IconButton(
+                    icon: Icon(
+                      Icons.delete,
+                      color: (enableSelectionIcons) ? Colors.red : Colors.grey,
+                    ),
+                    onPressed: (enableSelectionIcons) ? () {
+                      //TODO: Delete selected images
+                    } : (){},
+                  )
+                : PopupMenuButton<String>(
+                    onSelected: handleClick,
+                    color: primaryColor.withOpacity(0.95),
+                    elevation: 30,
+                    offset: Offset.fromDirection(20, 20),
+                    icon: Icon(Icons.more_vert),
+                    itemBuilder: (BuildContext context) {
+                      return {'Share', 'Reorder', 'Select'}
+                          .map((String choice) {
+                        return PopupMenuItem<String>(
+                          value: choice,
+                          child: Text(choice),
+                        );
+                      }).toList();
+                    },
+                  ),
           ],
         ),
         body: RefreshIndicator(
@@ -262,7 +343,6 @@ class _ViewDocumentState extends State<ViewDocument> {
               child: ListView(
                 children: [
                   ReorderableWrap(
-                    //TODO: Check
                     spacing: 10,
                     runSpacing: 10,
                     minMainAxisCount: 2,
@@ -284,6 +364,7 @@ class _ViewDocumentState extends State<ViewDocument> {
           ),
         ),
         // TODO: Add photos from gallery
+        // TODO: Add Quick Scan
         floatingActionButton: FloatingActionButton(
           backgroundColor: secondaryColor,
           onPressed: createImage,
@@ -361,7 +442,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                 await fileOperations.saveToAppDirectory(
                               context: context,
                               fileName: fileName,
-                              images: directoryImages,
+                              images: (enableSelect) ? tempDirectoryImages : directoryImages,
                             );
                             Directory storedDirectory =
                                 await getApplicationDocumentsDirectory();
@@ -388,7 +469,7 @@ class _ViewDocumentState extends State<ViewDocument> {
               savedDirectory = await fileOperations.saveToDevice(
                 context: context,
                 fileName: fileName,
-                images: directoryImages,
+                images: (enableSelect) ? tempDirectoryImages : directoryImages,
               );
               String displayText;
               (savedDirectory != null)
@@ -419,11 +500,11 @@ class _ViewDocumentState extends State<ViewDocument> {
             leading: Icon(Icons.image),
             title: Text('Share images'),
             onTap: () {
-              ShareExtend.shareMultiple(imageFilesPath, 'file');
+              ShareExtend.shareMultiple((enableSelect) ? tempImageFilesPath : imageFilesPath, 'file');
               Navigator.pop(context);
             },
           ),
-          ListTile(
+          (enableSelect) ? Container() : ListTile(
             leading: Icon(
               Icons.delete,
               color: Colors.redAccent,

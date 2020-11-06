@@ -74,7 +74,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     }
-    //TODO: Check reverse
     masterDirectories = masterDirectories.reversed.toList();
     return masterDirectories;
   }
