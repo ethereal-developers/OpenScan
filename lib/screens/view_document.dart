@@ -35,7 +35,7 @@ class _ViewDocumentState extends State<ViewDocument> {
   String imageFilePath;
   FileOperations fileOperations;
   String dirPath;
-  String fileName;
+  String fileName = '';
   List<Map<String, dynamic>> directoryData;
   List<ImageOS> directoryImages = [];
   List<ImageOS> initDirectoryImages = [];
@@ -294,6 +294,14 @@ class _ViewDocumentState extends State<ViewDocument> {
             actions: (enableReorder) ? [
               GestureDetector(
                 onTap: (){
+                  for (var i=1; i <= directoryImages.length; i++){
+                    directoryImages[i-1].idx = i;
+                    database.updateImagePath(
+                      image: directoryImages[i-1],
+                      tableName: widget.directoryOS.dirName,
+                    );
+                    print('$i: ${directoryImages[i-1].imgPath}');
+                  }
                   setState(() {
                     enableReorder = false;
                     //TODO: Sort the images in DB
