@@ -216,6 +216,16 @@ class _ImageCardState extends State<ImageCard> {
                 width: 0.001,
                 height: 0.001,
               ),
+        (enableReorder)
+            ? Positioned.fill(
+                child: Container(
+                  color: Colors.transparent,
+                ),
+              )
+            : Container(
+                width: 0.001,
+                height: 0.001,
+              ),
       ],
     );
   }

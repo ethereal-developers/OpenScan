@@ -88,7 +88,6 @@ class DatabaseHelper {
       where: 'dir_name == ?',
       whereArgs: [tableName],
     );
-    // TODO: Not working when multiple images are saved !Check!
     await db.update(
         _masterTableName,
         {
@@ -148,7 +147,6 @@ class DatabaseHelper {
   Future deleteImage({String imgPath, String tableName}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
-    //TODO: Check if image index is 1, then change first_img_path in master
     await db
         .delete(_dirTableName, where: 'img_path == ?', whereArgs: [imgPath]);
     var data = await db.query(
