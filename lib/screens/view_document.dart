@@ -15,6 +15,7 @@ import 'package:share_extend/share_extend.dart';
 
 bool enableSelect = false;
 bool enableReorder = false;
+List<bool> selectedImageIndex = [];
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
@@ -39,7 +40,6 @@ class _ViewDocumentState extends State<ViewDocument> {
   List<Map<String, dynamic>> directoryData;
   List<ImageOS> directoryImages = [];
   List<ImageOS> initDirectoryImages = [];
-  List<bool> selectedImageIndex = [];
   bool enableSelectionIcons = false;
   bool resetReorder = false;
 
@@ -55,7 +55,6 @@ class _ViewDocumentState extends State<ViewDocument> {
   }
 
   selectCallback({ImageOS imageOS}) {
-    selectedImageIndex[imageOS.idx - 1] = !selectedImageIndex[imageOS.idx - 1];
     if(selectedImageIndex.contains(true)){
       setState(() {
         enableSelectionIcons = true;
@@ -66,16 +65,6 @@ class _ViewDocumentState extends State<ViewDocument> {
       });
     }
   }
-
-  // Future<void> displayDialog(BuildContext context) async {
-  //   String displayText;
-  //   (_statusSuccess)
-  //       ? displayText = "Success. File stored in the OpenScan folder."
-  //       : displayText = "Failed to generate pdf. Try Again.";
-  //   Scaffold.of(context).showSnackBar(
-  //     SnackBar(content: Text(displayText)),
-  //   );
-  // }
 
   Future<void> createDirectoryPath() async {
     Directory appDir = await getExternalStorageDirectory();
@@ -109,6 +98,7 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   getImageCards() {
     imageCards = [];
+    print(selectedImageIndex);
     for (var image in directoryImages) {
       ImageCard imageCard = ImageCard(
         imageOS: image,
@@ -207,18 +197,18 @@ class _ViewDocumentState extends State<ViewDocument> {
     }
   }
 
-  void handleSelectionClick(String value) {
-    switch (value) {
-      case 'Delete':
-        break;
-      case 'Share':
-        showModalBottomSheet(
-          context: context,
-          builder: _buildBottomSheet,
-        );
-        break;
-    }
-  }
+  // void handleSelectionClick(String value) {
+  //   switch (value) {
+  //     case 'Delete':
+  //       break;
+  //     case 'Share':
+  //       showModalBottomSheet(
+  //         context: context,
+  //         builder: _buildBottomSheet,
+  //       );
+  //       break;
+  //   }
+  // }
 
   @override
   void initState() {
@@ -265,6 +255,9 @@ class _ViewDocumentState extends State<ViewDocument> {
                     onPressed: (enableSelect) ? () {
                       //TODO: Remove all selections, else deletion bug occurs
                       setState(() {
+                        for(var i=0; i < selectedImageIndex.length; i++){
+                          selectedImageIndex[i]=false;
+                        }
                         enableSelect = false;
                       });
                     } : (){
@@ -304,7 +297,6 @@ class _ViewDocumentState extends State<ViewDocument> {
                   }
                   setState(() {
                     enableReorder = false;
-                    //TODO: Sort the images in DB
                   });
                 },
                 child: Container(
@@ -357,6 +349,26 @@ class _ViewDocumentState extends State<ViewDocument> {
                       ),
                       onPressed: (enableSelectionIcons) ? () {
                         //TODO: Delete selected images
+                        for(var i = 0; i < directoryImages.length; i++){
+                          print(selectedImageIndex[i]);
+                          if(selectedImageIndex[i]){
+                            print(directoryImages[i].imgPath);
+                            File(directoryImages[i].imgPath).deleteSync();
+                            database.deleteImage(
+                              imgPath: directoryImages[i].imgPath,
+                              tableName: widget.directoryOS.dirName,
+                            );
+                            try {
+                              Directory(widget.directoryOS.dirPath)
+                                  .deleteSync(recursive: false);
+                              database.deleteDirectory(
+                                  dirPath: widget.directoryOS.dirPath);
+                            } catch (e) {
+                              fileEditCallback(imageOS: directoryImages[i]);
+                            }
+                          }
+                        }
+
                       } : (){},
                     )
                   : PopupMenuButton<String>(

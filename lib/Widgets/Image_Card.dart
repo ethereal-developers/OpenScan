@@ -31,7 +31,6 @@ class ImageCard extends StatefulWidget {
 class _ImageCardState extends State<ImageCard> {
   TransformationController _controller = TransformationController();
   DatabaseHelper database = DatabaseHelper();
-  bool selected = false;
 
   imageViewerOnPressed({context, controller, size}) {
     showCupertinoDialog(
@@ -64,7 +63,7 @@ class _ImageCardState extends State<ImageCard> {
 
   selectionOnPressed() {
     setState(() {
-      selected = true;
+      selectedImageIndex[widget.imageOS.idx - 1] = true;
     });
     widget.selectCallback();
   }
@@ -195,12 +194,12 @@ class _ImageCardState extends State<ImageCard> {
             ),
           ),
         ),
-        (selected && enableSelect)
+        (selectedImageIndex[widget.imageOS.idx - 1] && enableSelect)
             ? Positioned.fill(
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
-                      selected = false;
+                      selectedImageIndex[widget.imageOS.idx - 1] = false;
                     });
                     widget.selectCallback();
                   },
