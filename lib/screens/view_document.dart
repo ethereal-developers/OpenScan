@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:open_file/open_file.dart';
 import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
@@ -42,6 +43,7 @@ class _ViewDocumentState extends State<ViewDocument> {
   List<ImageOS> initDirectoryImages = [];
   bool enableSelectionIcons = false;
   bool resetReorder = false;
+  bool quickScan = false;
 
   void fileEditCallback({ImageOS imageOS}) {
     bool isFirstImage = false;
@@ -55,7 +57,7 @@ class _ViewDocumentState extends State<ViewDocument> {
   }
 
   selectCallback({ImageOS imageOS}) {
-    if(selectedImageIndex.contains(true)){
+    if (selectedImageIndex.contains(true)) {
       setState(() {
         enableSelectionIcons = true;
       });
@@ -73,11 +75,11 @@ class _ViewDocumentState extends State<ViewDocument> {
     widget.directoryOS.dirName = fileName;
   }
 
-  Future<dynamic> createImage() async {
+  Future<dynamic> createImage({bool quickScan}) async {
     File image = await fileOperations.openCamera();
     Directory cacheDir = await getTemporaryDirectory();
     if (image != null) {
-      if (!widget.quickScan) {
+      if (!quickScan) {
         imageFilePath = await FlutterScannerCropper.openCrop({
           'src': image.path,
           'dest': cacheDir.path,
@@ -91,7 +93,7 @@ class _ViewDocumentState extends State<ViewDocument> {
         dirPath: dirPath,
       );
       await fileOperations.deleteTemporaryFiles();
-      if (widget.quickScan) createImage();
+      if (quickScan) createImage(quickScan: quickScan);
       getDirectoryData();
     }
   }
@@ -220,7 +222,8 @@ class _ViewDocumentState extends State<ViewDocument> {
       getDirectoryData();
     } else {
       createDirectoryPath();
-      createImage();
+      quickScan = widget.quickScan;
+      createImage(quickScan: quickScan);
     }
   }
 
@@ -229,8 +232,8 @@ class _ViewDocumentState extends State<ViewDocument> {
     Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: WillPopScope(
-        onWillPop: (){
-          if(enableSelect || enableReorder){
+        onWillPop: () {
+          if (enableSelect || enableReorder) {
             setState(() {
               enableSelect = false;
               enableReorder = false;
@@ -252,23 +255,27 @@ class _ViewDocumentState extends State<ViewDocument> {
                       Icons.close,
                       size: 30,
                     ),
-                    onPressed: (enableSelect) ? () {
-                      //TODO: Remove all selections, else deletion bug occurs
-                      setState(() {
-                        for(var i=0; i < selectedImageIndex.length; i++){
-                          selectedImageIndex[i]=false;
-                        }
-                        enableSelect = false;
-                      });
-                    } : (){
-                      setState(() {
-                        directoryImages = [];
-                        for(var image in initDirectoryImages){
-                          directoryImages.add(image);
-                        }
-                        enableReorder = false;
-                      });
-                    },
+                    onPressed: (enableSelect)
+                        ? () {
+                            //TODO: Remove all selections, else deletion bug occurs
+                            setState(() {
+                              for (var i = 0;
+                                  i < selectedImageIndex.length;
+                                  i++) {
+                                selectedImageIndex[i] = false;
+                              }
+                              enableSelect = false;
+                            });
+                          }
+                        : () {
+                            setState(() {
+                              directoryImages = [];
+                              for (var image in initDirectoryImages) {
+                                directoryImages.add(image);
+                              }
+                              enableReorder = false;
+                            });
+                          },
                   )
                 : IconButton(
                     icon: Icon(Icons.arrow_back_ios),
@@ -284,110 +291,127 @@ class _ViewDocumentState extends State<ViewDocument> {
               ),
               overflow: TextOverflow.ellipsis,
             ),
-            actions: (enableReorder) ? [
-              GestureDetector(
-                onTap: (){
-                  for (var i=1; i <= directoryImages.length; i++){
-                    directoryImages[i-1].idx = i;
-                    database.updateImagePath(
-                      image: directoryImages[i-1],
-                      tableName: widget.directoryOS.dirName,
-                    );
-                    print('$i: ${directoryImages[i-1].imgPath}');
-                  }
-                  setState(() {
-                    enableReorder = false;
-                  });
-                },
-                child: Container(
-                  padding: EdgeInsets.only(right: 10),
-                  alignment: Alignment.center,
-                  child: Text('Done', style: TextStyle(color: secondaryColor),),
-                ),
-              ),
-            ] : [
-              (enableSelect)
-                  ? IconButton(
-                      icon: Icon(
-                        Icons.share,
-                        color: (enableSelectionIcons) ? Colors.white : Colors.grey,
-                      ),
-                      onPressed: (enableSelectionIcons) ? () {
-                        showModalBottomSheet(
-                          context: context,
-                          builder: _buildBottomSheet,
-                        );
-                      } : (){},
-                    )
-                  : IconButton(
-                      icon: Icon(Icons.picture_as_pdf),
-                      onPressed: () async {
-                        await fileOperations.saveToAppDirectory(
-                          context: context,
-                          fileName: fileName,
-                          images: directoryImages,
-                        );
-                        Directory storedDirectory =
-                            await getApplicationDocumentsDirectory();
-                        //TODO: Doubt! Is this line needed??
-                        // File('${storedDirectory.path}/$fileName.pdf').deleteSync();
-                        final result = await OpenFile.open(
-                            '${storedDirectory.path}/$fileName.pdf');
-
+            actions: (enableReorder)
+                ? [
+                    GestureDetector(
+                      onTap: () {
+                        for (var i = 1; i <= directoryImages.length; i++) {
+                          directoryImages[i - 1].idx = i;
+                          database.updateImagePath(
+                            image: directoryImages[i - 1],
+                            tableName: widget.directoryOS.dirName,
+                          );
+                          print('$i: ${directoryImages[i - 1].imgPath}');
+                        }
                         setState(() {
-                          String _openResult =
-                              "type=${result.type}  message=${result.message}";
-                          print(_openResult);
+                          enableReorder = false;
                         });
                       },
-                    ),
-              (enableSelect)
-                  ? IconButton(
-                      icon: Icon(
-                        Icons.delete,
-                        color: (enableSelectionIcons) ? Colors.red : Colors.grey,
+                      child: Container(
+                        padding: EdgeInsets.only(right: 10),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Done',
+                          style: TextStyle(color: secondaryColor),
+                        ),
                       ),
-                      onPressed: (enableSelectionIcons) ? () {
-                        //TODO: Delete selected images
-                        for(var i = 0; i < directoryImages.length; i++){
-                          print(selectedImageIndex[i]);
-                          if(selectedImageIndex[i]){
-                            print(directoryImages[i].imgPath);
-                            File(directoryImages[i].imgPath).deleteSync();
-                            database.deleteImage(
-                              imgPath: directoryImages[i].imgPath,
-                              tableName: widget.directoryOS.dirName,
-                            );
-                            try {
-                              Directory(widget.directoryOS.dirPath)
-                                  .deleteSync(recursive: false);
-                              database.deleteDirectory(
-                                  dirPath: widget.directoryOS.dirPath);
-                            } catch (e) {
-                              fileEditCallback(imageOS: directoryImages[i]);
-                            }
-                          }
-                        }
-
-                      } : (){},
-                    )
-                  : PopupMenuButton<String>(
-                      onSelected: handleClick,
-                      color: primaryColor.withOpacity(0.95),
-                      elevation: 30,
-                      offset: Offset.fromDirection(20, 20),
-                      icon: Icon(Icons.more_vert),
-                      itemBuilder: (BuildContext context) {
-                        return {'Share', 'Reorder', 'Select'}
-                            .map((String choice) {
-                          return PopupMenuItem<String>(
-                            value: choice,
-                            child: Text(choice),
-                          );
-                        }).toList();
-                      },
                     ),
-            ],
+                  ]
+                : [
+                    (enableSelect)
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.share,
+                              color: (enableSelectionIcons)
+                                  ? Colors.white
+                                  : Colors.grey,
+                            ),
+                            onPressed: (enableSelectionIcons)
+                                ? () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: _buildBottomSheet,
+                                    );
+                                  }
+                                : () {},
+                          )
+                        : IconButton(
+                            icon: Icon(Icons.picture_as_pdf),
+                            onPressed: () async {
+                              await fileOperations.saveToAppDirectory(
+                                context: context,
+                                fileName: fileName,
+                                images: directoryImages,
+                              );
+                              Directory storedDirectory =
+                                  await getApplicationDocumentsDirectory();
+                              //TODO: Doubt! Is this line needed??
+                              // File('${storedDirectory.path}/$fileName.pdf').deleteSync();
+                              final result = await OpenFile.open(
+                                  '${storedDirectory.path}/$fileName.pdf');
+
+                              setState(() {
+                                String _openResult =
+                                    "type=${result.type}  message=${result.message}";
+                                print(_openResult);
+                              });
+                            },
+                          ),
+                    (enableSelect)
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.delete,
+                              color: (enableSelectionIcons)
+                                  ? Colors.red
+                                  : Colors.grey,
+                            ),
+                            onPressed: (enableSelectionIcons)
+                                ? () {
+                                    //TODO: Delete selected images
+                                    for (var i = 0;
+                                        i < directoryImages.length;
+                                        i++) {
+                                      print(selectedImageIndex[i]);
+                                      if (selectedImageIndex[i]) {
+                                        print(directoryImages[i].imgPath);
+                                        File(directoryImages[i].imgPath)
+                                            .deleteSync();
+                                        database.deleteImage(
+                                          imgPath: directoryImages[i].imgPath,
+                                          tableName: widget.directoryOS.dirName,
+                                        );
+                                        try {
+                                          Directory(widget.directoryOS.dirPath)
+                                              .deleteSync(recursive: false);
+                                          database.deleteDirectory(
+                                              dirPath:
+                                                  widget.directoryOS.dirPath);
+                                        } catch (e) {
+                                          fileEditCallback(
+                                              imageOS: directoryImages[i]);
+                                        }
+                                      }
+                                    }
+                                  }
+                                : () {},
+                          )
+                        : PopupMenuButton<String>(
+                            onSelected: handleClick,
+                            color: primaryColor.withOpacity(0.95),
+                            elevation: 30,
+                            offset: Offset.fromDirection(20, 20),
+                            icon: Icon(Icons.more_vert),
+                            itemBuilder: (BuildContext context) {
+                              return {'Share', 'Reorder', 'Select'}
+                                  .map((String choice) {
+                                return PopupMenuItem<String>(
+                                  value: choice,
+                                  child: Text(choice),
+                                );
+                              }).toList();
+                            },
+                          ),
+                  ],
           ),
           body: RefreshIndicator(
             backgroundColor: primaryColor,
@@ -424,13 +448,49 @@ class _ViewDocumentState extends State<ViewDocument> {
           ),
           // TODO: Add photos from gallery
           // TODO: Add Quick Scan
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: SpeedDial(
+            // both default to 16
+            marginRight: 18,
+            marginBottom: 20,
+            animatedIcon: AnimatedIcons.menu_close,
+            animatedIconTheme: IconThemeData(size: 22.0),
+            // this is ignored if animatedIcon is non null
+            // child: Icon(Icons.add),
+            visible: true,
+            // If true user is forced to close dial manually
+            // by tapping main button and overlay is not rendered.
+            closeManually: false,
+            curve: Curves.bounceIn,
+            overlayColor: Colors.black,
+            overlayOpacity: 0.5,
+            // onOpen: () => print('OPENING DIAL'),
+            // onClose: () => print('DIAL CLOSED'),
+            tooltip: 'Scan Options',
+            heroTag: 'speed-dial-hero-tag',
             backgroundColor: secondaryColor,
-            onPressed: createImage,
-            child: Icon(
-              Icons.camera_alt,
-              color: primaryColor,
-            ),
+            foregroundColor: Colors.black,
+            elevation: 8.0,
+            shape: CircleBorder(),
+            children: [
+              SpeedDialChild(
+                child: Icon(Icons.camera_alt),
+                backgroundColor: Colors.white,
+                label: 'Normal Scan',
+                labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+                onTap: () {
+                  createImage(quickScan: false);
+                },
+              ),
+              SpeedDialChild(
+                child: Icon(Icons.camera_roll),
+                backgroundColor: Colors.white,
+                label: 'Quick Scan',
+                labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+                onTap: () {
+                  createImage(quickScan: true);
+                },
+              ),
+            ],
           ),
         ),
       ),
@@ -510,8 +570,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                         FlatButton(
                           onPressed: () async {
                             List<ImageOS> selectedImages = [];
-                            for(var image in directoryImages){
-                              if(selectedImageIndex.elementAt(image.idx - 1)){
+                            for (var image in directoryImages) {
+                              if (selectedImageIndex.elementAt(image.idx - 1)) {
                                 selectedImages.add(image);
                               }
                             }
@@ -519,7 +579,9 @@ class _ViewDocumentState extends State<ViewDocument> {
                             await fileOperations.saveToAppDirectory(
                               context: context,
                               fileName: fileName,
-                              images: (enableSelect) ? selectedImages : directoryImages,
+                              images: (enableSelect)
+                                  ? selectedImages
+                                  : directoryImages,
                             );
                             Directory storedDirectory =
                                 await getApplicationDocumentsDirectory();
@@ -542,8 +604,8 @@ class _ViewDocumentState extends State<ViewDocument> {
             title: Text('Save to device'),
             onTap: () async {
               List<ImageOS> selectedImages = [];
-              for(var image in directoryImages){
-                if(selectedImageIndex.elementAt(image.idx - 1)){
+              for (var image in directoryImages) {
+                if (selectedImageIndex.elementAt(image.idx - 1)) {
                   selectedImages.add(image);
                 }
               }
@@ -584,62 +646,67 @@ class _ViewDocumentState extends State<ViewDocument> {
             title: Text('Share images'),
             onTap: () {
               List<String> selectedImagesPath = [];
-              for(var image in directoryImages){
-                if(selectedImageIndex.elementAt(image.idx - 1)){
+              for (var image in directoryImages) {
+                if (selectedImageIndex.elementAt(image.idx - 1)) {
                   selectedImagesPath.add(image.imgPath);
                 }
               }
-              ShareExtend.shareMultiple((enableSelect) ? selectedImagesPath : imageFilesPath, 'file');
+              ShareExtend.shareMultiple(
+                  (enableSelect) ? selectedImagesPath : imageFilesPath, 'file');
               Navigator.pop(context);
             },
           ),
-          (enableSelect) ? Container() : ListTile(
-            leading: Icon(
-              Icons.delete,
-              color: Colors.redAccent,
-            ),
-            title: Text(
-              'Delete All',
-              style: TextStyle(color: Colors.redAccent),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              showDialog(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(10),
-                      ),
-                    ),
-                    title: Text('Delete'),
-                    content: Text('Do you really want to delete this file?'),
-                    actions: <Widget>[
-                      FlatButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Cancel'),
-                      ),
-                      FlatButton(
-                        onPressed: () {
-                          Directory(dirPath).deleteSync(recursive: true);
-                          DatabaseHelper()..deleteDirectory(dirPath: dirPath);
-                          Navigator.popUntil(
-                            context,
-                            ModalRoute.withName(HomeScreen.route),
-                          );
-                        },
-                        child: Text(
-                          'Delete',
-                          style: TextStyle(color: Colors.redAccent),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
+          (enableSelect)
+              ? Container()
+              : ListTile(
+                  leading: Icon(
+                    Icons.delete,
+                    color: Colors.redAccent,
+                  ),
+                  title: Text(
+                    'Delete All',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(10),
+                            ),
+                          ),
+                          title: Text('Delete'),
+                          content:
+                              Text('Do you really want to delete this file?'),
+                          actions: <Widget>[
+                            FlatButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text('Cancel'),
+                            ),
+                            FlatButton(
+                              onPressed: () {
+                                Directory(dirPath).deleteSync(recursive: true);
+                                DatabaseHelper()
+                                  ..deleteDirectory(dirPath: dirPath);
+                                Navigator.popUntil(
+                                  context,
+                                  ModalRoute.withName(HomeScreen.route),
+                                );
+                              },
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
         ],
       ),
     );
