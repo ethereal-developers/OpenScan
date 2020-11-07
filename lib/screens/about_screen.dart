@@ -151,6 +151,14 @@ class AboutScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                SizedBox(
+                  height: size.height * 0.02,
+                ),
+                Text(
+                  "Version 2.0.0",
+                  style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.7)),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
