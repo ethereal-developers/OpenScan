@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<DirectoryOS>> getMasterData() async {
     masterDirectories = [];
     masterData = await database.getMasterData();
-    print('Master Table => $masterData');
+    print('Master Table => ${masterData}');
     for (var directory in masterData) {
       var flag = false;
       for (var dir in masterDirectories) {

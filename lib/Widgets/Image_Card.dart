@@ -158,10 +158,10 @@ class _ImageCardState extends State<ImageCard> {
                               File(widget.imageOS.imgPath).deleteSync();
                               database.deleteImage(
                                 imgPath: widget.imageOS.imgPath,
-                                tableName: widget.directoryOS.dirPath.substring(
-                                    widget.directoryOS.dirPath
-                                            .lastIndexOf("/") +
-                                        1),
+                                tableName: widget.directoryOS.dirName,
+                              );
+                              database.updateImageCount(
+                                tableName: widget.directoryOS.dirName,
                               );
                               try {
                                 Directory(widget.directoryOS.dirPath)
@@ -190,7 +190,7 @@ class _ImageCardState extends State<ImageCard> {
             child: Container(
               child: Image.file(File(widget.imageOS.imgPath)),
               height: size.height * 0.25,
-              width: size.width * 0.4,
+              width: size.width * 0.395,
             ),
           ),
         ),

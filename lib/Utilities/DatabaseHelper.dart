@@ -149,15 +149,14 @@ class DatabaseHelper {
     getDirectoryTableName(tableName);
     await db
         .delete(_dirTableName, where: 'img_path == ?', whereArgs: [imgPath]);
-    var data = await db.query(
-      _masterTableName,
-      columns: ['image_count'],
-      where: 'dir_name == ?',
-      whereArgs: [tableName],
-    );
+  }
+
+  void updateImageCount({String tableName}) async {
+    Database db = await instance.database;
+    var data = await getDirectoryData(tableName);
     db.update(
       _masterTableName,
-      {'image_count': data[0]['image_count'] - 1},
+      {'image_count': data.length},
       where: 'dir_name == ?',
       whereArgs: [tableName],
     );

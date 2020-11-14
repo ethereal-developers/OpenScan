@@ -135,6 +135,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     directoryImages = [];
     initDirectoryImages = [];
     imageFilesPath = [];
+    selectedImageIndex = [];
     int index = 1;
     directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
     print('Directory table[$widget.directoryOS.dirName] => $directoryData');
@@ -175,6 +176,7 @@ class _ViewDocumentState extends State<ViewDocument> {
       selectedImageIndex.add(false);
       index += 1;
     }
+    print(selectedImageIndex.length);
     setState(() {});
   }
 
@@ -197,6 +199,47 @@ class _ViewDocumentState extends State<ViewDocument> {
         );
         break;
     }
+  }
+
+  removeSelection() {
+    setState(() {
+      for (var i = 0; i < selectedImageIndex.length; i++) {
+        selectedImageIndex[i] = false;
+      }
+      enableSelect = false;
+    });
+  }
+
+  deleteMultipleImages() {
+    bool isFirstImage = false;
+    for (var i = 0; i < directoryImages.length; i++) {
+      if (selectedImageIndex[i]) {
+        print('${directoryImages[i].idx}: ${directoryImages[i].imgPath}');
+        if (directoryImages[i].imgPath == widget.directoryOS.firstImgPath) {
+          isFirstImage = true;
+        }
+
+        File(directoryImages[i].imgPath).deleteSync();
+        database.deleteImage(
+          imgPath: directoryImages[i].imgPath,
+          tableName: widget.directoryOS.dirName,
+        );
+      }
+    }
+    database.updateImageCount(
+      tableName: widget.directoryOS.dirName,
+    );
+    try {
+      Directory(widget.directoryOS.dirPath).deleteSync(recursive: false);
+      database.deleteDirectory(dirPath: widget.directoryOS.dirPath);
+    } catch (e) {
+      getDirectoryData(
+        updateFirstImage: isFirstImage,
+        updateIndex: true,
+      );
+    }
+    removeSelection();
+    Navigator.pop(context);
   }
 
   // void handleSelectionClick(String value) {
@@ -236,6 +279,7 @@ class _ViewDocumentState extends State<ViewDocument> {
           if (enableSelect || enableReorder) {
             setState(() {
               enableSelect = false;
+              removeSelection();
               enableReorder = false;
             });
           } else {
@@ -257,15 +301,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                     ),
                     onPressed: (enableSelect)
                         ? () {
-                            //TODO: Remove all selections, else deletion bug occurs
-                            setState(() {
-                              for (var i = 0;
-                                  i < selectedImageIndex.length;
-                                  i++) {
-                                selectedImageIndex[i] = false;
-                              }
-                              enableSelect = false;
-                            });
+                            removeSelection();
                           }
                         : () {
                             setState(() {
@@ -368,30 +404,36 @@ class _ViewDocumentState extends State<ViewDocument> {
                             onPressed: (enableSelectionIcons)
                                 ? () {
                                     //TODO: Delete selected images
-                                    for (var i = 0;
-                                        i < directoryImages.length;
-                                        i++) {
-                                      print(selectedImageIndex[i]);
-                                      if (selectedImageIndex[i]) {
-                                        print(directoryImages[i].imgPath);
-                                        File(directoryImages[i].imgPath)
-                                            .deleteSync();
-                                        database.deleteImage(
-                                          imgPath: directoryImages[i].imgPath,
-                                          tableName: widget.directoryOS.dirName,
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(10),
+                                            ),
+                                          ),
+                                          title: Text('Delete'),
+                                          content: Text(
+                                              'Do you really want to delete this file?'),
+                                          actions: <Widget>[
+                                            FlatButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: Text('Cancel'),
+                                            ),
+                                            FlatButton(
+                                              onPressed: deleteMultipleImages,
+                                              child: Text(
+                                                'Delete',
+                                                style: TextStyle(
+                                                    color: Colors.redAccent),
+                                              ),
+                                            ),
+                                          ],
                                         );
-                                        try {
-                                          Directory(widget.directoryOS.dirPath)
-                                              .deleteSync(recursive: false);
-                                          database.deleteDirectory(
-                                              dirPath:
-                                                  widget.directoryOS.dirPath);
-                                        } catch (e) {
-                                          fileEditCallback(
-                                              imageOS: directoryImages[i]);
-                                        }
-                                      }
-                                    }
+                                      },
+                                    );
                                   }
                                 : () {},
                           )
@@ -447,24 +489,16 @@ class _ViewDocumentState extends State<ViewDocument> {
             ),
           ),
           // TODO: Add photos from gallery
-          // TODO: Add Quick Scan
           floatingActionButton: SpeedDial(
-            // both default to 16
             marginRight: 18,
             marginBottom: 20,
             animatedIcon: AnimatedIcons.menu_close,
             animatedIconTheme: IconThemeData(size: 22.0),
-            // this is ignored if animatedIcon is non null
-            // child: Icon(Icons.add),
             visible: true,
-            // If true user is forced to close dial manually
-            // by tapping main button and overlay is not rendered.
             closeManually: false,
             curve: Curves.bounceIn,
             overlayColor: Colors.black,
             overlayOpacity: 0.5,
-            // onOpen: () => print('OPENING DIAL'),
-            // onClose: () => print('DIAL CLOSED'),
             tooltip: 'Scan Options',
             heroTag: 'speed-dial-hero-tag',
             backgroundColor: secondaryColor,
