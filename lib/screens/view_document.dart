@@ -45,89 +45,6 @@ class _ViewDocumentState extends State<ViewDocument> {
   bool resetReorder = false;
   bool quickScan = false;
 
-  void fileEditCallback({ImageOS imageOS}) {
-    bool isFirstImage = false;
-    if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
-      isFirstImage = true;
-    }
-    getDirectoryData(
-      updateFirstImage: isFirstImage,
-      updateIndex: true,
-    );
-  }
-
-  selectCallback({ImageOS imageOS}) {
-    if (selectedImageIndex.contains(true)) {
-      setState(() {
-        enableSelectionIcons = true;
-      });
-    } else {
-      setState(() {
-        enableSelectionIcons = false;
-      });
-    }
-  }
-
-  Future<void> createDirectoryPath() async {
-    Directory appDir = await getExternalStorageDirectory();
-    dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
-    fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
-    widget.directoryOS.dirName = fileName;
-  }
-
-  Future<dynamic> createImage({bool quickScan}) async {
-    File image = await fileOperations.openCamera();
-    Directory cacheDir = await getTemporaryDirectory();
-    if (image != null) {
-      if (!quickScan) {
-        imageFilePath = await FlutterScannerCropper.openCrop({
-          'src': image.path,
-          'dest': cacheDir.path,
-        });
-      }
-      File imageFile = File(imageFilePath ?? image.path);
-      setState(() {});
-      await fileOperations.saveImage(
-        image: imageFile,
-        index: directoryImages.length + 1,
-        dirPath: dirPath,
-      );
-      await fileOperations.deleteTemporaryFiles();
-      if (quickScan) createImage(quickScan: quickScan);
-      getDirectoryData();
-    }
-  }
-
-  getImageCards() {
-    imageCards = [];
-    print(selectedImageIndex);
-    for (var image in directoryImages) {
-      ImageCard imageCard = ImageCard(
-        imageOS: image,
-        directoryOS: widget.directoryOS,
-        fileEditCallback: () {
-          fileEditCallback(imageOS: image);
-        },
-        selectCallback: () {
-          selectCallback(imageOS: image);
-        },
-      );
-      if (!imageCards.contains(imageCard)) {
-        imageCards.add(imageCard);
-      }
-    }
-    return imageCards;
-  }
-
-  void _onReorder(int oldIndex, int newIndex) {
-    print(newIndex);
-    //TODO: Change index of reordered images
-    Widget image = imageCards.removeAt(oldIndex);
-    imageCards.insert(newIndex, image);
-    ImageOS image1 = directoryImages.removeAt(oldIndex);
-    directoryImages.insert(newIndex, image1);
-  }
-
   void getDirectoryData({
     bool updateFirstImage = false,
     bool updateIndex = false,
@@ -178,6 +95,88 @@ class _ViewDocumentState extends State<ViewDocument> {
     }
     print(selectedImageIndex.length);
     setState(() {});
+  }
+
+  getImageCards() {
+    imageCards = [];
+    print(selectedImageIndex);
+    for (var image in directoryImages) {
+      ImageCard imageCard = ImageCard(
+        imageOS: image,
+        directoryOS: widget.directoryOS,
+        fileEditCallback: () {
+          fileEditCallback(imageOS: image);
+        },
+        selectCallback: () {
+          selectionCallback(imageOS: image);
+        },
+      );
+      if (!imageCards.contains(imageCard)) {
+        imageCards.add(imageCard);
+      }
+    }
+    return imageCards;
+  }
+
+  Future<void> createDirectoryPath() async {
+    Directory appDir = await getExternalStorageDirectory();
+    dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
+    fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
+    widget.directoryOS.dirName = fileName;
+  }
+
+  Future<dynamic> createImage({bool quickScan}) async {
+    File image = await fileOperations.openCamera();
+    Directory cacheDir = await getTemporaryDirectory();
+    if (image != null) {
+      if (!quickScan) {
+        imageFilePath = await FlutterScannerCropper.openCrop({
+          'src': image.path,
+          'dest': cacheDir.path,
+        });
+      }
+      File imageFile = File(imageFilePath ?? image.path);
+      setState(() {});
+      await fileOperations.saveImage(
+        image: imageFile,
+        index: directoryImages.length + 1,
+        dirPath: dirPath,
+      );
+      await fileOperations.deleteTemporaryFiles();
+      if (quickScan) createImage(quickScan: quickScan);
+      getDirectoryData();
+    }
+  }
+
+  selectionCallback({ImageOS imageOS}) {
+    if (selectedImageIndex.contains(true)) {
+      setState(() {
+        enableSelectionIcons = true;
+      });
+    } else {
+      setState(() {
+        enableSelectionIcons = false;
+      });
+    }
+  }
+
+  void fileEditCallback({ImageOS imageOS}) {
+    bool isFirstImage = false;
+    if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
+      isFirstImage = true;
+    }
+    getDirectoryData(
+      updateFirstImage: isFirstImage,
+      updateIndex: true,
+    );
+  }
+
+  void _onReorder(int oldIndex, int newIndex) {
+    print(newIndex);
+    Widget image = imageCards.removeAt(oldIndex);
+    imageCards.insert(newIndex, image);
+    ImageOS image1 = directoryImages.removeAt(oldIndex);
+    directoryImages.insert(newIndex, image1);
   }
 
   void handleClick(String value) {
@@ -241,19 +240,6 @@ class _ViewDocumentState extends State<ViewDocument> {
     removeSelection();
     Navigator.pop(context);
   }
-
-  // void handleSelectionClick(String value) {
-  //   switch (value) {
-  //     case 'Delete':
-  //       break;
-  //     case 'Share':
-  //       showModalBottomSheet(
-  //         context: context,
-  //         builder: _buildBottomSheet,
-  //       );
-  //       break;
-  //   }
-  // }
 
   @override
   void initState() {
@@ -387,7 +373,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                               );
                               Directory storedDirectory =
                                   await getApplicationDocumentsDirectory();
-                              //TODO: Doubt! Is this line needed??
+                              //TODO: Doubt! Is this line needed ??
                               // File('${storedDirectory.path}/$fileName.pdf').deleteSync();
                               final result = await OpenFile.open(
                                   '${storedDirectory.path}/$fileName.pdf');
@@ -575,17 +561,6 @@ class _ViewDocumentState extends State<ViewDocument> {
       ),
     );
   }
-
-  // removeUnavailableImages() {
-  //   if(enableSelect){
-  //     for (var image in tempDirectoryImages) {
-  //       if (!File(image.imgPath).existsSync()) {
-  //         tempImageFilesPath.remove(image.imgPath);
-  //         tempDirectoryImages.remove(image);
-  //       }
-  //     }
-  //   }
-  // }
 
   Widget _buildBottomSheet(BuildContext context) {
     FileOperations fileOperations = FileOperations();

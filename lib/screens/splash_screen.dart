@@ -31,19 +31,23 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void getTimerWid() {
-    Timer(Duration(milliseconds: 500), () {
-      (visitingFlag)
-          ? (databaseFlag)
-              ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
-              : Navigator.of(context).pushReplacementNamed(LoadingScreen.route)
-          : Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => GettingStartedScreen(
-                  showSkip: true,
+    Timer(
+      Duration(milliseconds: 500),
+      () {
+        (visitingFlag)
+            ? (databaseFlag)
+                ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
+                : Navigator.of(context)
+                    .pushReplacementNamed(LoadingScreen.route)
+            : Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => GettingStartedScreen(
+                    showSkip: true,
+                  ),
                 ),
-              ),
-            );
-    });
+              );
+      },
+    );
   }
 
   @override
@@ -91,9 +95,9 @@ class _SplashScreenState extends State<SplashScreen> {
               child: Text(
                 'Made with ❤ in India',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.normal,
-                  color: Colors.grey[400],
+                  color: Colors.grey[300],
                 ),
               ),
             ),

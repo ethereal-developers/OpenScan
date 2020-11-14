@@ -8,7 +8,6 @@ import 'package:openscan/screens/home_screen.dart';
 import 'package:openscan/screens/loading_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 
-import 'screens/pdf_screen.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -42,7 +41,6 @@ class _OpenScanState extends State<OpenScan> {
         LoadingScreen.route: (context) => LoadingScreen(),
         HomeScreen.route: (context) => HomeScreen(),
         ViewDocument.route: (context) => ViewDocument(),
-        PDFScreen.route: (context) => PDFScreen(),
         AboutScreen.route: (context) => AboutScreen(),
       },
     );

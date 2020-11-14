@@ -205,7 +205,10 @@ class _ImageCardState extends State<ImageCard> {
                   },
                   child: Container(
                     foregroundDecoration: BoxDecoration(
-                      border: Border.all(width: 3, color: secondaryColor),
+                      border: Border.all(
+                        width: 3,
+                        color: secondaryColor,
+                      ),
                     ),
                     color: secondaryColor.withOpacity(0.3),
                   ),

@@ -1,7 +1,7 @@
 // import 'dart:io';
 // import 'package:flutter/material.dart';
 // import 'package:image_cropper/image_cropper.dart';
-
+//TODO: Remove this file if not needed
 // class Cropper{
 //   Future cropImage(imageFile) async {
 //     File croppedFile = await ImageCropper.cropImage(

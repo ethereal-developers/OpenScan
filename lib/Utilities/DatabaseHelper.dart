@@ -98,6 +98,30 @@ class DatabaseHelper {
         whereArgs: [tableName]);
   }
 
+  Future deleteDirectory({String dirPath}) async {
+    Database db = await instance.database;
+    await db
+        .delete(_masterTableName, where: 'dir_path == ?', whereArgs: [dirPath]);
+    String dirName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
+    getDirectoryTableName(dirName);
+    await db.execute('DROP TABLE $_dirTableName');
+  }
+
+  Future deleteImage({String imgPath, String tableName}) async {
+    Database db = await instance.database;
+    getDirectoryTableName(tableName);
+    await db
+        .delete(_dirTableName, where: 'img_path == ?', whereArgs: [imgPath]);
+  }
+
+  /// <---- Master Table Operations ---->
+
+  Future getMasterData() async {
+    Database db = await instance.database;
+    List<Map<String, dynamic>> data = await db.query(_masterTableName);
+    return data;
+  }
+
   Future<int> updateFirstImagePath({String imagePath, String dirPath}) async {
     Database db = await instance.database;
     return await db.update(_masterTableName, {'first_img_path': imagePath},
@@ -121,6 +145,15 @@ class DatabaseHelper {
     );
   }
 
+  /// <---- Directory Table Operations ---->
+
+  Future getDirectoryData(String tableName) async {
+    Database db = await instance.database;
+    getDirectoryTableName(tableName);
+    List<Map<String, dynamic>> data = await db.query(_dirTableName);
+    return data;
+  }
+
   Future<int> updateImagePath({String tableName, ImageOS image}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
@@ -133,7 +166,6 @@ class DatabaseHelper {
         whereArgs: [image.idx]);
   }
 
-  // For Reordering Images
   Future<int> updateImageIndex({ImageOS image, String tableName}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
@@ -145,47 +177,4 @@ class DatabaseHelper {
         where: 'img_path == ?',
         whereArgs: [image.imgPath]);
   }
-
-  Future deleteDirectory({String dirPath}) async {
-    Database db = await instance.database;
-    await db
-        .delete(_masterTableName, where: 'dir_path == ?', whereArgs: [dirPath]);
-    String dirName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
-    getDirectoryTableName(dirName);
-    await db.execute('DROP TABLE $_dirTableName');
-  }
-
-  Future deleteImage({String imgPath, String tableName}) async {
-    Database db = await instance.database;
-    getDirectoryTableName(tableName);
-    await db
-        .delete(_dirTableName, where: 'img_path == ?', whereArgs: [imgPath]);
-  }
-
-  Future getMasterData() async {
-    Database db = await instance.database;
-    List<Map<String, dynamic>> data = await db.query(_masterTableName);
-    return data;
-  }
-
-  Future getDirectoryData(String tableName) async {
-    Database db = await instance.database;
-    getDirectoryTableName(tableName);
-    List<Map<String, dynamic>> data = await db.query(_dirTableName);
-    return data;
-  }
-
-// Future queryAll() async {
-//   Database db = await instance.database;
-//   List<Map<String, dynamic>> data = await db.query(_masterTableName);
-//
-//   for (var record in data){
-//     getDirectoryTableName(record['dir_name']);
-//     data = await db.query(_dirTableName);
-//   }
-// }
-
-//  void deleteDB() async {
-//    await deleteDatabase(path);
-//  }
 }
