@@ -333,6 +333,12 @@ class _ViewDocumentState extends State<ViewDocument> {
                       onTap: () {
                         for (var i = 1; i <= directoryImages.length; i++) {
                           directoryImages[i - 1].idx = i;
+                          if (i == 1) {
+                            database.updateFirstImagePath(
+                              dirPath: widget.directoryOS.dirPath,
+                              imagePath: directoryImages[i - 1].imgPath,
+                            );
+                          }
                           database.updateImagePath(
                             image: directoryImages[i - 1],
                             tableName: widget.directoryOS.dirName,
@@ -447,7 +453,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                                 PopupMenuItem(
                                   value: 'Select',
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text('Select'),
                                       SizedBox(width: 10),
@@ -461,7 +468,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                                 PopupMenuItem(
                                   value: 'Reorder',
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text('Reorder'),
                                       SizedBox(width: 10),
@@ -475,7 +483,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                                 PopupMenuItem(
                                   value: 'Share',
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text('Share'),
                                       SizedBox(width: 10),
