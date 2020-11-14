@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<DirectoryOS>> getMasterData() async {
     masterDirectories = [];
     masterData = await database.getMasterData();
-    print('Master Table => ${masterData}');
+    print('Master Table => $masterData');
     for (var directory in masterData) {
       var flag = false;
       for (var dir in masterDirectories) {
@@ -69,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
             imageCount: directory['image_count'],
             firstImgPath: directory['first_img_path'],
             lastModified: DateTime.parse(directory['last_modified']),
-            newName: directory['newName'],
+            newName: directory['new_name'],
           ),
         );
       }
@@ -234,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 height: 50,
                               ),
                               title: Text(
-                                masterDirectories[index].dirName,
+                                masterDirectories[index].newName ?? masterDirectories[index].dirName,
                                 style: TextStyle(fontSize: 14),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -281,49 +281,58 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Colors.black,
                                 ),
                                 onPressed: () {
-                                  //TODO: Implement Rename Directory
-                                  // showDialog(
-                                  //   context: context,
-                                  //   builder: (context) {
-                                  //     return AlertDialog(
-                                  //       shape: RoundedRectangleBorder(
-                                  //         borderRadius: BorderRadius.all(
-                                  //           Radius.circular(10),
-                                  //         ),
-                                  //       ),
-                                  //       title: Text('Delete'),
-                                  //       content: Text(
-                                  //           'Do you really want to delete file?'),
-                                  //       actions: <Widget>[
-                                  //         FlatButton(
-                                  //           onPressed: () =>
-                                  //               Navigator.pop(context),
-                                  //           child: Text('Cancel'),
-                                  //         ),
-                                  //         FlatButton(
-                                  //           onPressed: () {
-                                  //             Directory(imageDirectories[index]
-                                  //             ['path'])
-                                  //                 .deleteSync(recursive: true);
-                                  //             database.deleteDirectory(
-                                  //                 dirPath:
-                                  //                 imageDirectories[index]
-                                  //                 ['path']);
-                                  //             Navigator.pop(context);
-                                  //             homeRefresh();
-                                  //           },
-                                  //           child: Text(
-                                  //             'Delete',
-                                  //             style: TextStyle(
-                                  //                 color: Colors.redAccent),
-                                  //           ),
-                                  //         ),
-                                  //       ],
-                                  //     );
-                                  //   },
-                                  // ).whenComplete(() {
-                                  //   setState(() {});
-                                  // });
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      String fileName = '';
+                                      return AlertDialog(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(10),
+                                          ),
+                                        ),
+                                        title: Text('Rename File'),
+                                        content: TextField(
+                                          onChanged: (value) {
+                                            fileName = value;
+                                          },
+                                          controller: TextEditingController(
+                                            text: fileName,
+                                          ),
+                                          cursorColor: secondaryColor,
+                                          textCapitalization: TextCapitalization.words,
+                                          decoration: InputDecoration(
+                                            prefixStyle: TextStyle(color: Colors.white),
+                                            focusedBorder: UnderlineInputBorder(
+                                                borderSide: BorderSide(color: secondaryColor)),
+                                          ),
+                                        ),
+                                        actions: <Widget>[
+                                          FlatButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: Text('Cancel'),
+                                          ),
+                                          FlatButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              print(fileName);
+                                              masterDirectories[index].newName = fileName;
+                                              database.renameDirectory(directory: masterDirectories[index]);
+                                              homeRefresh();
+                                            },
+                                            child: Text(
+                                              'Save',
+                                              style: TextStyle(
+                                                  color: secondaryColor),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ).whenComplete(() {
+                                    setState(() {});
+                                  });
                                 },
                               ),
                               FocusedMenuItem(

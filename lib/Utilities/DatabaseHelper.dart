@@ -110,6 +110,17 @@ class DatabaseHelper {
         where: 'dir_name == ?', whereArgs: [directory.dirName]);
   }
 
+  void updateImageCount({String tableName}) async {
+    Database db = await instance.database;
+    var data = await getDirectoryData(tableName);
+    db.update(
+      _masterTableName,
+      {'image_count': data.length},
+      where: 'dir_name == ?',
+      whereArgs: [tableName],
+    );
+  }
+
   Future<int> updateImagePath({String tableName, ImageOS image}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
@@ -149,17 +160,6 @@ class DatabaseHelper {
     getDirectoryTableName(tableName);
     await db
         .delete(_dirTableName, where: 'img_path == ?', whereArgs: [imgPath]);
-  }
-
-  void updateImageCount({String tableName}) async {
-    Database db = await instance.database;
-    var data = await getDirectoryData(tableName);
-    db.update(
-      _masterTableName,
-      {'image_count': data.length},
-      where: 'dir_name == ?',
-      whereArgs: [tableName],
-    );
   }
 
   Future getMasterData() async {

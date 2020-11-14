@@ -261,7 +261,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     fileOperations = FileOperations();
     if (widget.directoryOS.dirPath != null) {
       dirPath = widget.directoryOS.dirPath;
-      fileName = widget.directoryOS.newName ?? widget.directoryOS.dirName;
+      fileName = widget.directoryOS.newName;
       getDirectoryData();
     } else {
       createDirectoryPath();
@@ -403,7 +403,6 @@ class _ViewDocumentState extends State<ViewDocument> {
                             ),
                             onPressed: (enableSelectionIcons)
                                 ? () {
-                                    //TODO: Delete selected images
                                     showDialog(
                                       context: context,
                                       builder: (context) {
@@ -443,14 +442,51 @@ class _ViewDocumentState extends State<ViewDocument> {
                             elevation: 30,
                             offset: Offset.fromDirection(20, 20),
                             icon: Icon(Icons.more_vert),
-                            itemBuilder: (BuildContext context) {
-                              return {'Share', 'Reorder', 'Select'}
-                                  .map((String choice) {
-                                return PopupMenuItem<String>(
-                                  value: choice,
-                                  child: Text(choice),
-                                );
-                              }).toList();
+                            itemBuilder: (context) {
+                              return [
+                                PopupMenuItem(
+                                  value: 'Select',
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Select'),
+                                      SizedBox(width: 10),
+                                      Icon(
+                                        Icons.select_all,
+                                        size: 20,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: 'Reorder',
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Reorder'),
+                                      SizedBox(width: 10),
+                                      Icon(
+                                        Icons.reorder,
+                                        size: 20,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: 'Share',
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Share'),
+                                      SizedBox(width: 10),
+                                      Icon(
+                                        Icons.share,
+                                        size: 20,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ];
                             },
                           ),
                   ],
@@ -569,68 +605,23 @@ class _ViewDocumentState extends State<ViewDocument> {
             leading: Icon(Icons.picture_as_pdf),
             title: Text('Share PDF'),
             onTap: () async {
+              List<ImageOS> selectedImages = [];
+              for (var image in directoryImages) {
+                if (selectedImageIndex.elementAt(image.idx - 1)) {
+                  selectedImages.add(image);
+                }
+              }
+              print(selectedImages.length);
+              await fileOperations.saveToAppDirectory(
+                context: context,
+                fileName: fileName,
+                images: (enableSelect) ? selectedImages : directoryImages,
+              );
+              Directory storedDirectory =
+                  await getApplicationDocumentsDirectory();
+              ShareExtend.share(
+                  '${storedDirectory.path}/$fileName.pdf', 'file');
               Navigator.pop(context);
-              showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(10),
-                        ),
-                      ),
-                      title: Text('Share PDF'),
-                      content: TextField(
-                        onChanged: (value) {
-                          fileName = '$value OpenScan';
-                        },
-                        controller: TextEditingController(
-                          text: fileName.substring(8, fileName.length),
-                        ),
-                        cursorColor: secondaryColor,
-                        textCapitalization: TextCapitalization.words,
-                        decoration: InputDecoration(
-                          prefixStyle: TextStyle(color: Colors.white),
-                          suffixText: ' OpenScan.pdf',
-                          focusedBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(color: secondaryColor)),
-                        ),
-                      ),
-                      actions: <Widget>[
-                        FlatButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text('Cancel'),
-                        ),
-                        FlatButton(
-                          onPressed: () async {
-                            List<ImageOS> selectedImages = [];
-                            for (var image in directoryImages) {
-                              if (selectedImageIndex.elementAt(image.idx - 1)) {
-                                selectedImages.add(image);
-                              }
-                            }
-                            print(selectedImages.length);
-                            await fileOperations.saveToAppDirectory(
-                              context: context,
-                              fileName: fileName,
-                              images: (enableSelect)
-                                  ? selectedImages
-                                  : directoryImages,
-                            );
-                            Directory storedDirectory =
-                                await getApplicationDocumentsDirectory();
-                            ShareExtend.share(
-                                '${storedDirectory.path}/$fileName.pdf',
-                                'file');
-                            Navigator.pop(context);
-                          },
-                          child: Text(
-                            'Share',
-                          ),
-                        ),
-                      ],
-                    );
-                  });
             },
           ),
           ListTile(
