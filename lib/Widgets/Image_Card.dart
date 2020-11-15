@@ -42,17 +42,14 @@ class _ImageCardState extends State<ImageCard> {
           backgroundColor: primaryColor,
           child: InteractiveViewer(
             transformationController: controller,
+            onInteractionEnd: (details){
+              controller.value = Matrix4.identity();
+            },
             maxScale: 10,
             child: GestureDetector(
-              onDoubleTap: () {
-                controller.value = Matrix4.identity();
-              },
-              child: Container(
-                width: size.width * 0.95,
-                child: Image.file(
-                  File(widget.imageOS.imgPath),
-                  scale: 1.7,
-                ),
+              child: Image.file(
+                File(widget.imageOS.imgPath),
+                // scale: 1.7,
               ),
             ),
           ),

@@ -11,6 +11,7 @@ import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/view_document.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -234,7 +235,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 height: 50,
                               ),
                               title: Text(
-                                masterDirectories[index].newName ?? masterDirectories[index].dirName,
+                                masterDirectories[index].newName ??
+                                    masterDirectories[index].dirName,
                                 style: TextStyle(fontSize: 14),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -260,8 +262,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               onTap: () async {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ViewDocument(
+                                  PageTransition(
+                                    type:
+                                        PageTransitionType.rightToLeftWithFade,
+                                    child: ViewDocument(
                                       directoryOS: masterDirectories[index],
                                     ),
                                   ),
@@ -300,11 +304,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                             text: fileName,
                                           ),
                                           cursorColor: secondaryColor,
-                                          textCapitalization: TextCapitalization.words,
+                                          textCapitalization:
+                                              TextCapitalization.words,
                                           decoration: InputDecoration(
-                                            prefixStyle: TextStyle(color: Colors.white),
+                                            prefixStyle:
+                                                TextStyle(color: Colors.white),
                                             focusedBorder: UnderlineInputBorder(
-                                                borderSide: BorderSide(color: secondaryColor)),
+                                                borderSide: BorderSide(
+                                                    color: secondaryColor)),
                                           ),
                                         ),
                                         actions: <Widget>[
@@ -317,8 +324,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                             onPressed: () {
                                               Navigator.pop(context);
                                               print(fileName);
-                                              masterDirectories[index].newName = fileName;
-                                              database.renameDirectory(directory: masterDirectories[index]);
+                                              masterDirectories[index].newName =
+                                                  fileName;
+                                              database.renameDirectory(
+                                                  directory:
+                                                      masterDirectories[index]);
                                               homeRefresh();
                                             },
                                             child: Text(
@@ -360,10 +370,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           FlatButton(
                                             onPressed: () {
-                                              Directory(masterDirectories[index].dirPath)
+                                              Directory(masterDirectories[index]
+                                                      .dirPath)
                                                   .deleteSync(recursive: true);
                                               database.deleteDirectory(
-                                                  dirPath:masterDirectories[index].dirPath);
+                                                  dirPath:
+                                                      masterDirectories[index]
+                                                          .dirPath);
                                               Navigator.pop(context);
                                               homeRefresh();
                                             },

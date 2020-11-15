@@ -324,6 +324,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                               dirPath: widget.directoryOS.dirPath,
                               imagePath: directoryImages[i - 1].imgPath,
                             );
+                            widget.directoryOS.firstImgPath = directoryImages[i - 1].imgPath;
                           }
                           database.updateImagePath(
                             image: directoryImages[i - 1],
@@ -373,11 +374,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                               );
                               Directory storedDirectory =
                                   await getApplicationDocumentsDirectory();
-                              //TODO: Doubt! Is this line needed ??
-                              // File('${storedDirectory.path}/$fileName.pdf').deleteSync();
                               final result = await OpenFile.open(
                                   '${storedDirectory.path}/$fileName.pdf');
-
                               setState(() {
                                 String _openResult =
                                     "type=${result.type}  message=${result.message}";
@@ -472,7 +470,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text('Share'),
+                                      Text('Export'),
                                       SizedBox(width: 10),
                                       Icon(
                                         Icons.share,
@@ -633,7 +631,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                 SnackBar(
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10))),
+                      borderRadius: BorderRadius.all(Radius.circular(10)),),
                   backgroundColor: primaryColor,
                   duration: Duration(seconds: 1),
                   content: Container(
