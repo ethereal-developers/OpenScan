@@ -7,7 +7,7 @@ class Slide {
     @required this.imageUrl,
   });
 }
-
+//TODO: Change assets
 final slideList = [
   Slide(
     imageUrl: 'assets/home.jpg',

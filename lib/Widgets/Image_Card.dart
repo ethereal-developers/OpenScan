@@ -16,12 +16,13 @@ class ImageCard extends StatefulWidget {
   final DirectoryOS directoryOS;
   final ImageOS imageOS;
   final Function selectCallback;
+  final Function imageViewerCallback;
 
   const ImageCard({
     this.fileEditCallback,
     this.directoryOS,
     this.imageOS,
-    this.selectCallback,
+    this.selectCallback, this.imageViewerCallback,
   });
 
   @override
@@ -29,34 +30,7 @@ class ImageCard extends StatefulWidget {
 }
 
 class _ImageCardState extends State<ImageCard> {
-  TransformationController _controller = TransformationController();
   DatabaseHelper database = DatabaseHelper();
-
-  imageViewerOnPressed({context, controller, size}) {
-    showCupertinoDialog(
-      //TODO: Change it to stack
-      context: context,
-      builder: (context) {
-        return Dialog(
-          elevation: 20,
-          backgroundColor: primaryColor,
-          child: InteractiveViewer(
-            transformationController: controller,
-            onInteractionEnd: (details){
-              controller.value = Matrix4.identity();
-            },
-            maxScale: 10,
-            child: GestureDetector(
-              child: Image.file(
-                File(widget.imageOS.imgPath),
-                // scale: 1.7,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   selectionOnPressed() {
     setState(() {
@@ -76,22 +50,15 @@ class _ImageCardState extends State<ImageCard> {
           onPressed: () {
             (enableSelect)
                 ? selectionOnPressed()
-                : imageViewerOnPressed(
-                    context: context,
-                    controller: _controller,
-                    size: size,
-                  );
+                : widget.imageViewerCallback();
           },
           child: FocusedMenuHolder(
             menuWidth: size.width * 0.45,
             onPressed: () {
+              print(enableSelect);
               (enableSelect)
                   ? selectionOnPressed()
-                  : imageViewerOnPressed(
-                      context: context,
-                      controller: _controller,
-                      size: size,
-                    );
+                  : widget.imageViewerCallback();
             },
             menuItems: [
               FocusedMenuItem(

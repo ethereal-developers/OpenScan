@@ -16,6 +16,7 @@ import 'package:share_extend/share_extend.dart';
 
 bool enableSelect = false;
 bool enableReorder = false;
+bool showImage = false;
 List<bool> selectedImageIndex = [];
 
 class ViewDocument extends StatefulWidget {
@@ -31,6 +32,7 @@ class ViewDocument extends StatefulWidget {
 
 class _ViewDocumentState extends State<ViewDocument> {
   final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
+  TransformationController _controller = TransformationController();
   DatabaseHelper database = DatabaseHelper();
   List<String> imageFilesPath = [];
   List<Widget> imageCards = [];
@@ -44,6 +46,7 @@ class _ViewDocumentState extends State<ViewDocument> {
   bool enableSelectionIcons = false;
   bool resetReorder = false;
   bool quickScan = false;
+  ImageOS displayImage;
 
   void getDirectoryData({
     bool updateFirstImage = false,
@@ -110,6 +113,9 @@ class _ViewDocumentState extends State<ViewDocument> {
         selectCallback: () {
           selectionCallback(imageOS: image);
         },
+        imageViewerCallback: (){
+          imageViewerCallback(imageOS: image);
+        },
       );
       if (!imageCards.contains(imageCard)) {
         imageCards.add(imageCard);
@@ -169,6 +175,13 @@ class _ViewDocumentState extends State<ViewDocument> {
       updateFirstImage: isFirstImage,
       updateIndex: true,
     );
+  }
+
+  imageViewerCallback({ImageOS imageOS}) {
+    setState(() {
+      displayImage = imageOS;
+      showImage = true;
+    });
   }
 
   void _onReorder(int oldIndex, int newIndex) {
@@ -262,299 +275,329 @@ class _ViewDocumentState extends State<ViewDocument> {
     return SafeArea(
       child: WillPopScope(
         onWillPop: () {
-          if (enableSelect || enableReorder) {
+          if (enableSelect || enableReorder || showImage) {
             setState(() {
               enableSelect = false;
               removeSelection();
               enableReorder = false;
+              showImage = false;
             });
           } else {
             Navigator.pop(context);
           }
           return;
         },
-        child: Scaffold(
-          backgroundColor: primaryColor,
-          key: scaffoldKey,
-          appBar: AppBar(
-            elevation: 0,
-            backgroundColor: primaryColor,
-            leading: (enableSelect || enableReorder)
-                ? IconButton(
-                    icon: Icon(
-                      Icons.close,
-                      size: 30,
-                    ),
-                    onPressed: (enableSelect)
-                        ? () {
-                            removeSelection();
-                          }
-                        : () {
-                            setState(() {
-                              directoryImages = [];
-                              for (var image in initDirectoryImages) {
-                                directoryImages.add(image);
-                              }
-                              enableReorder = false;
-                            });
-                          },
-                  )
-                : IconButton(
-                    icon: Icon(Icons.arrow_back_ios),
-                    onPressed: () {
-                      Navigator.pop(context, true);
-                    },
+        child: Stack(
+          children: [
+            Scaffold(
+              backgroundColor: primaryColor,
+              key: scaffoldKey,
+              appBar: AppBar(
+                elevation: 0,
+                backgroundColor: primaryColor,
+                leading: (enableSelect || enableReorder)
+                    ? IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    size: 30,
                   ),
-            title: Text(
-              fileName,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-            actions: (enableReorder)
-                ? [
-                    GestureDetector(
-                      onTap: () {
-                        for (var i = 1; i <= directoryImages.length; i++) {
-                          directoryImages[i - 1].idx = i;
-                          if (i == 1) {
-                            database.updateFirstImagePath(
-                              dirPath: widget.directoryOS.dirPath,
-                              imagePath: directoryImages[i - 1].imgPath,
-                            );
-                            widget.directoryOS.firstImgPath = directoryImages[i - 1].imgPath;
-                          }
-                          database.updateImagePath(
-                            image: directoryImages[i - 1],
-                            tableName: widget.directoryOS.dirName,
+                  onPressed: (enableSelect)
+                      ? () {
+                    removeSelection();
+                  }
+                      : () {
+                    setState(() {
+                      directoryImages = [];
+                      for (var image in initDirectoryImages) {
+                        directoryImages.add(image);
+                      }
+                      enableReorder = false;
+                    });
+                  },
+                )
+                    : IconButton(
+                  icon: Icon(Icons.arrow_back_ios),
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                  },
+                ),
+                title: Text(
+                  fileName,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                actions: (enableReorder)
+                    ? [
+                  GestureDetector(
+                    onTap: () {
+                      for (var i = 1; i <= directoryImages.length; i++) {
+                        directoryImages[i - 1].idx = i;
+                        if (i == 1) {
+                          database.updateFirstImagePath(
+                            dirPath: widget.directoryOS.dirPath,
+                            imagePath: directoryImages[i - 1].imgPath,
                           );
-                          print('$i: ${directoryImages[i - 1].imgPath}');
+                          widget.directoryOS.firstImgPath = directoryImages[i - 1].imgPath;
                         }
-                        setState(() {
-                          enableReorder = false;
-                        });
-                      },
-                      child: Container(
-                        padding: EdgeInsets.only(right: 10),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Done',
-                          style: TextStyle(color: secondaryColor),
-                        ),
+                        database.updateImagePath(
+                          image: directoryImages[i - 1],
+                          tableName: widget.directoryOS.dirName,
+                        );
+                        print('$i: ${directoryImages[i - 1].imgPath}');
+                      }
+                      setState(() {
+                        enableReorder = false;
+                      });
+                    },
+                    child: Container(
+                      padding: EdgeInsets.only(right: 10),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Done',
+                        style: TextStyle(color: secondaryColor),
                       ),
                     ),
-                  ]
-                : [
-                    (enableSelect)
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.share,
-                              color: (enableSelectionIcons)
-                                  ? Colors.white
-                                  : Colors.grey,
-                            ),
-                            onPressed: (enableSelectionIcons)
-                                ? () {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      builder: _buildBottomSheet,
-                                    );
-                                  }
-                                : () {},
-                          )
-                        : IconButton(
-                            icon: Icon(Icons.picture_as_pdf),
-                            onPressed: () async {
-                              await fileOperations.saveToAppDirectory(
-                                context: context,
-                                fileName: fileName,
-                                images: directoryImages,
-                              );
-                              Directory storedDirectory =
-                                  await getApplicationDocumentsDirectory();
-                              final result = await OpenFile.open(
-                                  '${storedDirectory.path}/$fileName.pdf');
-                              setState(() {
-                                String _openResult =
-                                    "type=${result.type}  message=${result.message}";
-                                print(_openResult);
-                              });
-                            },
-                          ),
-                    (enableSelect)
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.delete,
-                              color: (enableSelectionIcons)
-                                  ? Colors.red
-                                  : Colors.grey,
-                            ),
-                            onPressed: (enableSelectionIcons)
-                                ? () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.all(
-                                              Radius.circular(10),
-                                            ),
-                                          ),
-                                          title: Text('Delete'),
-                                          content: Text(
-                                              'Do you really want to delete this file?'),
-                                          actions: <Widget>[
-                                            FlatButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context),
-                                              child: Text('Cancel'),
-                                            ),
-                                            FlatButton(
-                                              onPressed: deleteMultipleImages,
-                                              child: Text(
-                                                'Delete',
-                                                style: TextStyle(
-                                                    color: Colors.redAccent),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  }
-                                : () {},
-                          )
-                        : PopupMenuButton<String>(
-                            onSelected: handleClick,
-                            color: primaryColor.withOpacity(0.95),
-                            elevation: 30,
-                            offset: Offset.fromDirection(20, 20),
-                            icon: Icon(Icons.more_vert),
-                            itemBuilder: (context) {
-                              return [
-                                PopupMenuItem(
-                                  value: 'Select',
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('Select'),
-                                      SizedBox(width: 10),
-                                      Icon(
-                                        Icons.select_all,
-                                        size: 20,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem(
-                                  value: 'Reorder',
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('Reorder'),
-                                      SizedBox(width: 10),
-                                      Icon(
-                                        Icons.reorder,
-                                        size: 20,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem(
-                                  value: 'Share',
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text('Export'),
-                                      SizedBox(width: 10),
-                                      Icon(
-                                        Icons.share,
-                                        size: 20,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ];
-                            },
-                          ),
-                  ],
-          ),
-          body: RefreshIndicator(
-            backgroundColor: primaryColor,
-            color: secondaryColor,
-            onRefresh: () async {
-              getDirectoryData();
-            },
-            child: Padding(
-              padding: EdgeInsets.all(size.width * 0.01),
-              child: Theme(
-                data: Theme.of(context).copyWith(accentColor: primaryColor),
-                child: ListView(
-                  children: [
-                    ReorderableWrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      minMainAxisCount: 2,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: getImageCards(),
-                      onReorder: _onReorder,
-                      onNoReorder: (int index) {
-                        debugPrint(
-                            '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:$index');
-                      },
-                      onReorderStarted: (int index) {
-                        debugPrint(
-                            '${DateTime.now().toString().substring(5, 22)} reorder started: index:$index');
-                      },
+                  ),
+                ]
+                    : [
+                  (enableSelect)
+                      ? IconButton(
+                    icon: Icon(
+                      Icons.share,
+                      color: (enableSelectionIcons)
+                          ? Colors.white
+                          : Colors.grey,
                     ),
-                  ],
+                    onPressed: (enableSelectionIcons)
+                        ? () {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: _buildBottomSheet,
+                      );
+                    }
+                        : () {},
+                  )
+                      : IconButton(
+                    icon: Icon(Icons.picture_as_pdf),
+                    onPressed: () async {
+                      await fileOperations.saveToAppDirectory(
+                        context: context,
+                        fileName: fileName,
+                        images: directoryImages,
+                      );
+                      Directory storedDirectory =
+                      await getApplicationDocumentsDirectory();
+                      final result = await OpenFile.open(
+                          '${storedDirectory.path}/$fileName.pdf');
+                      setState(() {
+                        String _openResult =
+                            "type=${result.type}  message=${result.message}";
+                        print(_openResult);
+                      });
+                    },
+                  ),
+                  (enableSelect)
+                      ? IconButton(
+                    icon: Icon(
+                      Icons.delete,
+                      color: (enableSelectionIcons)
+                          ? Colors.red
+                          : Colors.grey,
+                    ),
+                    onPressed: (enableSelectionIcons)
+                        ? () {
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
+                            ),
+                            title: Text('Delete'),
+                            content: Text(
+                                'Do you really want to delete this file?'),
+                            actions: <Widget>[
+                              FlatButton(
+                                onPressed: () =>
+                                    Navigator.pop(context),
+                                child: Text('Cancel'),
+                              ),
+                              FlatButton(
+                                onPressed: deleteMultipleImages,
+                                child: Text(
+                                  'Delete',
+                                  style: TextStyle(
+                                      color: Colors.redAccent),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    }
+                        : () {},
+                  )
+                      : PopupMenuButton<String>(
+                    onSelected: handleClick,
+                    color: primaryColor.withOpacity(0.95),
+                    elevation: 30,
+                    offset: Offset.fromDirection(20, 20),
+                    icon: Icon(Icons.more_vert),
+                    itemBuilder: (context) {
+                      return [
+                        PopupMenuItem(
+                          value: 'Select',
+                          child: Row(
+                            mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Select'),
+                              SizedBox(width: 10),
+                              Icon(
+                                Icons.select_all,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'Reorder',
+                          child: Row(
+                            mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Reorder'),
+                              SizedBox(width: 10),
+                              Icon(
+                                Icons.reorder,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'Share',
+                          child: Row(
+                            mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Export'),
+                              SizedBox(width: 10),
+                              Icon(
+                                Icons.share,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ];
+                    },
+                  ),
+                ],
+              ),
+              body: RefreshIndicator(
+                backgroundColor: primaryColor,
+                color: secondaryColor,
+                onRefresh: () async {
+                  getDirectoryData();
+                },
+                child: Padding(
+                  padding: EdgeInsets.all(size.width * 0.01),
+                  child: Theme(
+                    data: Theme.of(context).copyWith(accentColor: primaryColor),
+                    child: ListView(
+                      children: [
+                        ReorderableWrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          minMainAxisCount: 2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: getImageCards(),
+                          onReorder: _onReorder,
+                          onNoReorder: (int index) {
+                            debugPrint(
+                                '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:$index');
+                          },
+                          onReorderStarted: (int index) {
+                            debugPrint(
+                                '${DateTime.now().toString().substring(5, 22)} reorder started: index:$index');
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
+              // TODO: Add photos from gallery
+              floatingActionButton: SpeedDial(
+                marginRight: 18,
+                marginBottom: 20,
+                animatedIcon: AnimatedIcons.menu_close,
+                animatedIconTheme: IconThemeData(size: 22.0),
+                visible: true,
+                closeManually: false,
+                curve: Curves.bounceIn,
+                overlayColor: Colors.black,
+                overlayOpacity: 0.5,
+                tooltip: 'Scan Options',
+                heroTag: 'speed-dial-hero-tag',
+                backgroundColor: secondaryColor,
+                foregroundColor: Colors.black,
+                elevation: 8.0,
+                shape: CircleBorder(),
+                children: [
+                  SpeedDialChild(
+                    child: Icon(Icons.camera_alt),
+                    backgroundColor: Colors.white,
+                    label: 'Normal Scan',
+                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+                    onTap: () {
+                      createImage(quickScan: false);
+                    },
+                  ),
+                  SpeedDialChild(
+                    child: Icon(Icons.camera_roll),
+                    backgroundColor: Colors.white,
+                    label: 'Quick Scan',
+                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+                    onTap: () {
+                      createImage(quickScan: true);
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-          // TODO: Add photos from gallery
-          floatingActionButton: SpeedDial(
-            marginRight: 18,
-            marginBottom: 20,
-            animatedIcon: AnimatedIcons.menu_close,
-            animatedIconTheme: IconThemeData(size: 22.0),
-            visible: true,
-            closeManually: false,
-            curve: Curves.bounceIn,
-            overlayColor: Colors.black,
-            overlayOpacity: 0.5,
-            tooltip: 'Scan Options',
-            heroTag: 'speed-dial-hero-tag',
-            backgroundColor: secondaryColor,
-            foregroundColor: Colors.black,
-            elevation: 8.0,
-            shape: CircleBorder(),
-            children: [
-              SpeedDialChild(
-                child: Icon(Icons.camera_alt),
-                backgroundColor: Colors.white,
-                label: 'Normal Scan',
-                labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-                onTap: () {
-                  createImage(quickScan: false);
-                },
+            (showImage)? GestureDetector(
+              onTap: (){
+                setState(() {
+                  showImage = false;
+                });
+              },
+              child: Container(
+                width: size.width,
+                height: size.height,
+                padding: EdgeInsets.all(20),
+                color: primaryColor.withOpacity(0.8),
+                child: InteractiveViewer(
+                  transformationController: _controller,
+                  onInteractionEnd: (details){
+                    _controller.value = Matrix4.identity();
+                  },
+                  maxScale: 10,
+                  child: GestureDetector(
+                    child: Image.file(
+                      File(displayImage.imgPath),
+                    ),
+                  ),
+                ),
               ),
-              SpeedDialChild(
-                child: Icon(Icons.camera_roll),
-                backgroundColor: Colors.white,
-                label: 'Quick Scan',
-                labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-                onTap: () {
-                  createImage(quickScan: true);
-                },
-              ),
-            ],
-          ),
+            ) : Container(),
+          ],
         ),
       ),
     );
