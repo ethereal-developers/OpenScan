@@ -606,6 +606,17 @@ class _ViewDocumentState extends State<ViewDocument> {
   Widget _buildBottomSheet(BuildContext context) {
     FileOperations fileOperations = FileOperations();
     Size size = MediaQuery.of(context).size;
+    String selectedFileName;
+
+    updateSelectedFileName() {
+      int selectedCount = 0;
+      for(bool i in selectedImageIndex){
+        selectedCount += (i) ? 1 : 0;
+      }
+      selectedFileName = fileName +' $selectedCount';
+      print(selectedFileName);
+    }
+
     return Container(
       color: primaryColor,
       child: Column(
@@ -630,6 +641,9 @@ class _ViewDocumentState extends State<ViewDocument> {
             leading: Icon(Icons.picture_as_pdf),
             title: Text('Share PDF'),
             onTap: () async {
+              if(enableSelect){
+                updateSelectedFileName();
+              }
               List<ImageOS> selectedImages = [];
               for (var image in directoryImages) {
                 if (selectedImageIndex.elementAt(image.idx - 1)) {
@@ -639,13 +653,13 @@ class _ViewDocumentState extends State<ViewDocument> {
               print(selectedImages.length);
               await fileOperations.saveToAppDirectory(
                 context: context,
-                fileName: fileName,
+                fileName: (enableSelect) ? selectedFileName : fileName,
                 images: (enableSelect) ? selectedImages : directoryImages,
               );
               Directory storedDirectory =
                   await getApplicationDocumentsDirectory();
               ShareExtend.share(
-                  '${storedDirectory.path}/$fileName.pdf', 'file');
+                  '${storedDirectory.path}/${(enableSelect) ? selectedFileName : fileName}.pdf', 'file');
               Navigator.pop(context);
             },
           ),
@@ -653,6 +667,9 @@ class _ViewDocumentState extends State<ViewDocument> {
             leading: Icon(Icons.phone_android),
             title: Text('Save to device'),
             onTap: () async {
+              if(enableSelect){
+                updateSelectedFileName();
+              }
               List<ImageOS> selectedImages = [];
               for (var image in directoryImages) {
                 if (selectedImageIndex.elementAt(image.idx - 1)) {
@@ -663,13 +680,14 @@ class _ViewDocumentState extends State<ViewDocument> {
               Navigator.pop(context);
               savedDirectory = await fileOperations.saveToDevice(
                 context: context,
-                fileName: fileName,
+                fileName: (enableSelect) ? selectedFileName : fileName,
                 images: (enableSelect) ? selectedImages : directoryImages,
               );
               String displayText;
               (savedDirectory != null)
                   ? displayText = "Saved at $savedDirectory"
                   : displayText = "Failed to generate pdf. Try Again.";
+              //TODO: Fix this
               scaffoldKey.currentState.showSnackBar(
                 SnackBar(
                   behavior: SnackBarBehavior.floating,

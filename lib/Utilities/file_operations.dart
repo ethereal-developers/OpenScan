@@ -160,7 +160,7 @@ class FileOperations {
 
     fileName = fileName.replaceAll('-', '');
     fileName = fileName.replaceAll('.', '');
-    fileName = fileName.replaceAll(' ', '');
+    // fileName = fileName.replaceAll(' ', '');
     fileName = fileName.replaceAll(':', '');
 
     pdfStatus = await createPdf(
