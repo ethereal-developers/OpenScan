@@ -137,7 +137,7 @@ packages:
     description:
       path: "flutter_scanner_cropper/"
       ref: HEAD
-      resolved-ref: "57c41574fbfc4f21a8e4626a63e3e6bfbdd5352d"
+      resolved-ref: b7c815bc4e0e22199dcc980a62ad1571f3678b71
       url: "https://github.com/Ethereal-Developers-Inc/flutter-scanner-plugin.git"
     source: git
     version: "0.0.1"

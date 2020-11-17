@@ -23,8 +23,15 @@ class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
   final DirectoryOS directoryOS;
   final bool quickScan;
+  final bool fromGallery;
+  final bool quickPick;
 
-  ViewDocument({this.quickScan = false, this.directoryOS});
+  ViewDocument({
+    this.quickScan = false,
+    this.directoryOS,
+    this.fromGallery = false,
+    this.quickPick = false,
+  });
 
   @override
   _ViewDocumentState createState() => _ViewDocumentState();
@@ -131,11 +138,20 @@ class _ViewDocumentState extends State<ViewDocument> {
     widget.directoryOS.dirName = fileName;
   }
 
-  Future<dynamic> createImage({bool quickScan}) async {
-    File image = await fileOperations.openCamera();
+  Future<dynamic> createImage({
+    bool quickScan,
+    bool fromGallery = false,
+    bool quickPick = false,
+  }) async {
+    File image;
+    if (fromGallery) {
+      image = await fileOperations.openGallery();
+    } else {
+      image = await fileOperations.openCamera();
+    }
     Directory cacheDir = await getTemporaryDirectory();
     if (image != null) {
-      if (!quickScan) {
+      if (!quickScan && !quickPick) {
         imageFilePath = await FlutterScannerCropper.openCrop(
           src: image.path,
           dest: cacheDir.path,
@@ -151,7 +167,16 @@ class _ViewDocumentState extends State<ViewDocument> {
         shouldCompress: quickScan ? 1 : 0,
       );
       await fileOperations.deleteTemporaryFiles();
-      if (quickScan) createImage(quickScan: quickScan);
+      if (quickScan) {
+        createImage(quickScan: quickScan);
+      }
+      if (quickPick) {
+        createImage(
+          quickScan: false,
+          fromGallery: true,
+          quickPick: true,
+        );
+      }
       getDirectoryData();
     }
   }
@@ -267,7 +292,15 @@ class _ViewDocumentState extends State<ViewDocument> {
     } else {
       createDirectoryPath();
       quickScan = widget.quickScan;
-      createImage(quickScan: quickScan);
+      if (widget.fromGallery) {
+        createImage(
+          quickScan: false,
+          fromGallery: true,
+          quickPick: widget.quickPick,
+        );
+      } else {
+        createImage(quickScan: quickScan);
+      }
     }
   }
 
@@ -572,6 +605,27 @@ class _ViewDocumentState extends State<ViewDocument> {
                     labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
                     onTap: () {
                       createImage(quickScan: true);
+                    },
+                  ),
+                  SpeedDialChild(
+                    // TODO: Change the icon
+                    child: Icon(Icons.camera_roll),
+                    backgroundColor: Colors.white,
+                    label: 'Import from Gallery (Normal)',
+                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+                    onTap: () {
+                      createImage(quickScan: false, fromGallery: true);
+                    },
+                  ),
+                  SpeedDialChild(
+                    // TODO: Change the icon
+                    child: Icon(Icons.camera_roll),
+                    backgroundColor: Colors.white,
+                    label: 'Import from Gallery (Quick)',
+                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+                    onTap: () {
+                      createImage(
+                          quickScan: false, fromGallery: true, quickPick: true);
                     },
                   ),
                 ],

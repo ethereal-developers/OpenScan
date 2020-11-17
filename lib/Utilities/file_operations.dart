@@ -70,6 +70,17 @@ class FileOperations {
     return image;
   }
 
+  Future<File> openGallery() async {
+    File image;
+    final _picker = ImagePicker();
+    var picture = await _picker.getImage(source: ImageSource.gallery);
+    if (picture != null) {
+      final requiredPicture = File(picture.path);
+      image = requiredPicture;
+    }
+    return image;
+  }
+
   Future<void> saveImage(
       {File image, int index, String dirPath, int shouldCompress}) async {
     if (!await Directory(dirPath).exists()) {
