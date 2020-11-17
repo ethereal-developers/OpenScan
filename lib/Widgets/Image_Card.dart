@@ -7,6 +7,7 @@ import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../Utilities/constants.dart';
 import '../screens/view_document.dart';
@@ -22,7 +23,8 @@ class ImageCard extends StatefulWidget {
     this.fileEditCallback,
     this.directoryOS,
     this.imageOS,
-    this.selectCallback, this.imageViewerCallback,
+    this.selectCallback,
+    this.imageViewerCallback,
   });
 
   @override
@@ -67,10 +69,13 @@ class _ImageCardState extends State<ImageCard> {
                   style: TextStyle(color: Colors.black),
                 ),
                 onPressed: () async {
-                  String imageFilePath = await FlutterScannerCropper.openCrop({
-                    'src': widget.imageOS.imgPath,
-                    'dest': '/data/user/0/com.ethereal.openscan/cache/'
-                  });
+                  Directory cacheDir = await getTemporaryDirectory();
+                  String imageFilePath = await FlutterScannerCropper.openCrop(
+                    src: widget.imageOS.imgPath,
+                    dest: cacheDir.path,
+                    shouldCompress:
+                        widget.imageOS.shouldCompress == 1 ? true : false,
+                  );
                   File image = File(imageFilePath);
                   File temp = File(widget.imageOS.imgPath.substring(
                           0, widget.imageOS.imgPath.lastIndexOf(".")) +
@@ -82,12 +87,19 @@ class _ImageCardState extends State<ImageCard> {
                   widget.imageOS.imgPath = temp.path;
                   print(temp.path);
                   database.updateImagePath(
-                      tableName: widget.directoryOS.dirName,
-                      image: widget.imageOS);
+                    tableName: widget.directoryOS.dirName,
+                    image: widget.imageOS,
+                  );
                   if (widget.imageOS.idx == 1) {
                     database.updateFirstImagePath(
                       imagePath: widget.imageOS.imgPath,
                       dirPath: widget.directoryOS.dirPath,
+                    );
+                  }
+                  if (widget.imageOS.shouldCompress == 1) {
+                    database.updateShouldCompress(
+                      image: widget.imageOS,
+                      tableName: widget.directoryOS.dirName,
                     );
                   }
                   widget.fileEditCallback();

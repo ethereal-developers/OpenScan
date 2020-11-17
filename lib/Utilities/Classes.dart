@@ -21,9 +21,11 @@ class DirectoryOS {
 class ImageOS {
   int idx;
   String imgPath;
+  int shouldCompress;
 
   ImageOS({
     this.idx,
     this.imgPath,
+    this.shouldCompress,
   });
 }

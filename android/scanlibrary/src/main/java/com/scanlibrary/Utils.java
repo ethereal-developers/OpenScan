@@ -23,12 +23,17 @@ public class Utils {
 
     }
 
-    public static String getUri(Bitmap bitmap, String tempDirPath) {
+    public static String getUri(Bitmap bitmap, String tempDirPath, boolean shouldCrop) {
         File file = null;
         try {
             file = new File(tempDirPath);
             FileOutputStream outStream = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 60, outStream);
+            if(shouldCrop) {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outStream);
+            }
+            else {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
+            }
             outStream.flush();
             outStream.close();
 

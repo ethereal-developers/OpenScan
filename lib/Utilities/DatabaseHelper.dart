@@ -69,7 +69,8 @@ class DatabaseHelper {
     db.execute('''
       CREATE TABLE $_dirTableName(
       idx INTEGER,
-      img_path TEXT)
+      img_path TEXT,
+      shouldCompress INTEGER)
       ''');
   }
 
@@ -79,6 +80,7 @@ class DatabaseHelper {
     int index = await db.insert(_dirTableName, {
       'idx': image.idx,
       'img_path': image.imgPath,
+      'shouldCompress': image.shouldCompress,
     });
     print('Image Index: $index');
 
@@ -173,6 +175,18 @@ class DatabaseHelper {
         _dirTableName,
         {
           'idx': image.idx,
+        },
+        where: 'img_path == ?',
+        whereArgs: [image.imgPath]);
+  }
+
+  Future<int> updateShouldCompress({ImageOS image, String tableName}) async {
+    Database db = await instance.database;
+    getDirectoryData(tableName);
+    return await db.update(
+        _dirTableName,
+        {
+          'shouldCompress': false,
         },
         where: 'img_path == ?',
         whereArgs: [image.imgPath]);

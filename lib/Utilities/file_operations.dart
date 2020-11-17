@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:directory_picker/directory_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/DatabaseHelper.dart';
@@ -69,7 +70,8 @@ class FileOperations {
     return image;
   }
 
-  Future<void> saveImage({File image, int index, String dirPath}) async {
+  Future<void> saveImage(
+      {File image, int index, String dirPath, int shouldCompress}) async {
     if (!await Directory(dirPath).exists()) {
       new Directory(dirPath).create();
       await database.createDirectory(
@@ -100,6 +102,7 @@ class FileOperations {
       image: ImageOS(
         imgPath: tempPic.path,
         idx: index,
+        shouldCompress: shouldCompress,
       ),
       tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
     );
@@ -149,18 +152,22 @@ class FileOperations {
       print(e);
       selectedDirectory = await pickDirectory(context, selectedDirectory);
     }
-    List<ImageOS> foo = [];
-    if (images.runtimeType == foo.runtimeType) {
-      var tempImages = [];
-      for (ImageOS image in images) {
-        tempImages.add(File(image.imgPath));
-      }
-      images = tempImages;
+
+    var tempImages = [];
+    String path;
+    Directory cacheDir = await getTemporaryDirectory();
+    for (ImageOS image in images) {
+      path = await FlutterScannerCropper.compressImage(
+        src: image.imgPath,
+        dest: cacheDir.path,
+        desiredQuality: 100,
+      );
+      tempImages.add(File(path));
     }
+    images = tempImages;
 
     fileName = fileName.replaceAll('-', '');
     fileName = fileName.replaceAll('.', '');
-    // fileName = fileName.replaceAll(' ', '');
     fileName = fileName.replaceAll(':', '');
 
     pdfStatus = await createPdf(
