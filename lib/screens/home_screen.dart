@@ -262,10 +262,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               onTap: () async {
                                 Navigator.push(
                                   context,
-                                  PageTransition(
-                                    type:
-                                        PageTransitionType.rightToLeftWithFade,
-                                    child: ViewDocument(
+                                  MaterialPageRoute(
+                                    builder: (context) => ViewDocument(
                                       directoryOS: masterDirectories[index],
                                     ),
                                   ),

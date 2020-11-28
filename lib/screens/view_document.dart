@@ -54,6 +54,7 @@ class _ViewDocumentState extends State<ViewDocument> {
   bool resetReorder = false;
   bool quickScan = false;
   ImageOS displayImage;
+  int imageQuality = 2;
 
   void getDirectoryData({
     bool updateFirstImage = false,
@@ -571,7 +572,6 @@ class _ViewDocumentState extends State<ViewDocument> {
                   ),
                 ),
               ),
-              // TODO: Add photos from gallery
               floatingActionButton: SpeedDial(
                 marginRight: 18,
                 marginBottom: 20,
@@ -580,12 +580,12 @@ class _ViewDocumentState extends State<ViewDocument> {
                 visible: true,
                 closeManually: false,
                 curve: Curves.bounceIn,
-                overlayColor: Colors.black,
+                overlayColor: primaryColor,
                 overlayOpacity: 0.5,
                 tooltip: 'Scan Options',
                 heroTag: 'speed-dial-hero-tag',
                 backgroundColor: secondaryColor,
-                foregroundColor: Colors.black,
+                foregroundColor: primaryColor,
                 elevation: 8.0,
                 shape: CircleBorder(),
                 children: [
@@ -685,11 +685,207 @@ class _ViewDocumentState extends State<ViewDocument> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Padding(
-            padding: EdgeInsets.fromLTRB(15, 20, 15, 15),
-            child: Text(
-              fileName,
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-              overflow: TextOverflow.ellipsis,
+            padding: EdgeInsets.fromLTRB(25, 20, 25, 15),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    fileName,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(10),
+                            ),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          content: StatefulBuilder(
+                            builder: (BuildContext context,
+                                void Function(void Function()) setState) {
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      'Image Quality',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 10,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text('Select image quality:'),
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment.center,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (imageQuality != 1) {
+                                            imageQuality = 1;
+                                            setState((){});
+                                          }
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(5),
+                                              bottomLeft:
+                                              Radius.circular(5),
+                                            ),
+                                            border: Border.all(
+                                                color: secondaryColor
+                                                    .withOpacity(0.5)),
+                                            color: (imageQuality == 1)
+                                                ? secondaryColor
+                                                : primaryColor,
+                                          ),
+                                          height: 35,
+                                          width: 70,
+                                          child: Text(
+                                            'Low',
+                                            style: TextStyle(
+                                                color:
+                                                (imageQuality == 1)
+                                                    ? primaryColor
+                                                    : secondaryColor),
+                                          ),
+                                          alignment: Alignment.center,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 1,
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (imageQuality != 2) {
+                                            imageQuality = 2;
+                                            setState((){});
+                                          }
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: (imageQuality == 2)
+                                                ? secondaryColor
+                                                : primaryColor,
+                                            border: Border.all(
+                                              color: secondaryColor
+                                                  .withOpacity(0.5),
+                                            ),
+                                          ),
+                                          height: 35,
+                                          width: 70,
+                                          child: Text(
+                                            'Medium',
+                                            style: TextStyle(
+                                                color:
+                                                (imageQuality == 2)
+                                                    ? primaryColor
+                                                    : secondaryColor),
+                                          ),
+                                          alignment: Alignment.center,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 1,
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (imageQuality != 3) {
+                                            imageQuality = 3;
+                                            setState((){});
+                                          }
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.only(
+                                              topRight: Radius.circular(5),
+                                              bottomRight:
+                                              Radius.circular(5),
+                                            ),
+                                            border: Border.all(
+                                                color: secondaryColor
+                                                    .withOpacity(0.5)),
+                                            color: (imageQuality == 3)
+                                                ? secondaryColor
+                                                : primaryColor,
+                                          ),
+                                          height: 35,
+                                          width: 70,
+                                          child: Text(
+                                            'High',
+                                            style: TextStyle(
+                                                color:
+                                                (imageQuality == 3)
+                                                    ? primaryColor
+                                                    : secondaryColor),
+                                          ),
+                                          alignment: Alignment.center,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment.end,
+                                    children: [
+                                      FlatButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context),
+                                        child: Text('Cancel'),
+                                      ),
+                                      FlatButton(
+                                        onPressed: () {
+                                          print('Selected Image Quality: $imageQuality');
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          'Done',
+                                          style: TextStyle(
+                                              color: secondaryColor),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  child: Container(
+                    child: Text('Quality'),
+                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                    decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white),
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ],
             ),
           ),
           Divider(
