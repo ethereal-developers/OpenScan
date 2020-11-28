@@ -390,7 +390,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                             });
                           },
                           child: Container(
-                            padding: EdgeInsets.only(right: 10),
+                            padding: EdgeInsets.only(right: 25),
                             alignment: Alignment.center,
                             child: Text(
                               'Done',

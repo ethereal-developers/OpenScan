@@ -69,16 +69,12 @@ class AboutScreen extends StatelessWidget {
                             fontWeight: FontWeight.normal,
                           ),
                         ),
-                        TextSpan(
-                          text: '',
-                          style: TextStyle(color: Colors.redAccent),
-                        ),
                       ],
                     ),
                   ),
                 ),
                 SizedBox(
-                  height: size.height * 0.03,
+                  height: size.height * 0.01,
                 ),
                 Center(
                   child: Text(
@@ -87,7 +83,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  height: size.height * 0.03,
+                  height: size.height * 0.02,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -110,12 +106,12 @@ class AboutScreen extends StatelessWidget {
                 Center(
                   child: Text(
                     "No ads. We don't collect any data.\n We respect your privacy.",
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 14),
                     textAlign: TextAlign.center,
                   ),
                 ),
                 SizedBox(
-                  height: size.height * 0.03,
+                  height: size.height * 0.035,
                 ),
                 Center(
                   child: GestureDetector(
@@ -152,7 +148,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  height: size.height * 0.025,
+                  height: size.height * 0.01,
                 ),
                 RichText(
                   textAlign: TextAlign.center,

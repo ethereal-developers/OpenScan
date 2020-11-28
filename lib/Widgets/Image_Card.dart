@@ -57,7 +57,6 @@ class _ImageCardState extends State<ImageCard> {
           child: FocusedMenuHolder(
             menuWidth: size.width * 0.45,
             onPressed: () {
-              print(enableSelect);
               (enableSelect)
                   ? selectionOnPressed()
                   : widget.imageViewerCallback();
@@ -148,6 +147,7 @@ class _ImageCardState extends State<ImageCard> {
                               } catch (e) {
                                 widget.fileEditCallback();
                               }
+                              widget.selectCallback();
                               Navigator.pop(context);
                             },
                             child: Text(
