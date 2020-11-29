@@ -696,7 +696,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Text(
-                                      'Image Quality',
+                                      'Export Quality',
                                       style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w600),
@@ -707,7 +707,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
-                                    child: Text('Select image quality:'),
+                                    child: Text('Select export quality:'),
                                   ),
                                   SizedBox(
                                     height: 20,
