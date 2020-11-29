@@ -24,13 +24,11 @@ class ViewDocument extends StatefulWidget {
   final DirectoryOS directoryOS;
   final bool quickScan;
   final bool fromGallery;
-  final bool quickPick;
 
   ViewDocument({
     this.quickScan = false,
     this.directoryOS,
     this.fromGallery = false,
-    this.quickPick = false,
   });
 
   @override
@@ -142,7 +140,6 @@ class _ViewDocumentState extends State<ViewDocument> {
   Future<dynamic> createImage({
     bool quickScan,
     bool fromGallery = false,
-    bool quickPick = false,
   }) async {
     File image;
     if (fromGallery) {
@@ -152,7 +149,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     }
     Directory cacheDir = await getTemporaryDirectory();
     if (image != null) {
-      if (!quickScan && !quickPick) {
+      if (!quickScan) {
         imageFilePath = await FlutterScannerCropper.openCrop(
           src: image.path,
           dest: cacheDir.path,
@@ -170,13 +167,6 @@ class _ViewDocumentState extends State<ViewDocument> {
       await fileOperations.deleteTemporaryFiles();
       if (quickScan) {
         createImage(quickScan: quickScan);
-      }
-      if (quickPick) {
-        createImage(
-          quickScan: false,
-          fromGallery: true,
-          quickPick: true,
-        );
       }
       getDirectoryData();
     }
@@ -297,7 +287,6 @@ class _ViewDocumentState extends State<ViewDocument> {
         createImage(
           quickScan: false,
           fromGallery: true,
-          quickPick: widget.quickPick,
         );
       } else {
         createImage(quickScan: quickScan);
@@ -611,21 +600,10 @@ class _ViewDocumentState extends State<ViewDocument> {
                     // TODO: Change the icon
                     child: Icon(Icons.camera_roll),
                     backgroundColor: Colors.white,
-                    label: 'Import from Gallery (Normal)',
+                    label: 'Import from Gallery',
                     labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
                     onTap: () {
                       createImage(quickScan: false, fromGallery: true);
-                    },
-                  ),
-                  SpeedDialChild(
-                    // TODO: Change the icon
-                    child: Icon(Icons.camera_roll),
-                    backgroundColor: Colors.white,
-                    label: 'Import from Gallery (Quick)',
-                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-                    onTap: () {
-                      createImage(
-                          quickScan: false, fromGallery: true, quickPick: true);
                     },
                   ),
                 ],
@@ -735,22 +713,20 @@ class _ViewDocumentState extends State<ViewDocument> {
                                     height: 20,
                                   ),
                                   Row(
-                                    mainAxisAlignment:
-                                    MainAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       GestureDetector(
                                         onTap: () {
                                           if (imageQuality != 1) {
                                             imageQuality = 1;
-                                            setState((){});
+                                            setState(() {});
                                           }
                                         },
                                         child: Container(
                                           decoration: BoxDecoration(
                                             borderRadius: BorderRadius.only(
                                               topLeft: Radius.circular(5),
-                                              bottomLeft:
-                                              Radius.circular(5),
+                                              bottomLeft: Radius.circular(5),
                                             ),
                                             border: Border.all(
                                                 color: secondaryColor
@@ -764,8 +740,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                           child: Text(
                                             'Low',
                                             style: TextStyle(
-                                                color:
-                                                (imageQuality == 1)
+                                                color: (imageQuality == 1)
                                                     ? primaryColor
                                                     : secondaryColor),
                                           ),
@@ -779,7 +754,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                         onTap: () {
                                           if (imageQuality != 2) {
                                             imageQuality = 2;
-                                            setState((){});
+                                            setState(() {});
                                           }
                                         },
                                         child: Container(
@@ -797,8 +772,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                           child: Text(
                                             'Medium',
                                             style: TextStyle(
-                                                color:
-                                                (imageQuality == 2)
+                                                color: (imageQuality == 2)
                                                     ? primaryColor
                                                     : secondaryColor),
                                           ),
@@ -812,15 +786,14 @@ class _ViewDocumentState extends State<ViewDocument> {
                                         onTap: () {
                                           if (imageQuality != 3) {
                                             imageQuality = 3;
-                                            setState((){});
+                                            setState(() {});
                                           }
                                         },
                                         child: Container(
                                           decoration: BoxDecoration(
                                             borderRadius: BorderRadius.only(
                                               topRight: Radius.circular(5),
-                                              bottomRight:
-                                              Radius.circular(5),
+                                              bottomRight: Radius.circular(5),
                                             ),
                                             border: Border.all(
                                                 color: secondaryColor
@@ -834,8 +807,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                           child: Text(
                                             'High',
                                             style: TextStyle(
-                                                color:
-                                                (imageQuality == 3)
+                                                color: (imageQuality == 3)
                                                     ? primaryColor
                                                     : secondaryColor),
                                           ),
@@ -848,23 +820,22 @@ class _ViewDocumentState extends State<ViewDocument> {
                                     height: 20,
                                   ),
                                   Row(
-                                    mainAxisAlignment:
-                                    MainAxisAlignment.end,
+                                    mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       FlatButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context),
+                                        onPressed: () => Navigator.pop(context),
                                         child: Text('Cancel'),
                                       ),
                                       FlatButton(
                                         onPressed: () {
-                                          print('Selected Image Quality: $imageQuality');
+                                          print(
+                                              'Selected Image Quality: $imageQuality');
                                           Navigator.pop(context);
                                         },
                                         child: Text(
                                           'Done',
-                                          style: TextStyle(
-                                              color: secondaryColor),
+                                          style:
+                                              TextStyle(color: secondaryColor),
                                         ),
                                       ),
                                     ],

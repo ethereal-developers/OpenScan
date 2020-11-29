@@ -461,7 +461,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SpeedDialChild(
               child: Icon(Icons.camera_roll),
               backgroundColor: Colors.white,
-              label: 'Import from Gallery (Normal)',
+              label: 'Import from Gallery',
               labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
               onTap: () {
                 Navigator.push(
@@ -471,27 +471,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       quickScan: false,
                       directoryOS: DirectoryOS(),
                       fromGallery: true,
-                    ),
-                  ),
-                ).whenComplete(() {
-                  homeRefresh();
-                });
-              },
-            ),
-            SpeedDialChild(
-              child: Icon(Icons.camera_roll),
-              backgroundColor: Colors.white,
-              label: 'Import from Gallery (Quick)',
-              labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ViewDocument(
-                      quickScan: false,
-                      directoryOS: DirectoryOS(),
-                      fromGallery: true,
-                      quickPick: true,
                     ),
                   ),
                 ).whenComplete(() {
