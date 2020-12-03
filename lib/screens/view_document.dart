@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
@@ -588,7 +589,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                     },
                   ),
                   SpeedDialChild(
-                    child: Icon(Icons.camera_roll),
+                    child: Icon(Icons.add_a_photo),
                     backgroundColor: Colors.white,
                     label: 'Quick Scan',
                     labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
@@ -597,8 +598,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                     },
                   ),
                   SpeedDialChild(
-                    // TODO: Change the icon
-                    child: Icon(Icons.camera_roll),
+                    child: Icon(Icons.image),
                     backgroundColor: Colors.white,
                     label: 'Import from Gallery',
                     labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
@@ -680,6 +680,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                     showDialog(
                       context: context,
                       builder: (context) {
+                        int imageQualityTemp = imageQuality;
                         return AlertDialog(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.all(
@@ -717,8 +718,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                                     children: [
                                       GestureDetector(
                                         onTap: () {
-                                          if (imageQuality != 1) {
-                                            imageQuality = 1;
+                                          if (imageQualityTemp != 1) {
+                                            imageQualityTemp = 1;
                                             setState(() {});
                                           }
                                         },
@@ -731,7 +732,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                             border: Border.all(
                                                 color: secondaryColor
                                                     .withOpacity(0.5)),
-                                            color: (imageQuality == 1)
+                                            color: (imageQualityTemp == 1)
                                                 ? secondaryColor
                                                 : primaryColor,
                                           ),
@@ -740,7 +741,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                           child: Text(
                                             'Low',
                                             style: TextStyle(
-                                                color: (imageQuality == 1)
+                                                color: (imageQualityTemp == 1)
                                                     ? primaryColor
                                                     : secondaryColor),
                                           ),
@@ -752,14 +753,14 @@ class _ViewDocumentState extends State<ViewDocument> {
                                       ),
                                       GestureDetector(
                                         onTap: () {
-                                          if (imageQuality != 2) {
-                                            imageQuality = 2;
+                                          if (imageQualityTemp != 2) {
+                                            imageQualityTemp = 2;
                                             setState(() {});
                                           }
                                         },
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            color: (imageQuality == 2)
+                                            color: (imageQualityTemp == 2)
                                                 ? secondaryColor
                                                 : primaryColor,
                                             border: Border.all(
@@ -772,7 +773,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                           child: Text(
                                             'Medium',
                                             style: TextStyle(
-                                                color: (imageQuality == 2)
+                                                color: (imageQualityTemp == 2)
                                                     ? primaryColor
                                                     : secondaryColor),
                                           ),
@@ -784,8 +785,8 @@ class _ViewDocumentState extends State<ViewDocument> {
                                       ),
                                       GestureDetector(
                                         onTap: () {
-                                          if (imageQuality != 3) {
-                                            imageQuality = 3;
+                                          if (imageQualityTemp != 3) {
+                                            imageQualityTemp = 3;
                                             setState(() {});
                                           }
                                         },
@@ -798,7 +799,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                             border: Border.all(
                                                 color: secondaryColor
                                                     .withOpacity(0.5)),
-                                            color: (imageQuality == 3)
+                                            color: (imageQualityTemp == 3)
                                                 ? secondaryColor
                                                 : primaryColor,
                                           ),
@@ -807,7 +808,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                           child: Text(
                                             'High',
                                             style: TextStyle(
-                                                color: (imageQuality == 3)
+                                                color: (imageQualityTemp == 3)
                                                     ? primaryColor
                                                     : secondaryColor),
                                           ),
@@ -823,14 +824,22 @@ class _ViewDocumentState extends State<ViewDocument> {
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       FlatButton(
-                                        onPressed: () => Navigator.pop(context),
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
                                         child: Text('Cancel'),
                                       ),
                                       FlatButton(
                                         onPressed: () {
+                                          imageQuality = imageQualityTemp;
                                           print(
                                               'Selected Image Quality: $imageQuality');
+                                          //TODO: Change export quality
                                           Navigator.pop(context);
+                                          showModalBottomSheet(
+                                            context: context,
+                                            builder: _buildBottomSheet,
+                                          );
                                         },
                                         child: Text(
                                           'Done',
@@ -906,36 +915,68 @@ class _ViewDocumentState extends State<ViewDocument> {
                 }
               }
               String savedDirectory;
-              Navigator.pop(context);
               savedDirectory = await fileOperations.saveToDevice(
                 context: context,
                 fileName: (enableSelect) ? selectedFileName : fileName,
                 images: (enableSelect) ? selectedImages : directoryImages,
               );
+              Navigator.pop(context);
               String displayText;
               (savedDirectory != null)
-                  ? displayText = "Saved at $savedDirectory"
+                  ? displayText = "PDF Saved at\n$savedDirectory"
                   : displayText = "Failed to generate pdf. Try Again.";
-              //TODO: Fix this
-              scaffoldKey.currentState.showSnackBar(
-                SnackBar(
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                  backgroundColor: primaryColor,
-                  duration: Duration(seconds: 1),
-                  content: Container(
-                    decoration: BoxDecoration(),
-                    alignment: Alignment.center,
-                    height: 20,
-                    width: size.width * 0.3,
-                    child: Text(
-                      displayText,
-                      style: TextStyle(color: Colors.white, fontSize: 12),
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(10),
+                      ),
                     ),
-                  ),
-                ),
+                    contentPadding: EdgeInsets.fromLTRB(0.0, 20.0, 0.0, 5.0),
+                    content: StatefulBuilder(
+                      builder: (BuildContext context,
+                          void Function(void Function()) setState) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                'Saved to Directory',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 10,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20),
+                              child: Text(displayText, textAlign: TextAlign.center,),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                FlatButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text(
+                                    'Done',
+                                    style: TextStyle(color: secondaryColor),
+                                  ),
+                                  padding: EdgeInsets.all(0),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  );
+                },
               );
             },
           ),

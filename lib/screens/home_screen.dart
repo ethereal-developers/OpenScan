@@ -440,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             SpeedDialChild(
-              child: Icon(Icons.camera_roll),
+              child: Icon(Icons.add_a_photo),
               backgroundColor: Colors.white,
               label: 'Quick Scan',
               labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
@@ -459,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             SpeedDialChild(
-              child: Icon(Icons.camera_roll),
+              child: Icon(Icons.image),
               backgroundColor: Colors.white,
               label: 'Import from Gallery',
               labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
