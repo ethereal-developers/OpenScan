@@ -53,7 +53,7 @@ class _ViewDocumentState extends State<ViewDocument> {
   bool resetReorder = false;
   bool quickScan = false;
   ImageOS displayImage;
-  int imageQuality = 2;
+  int imageQuality = 3;
 
   void getDirectoryData({
     bool updateFirstImage = false,
@@ -919,6 +919,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                 context: context,
                 fileName: (enableSelect) ? selectedFileName : fileName,
                 images: (enableSelect) ? selectedImages : directoryImages,
+                quality: imageQuality,
               );
               Navigator.pop(context);
               String displayText;
@@ -953,8 +954,12 @@ class _ViewDocumentState extends State<ViewDocument> {
                               height: 10,
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20),
-                              child: Text(displayText, textAlign: TextAlign.center,),
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0, horizontal: 20),
+                              child: Text(
+                                displayText,
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,

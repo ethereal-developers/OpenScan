@@ -148,10 +148,14 @@ class FileOperations {
   }
 
   Future<String> saveToDevice(
-      {BuildContext context, String fileName, dynamic images}) async {
+      {BuildContext context,
+      String fileName,
+      dynamic images,
+      int quality}) async {
     Directory selectedDirectory;
     Directory openscanDir = Directory("/storage/emulated/0/OpenScan");
     Directory openscanPdfDir = Directory("/storage/emulated/0/OpenScan/PDF");
+    int desiredQuality = 100;
 
     try {
       if (!openscanDir.existsSync()) {
@@ -166,12 +170,23 @@ class FileOperations {
 
     var tempImages = [];
     String path;
+
+    if (quality == 1) {
+      desiredQuality = 60;
+    } else if (quality == 2) {
+      desiredQuality = 80;
+    } else {
+      desiredQuality = 100;
+    }
+
+    print(desiredQuality);
+
     Directory cacheDir = await getTemporaryDirectory();
     for (ImageOS image in images) {
       path = await FlutterScannerCropper.compressImage(
         src: image.imgPath,
         dest: cacheDir.path,
-        desiredQuality: 100,
+        desiredQuality: desiredQuality,
       );
       tempImages.add(File(path));
     }
