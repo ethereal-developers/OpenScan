@@ -7,15 +7,24 @@ class Slide {
     @required this.imageUrl,
   });
 }
-//TODO: Change assets
+
 final slideList = [
   Slide(
     imageUrl: 'assets/home.jpg',
   ),
   Slide(
-    imageUrl: 'assets/view1.jpg',
+    imageUrl: 'assets/view_doc_01.jpg',
   ),
   Slide(
-    imageUrl: 'assets/view2.jpg',
+    imageUrl: 'assets/view_doc_02.jpg',
+  ),
+  Slide(
+    imageUrl: 'assets/view_doc_03.jpg',
+  ),
+  Slide(
+    imageUrl: 'assets/view_doc_04.jpg',
+  ),
+  Slide(
+    imageUrl: 'assets/view_doc_05.jpg',
   ),
 ];

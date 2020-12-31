@@ -29,7 +29,7 @@ public class Utils {
             file = new File(tempDirPath);
             FileOutputStream outStream = new FileOutputStream(file);
             if(shouldCrop) {
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outStream);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outStream);
             }
             else {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
