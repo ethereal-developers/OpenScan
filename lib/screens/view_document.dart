@@ -644,7 +644,6 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   Widget _buildBottomSheet(BuildContext context) {
     FileOperations fileOperations = FileOperations();
-    Size size = MediaQuery.of(context).size;
     String selectedFileName;
 
     updateSelectedFileName() {

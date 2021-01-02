@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/slide.dart';
 
 class SlideItem extends StatelessWidget {
@@ -15,7 +16,7 @@ class SlideItem extends StatelessWidget {
       children: <Widget>[
         Container(
           width: size.width,
-          height: size.height * 0.8,
+          height: size.height * 0.78,
           decoration: BoxDecoration(
             image: DecorationImage(
               image: AssetImage(slideList[index].imageUrl),

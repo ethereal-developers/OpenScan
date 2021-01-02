@@ -100,7 +100,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
       body: Container(
         color: primaryColor,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20,0,20,20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
