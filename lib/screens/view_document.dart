@@ -1,21 +1,36 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:open_file/open_file.dart';
+import 'package:openscan/Utilities/Classes.dart';
+import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/Utilities/cropper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/Widgets/Image_Card.dart';
 import 'package:openscan/screens/home_screen.dart';
-import 'package:openscan/screens/pdf_screen.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:reorderables/reorderables.dart';
 import 'package:share_extend/share_extend.dart';
+
+bool enableSelect = false;
+bool enableReorder = false;
+bool showImage = false;
+List<bool> selectedImageIndex = [];
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
+  final DirectoryOS directoryOS;
+  final bool quickScan;
+  final bool fromGallery;
 
-  ViewDocument({this.dirPath});
-
-  final String dirPath;
+  ViewDocument({
+    this.quickScan = false,
+    this.directoryOS,
+    this.fromGallery = false,
+  });
 
   @override
   _ViewDocumentState createState() => _ViewDocumentState();
@@ -23,169 +38,605 @@ class ViewDocument extends StatefulWidget {
 
 class _ViewDocumentState extends State<ViewDocument> {
   final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
-
-  List<Map<String, dynamic>> imageFilesWithDate = [];
+  TransformationController _controller = TransformationController();
+  DatabaseHelper database = DatabaseHelper();
   List<String> imageFilesPath = [];
-
+  List<Widget> imageCards = [];
+  String imageFilePath;
   FileOperations fileOperations;
+  String dirPath;
+  String fileName = '';
+  List<Map<String, dynamic>> directoryData;
+  List<ImageOS> directoryImages = [];
+  List<ImageOS> initDirectoryImages = [];
+  bool enableSelectionIcons = false;
+  bool resetReorder = false;
+  bool quickScan = false;
+  ImageOS displayImage;
+  int imageQuality = 3;
 
-  String dirName;
-
-  String fileName;
-
-  bool _statusSuccess;
-
-  void getImages() {
+  void getDirectoryData({
+    bool updateFirstImage = false,
+    bool updateIndex = false,
+  }) async {
+    directoryImages = [];
+    initDirectoryImages = [];
     imageFilesPath = [];
-    imageFilesWithDate = [];
+    selectedImageIndex = [];
+    int index = 1;
+    directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
+    print('Directory table[$widget.directoryOS.dirName] => $directoryData');
+    for (var image in directoryData) {
+      // Updating first image path after delete
+      if (updateFirstImage) {
+        database.updateFirstImagePath(
+            imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
+        updateFirstImage = false;
+      }
+      var i = image['idx'];
 
-    Directory(dirName)
-        .list(recursive: false, followLinks: false)
-        .listen((FileSystemEntity entity) {
-      List<String> temp = entity.path.split(" ");
-      imageFilesWithDate.add({
-        "file": entity,
-        "creationDate": DateTime.parse("${temp[3]} ${temp[4]}")
-      });
+      // Updating index of images after delete
+      if (updateIndex) {
+        i = index;
+        database.updateImageIndex(
+          image: ImageOS(
+            idx: i,
+            imgPath: image['img_path'],
+          ),
+          tableName: widget.directoryOS.dirName,
+        );
+      }
 
+      directoryImages.add(
+        ImageOS(
+          idx: i,
+          imgPath: image['img_path'],
+        ),
+      );
+      initDirectoryImages.add(
+        ImageOS(
+          idx: i,
+          imgPath: image['img_path'],
+        ),
+      );
+      imageFilesPath.add(image['img_path']);
+      selectedImageIndex.add(false);
+      index += 1;
+    }
+    print(selectedImageIndex.length);
+    setState(() {});
+  }
+
+  getImageCards() {
+    imageCards = [];
+    print(selectedImageIndex);
+    for (var image in directoryImages) {
+      ImageCard imageCard = ImageCard(
+        imageOS: image,
+        directoryOS: widget.directoryOS,
+        fileEditCallback: () {
+          fileEditCallback(imageOS: image);
+        },
+        selectCallback: () {
+          selectionCallback(imageOS: image);
+        },
+        imageViewerCallback: () {
+          imageViewerCallback(imageOS: image);
+        },
+      );
+      if (!imageCards.contains(imageCard)) {
+        imageCards.add(imageCard);
+      }
+    }
+    return imageCards;
+  }
+
+  Future<void> createDirectoryPath() async {
+    Directory appDir = await getExternalStorageDirectory();
+    dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
+    fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
+    widget.directoryOS.dirName = fileName;
+  }
+
+  Future<dynamic> createImage({
+    bool quickScan,
+    bool fromGallery = false,
+  }) async {
+    File image;
+    if (fromGallery) {
+      image = await fileOperations.openGallery();
+    } else {
+      image = await fileOperations.openCamera();
+    }
+    Directory cacheDir = await getTemporaryDirectory();
+    if (image != null) {
+      if (!quickScan) {
+        imageFilePath = await FlutterScannerCropper.openCrop(
+          src: image.path,
+          dest: cacheDir.path,
+          shouldCompress: true,
+        );
+      }
+      File imageFile = File(imageFilePath ?? image.path);
+      setState(() {});
+      await fileOperations.saveImage(
+        image: imageFile,
+        index: directoryImages.length + 1,
+        dirPath: dirPath,
+        shouldCompress: quickScan ? 1 : 0,
+      );
+      await fileOperations.deleteTemporaryFiles();
+      if (quickScan) {
+        createImage(quickScan: quickScan);
+      }
+      getDirectoryData();
+    }
+  }
+
+  selectionCallback({ImageOS imageOS}) {
+    if (selectedImageIndex.contains(true)) {
       setState(() {
-        imageFilesWithDate
-            .sort((a, b) => a["creationDate"].compareTo(b["creationDate"]));
-        for (var image in imageFilesWithDate) {
-          if (!imageFilesPath.contains(image['file'].path))
-            imageFilesPath.add(image["file"].path);
-        }
+        enableSelectionIcons = true;
       });
+    } else {
+      setState(() {
+        enableSelectionIcons = false;
+      });
+    }
+  }
+
+  void fileEditCallback({ImageOS imageOS}) {
+    bool isFirstImage = false;
+    if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
+      isFirstImage = true;
+    }
+    getDirectoryData(
+      updateFirstImage: isFirstImage,
+      updateIndex: true,
+    );
+  }
+
+  imageViewerCallback({ImageOS imageOS}) {
+    setState(() {
+      displayImage = imageOS;
+      showImage = true;
     });
   }
 
-  void imageEditCallback() {
-    getImages();
+  void _onReorder(int oldIndex, int newIndex) {
+    print(newIndex);
+    Widget image = imageCards.removeAt(oldIndex);
+    imageCards.insert(newIndex, image);
+    ImageOS image1 = directoryImages.removeAt(oldIndex);
+    directoryImages.insert(newIndex, image1);
   }
 
-  Future<void> displayDialog(BuildContext context) async {
-    String displayText;
-    (_statusSuccess)
-        ? displayText = "Success. File stored in the OpenScan folder."
-        : displayText = "Failed to generate pdf. Try Again.";
-    Scaffold.of(context).showSnackBar(
-      SnackBar(content: Text(displayText)),
+  void handleClick(String value) {
+    switch (value) {
+      case 'Reorder':
+        setState(() {
+          enableReorder = true;
+        });
+        break;
+      case 'Select':
+        setState(() {
+          enableSelect = true;
+        });
+        break;
+      case 'Share':
+        showModalBottomSheet(
+          context: context,
+          builder: _buildBottomSheet,
+        );
+        break;
+    }
+  }
+
+  removeSelection() {
+    setState(() {
+      for (var i = 0; i < selectedImageIndex.length; i++) {
+        selectedImageIndex[i] = false;
+      }
+      enableSelect = false;
+    });
+  }
+
+  deleteMultipleImages() {
+    bool isFirstImage = false;
+    for (var i = 0; i < directoryImages.length; i++) {
+      if (selectedImageIndex[i]) {
+        print('${directoryImages[i].idx}: ${directoryImages[i].imgPath}');
+        if (directoryImages[i].imgPath == widget.directoryOS.firstImgPath) {
+          isFirstImage = true;
+        }
+
+        File(directoryImages[i].imgPath).deleteSync();
+        database.deleteImage(
+          imgPath: directoryImages[i].imgPath,
+          tableName: widget.directoryOS.dirName,
+        );
+      }
+    }
+    database.updateImageCount(
+      tableName: widget.directoryOS.dirName,
     );
+    try {
+      Directory(widget.directoryOS.dirPath).deleteSync(recursive: false);
+      database.deleteDirectory(dirPath: widget.directoryOS.dirPath);
+    } catch (e) {
+      getDirectoryData(
+        updateFirstImage: isFirstImage,
+        updateIndex: true,
+      );
+    }
+    removeSelection();
+    Navigator.pop(context);
   }
 
   @override
   void initState() {
     super.initState();
     fileOperations = FileOperations();
-    dirName = widget.dirPath;
-    getImages();
-    fileName =
-        dirName.substring(dirName.lastIndexOf("/") + 1, dirName.length - 1);
-  }
-
-  Future<dynamic> createImage() async {
-    File image = await fileOperations.openCamera();
-    if (image != null) {
-      Cropper cropper = Cropper();
-      var imageFile = await cropper.cropImage(image);
-      if (imageFile != null) return imageFile;
+    if (widget.directoryOS.dirPath != null) {
+      dirPath = widget.directoryOS.dirPath;
+      fileName = widget.directoryOS.newName;
+      getDirectoryData();
+    } else {
+      createDirectoryPath();
+      quickScan = widget.quickScan;
+      if (widget.fromGallery) {
+        createImage(
+          quickScan: false,
+          fromGallery: true,
+        );
+      } else {
+        createImage(quickScan: quickScan);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return SafeArea(
-      child: Scaffold(
-        backgroundColor: primaryColor,
-        key: scaffoldKey,
-        appBar: AppBar(
-          elevation: 0,
-          centerTitle: true,
-          backgroundColor: primaryColor,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios),
-            onPressed: () {
-              Navigator.pop(context, true);
-              //TODO : Reload home
-            },
-          ),
-          title: RichText(
-            text: TextSpan(
-              text: 'View ',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-              children: [
-                TextSpan(
-                  text: 'Document',
-                  style: TextStyle(color: secondaryColor),
+      child: WillPopScope(
+        onWillPop: () {
+          if (enableSelect || enableReorder || showImage) {
+            setState(() {
+              enableSelect = false;
+              removeSelection();
+              enableReorder = false;
+              showImage = false;
+            });
+          } else {
+            Navigator.pop(context);
+          }
+          return;
+        },
+        child: Stack(
+          children: [
+            Scaffold(
+              backgroundColor: primaryColor,
+              key: scaffoldKey,
+              appBar: AppBar(
+                elevation: 0,
+                backgroundColor: primaryColor,
+                leading: (enableSelect || enableReorder)
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          size: 30,
+                        ),
+                        onPressed: (enableSelect)
+                            ? () {
+                                removeSelection();
+                              }
+                            : () {
+                                setState(() {
+                                  directoryImages = [];
+                                  for (var image in initDirectoryImages) {
+                                    directoryImages.add(image);
+                                  }
+                                  enableReorder = false;
+                                });
+                              },
+                      )
+                    : IconButton(
+                        icon: Icon(Icons.arrow_back_ios),
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                      ),
+                title: Text(
+                  fileName,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.picture_as_pdf),
-              onPressed: () async {
-                _statusSuccess = await fileOperations.saveToAppDirectory(
-                  context: context,
-                  fileName: fileName,
-                  images: imageFilesWithDate,
-                );
-                Directory storedDirectory =
-                    await getApplicationDocumentsDirectory();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PDFScreen(
-                      path: '${storedDirectory.path}/$fileName.pdf',
+                actions: (enableReorder)
+                    ? [
+                        GestureDetector(
+                          onTap: () {
+                            for (var i = 1; i <= directoryImages.length; i++) {
+                              directoryImages[i - 1].idx = i;
+                              if (i == 1) {
+                                database.updateFirstImagePath(
+                                  dirPath: widget.directoryOS.dirPath,
+                                  imagePath: directoryImages[i - 1].imgPath,
+                                );
+                                widget.directoryOS.firstImgPath =
+                                    directoryImages[i - 1].imgPath;
+                              }
+                              database.updateImagePath(
+                                image: directoryImages[i - 1],
+                                tableName: widget.directoryOS.dirName,
+                              );
+                              print('$i: ${directoryImages[i - 1].imgPath}');
+                            }
+                            setState(() {
+                              enableReorder = false;
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.only(right: 25),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Done',
+                              style: TextStyle(color: secondaryColor),
+                            ),
+                          ),
+                        ),
+                      ]
+                    : [
+                        (enableSelect)
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.share,
+                                  color: (enableSelectionIcons)
+                                      ? Colors.white
+                                      : Colors.grey,
+                                ),
+                                onPressed: (enableSelectionIcons)
+                                    ? () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          builder: _buildBottomSheet,
+                                        );
+                                      }
+                                    : () {},
+                              )
+                            : IconButton(
+                                icon: Icon(Icons.picture_as_pdf),
+                                onPressed: () async {
+                                  await fileOperations.saveToAppDirectory(
+                                    context: context,
+                                    fileName: fileName,
+                                    images: directoryImages,
+                                  );
+                                  Directory storedDirectory =
+                                      await getApplicationDocumentsDirectory();
+                                  final result = await OpenFile.open(
+                                      '${storedDirectory.path}/$fileName.pdf');
+                                  setState(() {
+                                    String _openResult =
+                                        "type=${result.type}  message=${result.message}";
+                                    print(_openResult);
+                                  });
+                                },
+                              ),
+                        (enableSelect)
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.delete,
+                                  color: (enableSelectionIcons)
+                                      ? Colors.red
+                                      : Colors.grey,
+                                ),
+                                onPressed: (enableSelectionIcons)
+                                    ? () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(
+                                                  Radius.circular(10),
+                                                ),
+                                              ),
+                                              title: Text('Delete'),
+                                              content: Text(
+                                                  'Do you really want to delete this file?'),
+                                              actions: <Widget>[
+                                                FlatButton(
+                                                  onPressed: () =>
+                                                      Navigator.pop(context),
+                                                  child: Text('Cancel'),
+                                                ),
+                                                FlatButton(
+                                                  onPressed:
+                                                      deleteMultipleImages,
+                                                  child: Text(
+                                                    'Delete',
+                                                    style: TextStyle(
+                                                        color:
+                                                            Colors.redAccent),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      }
+                                    : () {},
+                              )
+                            : PopupMenuButton<String>(
+                                onSelected: handleClick,
+                                color: primaryColor.withOpacity(0.95),
+                                elevation: 30,
+                                offset: Offset.fromDirection(20, 20),
+                                icon: Icon(Icons.more_vert),
+                                itemBuilder: (context) {
+                                  return [
+                                    PopupMenuItem(
+                                      value: 'Select',
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('Select'),
+                                          SizedBox(width: 10),
+                                          Icon(
+                                            Icons.select_all,
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'Reorder',
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('Reorder'),
+                                          SizedBox(width: 10),
+                                          Icon(
+                                            Icons.reorder,
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'Share',
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('Export'),
+                                          SizedBox(width: 10),
+                                          Icon(
+                                            Icons.share,
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ];
+                                },
+                              ),
+                      ],
+              ),
+              body: RefreshIndicator(
+                backgroundColor: primaryColor,
+                color: secondaryColor,
+                onRefresh: () async {
+                  getDirectoryData();
+                },
+                child: Padding(
+                  padding: EdgeInsets.all(size.width * 0.01),
+                  child: Theme(
+                    data: Theme.of(context).copyWith(accentColor: primaryColor),
+                    child: ListView(
+                      children: [
+                        ReorderableWrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          minMainAxisCount: 2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: getImageCards(),
+                          onReorder: _onReorder,
+                          onNoReorder: (int index) {
+                            debugPrint(
+                                '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:$index');
+                          },
+                          onReorderStarted: (int index) {
+                            debugPrint(
+                                '${DateTime.now().toString().substring(5, 22)} reorder started: index:$index');
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
-            Builder(builder: (context) {
-              return IconButton(
-                icon: Icon(Icons.more_vert),
-                onPressed: () {
-                  showModalBottomSheet(
-                      context: context, builder: _buildBottomSheet);
-                },
-              );
-            }),
-          ],
-        ),
-        body: RefreshIndicator(
-          backgroundColor: primaryColor,
-          color: secondaryColor,
-          onRefresh: () async {
-            getImages();
-          },
-          child: Theme(
-            data: Theme.of(context).copyWith(accentColor: primaryColor),
-            child: ListView.builder(
-              itemCount: ((imageFilesWithDate.length) / 2).round(),
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(vertical: 3.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: <Widget>[
-                      ImageCard(
-                        imageFile:
-                            File(imageFilesWithDate[index * 2]["file"].path),
-                        imageFileEditCallback: imageEditCallback,
-                      ),
-                      if (index * 2 + 1 < imageFilesWithDate.length)
-                        ImageCard(
-                          imageFile: File(
-                              imageFilesWithDate[index * 2 + 1]["file"].path),
-                          imageFileEditCallback: imageEditCallback,
-                        ),
-                    ],
+                ),
+              ),
+              floatingActionButton: SpeedDial(
+                marginRight: 18,
+                marginBottom: 20,
+                animatedIcon: AnimatedIcons.menu_close,
+                animatedIconTheme: IconThemeData(size: 22.0),
+                visible: true,
+                closeManually: false,
+                curve: Curves.bounceIn,
+                overlayColor: primaryColor,
+                overlayOpacity: 0.5,
+                tooltip: 'Scan Options',
+                heroTag: 'speed-dial-hero-tag',
+                backgroundColor: secondaryColor,
+                foregroundColor: primaryColor,
+                elevation: 8.0,
+                shape: CircleBorder(),
+                children: [
+                  SpeedDialChild(
+                    child: Icon(Icons.camera_alt),
+                    backgroundColor: Colors.white,
+                    label: 'Normal Scan',
+                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+                    onTap: () {
+                      createImage(quickScan: false);
+                    },
                   ),
-                );
-              },
+                  SpeedDialChild(
+                    child: Icon(Icons.add_a_photo),
+                    backgroundColor: Colors.white,
+                    label: 'Quick Scan',
+                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+                    onTap: () {
+                      createImage(quickScan: true);
+                    },
+                  ),
+                  SpeedDialChild(
+                    child: Icon(Icons.image),
+                    backgroundColor: Colors.white,
+                    label: 'Import from Gallery',
+                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+                    onTap: () {
+                      createImage(quickScan: false, fromGallery: true);
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
+            (showImage)
+                ? GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        showImage = false;
+                      });
+                    },
+                    child: Container(
+                      width: size.width,
+                      height: size.height,
+                      padding: EdgeInsets.all(20),
+                      color: primaryColor.withOpacity(0.8),
+                      child: InteractiveViewer(
+                        transformationController: _controller,
+                        onInteractionEnd: (details) {
+                          _controller.value = Matrix4.identity();
+                        },
+                        maxScale: 10,
+                        child: GestureDetector(
+                          child: Image.file(
+                            File(displayImage.imgPath),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                : Container(),
+          ],
         ),
       ),
     );
@@ -193,9 +644,17 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   Widget _buildBottomSheet(BuildContext context) {
     FileOperations fileOperations = FileOperations();
-    Size size = MediaQuery.of(context).size;
-    String folderName =
-        dirName.substring(dirName.lastIndexOf('/') + 1, dirName.length - 1);
+    String selectedFileName;
+
+    updateSelectedFileName() {
+      int selectedCount = 0;
+      for (bool i in selectedImageIndex) {
+        selectedCount += (i) ? 1 : 0;
+      }
+      selectedFileName = fileName + ' $selectedCount';
+      print(selectedFileName);
+    }
+
     return Container(
       color: primaryColor,
       child: Column(
@@ -203,11 +662,209 @@ class _ViewDocumentState extends State<ViewDocument> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Padding(
-            padding: EdgeInsets.fromLTRB(15, 20, 15, 15),
-            child: Text(
-              folderName,
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
-              overflow: TextOverflow.ellipsis,
+            padding: EdgeInsets.fromLTRB(25, 20, 25, 15),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    fileName,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        int imageQualityTemp = imageQuality;
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(10),
+                            ),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 10),
+                          content: StatefulBuilder(
+                            builder: (BuildContext context,
+                                void Function(void Function()) setState) {
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      'Export Quality',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 10,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text('Select export quality:'),
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (imageQualityTemp != 1) {
+                                            imageQualityTemp = 1;
+                                            setState(() {});
+                                          }
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.only(
+                                              topLeft: Radius.circular(5),
+                                              bottomLeft: Radius.circular(5),
+                                            ),
+                                            border: Border.all(
+                                                color: secondaryColor
+                                                    .withOpacity(0.5)),
+                                            color: (imageQualityTemp == 1)
+                                                ? secondaryColor
+                                                : primaryColor,
+                                          ),
+                                          height: 35,
+                                          width: 70,
+                                          child: Text(
+                                            'Low',
+                                            style: TextStyle(
+                                                color: (imageQualityTemp == 1)
+                                                    ? primaryColor
+                                                    : secondaryColor),
+                                          ),
+                                          alignment: Alignment.center,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 1,
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (imageQualityTemp != 2) {
+                                            imageQualityTemp = 2;
+                                            setState(() {});
+                                          }
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: (imageQualityTemp == 2)
+                                                ? secondaryColor
+                                                : primaryColor,
+                                            border: Border.all(
+                                              color: secondaryColor
+                                                  .withOpacity(0.5),
+                                            ),
+                                          ),
+                                          height: 35,
+                                          width: 70,
+                                          child: Text(
+                                            'Medium',
+                                            style: TextStyle(
+                                                color: (imageQualityTemp == 2)
+                                                    ? primaryColor
+                                                    : secondaryColor),
+                                          ),
+                                          alignment: Alignment.center,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 1,
+                                      ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (imageQualityTemp != 3) {
+                                            imageQualityTemp = 3;
+                                            setState(() {});
+                                          }
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.only(
+                                              topRight: Radius.circular(5),
+                                              bottomRight: Radius.circular(5),
+                                            ),
+                                            border: Border.all(
+                                                color: secondaryColor
+                                                    .withOpacity(0.5)),
+                                            color: (imageQualityTemp == 3)
+                                                ? secondaryColor
+                                                : primaryColor,
+                                          ),
+                                          height: 35,
+                                          width: 70,
+                                          child: Text(
+                                            'High',
+                                            style: TextStyle(
+                                                color: (imageQualityTemp == 3)
+                                                    ? primaryColor
+                                                    : secondaryColor),
+                                          ),
+                                          alignment: Alignment.center,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(
+                                    height: 20,
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      FlatButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text('Cancel'),
+                                      ),
+                                      FlatButton(
+                                        onPressed: () {
+                                          imageQuality = imageQualityTemp;
+                                          print(
+                                              'Selected Image Quality: $imageQuality');
+                                          //TODO: Change export quality
+                                          Navigator.pop(context);
+                                          showModalBottomSheet(
+                                            context: context,
+                                            builder: _buildBottomSheet,
+                                          );
+                                        },
+                                        child: Text(
+                                          'Done',
+                                          style:
+                                              TextStyle(color: secondaryColor),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  child: Container(
+                    child: Text('Quality'),
+                    padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                    decoration: BoxDecoration(
+                        border: Border.all(color: Colors.white),
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ],
             ),
           ),
           Divider(
@@ -217,134 +874,57 @@ class _ViewDocumentState extends State<ViewDocument> {
             color: Colors.white,
           ),
           ListTile(
-            leading: Icon(Icons.add_a_photo),
-            title: Text('Add Image'),
+            leading: Icon(Icons.picture_as_pdf),
+            title: Text('Share PDF'),
             onTap: () async {
-              Navigator.pop(context);
-              var image = await createImage();
-              setState(() {});
-              await fileOperations.saveImage(
-                image: image,
-                i: imageFilesWithDate.length + 1,
-                dirName: dirName,
+              if (enableSelect) {
+                updateSelectedFileName();
+              }
+              List<ImageOS> selectedImages = [];
+              for (var image in directoryImages) {
+                if (selectedImageIndex.elementAt(image.idx - 1)) {
+                  selectedImages.add(image);
+                }
+              }
+              print(selectedImages.length);
+              await fileOperations.saveToAppDirectory(
+                context: context,
+                fileName: (enableSelect) ? selectedFileName : fileName,
+                images: (enableSelect) ? selectedImages : directoryImages,
               );
-              getImages();
+              Directory storedDirectory =
+                  await getApplicationDocumentsDirectory();
+              ShareExtend.share(
+                  '${storedDirectory.path}/${(enableSelect) ? selectedFileName : fileName}.pdf',
+                  'file');
+              Navigator.pop(context);
             },
           ),
           ListTile(
             leading: Icon(Icons.phone_android),
             title: Text('Save to device'),
             onTap: () async {
+              if (enableSelect) {
+                updateSelectedFileName();
+              }
+              List<ImageOS> selectedImages = [];
+              for (var image in directoryImages) {
+                if (selectedImageIndex.elementAt(image.idx - 1)) {
+                  selectedImages.add(image);
+                }
+              }
               String savedDirectory;
-              Navigator.pop(context);
               savedDirectory = await fileOperations.saveToDevice(
                 context: context,
-                fileName: fileName,
-                images: imageFilesWithDate,
+                fileName: (enableSelect) ? selectedFileName : fileName,
+                images: (enableSelect) ? selectedImages : directoryImages,
+                quality: imageQuality,
               );
+              Navigator.pop(context);
               String displayText;
               (savedDirectory != null)
-                  ? displayText = "Saved at $savedDirectory"
+                  ? displayText = "PDF Saved at\n$savedDirectory"
                   : displayText = "Failed to generate pdf. Try Again.";
-              scaffoldKey.currentState.showSnackBar(
-                SnackBar(
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10))),
-                  backgroundColor: primaryColor,
-                  duration: Duration(seconds: 1),
-                  content: Container(
-                    decoration: BoxDecoration(),
-                    alignment: Alignment.center,
-                    height: 20,
-                    width: size.width * 0.3,
-                    child: Text(
-                      displayText,
-                      style: TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.picture_as_pdf),
-            title: Text('Share as PDF'),
-            onTap: () async {
-              Navigator.pop(context);
-              showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(10),
-                        ),
-                      ),
-                      title: Text('Share as PDF'),
-                      content: TextField(
-                        onChanged: (value) {
-                          fileName = '$value OpenScan';
-                        },
-                        controller: TextEditingController(
-                            text: fileName.substring(8, fileName.length)),
-                        cursorColor: secondaryColor,
-                        textCapitalization: TextCapitalization.words,
-                        decoration: InputDecoration(
-                          prefixStyle: TextStyle(color: Colors.white),
-                          suffixText: ' OpenScan.pdf',
-                          focusedBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(color: secondaryColor)),
-                        ),
-                      ),
-                      actions: <Widget>[
-                        FlatButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text('Cancel'),
-                        ),
-                        FlatButton(
-                          onPressed: () async {
-                            _statusSuccess =
-                                await fileOperations.saveToAppDirectory(
-                              context: context,
-                              fileName: fileName,
-                              images: imageFilesWithDate,
-                            );
-                            Directory storedDirectory =
-                                await getApplicationDocumentsDirectory();
-                            ShareExtend.share(
-                                '${storedDirectory.path}/$fileName.pdf',
-                                'file');
-                            Navigator.pop(context);
-                          },
-                          child: Text(
-                            'Share',
-                          ),
-                        ),
-                      ],
-                    );
-                  });
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.image),
-            title: Text('Share as image'),
-            onTap: () {
-              ShareExtend.shareMultiple(imageFilesPath, 'file');
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: Icon(
-              Icons.delete,
-              color: Colors.redAccent,
-            ),
-            title: Text(
-              'Delete All',
-              style: TextStyle(color: Colors.redAccent),
-            ),
-            onTap: () {
-              Navigator.pop(context);
               showDialog(
                 context: context,
                 builder: (context) {
@@ -354,30 +934,122 @@ class _ViewDocumentState extends State<ViewDocument> {
                         Radius.circular(10),
                       ),
                     ),
-                    title: Text('Delete'),
-                    content: Text('Do you really want to delete file?'),
-                    actions: <Widget>[
-                      FlatButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Cancel'),
-                      ),
-                      FlatButton(
-                        onPressed: () {
-                          Directory(dirName).deleteSync(recursive: true);
-                          Navigator.popUntil(
-                              context, ModalRoute.withName(HomeScreen.route));
-                        },
-                        child: Text(
-                          'Delete',
-                          style: TextStyle(color: Colors.redAccent),
-                        ),
-                      ),
-                    ],
+                    contentPadding: EdgeInsets.fromLTRB(0.0, 20.0, 0.0, 5.0),
+                    content: StatefulBuilder(
+                      builder: (BuildContext context,
+                          void Function(void Function()) setState) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                'Saved to Directory',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 10,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 8.0, horizontal: 20),
+                              child: Text(
+                                displayText,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                FlatButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text(
+                                    'Done',
+                                    style: TextStyle(color: secondaryColor),
+                                  ),
+                                  padding: EdgeInsets.all(0),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   );
                 },
               );
             },
           ),
+          ListTile(
+            leading: Icon(Icons.image),
+            title: Text('Share images'),
+            onTap: () {
+              List<String> selectedImagesPath = [];
+              for (var image in directoryImages) {
+                if (selectedImageIndex.elementAt(image.idx - 1)) {
+                  selectedImagesPath.add(image.imgPath);
+                }
+              }
+              ShareExtend.shareMultiple(
+                  (enableSelect) ? selectedImagesPath : imageFilesPath, 'file');
+              Navigator.pop(context);
+            },
+          ),
+          (enableSelect)
+              ? Container()
+              : ListTile(
+                  leading: Icon(
+                    Icons.delete,
+                    color: Colors.redAccent,
+                  ),
+                  title: Text(
+                    'Delete All',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(10),
+                            ),
+                          ),
+                          title: Text('Delete'),
+                          content:
+                              Text('Do you really want to delete this file?'),
+                          actions: <Widget>[
+                            FlatButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text('Cancel'),
+                            ),
+                            FlatButton(
+                              onPressed: () {
+                                Directory(dirPath).deleteSync(recursive: true);
+                                DatabaseHelper()
+                                  ..deleteDirectory(dirPath: dirPath);
+                                Navigator.popUntil(
+                                  context,
+                                  ModalRoute.withName(HomeScreen.route),
+                                );
+                              },
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
         ],
       ),
     );

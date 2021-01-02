@@ -13,8 +13,8 @@ void launchWebsite(String urlString) async {
 
 class AboutScreen extends StatelessWidget {
   static String route = "AboutScreen";
-  final String vjlink = "https://www.linkedin.com/in/vijay-t-s/";
-  final String vikramlink = "https://www.linkedin.com/in/vikram-harikrishnan/";
+  final String vjLink = "https://www.linkedin.com/in/vijay-t-s/";
+  final String vikramLink = "https://www.linkedin.com/in/vikram-harikrishnan/";
 
   @override
   Widget build(BuildContext context) {
@@ -63,23 +63,18 @@ class AboutScreen extends StatelessWidget {
                             style: TextStyle(color: secondaryColor)),
                         TextSpan(
                           text:
-                              ' is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file. We don\'t add watermark or label in PDF.',
+                              ' is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file.',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.normal,
                           ),
-                        ),
-                        //TODO: Content Writing
-                        TextSpan(
-                          text: '',
-                          style: TextStyle(color: Colors.redAccent),
                         ),
                       ],
                     ),
                   ),
                 ),
                 SizedBox(
-                  height: size.height * 0.03,
+                  height: size.height * 0.01,
                 ),
                 Center(
                   child: Text(
@@ -88,19 +83,19 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  height: size.height * 0.03,
+                  height: size.height * 0.02,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: <Widget>[
                     ContactCard(
                       name: "Vijay",
-                      link: vjlink,
+                      link: vjLink,
                       image: AssetImage('assets/vj_jpg.JPG'),
                     ),
                     ContactCard(
                       name: "Vikram",
-                      link: vikramlink,
+                      link: vikramLink,
                       image: AssetImage('assets/vikkiboi.jpg'),
                     ),
                   ],
@@ -111,17 +106,18 @@ class AboutScreen extends StatelessWidget {
                 Center(
                   child: Text(
                     "No ads. We don't collect any data.\n We respect your privacy.",
-                    style: TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 14),
                     textAlign: TextAlign.center,
                   ),
                 ),
                 SizedBox(
-                  height: size.height * 0.03,
+                  height: size.height * 0.035,
                 ),
                 Center(
                   child: GestureDetector(
-                    onTap: () =>
-                        launchWebsite('https://github.com/veejayts/openscan'),
+                    onTap: () => launchWebsite(
+                      'https://github.com/Ethereal-Developers-Inc/OpenScan',
+                    ),
                     child: Container(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(0, 2, 7, 2),
@@ -149,6 +145,21 @@ class AboutScreen extends StatelessWidget {
                         color: Colors.black,
                       ),
                     ),
+                  ),
+                ),
+                SizedBox(
+                  height: size.height * 0.01,
+                ),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    text: 'Version ',
+                    style: TextStyle(fontSize: 14),
+                    children: [
+                      TextSpan(
+                          text: '2.0.0',
+                          style: TextStyle(color: secondaryColor)),
+                    ],
                   ),
                 ),
               ],

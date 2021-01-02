@@ -19,10 +19,20 @@ class GettingStartedScreen extends StatefulWidget {
 
 class _GettingStartedScreenState extends State<GettingStartedScreen> {
   int _currentPage = 0;
+  bool isDone = false;
 
   _onPageChanged(int index) {
     setState(() {
       _currentPage = index;
+      if (index == slideList.length - 1) {
+        setState(() {
+          isDone = true;
+        });
+      } else {
+        setState(() {
+          isDone = false;
+        });
+      }
     });
   }
 
@@ -60,15 +70,26 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         Center(
-                            child: Text(
-                          'Skip',
-                          style: TextStyle(color: secondaryColor, fontSize: 13),
-                        )),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 17,
-                          color: secondaryColor,
-                        )
+                          child: Text(
+                            (isDone) ? 'Done' : 'Skip',
+                            style: TextStyle(
+                              color: secondaryColor,
+                              fontSize: 17,
+                              fontWeight: (isDone)
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        (isDone)
+                            ? Container(
+                                width: 15,
+                              )
+                            : Icon(
+                                Icons.arrow_forward_ios,
+                                size: 17,
+                                color: secondaryColor,
+                              )
                       ],
                     ),
                   ),
@@ -79,7 +100,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
       body: Container(
         color: primaryColor,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20,0,20,20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -95,7 +116,9 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                         scrollDirection: Axis.horizontal,
                         onPageChanged: _onPageChanged,
                         itemCount: slideList.length,
-                        itemBuilder: (ctx, i) => SlideItem(i),
+                        itemBuilder: (ctx, i) {
+                          return SlideItem(i);
+                        },
                       ),
                     ),
                     Stack(
