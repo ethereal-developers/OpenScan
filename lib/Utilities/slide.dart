@@ -22,9 +22,9 @@ final slideList = [
     imageUrl: 'assets/view_doc_03.jpg',
   ),
   Slide(
-    imageUrl: 'assets/view_doc_04.jpg',
+    imageUrl: 'assets/view_doc_05.jpg',
   ),
   Slide(
-    imageUrl: 'assets/view_doc_05.jpg',
+    imageUrl: 'assets/view_doc_04.jpg',
   ),
 ];
