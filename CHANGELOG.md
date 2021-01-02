@@ -1,4 +1,4 @@
-# v2.0.0 - UNRELEASED
+# v2.0.0
 ### Changed
 - New Cropper with more advanced functions
 - Demo images
