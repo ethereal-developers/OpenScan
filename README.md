@@ -4,6 +4,9 @@ An open source app that enables users to scan hardcopies of documents or notes a
 
 [<img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/gplay%20badge.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=com.ethereal.openscan)
 
+[<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height="80">](https://apt.izzysoft.de/fdroid/index/apk/com.ethereal.openscan)
+
+
 (Build instructions present at the bottom of the file)
 
 <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/scan_g.jpeg" height=400>
