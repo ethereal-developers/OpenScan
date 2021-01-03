@@ -6,7 +6,6 @@ An open source app that enables users to scan hardcopies of documents or notes a
 
 [<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height="80">](https://apt.izzysoft.de/fdroid/index/apk/com.ethereal.openscan)
 
-
 (Build instructions present at the bottom of the file)
 
 <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/scan_g.jpeg" height=400>
@@ -55,6 +54,9 @@ We *differentiate* our self from the rest of the apps in the market by:
 - permission_handler: ^3.2.2
 - shared_preferences: ^0.5.7+3
 - flutter_speed_dial: ^1.2.5
+- open_file: ^3.0.3
+- sqflite: ^1.3.1+2
+- reorderables: ^0.3.2
 - flutter_scanner_cropper:
     - git:
         - url: https://github.com/Ethereal-Developers-Inc/flutter-scanner-plugin.git
