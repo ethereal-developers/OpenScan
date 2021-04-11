@@ -51,7 +51,6 @@ class _ViewDocumentState extends State<ViewDocument> {
   List<ImageOS> initDirectoryImages = [];
   bool enableSelectionIcons = false;
   bool resetReorder = false;
-  bool quickScan = false;
   ImageOS displayImage;
   int imageQuality = 3;
 
@@ -166,8 +165,9 @@ class _ViewDocumentState extends State<ViewDocument> {
       );
       await fileOperations.deleteTemporaryFiles();
       if (quickScan) {
-        createImage(quickScan: quickScan);
+        return createImage(quickScan: quickScan);
       }
+      imageFilePath = null;
       getDirectoryData();
     }
   }
@@ -282,14 +282,13 @@ class _ViewDocumentState extends State<ViewDocument> {
       getDirectoryData();
     } else {
       createDirectoryPath();
-      quickScan = widget.quickScan;
       if (widget.fromGallery) {
         createImage(
           quickScan: false,
           fromGallery: true,
         );
       } else {
-        createImage(quickScan: quickScan);
+        createImage(quickScan: widget.quickScan);
       }
     }
   }
