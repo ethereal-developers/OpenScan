@@ -154,7 +154,6 @@ class _ViewDocumentState extends State<ViewDocument> {
         imageFilePath = await FlutterScannerCropper.openCrop(
           src: image.path,
           dest: cacheDir.path,
-          shouldCompress: true,
         );
       }
       File imageFile = File(imageFilePath ?? image.path);
@@ -449,12 +448,12 @@ class _ViewDocumentState extends State<ViewDocument> {
                                               content: Text(
                                                   'Do you really want to delete this file?'),
                                               actions: <Widget>[
-                                                FlatButton(
+                                                TextButton(
                                                   onPressed: () =>
                                                       Navigator.pop(context),
                                                   child: Text('Cancel'),
                                                 ),
-                                                FlatButton(
+                                                TextButton(
                                                   onPressed:
                                                       deleteMultipleImages,
                                                   child: Text(
@@ -822,18 +821,17 @@ class _ViewDocumentState extends State<ViewDocument> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      FlatButton(
+                                      TextButton(
                                         onPressed: () {
                                           Navigator.pop(context);
                                         },
                                         child: Text('Cancel'),
                                       ),
-                                      FlatButton(
+                                      TextButton(
                                         onPressed: () {
                                           imageQuality = imageQualityTemp;
                                           print(
                                               'Selected Image Quality: $imageQuality');
-                                          //TODO: Change export quality
                                           Navigator.pop(context);
                                           showModalBottomSheet(
                                             context: context,
@@ -963,7 +961,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                FlatButton(
+                                TextButton(
                                   onPressed: () {
                                     Navigator.pop(context);
                                   },
@@ -971,7 +969,6 @@ class _ViewDocumentState extends State<ViewDocument> {
                                     'Done',
                                     style: TextStyle(color: secondaryColor),
                                   ),
-                                  padding: EdgeInsets.all(0),
                                 ),
                               ],
                             ),
@@ -1025,11 +1022,11 @@ class _ViewDocumentState extends State<ViewDocument> {
                           content:
                               Text('Do you really want to delete this file?'),
                           actions: <Widget>[
-                            FlatButton(
+                            TextButton(
                               onPressed: () => Navigator.pop(context),
                               child: Text('Cancel'),
                             ),
-                            FlatButton(
+                            TextButton(
                               onPressed: () {
                                 Directory(dirPath).deleteSync(recursive: true);
                                 DatabaseHelper()

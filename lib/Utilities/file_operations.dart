@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:directory_picker/directory_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -44,11 +43,16 @@ class FileOperations {
           bytes: images[i].readAsBytesSync(),
         );
 
-        doc.addPage(pw.Page(build: (pw.Context context) {
-          return pw.Center(
-            child: pw.Image(image),
-          ); // Center
-        }));
+        doc.addPage(
+          pw.Page(
+            build: (pw.Context context) {
+              return pw.Center(
+                child: pw.Image(image),
+              );
+            },
+            margin: pw.EdgeInsets.all(5.0),
+          ),
+        );
       }
 
       output.writeAsBytesSync(doc.save());
@@ -137,14 +141,14 @@ class FileOperations {
       directory = await getExternalStorageDirectory();
     }
 
-    Directory newDirectory = await DirectoryPicker.pick(
-        allowFolderCreation: true,
-        context: context,
-        rootDirectory: directory,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10))));
+    // Directory newDirectory = await DirectoryPicker.pick(
+    //     allowFolderCreation: true,
+    //     context: context,
+    //     rootDirectory: directory,
+    //     shape: RoundedRectangleBorder(
+    //         borderRadius: BorderRadius.all(Radius.circular(10))));
 
-    return newDirectory;
+    return directory;
   }
 
   Future<String> saveToDevice(

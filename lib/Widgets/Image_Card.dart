@@ -46,7 +46,7 @@ class _ImageCardState extends State<ImageCard> {
     Size size = MediaQuery.of(context).size;
     return Stack(
       children: [
-        RaisedButton(
+        MaterialButton(
           elevation: 20,
           color: primaryColor,
           onPressed: () {
@@ -72,8 +72,6 @@ class _ImageCardState extends State<ImageCard> {
                   String imageFilePath = await FlutterScannerCropper.openCrop(
                     src: widget.imageOS.imgPath,
                     dest: cacheDir.path,
-                    shouldCompress:
-                        widget.imageOS.shouldCompress == 1 ? true : false,
                   );
                   File image = File(imageFilePath);
                   File temp = File(widget.imageOS.imgPath.substring(
@@ -124,11 +122,11 @@ class _ImageCardState extends State<ImageCard> {
                         title: Text('Delete'),
                         content: Text('Do you really want to delete image?'),
                         actions: <Widget>[
-                          FlatButton(
+                          TextButton(
                             onPressed: () => Navigator.pop(context),
                             child: Text('Cancel'),
                           ),
-                          FlatButton(
+                          TextButton(
                             onPressed: () {
                               File(widget.imageOS.imgPath).deleteSync();
                               database.deleteImage(

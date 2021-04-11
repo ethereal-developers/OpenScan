@@ -14,7 +14,6 @@ dependencies:
   path_provider: ^1.6.11
   image_picker: ^0.6.4
   focused_menu: ^1.0.1
-  directory_picker: ^1.0.0
   pdf: ^1.9.0
   share_extend: ^1.1.9
   url_launcher: ^5.4.11

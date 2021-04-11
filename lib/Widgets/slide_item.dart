@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/slide.dart';
 
 class SlideItem extends StatelessWidget {

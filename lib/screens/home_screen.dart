@@ -312,12 +312,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                         ),
                                         actions: <Widget>[
-                                          FlatButton(
+                                          TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(context),
                                             child: Text('Cancel'),
                                           ),
-                                          FlatButton(
+                                          TextButton(
                                             onPressed: () {
                                               Navigator.pop(context);
                                               print(fileName);
@@ -360,12 +360,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                         content: Text(
                                             'Do you really want to delete file?'),
                                         actions: <Widget>[
-                                          FlatButton(
+                                          TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(context),
                                             child: Text('Cancel'),
                                           ),
-                                          FlatButton(
+                                          TextButton(
                                             onPressed: () {
                                               Directory(masterDirectories[index]
                                                       .dirPath)
