@@ -6,7 +6,7 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/DatabaseHelper.dart';
+import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/getting_started_screen.dart';

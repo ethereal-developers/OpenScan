@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/DatabaseHelper.dart';
+import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/screens/home_screen.dart';

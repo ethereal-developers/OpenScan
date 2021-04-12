@@ -6,7 +6,7 @@ import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/DatabaseHelper.dart';
+import 'package:openscan/Utilities/database_helper.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../Utilities/constants.dart';
