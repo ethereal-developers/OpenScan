@@ -12,6 +12,8 @@ dependencies:
   flutter:
     sdk: flutter
   path_provider: ^1.6.11
+  multi_image_picker: ^4.8.0
+  flutter_absolute_path: ^1.0.6
   image_picker: ^0.6.4
   focused_menu: ^1.0.1
   pdf: ^1.9.0

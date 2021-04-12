@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_absolute_path/flutter_absolute_path.dart';
+import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/database_helper.dart';
 import 'package:path_provider/path_provider.dart';
@@ -68,25 +71,29 @@ class FileOperations {
     final _picker = ImagePicker();
     var picture = await _picker.getImage(source: ImageSource.camera);
     if (picture != null) {
-      final requiredPicture = File(picture.path);
-      image = requiredPicture;
+      image = File(picture.path);
     }
     return image;
   }
 
-  Future<File> openGallery() async {
-    File image;
-    final _picker = ImagePicker();
-    var picture = await _picker.getImage(source: ImageSource.gallery);
-    if (picture != null) {
-      final requiredPicture = File(picture.path);
-      image = requiredPicture;
+  Future<dynamic> openGallery() async {
+    List<Asset> pic = await MultiImagePicker.pickImages(maxImages: 30);
+    List<File> imageFiles = [];
+
+    if (pic != null) {
+      for (Asset imagePath in pic) {
+        imageFiles.add(
+          File(
+            await FlutterAbsolutePath.getAbsolutePath(imagePath.identifier),
+          ),
+        );
+      }
     }
-    return image;
+    print(imageFiles);
+    return imageFiles;
   }
 
-  Future<void> saveImage(
-      {File image, int index, String dirPath, int shouldCompress}) async {
+  Future<void> saveImage({File image, int index, String dirPath}) async {
     if (!await Directory(dirPath).exists()) {
       new Directory(dirPath).create();
       await database.createDirectory(
@@ -117,7 +124,6 @@ class FileOperations {
       image: ImageOS(
         imgPath: tempPic.path,
         idx: index,
-        shouldCompress: shouldCompress,
       ),
       tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
     );

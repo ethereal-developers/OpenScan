@@ -142,32 +142,44 @@ class _ViewDocumentState extends State<ViewDocument> {
     bool fromGallery = false,
   }) async {
     File image;
+    List<File> galleryImages;
     if (fromGallery) {
-      image = await fileOperations.openGallery();
+      galleryImages = await fileOperations.openGallery();
     } else {
       image = await fileOperations.openCamera();
     }
     Directory cacheDir = await getTemporaryDirectory();
     if (image != null) {
-      if (!quickScan) {
+      if (!quickScan && !fromGallery) {
         imageFilePath = await FlutterScannerCropper.openCrop(
           src: image.path,
           dest: cacheDir.path,
         );
       }
-      File imageFile = File(imageFilePath ?? image.path);
-      setState(() {});
-      await fileOperations.saveImage(
-        image: imageFile,
-        index: directoryImages.length + 1,
-        dirPath: dirPath,
-        shouldCompress: quickScan ? 1 : 0,
-      );
-      await fileOperations.deleteTemporaryFiles();
-      if (quickScan) {
-        return createImage(quickScan: quickScan);
+
+      if (fromGallery) {
+        for (File galleryImage in galleryImages) {
+          await fileOperations.saveImage(
+            image: galleryImage,
+            index: directoryImages.length + 1,
+            dirPath: dirPath,
+          );
+        }
+        setState(() {});
+      } else {
+        File imageFile = File(imageFilePath ?? image.path);
+        setState(() {});
+        await fileOperations.saveImage(
+          image: imageFile,
+          index: directoryImages.length + 1,
+          dirPath: dirPath,
+        );
+        await fileOperations.deleteTemporaryFiles();
+        if (quickScan) {
+          return createImage(quickScan: quickScan);
+        }
+        imageFilePath = null;
       }
-      imageFilePath = null;
       getDirectoryData();
     }
   }
