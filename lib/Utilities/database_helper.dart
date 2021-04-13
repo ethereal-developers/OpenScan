@@ -83,16 +83,10 @@ class DatabaseHelper {
     });
     print('Image Index: $index');
 
-    var data = await db.query(
-      _masterTableName,
-      columns: ['image_count'],
-      where: 'dir_name == ?',
-      whereArgs: [tableName],
-    );
     await db.update(
         _masterTableName,
         {
-          'image_count': data[0]['image_count'] + 1,
+          'image_count': index,
           'last_modified': DateTime.now().toString()
         },
         where: 'dir_name == ?',

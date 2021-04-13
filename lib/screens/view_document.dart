@@ -165,26 +165,27 @@ class _ViewDocumentState extends State<ViewDocument> {
               index: directoryImages.length + 1,
               dirPath: dirPath,
             );
-          } else {
-            continue;
           }
+          directoryImages.length++;
         }
         setState(() {});
       } else {
         File imageFile = File(imageFilePath ?? image.path);
-        setState(() {});
         await fileOperations.saveImage(
           image: imageFile,
           index: directoryImages.length + 1,
           dirPath: dirPath,
         );
+
         await fileOperations.deleteTemporaryFiles();
         if (quickScan) {
+          getDirectoryData();
           return createImage(quickScan: quickScan);
         }
+        setState(() {});
         imageFilePath = null;
       }
-      getDirectoryData(updateIndex: true);
+      getDirectoryData();
     }
   }
 
