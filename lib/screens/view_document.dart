@@ -149,7 +149,7 @@ class _ViewDocumentState extends State<ViewDocument> {
       image = await fileOperations.openCamera();
     }
     Directory cacheDir = await getTemporaryDirectory();
-    if (image != null) {
+    if (image != null || galleryImages != null) {
       if (!quickScan && !fromGallery) {
         imageFilePath = await FlutterScannerCropper.openCrop(
           src: image.path,
@@ -159,11 +159,15 @@ class _ViewDocumentState extends State<ViewDocument> {
 
       if (fromGallery) {
         for (File galleryImage in galleryImages) {
-          await fileOperations.saveImage(
-            image: galleryImage,
-            index: directoryImages.length + 1,
-            dirPath: dirPath,
-          );
+          if (galleryImage.existsSync()) {
+            await fileOperations.saveImage(
+              image: galleryImage,
+              index: directoryImages.length + 1,
+              dirPath: dirPath,
+            );
+          } else {
+            continue;
+          }
         }
         setState(() {});
       } else {
@@ -180,7 +184,7 @@ class _ViewDocumentState extends State<ViewDocument> {
         }
         imageFilePath = null;
       }
-      getDirectoryData();
+      getDirectoryData(updateIndex: true);
     }
   }
 

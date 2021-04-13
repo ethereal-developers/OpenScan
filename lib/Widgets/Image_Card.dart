@@ -93,12 +93,12 @@ class _ImageCardState extends State<ImageCard> {
                       dirPath: widget.directoryOS.dirPath,
                     );
                   }
-                  if (widget.imageOS.shouldCompress == 1) {
-                    database.updateShouldCompress(
-                      image: widget.imageOS,
-                      tableName: widget.directoryOS.dirName,
-                    );
-                  }
+                  // if (widget.imageOS.shouldCompress == 1) {
+                  //   database.updateShouldCompress(
+                  //     image: widget.imageOS,
+                  //     tableName: widget.directoryOS.dirName,
+                  //   );
+                  // }
                   widget.fileEditCallback();
                 },
                 trailingIcon: Icon(
