@@ -14,12 +14,7 @@ void main() async {
   runApp(OpenScan());
 }
 
-class OpenScan extends StatefulWidget {
-  @override
-  _OpenScanState createState() => _OpenScanState();
-}
-
-class _OpenScanState extends State<OpenScan> {
+class OpenScan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(

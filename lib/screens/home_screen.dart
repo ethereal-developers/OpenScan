@@ -320,13 +320,37 @@ class _HomeScreenState extends State<HomeScreen> {
                                           TextButton(
                                             onPressed: () {
                                               Navigator.pop(context);
-                                              print(fileName);
-                                              masterDirectories[index].newName =
-                                                  fileName;
-                                              database.renameDirectory(
-                                                  directory:
-                                                      masterDirectories[index]);
-                                              homeRefresh();
+                                              fileName = fileName.trim();
+                                              fileName =
+                                                  fileName.replaceAll('/', '');
+                                              if (fileName.isNotEmpty) {
+                                                print(fileName);
+                                                masterDirectories[index]
+                                                    .newName = fileName;
+                                                database.renameDirectory(
+                                                    directory:
+                                                        masterDirectories[
+                                                            index]);
+                                                homeRefresh();
+                                              } else {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return AlertDialog(
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                          Radius.circular(10),
+                                                        ),
+                                                      ),
+                                                      title: Text('Error!'),
+                                                      content: Text(
+                                                          'File name cannot be empty'),
+                                                    );
+                                                  },
+                                                );
+                                              }
                                             },
                                             child: Text(
                                               'Save',
