@@ -35,13 +35,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<bool> _requestPermission() async {
-    final PermissionHandler _permissionHandler = PermissionHandler();
-    var result = await _permissionHandler.requestPermissions(
-        <PermissionGroup>[PermissionGroup.storage, PermissionGroup.camera]);
-    if (result[PermissionGroup.storage] == PermissionStatus.granted &&
-        result[PermissionGroup.camera] == PermissionStatus.granted) {
+    if (await Permission.storage.request().isGranted &&
+        await Permission.camera.request().isGranted) {
       return true;
     }
+    await Permission.storage.request();
+    await Permission.camera.request();
     return false;
   }
 
@@ -282,6 +281,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Colors.black,
                                 ),
                                 onPressed: () {
+                                  bool isEmptyError = true;
+
                                   showDialog(
                                     context: context,
                                     builder: (context) {
@@ -309,6 +310,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             focusedBorder: UnderlineInputBorder(
                                                 borderSide: BorderSide(
                                                     color: secondaryColor)),
+                                            errorText:
+                                                'Error! File name cannot be empty',
                                           ),
                                         ),
                                         actions: <Widget>[
@@ -333,23 +336,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                                             index]);
                                                 homeRefresh();
                                               } else {
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (context) {
-                                                    return AlertDialog(
-                                                      shape:
-                                                          RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius.all(
-                                                          Radius.circular(10),
-                                                        ),
-                                                      ),
-                                                      title: Text('Error!'),
-                                                      content: Text(
-                                                          'File name cannot be empty'),
-                                                    );
-                                                  },
-                                                );
+                                                // TODO: HANDLE ERROR
+                                                // showDialog(
+                                                //   context: context,
+                                                //   builder: (context) {
+                                                //     return AlertDialog(
+                                                //       shape:
+                                                //           RoundedRectangleBorder(
+                                                //         borderRadius:
+                                                //             BorderRadius.all(
+                                                //           Radius.circular(10),
+                                                //         ),
+                                                //       ),
+                                                //       title: Text('Error!'),
+                                                //       content: Text(
+                                                //           'File name cannot be empty'),
+                                                //     );
+                                                //   },
+                                                // );
                                               }
                                             },
                                             child: Text(

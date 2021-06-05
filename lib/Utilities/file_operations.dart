@@ -68,8 +68,7 @@ class FileOperations {
   // ADD IMAGES
   Future<File> openCamera() async {
     File image;
-    final _picker = ImagePicker();
-    var picture = await _picker.getImage(source: ImageSource.camera);
+    var picture = await ImagePicker.pickImage(source: ImageSource.camera);
     if (picture != null) {
       image = File(picture.path);
     }
