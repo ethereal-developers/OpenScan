@@ -6,12 +6,13 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   static String route = "HomeScreen";
@@ -20,10 +21,12 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   DatabaseHelper database = DatabaseHelper();
   List<Map<String, dynamic>> masterData;
   List<DirectoryOS> masterDirectories = [];
+  AnimationController _animationController;
+  Animation<double> _progress;
 
   Future homeRefresh() async {
     await getMasterData();
@@ -82,6 +85,13 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     askPermission();
     getMasterData();
+    _animationController =
+    AnimationController(vsync: this, duration: Duration(milliseconds: 200))
+      ..addListener(() {
+        setState(() {});
+      });
+    _progress =
+        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
   }
 
   @override
@@ -281,88 +291,84 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Colors.black,
                                 ),
                                 onPressed: () {
-                                  bool isEmptyError = true;
-
+                                  bool isEmptyError = false;
                                   showDialog(
                                     context: context,
                                     builder: (context) {
-                                      String fileName = '';
-                                      return AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(10),
-                                          ),
-                                        ),
-                                        title: Text('Rename File'),
-                                        content: TextField(
-                                          onChanged: (value) {
-                                            fileName = value;
-                                          },
-                                          controller: TextEditingController(
-                                            text: fileName,
-                                          ),
-                                          cursorColor: secondaryColor,
-                                          textCapitalization:
-                                              TextCapitalization.words,
-                                          decoration: InputDecoration(
-                                            prefixStyle:
-                                                TextStyle(color: Colors.white),
-                                            focusedBorder: UnderlineInputBorder(
-                                                borderSide: BorderSide(
-                                                    color: secondaryColor)),
-                                            errorText:
-                                                'Error! File name cannot be empty',
-                                          ),
-                                        ),
-                                        actions: <Widget>[
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: Text('Cancel'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              fileName = fileName.trim();
-                                              fileName =
-                                                  fileName.replaceAll('/', '');
-                                              if (fileName.isNotEmpty) {
-                                                print(fileName);
-                                                masterDirectories[index]
-                                                    .newName = fileName;
-                                                database.renameDirectory(
-                                                    directory:
-                                                        masterDirectories[
-                                                            index]);
-                                                homeRefresh();
-                                              } else {
-                                                // TODO: HANDLE ERROR
-                                                // showDialog(
-                                                //   context: context,
-                                                //   builder: (context) {
-                                                //     return AlertDialog(
-                                                //       shape:
-                                                //           RoundedRectangleBorder(
-                                                //         borderRadius:
-                                                //             BorderRadius.all(
-                                                //           Radius.circular(10),
-                                                //         ),
-                                                //       ),
-                                                //       title: Text('Error!'),
-                                                //       content: Text(
-                                                //           'File name cannot be empty'),
-                                                //     );
-                                                //   },
-                                                // );
-                                              }
-                                            },
-                                            child: Text(
-                                              'Save',
-                                              style: TextStyle(
-                                                  color: secondaryColor),
+                                      String fileName;
+                                      return StatefulBuilder(
+                                        builder: (BuildContext context,
+                                            void Function(void Function())
+                                                setState) {
+                                          return AlertDialog(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.all(
+                                                Radius.circular(10),
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                            title: Text('Rename File'),
+                                            content: TextField(
+                                              controller: TextEditingController(
+                                                text: fileName ??
+                                                    masterDirectories[index]
+                                                        .newName,
+                                              ),
+                                              onChanged: (value) {
+                                                fileName = value;
+                                              },
+                                              cursorColor: secondaryColor,
+                                              textCapitalization:
+                                                  TextCapitalization.words,
+                                              decoration: InputDecoration(
+                                                prefixStyle: TextStyle(
+                                                    color: Colors.white),
+                                                focusedBorder:
+                                                    UnderlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                      color: secondaryColor),
+                                                ),
+                                                errorText: isEmptyError
+                                                    ? 'Error! File name cannot be empty'
+                                                    : null,
+                                              ),
+                                            ),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: Text('Cancel'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  fileName = fileName.trim();
+                                                  fileName = fileName
+                                                      .replaceAll('/', '');
+                                                  print(fileName);
+                                                  if (fileName.isNotEmpty) {
+                                                    print(fileName);
+                                                    masterDirectories[index]
+                                                        .newName = fileName;
+                                                    database.renameDirectory(
+                                                        directory:
+                                                            masterDirectories[
+                                                                index]);
+                                                    Navigator.pop(context);
+                                                    homeRefresh();
+                                                  } else {
+                                                    setState(() {
+                                                      isEmptyError = true;
+                                                    });
+                                                  }
+                                                },
+                                                child: Text(
+                                                  'Save',
+                                                  style: TextStyle(
+                                                      color: secondaryColor),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
                                       );
                                     },
                                   ).whenComplete(() {
@@ -433,8 +439,12 @@ class _HomeScreenState extends State<HomeScreen> {
         floatingActionButton: SpeedDial(
           marginRight: 18,
           marginBottom: 20,
-          animatedIcon: AnimatedIcons.menu_close,
-          animatedIconTheme: IconThemeData(size: 22.0),
+            child: SimpleAnimatedIcon(
+              startIcon: Icons.add,
+              endIcon: Icons.close,
+              size: 30,
+              progress: _progress,
+            ),
           visible: true,
           closeManually: false,
           curve: Curves.bounceIn,
@@ -446,6 +456,12 @@ class _HomeScreenState extends State<HomeScreen> {
           foregroundColor: Colors.black,
           elevation: 8.0,
           shape: CircleBorder(),
+          onOpen: () {
+            _animationController.forward();
+          },
+          onClose: () {
+            _animationController.reverse();
+          },
           children: [
             SpeedDialChild(
               child: Icon(Icons.camera_alt),

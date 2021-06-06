@@ -206,7 +206,7 @@ packages:
       name: multi_image_picker
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.8.00"
+    version: "4.8.01"
   open_file:
     dependency: "direct main"
     description:
@@ -361,6 +361,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.2+7"
+  simple_animated_icon:
+    dependency: "direct main"
+    description:
+      name: simple_animated_icon
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
   sky_engine:
     dependency: transitive
     description: flutter
