@@ -6,14 +6,15 @@ import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:open_file/open_file.dart';
 import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/Widgets/image_card.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:share_extend/share_extend.dart';
+import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 bool enableSelect = false;
 bool enableReorder = false;
@@ -36,7 +37,8 @@ class ViewDocument extends StatefulWidget {
   _ViewDocumentState createState() => _ViewDocumentState();
 }
 
-class _ViewDocumentState extends State<ViewDocument> {
+class _ViewDocumentState extends State<ViewDocument>
+    with TickerProviderStateMixin {
   final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
   TransformationController _controller = TransformationController();
   DatabaseHelper database = DatabaseHelper();
@@ -53,6 +55,8 @@ class _ViewDocumentState extends State<ViewDocument> {
   bool resetReorder = false;
   ImageOS displayImage;
   int imageQuality = 3;
+  AnimationController _animationController;
+  Animation<double> _progress;
 
   void getDirectoryData({
     bool updateFirstImage = false,
@@ -123,9 +127,9 @@ class _ViewDocumentState extends State<ViewDocument> {
           imageViewerCallback(imageOS: image);
         },
       );
-      if (!imageCards.contains(imageCard)) {
+      // if (!imageCards.contains(imageCard)) {
         imageCards.add(imageCard);
-      }
+      // }
     }
     return imageCards;
   }
@@ -308,6 +312,14 @@ class _ViewDocumentState extends State<ViewDocument> {
         createImage(quickScan: widget.quickScan);
       }
     }
+
+    _animationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 200))
+          ..addListener(() {
+            setState(() {});
+          });
+    _progress =
+        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
   }
 
   @override
@@ -467,7 +479,12 @@ class _ViewDocumentState extends State<ViewDocument> {
                                                 TextButton(
                                                   onPressed: () =>
                                                       Navigator.pop(context),
-                                                  child: Text('Cancel'),
+                                                  child: Text(
+                                                    'Cancel',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
                                                 ),
                                                 TextButton(
                                                   onPressed:
@@ -580,8 +597,12 @@ class _ViewDocumentState extends State<ViewDocument> {
               floatingActionButton: SpeedDial(
                 marginRight: 18,
                 marginBottom: 20,
-                animatedIcon: AnimatedIcons.menu_close,
-                animatedIconTheme: IconThemeData(size: 22.0),
+                child: SimpleAnimatedIcon(
+                  startIcon: Icons.add,
+                  endIcon: Icons.close,
+                  size: 30,
+                  progress: _progress,
+                ),
                 visible: true,
                 closeManually: false,
                 curve: Curves.bounceIn,
@@ -593,6 +614,12 @@ class _ViewDocumentState extends State<ViewDocument> {
                 foregroundColor: primaryColor,
                 elevation: 8.0,
                 shape: CircleBorder(),
+                onOpen: () {
+                  _animationController.forward();
+                },
+                onClose: () {
+                  _animationController.reverse();
+                },
                 children: [
                   SpeedDialChild(
                     child: Icon(Icons.camera_alt),

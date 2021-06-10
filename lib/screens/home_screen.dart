@@ -86,10 +86,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     askPermission();
     getMasterData();
     _animationController =
-    AnimationController(vsync: this, duration: Duration(milliseconds: 200))
-      ..addListener(() {
-        setState(() {});
-      });
+        AnimationController(vsync: this, duration: Duration(milliseconds: 200))
+          ..addListener(() {
+            setState(() {});
+          });
     _progress =
         Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
   }
@@ -336,7 +336,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               TextButton(
                                                 onPressed: () =>
                                                     Navigator.pop(context),
-                                                child: Text('Cancel'),
+                                                child: Text(
+                                                  'Cancel',
+                                                  style: TextStyle(
+                                                      color: Colors.white),
+                                                ),
                                               ),
                                               TextButton(
                                                 onPressed: () {
@@ -397,7 +401,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(context),
-                                            child: Text('Cancel'),
+                                            child: Text('Cancel',
+                                              style: TextStyle(
+                                                  color: Colors.white),),
                                           ),
                                           TextButton(
                                             onPressed: () {
@@ -439,12 +445,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         floatingActionButton: SpeedDial(
           marginRight: 18,
           marginBottom: 20,
-            child: SimpleAnimatedIcon(
-              startIcon: Icons.add,
-              endIcon: Icons.close,
-              size: 30,
-              progress: _progress,
-            ),
+          child: SimpleAnimatedIcon(
+            startIcon: Icons.add,
+            endIcon: Icons.close,
+            size: 30,
+            progress: _progress,
+          ),
           visible: true,
           closeManually: false,
           curve: Curves.bounceIn,
@@ -453,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           tooltip: 'Scan Options',
           heroTag: 'speed-dial-hero-tag',
           backgroundColor: secondaryColor,
-          foregroundColor: Colors.black,
+          foregroundColor: primaryColor,
           elevation: 8.0,
           shape: CircleBorder(),
           onOpen: () {
