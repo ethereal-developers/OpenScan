@@ -110,30 +110,6 @@ class _ViewDocumentState extends State<ViewDocument>
     setState(() {});
   }
 
-  getImageCards() {
-    imageCards = [];
-    print(selectedImageIndex);
-    for (var image in directoryImages) {
-      ImageCard imageCard = ImageCard(
-        imageOS: image,
-        directoryOS: widget.directoryOS,
-        fileEditCallback: () {
-          fileEditCallback(imageOS: image);
-        },
-        selectCallback: () {
-          selectionCallback(imageOS: image);
-        },
-        imageViewerCallback: () {
-          imageViewerCallback(imageOS: image);
-        },
-      );
-      // if (!imageCards.contains(imageCard)) {
-        imageCards.add(imageCard);
-      // }
-    }
-    return imageCards;
-  }
-
   Future<void> createDirectoryPath() async {
     Directory appDir = await getExternalStorageDirectory();
     dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
@@ -223,14 +199,6 @@ class _ViewDocumentState extends State<ViewDocument>
     });
   }
 
-  void _onReorder(int oldIndex, int newIndex) {
-    print(newIndex);
-    Widget image = imageCards.removeAt(oldIndex);
-    imageCards.insert(newIndex, image);
-    ImageOS image1 = directoryImages.removeAt(oldIndex);
-    directoryImages.insert(newIndex, image1);
-  }
-
   void handleClick(String value) {
     switch (value) {
       case 'Reorder':
@@ -254,9 +222,7 @@ class _ViewDocumentState extends State<ViewDocument>
 
   removeSelection() {
     setState(() {
-      for (var i = 0; i < selectedImageIndex.length; i++) {
-        selectedImageIndex[i] = false;
-      }
+      selectedImageIndex = selectedImageIndex.map((e) => false).toList();
       enableSelect = false;
     });
   }
@@ -578,8 +544,28 @@ class _ViewDocumentState extends State<ViewDocument>
                           runSpacing: 10,
                           minMainAxisCount: 2,
                           crossAxisAlignment: WrapCrossAlignment.center,
-                          children: getImageCards(),
-                          onReorder: _onReorder,
+                          children: directoryImages.map((image) {
+                            return ImageCard(
+                              imageOS: image,
+                              directoryOS: widget.directoryOS,
+                              fileEditCallback: () {
+                                fileEditCallback(imageOS: image);
+                              },
+                              selectCallback: () {
+                                selectionCallback(imageOS: image);
+                              },
+                              imageViewerCallback: () {
+                                imageViewerCallback(imageOS: image);
+                              },
+                            );
+                          }).toList(),
+                          onReorder: (int oldIndex, int newIndex) {
+                            print(newIndex);
+                            Widget image = imageCards.removeAt(oldIndex);
+                            imageCards.insert(newIndex, image);
+                            ImageOS image1 = directoryImages.removeAt(oldIndex);
+                            directoryImages.insert(newIndex, image1);
+                          },
                           onNoReorder: (int index) {
                             debugPrint(
                                 '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:$index');
