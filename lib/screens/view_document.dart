@@ -96,12 +96,44 @@ class _ViewDocumentState extends State<ViewDocument>
           imgPath: image['img_path'],
         ),
       );
+
       initDirectoryImages.add(
         ImageOS(
           idx: i,
           imgPath: image['img_path'],
         ),
       );
+      imageCards.add(
+        ImageCard(
+          imageOS: ImageOS(
+            idx: i,
+            imgPath: image['img_path'],
+          ),
+          directoryOS: widget.directoryOS,
+          fileEditCallback: () {
+            fileEditCallback(
+                imageOS: ImageOS(
+              idx: i,
+              imgPath: image['img_path'],
+            ));
+          },
+          selectCallback: () {
+            selectionCallback(
+                imageOS: ImageOS(
+              idx: i,
+              imgPath: image['img_path'],
+            ));
+          },
+          imageViewerCallback: () {
+            imageViewerCallback(
+                imageOS: ImageOS(
+              idx: i,
+              imgPath: image['img_path'],
+            ));
+          },
+        ),
+      );
+
       imageFilesPath.add(image['img_path']);
       selectedImageIndex.add(false);
       index += 1;
@@ -560,11 +592,14 @@ class _ViewDocumentState extends State<ViewDocument>
                             );
                           }).toList(),
                           onReorder: (int oldIndex, int newIndex) {
-                            print(newIndex);
+                            // print(newIndex);
+                            // print(
+                            //     'newIndex: $newIndex\n oldIndex: $oldIndex\n list len: ${imageCards.length}');
                             Widget image = imageCards.removeAt(oldIndex);
                             imageCards.insert(newIndex, image);
                             ImageOS image1 = directoryImages.removeAt(oldIndex);
                             directoryImages.insert(newIndex, image1);
+                            setState(() {});
                           },
                           onNoReorder: (int index) {
                             debugPrint(
@@ -1079,5 +1114,11 @@ class _ViewDocumentState extends State<ViewDocument>
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _animationController.dispose();
   }
 }

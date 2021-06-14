@@ -401,9 +401,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(context),
-                                            child: Text('Cancel',
+                                            child: Text(
+                                              'Cancel',
                                               style: TextStyle(
-                                                  color: Colors.white),),
+                                                  color: Colors.white),
+                                            ),
                                           ),
                                           TextButton(
                                             onPressed: () {
@@ -531,5 +533,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _animationController.dispose();
   }
 }
