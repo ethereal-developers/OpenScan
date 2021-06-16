@@ -156,6 +156,7 @@ class _ViewDocumentState extends State<ViewDocument>
     File image;
     List<File> galleryImages;
     if (fromGallery) {
+      //TODO: Unhandled Exception: The user has cancelled the selection
       galleryImages = await fileOperations.openGallery();
     } else {
       image = await fileOperations.openCamera();
