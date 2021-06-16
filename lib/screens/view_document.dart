@@ -9,7 +9,7 @@ import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
-import 'package:openscan/Widgets/image_card.dart';
+import 'package:openscan/Widgets/Image_Card.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:reorderables/reorderables.dart';
@@ -68,9 +68,9 @@ class _ViewDocumentState extends State<ViewDocument>
     selectedImageIndex = [];
     int index = 1;
     directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
-    print('Directory table[$widget.directoryOS.dirName] => $directoryData');
+    print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
     for (var image in directoryData) {
-      // Updating first image path after delete
+      /// Updating first image path after delete
       if (updateFirstImage) {
         database.updateFirstImagePath(
             imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
@@ -78,7 +78,7 @@ class _ViewDocumentState extends State<ViewDocument>
       }
       var i = image['idx'];
 
-      // Updating index of images after delete
+      /// Updating index of images after delete
       if (updateIndex) {
         i = index;
         database.updateImageIndex(
@@ -90,46 +90,32 @@ class _ViewDocumentState extends State<ViewDocument>
         );
       }
 
+      ImageOS tempImageOS = ImageOS(
+        idx: i,
+        imgPath: image['img_path'],
+      );
       directoryImages.add(
-        ImageOS(
-          idx: i,
-          imgPath: image['img_path'],
-        ),
+        tempImageOS,
+      );
+      initDirectoryImages.add(
+        tempImageOS,
       );
 
-      initDirectoryImages.add(
-        ImageOS(
-          idx: i,
-          imgPath: image['img_path'],
-        ),
-      );
       imageCards.add(
         ImageCard(
-          imageOS: ImageOS(
-            idx: i,
-            imgPath: image['img_path'],
-          ),
+          imageOS: tempImageOS,
           directoryOS: widget.directoryOS,
           fileEditCallback: () {
             fileEditCallback(
-                imageOS: ImageOS(
-              idx: i,
-              imgPath: image['img_path'],
-            ));
+                imageOS: tempImageOS);
           },
           selectCallback: () {
             selectionCallback(
-                imageOS: ImageOS(
-              idx: i,
-              imgPath: image['img_path'],
-            ));
+                imageOS: tempImageOS);
           },
           imageViewerCallback: () {
             imageViewerCallback(
-                imageOS: ImageOS(
-              idx: i,
-              imgPath: image['img_path'],
-            ));
+                imageOS: tempImageOS);
           },
         ),
       );
@@ -138,7 +124,7 @@ class _ViewDocumentState extends State<ViewDocument>
       selectedImageIndex.add(false);
       index += 1;
     }
-    print(selectedImageIndex.length);
+    // print(selectedImageIndex.length);
     setState(() {});
   }
 
@@ -146,7 +132,9 @@ class _ViewDocumentState extends State<ViewDocument>
     Directory appDir = await getExternalStorageDirectory();
     dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
     fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
+    widget.directoryOS.dirPath = dirPath;
     widget.directoryOS.dirName = fileName;
+    // print('New Directory => ${widget.directoryOS.dirName}');
   }
 
   Future<dynamic> createImage({
@@ -156,7 +144,6 @@ class _ViewDocumentState extends State<ViewDocument>
     File image;
     List<File> galleryImages;
     if (fromGallery) {
-      //TODO: Unhandled Exception: The user has cancelled the selection
       galleryImages = await fileOperations.openGallery();
     } else {
       image = await fileOperations.openCamera();
@@ -264,7 +251,7 @@ class _ViewDocumentState extends State<ViewDocument>
     bool isFirstImage = false;
     for (var i = 0; i < directoryImages.length; i++) {
       if (selectedImageIndex[i]) {
-        print('${directoryImages[i].idx}: ${directoryImages[i].imgPath}');
+        // print('${directoryImages[i].idx}: ${directoryImages[i].imgPath}');
         if (directoryImages[i].imgPath == widget.directoryOS.firstImgPath) {
           isFirstImage = true;
         }
@@ -399,7 +386,7 @@ class _ViewDocumentState extends State<ViewDocument>
                                 image: directoryImages[i - 1],
                                 tableName: widget.directoryOS.dirName,
                               );
-                              print('$i: ${directoryImages[i - 1].imgPath}');
+                              // print('$i: ${directoryImages[i - 1].imgPath}');
                             }
                             setState(() {
                               enableReorder = false;
@@ -448,7 +435,7 @@ class _ViewDocumentState extends State<ViewDocument>
                                   setState(() {
                                     String _openResult =
                                         "type=${result.type}  message=${result.message}";
-                                    print(_openResult);
+                                    // print(_openResult);
                                   });
                                 },
                               ),
@@ -593,9 +580,6 @@ class _ViewDocumentState extends State<ViewDocument>
                             );
                           }).toList(),
                           onReorder: (int oldIndex, int newIndex) {
-                            // print(newIndex);
-                            // print(
-                            //     'newIndex: $newIndex\n oldIndex: $oldIndex\n list len: ${imageCards.length}');
                             Widget image = imageCards.removeAt(oldIndex);
                             imageCards.insert(newIndex, image);
                             ImageOS image1 = directoryImages.removeAt(oldIndex);
@@ -716,7 +700,7 @@ class _ViewDocumentState extends State<ViewDocument>
         selectedCount += (i) ? 1 : 0;
       }
       selectedFileName = fileName + ' $selectedCount';
-      print(selectedFileName);
+      // print(selectedFileName);
     }
 
     return Container(
@@ -949,7 +933,6 @@ class _ViewDocumentState extends State<ViewDocument>
                   selectedImages.add(image);
                 }
               }
-              print(selectedImages.length);
               await fileOperations.saveToAppDirectory(
                 context: context,
                 fileName: (enableSelect) ? selectedFileName : fileName,

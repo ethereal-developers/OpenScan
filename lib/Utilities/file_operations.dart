@@ -50,6 +50,7 @@ class FileOperations {
           pw.Page(
             build: (pw.Context context) {
               return pw.Center(
+                // child: pw.Image.provider(image),
                 child: pw.Image(image),
               );
             },
@@ -76,6 +77,7 @@ class FileOperations {
   }
 
   Future<dynamic> openGallery() async {
+    //TODO: Unhandled Exception: The user has cancelled the selection
     List<Asset> pic = await MultiImagePicker.pickImages(maxImages: 30);
     List<File> imageFiles = [];
 

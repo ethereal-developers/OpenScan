@@ -347,9 +347,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                                   fileName = fileName.trim();
                                                   fileName = fileName
                                                       .replaceAll('/', '');
-                                                  print(fileName);
                                                   if (fileName.isNotEmpty) {
-                                                    print(fileName);
                                                     masterDirectories[index]
                                                         .newName = fileName;
                                                     database.renameDirectory(

@@ -82,7 +82,6 @@ class _ImageCardState extends State<ImageCard> {
                     image.copySync(temp.path);
                   }
                   widget.imageOS.imgPath = temp.path;
-                  print(temp.path);
                   database.updateImagePath(
                     tableName: widget.directoryOS.dirName,
                     image: widget.imageOS,
