@@ -77,8 +77,13 @@ class FileOperations {
   }
 
   Future<dynamic> openGallery() async {
-    //TODO: Unhandled Exception: The user has cancelled the selection
-    List<Asset> pic = await MultiImagePicker.pickImages(maxImages: 30);
+    List<Asset> pic;
+    try {
+      pic = await MultiImagePicker.pickImages(maxImages: 30);
+    } catch (e) {
+      print(e);
+    }
+
     List<File> imageFiles = [];
 
     if (pic != null) {

@@ -126,7 +126,7 @@ class _ViewDocumentState extends State<ViewDocument>
   }
 
   Future<void> createDirectoryPath() async {
-    Directory appDir = await getApplicationDocumentsDirectory();
+    Directory appDir = await getExternalStorageDirectory();
     dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
     fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
     widget.directoryOS.dirPath = dirPath;
