@@ -12,6 +12,7 @@ import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:quick_actions/quick_actions.dart';
 import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<DirectoryOS> masterDirectories = [];
   AnimationController _animationController;
   Animation<double> _progress;
+  QuickActions quickActions = QuickActions();
 
   Future homeRefresh() async {
     await getMasterData();
@@ -85,6 +87,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     askPermission();
     getMasterData();
+
+    // FAB related
     _animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 200))
           ..addListener(() {
@@ -92,6 +96,70 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           });
     _progress =
         Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
+
+    // Quick Action related
+    quickActions.initialize((String shortcutType) {
+      switch (shortcutType) {
+        case 'Normal Scan':
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ViewDocument(
+                quickScan: false,
+                directoryOS: DirectoryOS(),
+              ),
+            ),
+          ).whenComplete(() {
+            homeRefresh();
+          });
+          break;
+        case 'Quick Scan':
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ViewDocument(
+                quickScan: true,
+                directoryOS: DirectoryOS(),
+              ),
+            ),
+          ).whenComplete(() {
+            homeRefresh();
+          });
+          break;
+        case 'Import from Gallery':
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ViewDocument(
+                quickScan: false,
+                directoryOS: DirectoryOS(),
+                fromGallery: true,
+              ),
+            ),
+          ).whenComplete(() {
+            homeRefresh();
+          });
+          break;
+      }
+    });
+    quickActions.setShortcutItems(<ShortcutItem>[
+      //TODO: Change Icon
+      ShortcutItem(
+        type: 'Normal Scan',
+        localizedTitle: 'Normal Scan',
+        icon: 'ic_launcher',
+      ),
+      ShortcutItem(
+        type: 'Quick Scan',
+        localizedTitle: 'Quick Scan',
+        icon: 'ic_launcher',
+      ),
+      ShortcutItem(
+        type: 'Import from Gallery',
+        localizedTitle: 'Import from Gallery',
+        icon: 'ic_launcher',
+      ),
+    ]);
   }
 
   @override
