@@ -57,6 +57,7 @@ class _ViewDocumentState extends State<ViewDocument>
   int imageQuality = 3;
   AnimationController _animationController;
   Animation<double> _progress;
+  TapDownDetails _doubleTapDetails;
 
   void getDirectoryData({
     bool updateFirstImage = false,
@@ -669,15 +670,27 @@ class _ViewDocumentState extends State<ViewDocument>
                       height: size.height,
                       padding: EdgeInsets.all(20),
                       color: primaryColor.withOpacity(0.8),
-                      child: InteractiveViewer(
-                        transformationController: _controller,
-                        onInteractionEnd: (details) {
-                          _controller.value = Matrix4.identity();
+                      child: GestureDetector(
+                        onDoubleTapDown: (details){
+                          _doubleTapDetails = details;
                         },
-                        maxScale: 10,
-                        child: GestureDetector(
-                          child: Image.file(
-                            File(displayImage.imgPath),
+                        onDoubleTap: (){
+                          if (_controller.value != Matrix4.identity()) {
+                            _controller.value = Matrix4.identity();
+                          } else {
+                            final position = _doubleTapDetails.localPosition;
+                            _controller.value = Matrix4.identity()
+                            ..translate(-position.dx, -position.dy)
+                            ..scale(2.0);
+                          }
+                        },
+                        child: InteractiveViewer(
+                          transformationController: _controller,
+                          maxScale: 10,
+                          child: GestureDetector(
+                            child: Image.file(
+                              File(displayImage.imgPath),
+                            ),
                           ),
                         ),
                       ),
