@@ -107,16 +107,13 @@ class _ViewDocumentState extends State<ViewDocument>
           imageOS: tempImageOS,
           directoryOS: widget.directoryOS,
           fileEditCallback: () {
-            fileEditCallback(
-                imageOS: tempImageOS);
+            fileEditCallback(imageOS: tempImageOS);
           },
           selectCallback: () {
-            selectionCallback(
-                imageOS: tempImageOS);
+            selectionCallback(imageOS: tempImageOS);
           },
           imageViewerCallback: () {
-            imageViewerCallback(
-                imageOS: tempImageOS);
+            imageViewerCallback(imageOS: tempImageOS);
           },
         ),
       );
@@ -125,12 +122,11 @@ class _ViewDocumentState extends State<ViewDocument>
       selectedImageIndex.add(false);
       index += 1;
     }
-    // print(selectedImageIndex.length);
     setState(() {});
   }
 
   Future<void> createDirectoryPath() async {
-    Directory appDir = await getExternalStorageDirectory();
+    Directory appDir = await getApplicationDocumentsDirectory();
     dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
     fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
     widget.directoryOS.dirPath = dirPath;
@@ -671,17 +667,17 @@ class _ViewDocumentState extends State<ViewDocument>
                       padding: EdgeInsets.all(20),
                       color: primaryColor.withOpacity(0.8),
                       child: GestureDetector(
-                        onDoubleTapDown: (details){
+                        onDoubleTapDown: (details) {
                           _doubleTapDetails = details;
                         },
-                        onDoubleTap: (){
+                        onDoubleTap: () {
                           if (_controller.value != Matrix4.identity()) {
                             _controller.value = Matrix4.identity();
                           } else {
                             final position = _doubleTapDetails.localPosition;
                             _controller.value = Matrix4.identity()
-                            ..translate(-position.dx, -position.dy)
-                            ..scale(2.0);
+                              ..translate(-position.dx, -position.dy)
+                              ..scale(2.0);
                           }
                         },
                         child: InteractiveViewer(

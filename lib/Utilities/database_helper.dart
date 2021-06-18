@@ -87,7 +87,7 @@ class DatabaseHelper {
         _masterTableName,
         {
           'image_count': index,
-          'last_modified': DateTime.now().toString()
+          'last_modified': DateTime.now().toString(),
         },
         where: 'dir_name == ?',
         whereArgs: [tableName]);

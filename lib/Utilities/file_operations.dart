@@ -237,10 +237,14 @@ class FileOperations {
   Future<void> deleteTemporaryFiles() async {
     // Delete the temporary files created by the image_picker package
     Directory appDocDir = await getExternalStorageDirectory();
+    Directory cacheDir = await getTemporaryDirectory();
     String appDocPath = "${appDocDir.path}/Pictures/";
     Directory del = Directory(appDocPath);
-    if (await del.exists()) {
+    if (del.existsSync()) {
       del.deleteSync(recursive: true);
+    }
+    if (cacheDir.existsSync()) {
+      cacheDir.deleteSync(recursive: true);
     }
     new Directory(appDocPath).create();
   }

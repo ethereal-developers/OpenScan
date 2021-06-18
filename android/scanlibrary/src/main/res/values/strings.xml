@@ -6,7 +6,7 @@
     <string name="scanning">Scanning</string>
     <string name="done">Save</string>
     <string name="scan">Next</string>
-    <string name="cantCrop">Cant crop the image, change the points</string>
+    <string name="cantCrop">Can\'t crop the image, change the points</string>
     <string name="ok">Ok</string>
     <string name="loading">Loading</string>
     <string name="applying_filter">Applying filter</string>
