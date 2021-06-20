@@ -147,17 +147,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ShortcutItem(
         type: 'Normal Scan',
         localizedTitle: 'Normal Scan',
-        icon: 'ic_launcher',
+        icon: 'normal_scan',
       ),
       ShortcutItem(
         type: 'Quick Scan',
         localizedTitle: 'Quick Scan',
-        icon: 'ic_launcher',
+        icon: 'quick_scan',
       ),
       ShortcutItem(
         type: 'Import from Gallery',
         localizedTitle: 'Import from Gallery',
-        icon: 'ic_launcher',
+        icon: 'gallery_action',
       ),
     ]);
   }
