@@ -143,7 +143,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
     quickActions.setShortcutItems(<ShortcutItem>[
-      //TODO: Change Icon
       ShortcutItem(
         type: 'Normal Scan',
         localizedTitle: 'Normal Scan',
