@@ -9,6 +9,7 @@ import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
+import 'package:openscan/Widgets/FAB.dart';
 import 'package:openscan/Widgets/Image_Card.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
@@ -597,61 +598,16 @@ class _ViewDocumentState extends State<ViewDocument>
                   ),
                 ),
               ),
-              floatingActionButton: SpeedDial(
-                marginRight: 18,
-                marginBottom: 20,
-                child: SimpleAnimatedIcon(
-                  startIcon: Icons.add,
-                  endIcon: Icons.close,
-                  size: 30,
-                  progress: _progress,
-                ),
-                visible: true,
-                closeManually: false,
-                curve: Curves.bounceIn,
-                overlayColor: primaryColor,
-                overlayOpacity: 0.5,
-                tooltip: 'Scan Options',
-                heroTag: 'speed-dial-hero-tag',
-                backgroundColor: secondaryColor,
-                foregroundColor: primaryColor,
-                elevation: 8.0,
-                shape: CircleBorder(),
-                onOpen: () {
-                  _animationController.forward();
+              floatingActionButton: FAB(
+                normalScanOnPressed: () {
+                  createImage(quickScan: false);
                 },
-                onClose: () {
-                  _animationController.reverse();
+                quickScanOnPressed: () {
+                  createImage(quickScan: true);
                 },
-                children: [
-                  SpeedDialChild(
-                    child: Icon(Icons.camera_alt),
-                    backgroundColor: Colors.white,
-                    label: 'Normal Scan',
-                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-                    onTap: () {
-                      createImage(quickScan: false);
-                    },
-                  ),
-                  SpeedDialChild(
-                    child: Icon(Icons.add_a_photo),
-                    backgroundColor: Colors.white,
-                    label: 'Quick Scan',
-                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-                    onTap: () {
-                      createImage(quickScan: true);
-                    },
-                  ),
-                  SpeedDialChild(
-                    child: Icon(Icons.image),
-                    backgroundColor: Colors.white,
-                    label: 'Import from Gallery',
-                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-                    onTap: () {
-                      createImage(quickScan: false, fromGallery: true);
-                    },
-                  ),
-                ],
+                galleryOnPressed: () {
+                  createImage(quickScan: false, fromGallery: true);
+                },
               ),
             ),
             (showImage)
