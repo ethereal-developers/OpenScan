@@ -6,7 +6,7 @@ import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/DatabaseHelper.dart';
+import 'package:openscan/Utilities/database_helper.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../Utilities/constants.dart';
@@ -46,7 +46,7 @@ class _ImageCardState extends State<ImageCard> {
     Size size = MediaQuery.of(context).size;
     return Stack(
       children: [
-        RaisedButton(
+        MaterialButton(
           elevation: 20,
           color: primaryColor,
           onPressed: () {
@@ -72,8 +72,6 @@ class _ImageCardState extends State<ImageCard> {
                   String imageFilePath = await FlutterScannerCropper.openCrop(
                     src: widget.imageOS.imgPath,
                     dest: cacheDir.path,
-                    shouldCompress:
-                        widget.imageOS.shouldCompress == 1 ? true : false,
                   );
                   File image = File(imageFilePath);
                   File temp = File(widget.imageOS.imgPath.substring(
@@ -84,7 +82,6 @@ class _ImageCardState extends State<ImageCard> {
                     image.copySync(temp.path);
                   }
                   widget.imageOS.imgPath = temp.path;
-                  print(temp.path);
                   database.updateImagePath(
                     tableName: widget.directoryOS.dirName,
                     image: widget.imageOS,
@@ -95,12 +92,12 @@ class _ImageCardState extends State<ImageCard> {
                       dirPath: widget.directoryOS.dirPath,
                     );
                   }
-                  if (widget.imageOS.shouldCompress == 1) {
-                    database.updateShouldCompress(
-                      image: widget.imageOS,
-                      tableName: widget.directoryOS.dirName,
-                    );
-                  }
+                  // if (widget.imageOS.shouldCompress == 1) {
+                  //   database.updateShouldCompress(
+                  //     image: widget.imageOS,
+                  //     tableName: widget.directoryOS.dirName,
+                  //   );
+                  // }
                   widget.fileEditCallback();
                 },
                 trailingIcon: Icon(
@@ -124,11 +121,11 @@ class _ImageCardState extends State<ImageCard> {
                         title: Text('Delete'),
                         content: Text('Do you really want to delete image?'),
                         actions: <Widget>[
-                          FlatButton(
+                          TextButton(
                             onPressed: () => Navigator.pop(context),
                             child: Text('Cancel'),
                           ),
-                          FlatButton(
+                          TextButton(
                             onPressed: () {
                               File(widget.imageOS.imgPath).deleteSync();
                               database.deleteImage(

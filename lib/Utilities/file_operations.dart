@@ -1,17 +1,19 @@
+import 'dart:async';
 import 'dart:io';
 
-import 'package:directory_picker/directory_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_absolute_path/flutter_absolute_path.dart';
+import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/DatabaseHelper.dart';
+import 'package:openscan/Utilities/database_helper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class FileOperations {
-  String appName = 'OpenScan';
+  final String appName = 'OpenScan';
   static bool pdfStatus;
   DatabaseHelper database = DatabaseHelper();
 
@@ -44,11 +46,17 @@ class FileOperations {
           bytes: images[i].readAsBytesSync(),
         );
 
-        doc.addPage(pw.Page(build: (pw.Context context) {
-          return pw.Center(
-            child: pw.Image(image),
-          ); // Center
-        }));
+        doc.addPage(
+          pw.Page(
+            build: (pw.Context context) {
+              return pw.Center(
+                // child: pw.Image.provider(image),
+                child: pw.Image(image),
+              );
+            },
+            margin: pw.EdgeInsets.all(5.0),
+          ),
+        );
       }
 
       output.writeAsBytesSync(doc.save());
@@ -61,28 +69,37 @@ class FileOperations {
   // ADD IMAGES
   Future<File> openCamera() async {
     File image;
-    final _picker = ImagePicker();
-    var picture = await _picker.getImage(source: ImageSource.camera);
+    var picture = await ImagePicker.pickImage(source: ImageSource.camera);
     if (picture != null) {
-      final requiredPicture = File(picture.path);
-      image = requiredPicture;
+      image = File(picture.path);
     }
     return image;
   }
 
-  Future<File> openGallery() async {
-    File image;
-    final _picker = ImagePicker();
-    var picture = await _picker.getImage(source: ImageSource.gallery);
-    if (picture != null) {
-      final requiredPicture = File(picture.path);
-      image = requiredPicture;
+  Future<dynamic> openGallery() async {
+    List<Asset> pic;
+    try {
+      pic = await MultiImagePicker.pickImages(maxImages: 30);
+    } catch (e) {
+      print(e);
     }
-    return image;
+
+    List<File> imageFiles = [];
+
+    if (pic != null) {
+      for (Asset imagePath in pic) {
+        imageFiles.add(
+          File(
+            await FlutterAbsolutePath.getAbsolutePath(imagePath.identifier),
+          ),
+        );
+      }
+    }
+    print(imageFiles);
+    return imageFiles;
   }
 
-  Future<void> saveImage(
-      {File image, int index, String dirPath, int shouldCompress}) async {
+  Future<void> saveImage({File image, int index, String dirPath}) async {
     if (!await Directory(dirPath).exists()) {
       new Directory(dirPath).create();
       await database.createDirectory(
@@ -113,7 +130,6 @@ class FileOperations {
       image: ImageOS(
         imgPath: tempPic.path,
         idx: index,
-        shouldCompress: shouldCompress,
       ),
       tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
     );
@@ -137,14 +153,14 @@ class FileOperations {
       directory = await getExternalStorageDirectory();
     }
 
-    Directory newDirectory = await DirectoryPicker.pick(
-        allowFolderCreation: true,
-        context: context,
-        rootDirectory: directory,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10))));
+    // Directory newDirectory = await DirectoryPicker.pick(
+    //     allowFolderCreation: true,
+    //     context: context,
+    //     rootDirectory: directory,
+    //     shape: RoundedRectangleBorder(
+    //         borderRadius: BorderRadius.all(Radius.circular(10))));
 
-    return newDirectory;
+    return directory;
   }
 
   Future<String> saveToDevice(
@@ -226,10 +242,14 @@ class FileOperations {
   Future<void> deleteTemporaryFiles() async {
     // Delete the temporary files created by the image_picker package
     Directory appDocDir = await getExternalStorageDirectory();
+    Directory cacheDir = await getTemporaryDirectory();
     String appDocPath = "${appDocDir.path}/Pictures/";
     Directory del = Directory(appDocPath);
-    if (await del.exists()) {
+    if (del.existsSync()) {
       del.deleteSync(recursive: true);
+    }
+    if (cacheDir.existsSync()) {
+      cacheDir.deleteSync(recursive: true);
     }
     new Directory(appDocPath).create();
   }

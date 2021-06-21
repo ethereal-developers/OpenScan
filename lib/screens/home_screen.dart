@@ -5,13 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/Utilities/database_helper.dart';
+import 'package:openscan/Widgets/FAB.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:quick_actions/quick_actions.dart';
+import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   static String route = "HomeScreen";
@@ -20,10 +24,11 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   DatabaseHelper database = DatabaseHelper();
   List<Map<String, dynamic>> masterData;
   List<DirectoryOS> masterDirectories = [];
+  QuickActions quickActions = QuickActions();
 
   Future homeRefresh() async {
     await getMasterData();
@@ -35,13 +40,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<bool> _requestPermission() async {
-    final PermissionHandler _permissionHandler = PermissionHandler();
-    var result = await _permissionHandler.requestPermissions(
-        <PermissionGroup>[PermissionGroup.storage, PermissionGroup.camera]);
-    if (result[PermissionGroup.storage] == PermissionStatus.granted &&
-        result[PermissionGroup.camera] == PermissionStatus.granted) {
+    if (await Permission.storage.request().isGranted &&
+        await Permission.camera.request().isGranted) {
       return true;
     }
+    await Permission.storage.request();
+    await Permission.camera.request();
     return false;
   }
 
@@ -83,6 +87,69 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     askPermission();
     getMasterData();
+
+    // Quick Action related
+    quickActions.initialize((String shortcutType) {
+      switch (shortcutType) {
+        case 'Normal Scan':
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ViewDocument(
+                quickScan: false,
+                directoryOS: DirectoryOS(),
+              ),
+            ),
+          ).whenComplete(() {
+            homeRefresh();
+          });
+          break;
+        case 'Quick Scan':
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ViewDocument(
+                quickScan: true,
+                directoryOS: DirectoryOS(),
+              ),
+            ),
+          ).whenComplete(() {
+            homeRefresh();
+          });
+          break;
+        case 'Import from Gallery':
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ViewDocument(
+                quickScan: false,
+                directoryOS: DirectoryOS(),
+                fromGallery: true,
+              ),
+            ),
+          ).whenComplete(() {
+            homeRefresh();
+          });
+          break;
+      }
+    });
+    quickActions.setShortcutItems(<ShortcutItem>[
+      ShortcutItem(
+        type: 'Normal Scan',
+        localizedTitle: 'Normal Scan',
+        icon: 'normal_scan',
+      ),
+      ShortcutItem(
+        type: 'Quick Scan',
+        localizedTitle: 'Quick Scan',
+        icon: 'quick_scan',
+      ),
+      ShortcutItem(
+        type: 'Import from Gallery',
+        localizedTitle: 'Import from Gallery',
+        icon: 'gallery_action',
+      ),
+    ]);
   }
 
   @override
@@ -282,59 +349,86 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Colors.black,
                                 ),
                                 onPressed: () {
+                                  bool isEmptyError = false;
                                   showDialog(
                                     context: context,
                                     builder: (context) {
-                                      String fileName = '';
-                                      return AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(10),
-                                          ),
-                                        ),
-                                        title: Text('Rename File'),
-                                        content: TextField(
-                                          onChanged: (value) {
-                                            fileName = value;
-                                          },
-                                          controller: TextEditingController(
-                                            text: fileName,
-                                          ),
-                                          cursorColor: secondaryColor,
-                                          textCapitalization:
-                                              TextCapitalization.words,
-                                          decoration: InputDecoration(
-                                            prefixStyle:
-                                                TextStyle(color: Colors.white),
-                                            focusedBorder: UnderlineInputBorder(
-                                                borderSide: BorderSide(
-                                                    color: secondaryColor)),
-                                          ),
-                                        ),
-                                        actions: <Widget>[
-                                          FlatButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: Text('Cancel'),
-                                          ),
-                                          FlatButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              print(fileName);
-                                              masterDirectories[index].newName =
-                                                  fileName;
-                                              database.renameDirectory(
-                                                  directory:
-                                                      masterDirectories[index]);
-                                              homeRefresh();
-                                            },
-                                            child: Text(
-                                              'Save',
-                                              style: TextStyle(
-                                                  color: secondaryColor),
+                                      String fileName;
+                                      return StatefulBuilder(
+                                        builder: (BuildContext context,
+                                            void Function(void Function())
+                                                setState) {
+                                          return AlertDialog(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.all(
+                                                Radius.circular(10),
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                            title: Text('Rename File'),
+                                            content: TextField(
+                                              controller: TextEditingController(
+                                                text: fileName ??
+                                                    masterDirectories[index]
+                                                        .newName,
+                                              ),
+                                              onChanged: (value) {
+                                                fileName = value;
+                                              },
+                                              cursorColor: secondaryColor,
+                                              textCapitalization:
+                                                  TextCapitalization.words,
+                                              decoration: InputDecoration(
+                                                prefixStyle: TextStyle(
+                                                    color: Colors.white),
+                                                focusedBorder:
+                                                    UnderlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                      color: secondaryColor),
+                                                ),
+                                                errorText: isEmptyError
+                                                    ? 'Error! File name cannot be empty'
+                                                    : null,
+                                              ),
+                                            ),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: Text(
+                                                  'Cancel',
+                                                  style: TextStyle(
+                                                      color: Colors.white),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  fileName = fileName.trim();
+                                                  fileName = fileName
+                                                      .replaceAll('/', '');
+                                                  if (fileName.isNotEmpty) {
+                                                    masterDirectories[index]
+                                                        .newName = fileName;
+                                                    database.renameDirectory(
+                                                        directory:
+                                                            masterDirectories[
+                                                                index]);
+                                                    Navigator.pop(context);
+                                                    homeRefresh();
+                                                  } else {
+                                                    setState(() {
+                                                      isEmptyError = true;
+                                                    });
+                                                  }
+                                                },
+                                                child: Text(
+                                                  'Save',
+                                                  style: TextStyle(
+                                                      color: secondaryColor),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
                                       );
                                     },
                                   ).whenComplete(() {
@@ -360,12 +454,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                         content: Text(
                                             'Do you really want to delete file?'),
                                         actions: <Widget>[
-                                          FlatButton(
+                                          TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(context),
-                                            child: Text('Cancel'),
+                                            child: Text(
+                                              'Cancel',
+                                              style: TextStyle(
+                                                  color: Colors.white),
+                                            ),
                                           ),
-                                          FlatButton(
+                                          TextButton(
                                             onPressed: () {
                                               Directory(masterDirectories[index]
                                                       .dirPath)
@@ -402,84 +500,50 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        floatingActionButton: SpeedDial(
-          marginRight: 18,
-          marginBottom: 20,
-          animatedIcon: AnimatedIcons.menu_close,
-          animatedIconTheme: IconThemeData(size: 22.0),
-          visible: true,
-          closeManually: false,
-          curve: Curves.bounceIn,
-          overlayColor: Colors.black,
-          overlayOpacity: 0.5,
-          tooltip: 'Scan Options',
-          heroTag: 'speed-dial-hero-tag',
-          backgroundColor: secondaryColor,
-          foregroundColor: Colors.black,
-          elevation: 8.0,
-          shape: CircleBorder(),
-          children: [
-            SpeedDialChild(
-              child: Icon(Icons.camera_alt),
-              backgroundColor: Colors.white,
-              label: 'Normal Scan',
-              labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ViewDocument(
-                      quickScan: false,
-                      directoryOS: DirectoryOS(),
-                    ),
-                  ),
-                ).whenComplete(() {
-                  homeRefresh();
-                });
-              },
-            ),
-            SpeedDialChild(
-              child: Icon(Icons.add_a_photo),
-              backgroundColor: Colors.white,
-              label: 'Quick Scan',
-              labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ViewDocument(
-                      quickScan: true,
-                      directoryOS: DirectoryOS(),
-                    ),
-                  ),
-                ).whenComplete(() {
-                  homeRefresh();
-                });
-              },
-            ),
-            SpeedDialChild(
-              child: Icon(Icons.image),
-              backgroundColor: Colors.white,
-              label: 'Import from Gallery',
-              labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ViewDocument(
-                      quickScan: false,
-                      directoryOS: DirectoryOS(),
-                      fromGallery: true,
-                    ),
-                  ),
-                ).whenComplete(() {
-                  homeRefresh();
-                });
-              },
-            ),
-          ],
+        floatingActionButton: FAB(
+          normalScanOnPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ViewDocument(
+                  quickScan: false,
+                  directoryOS: DirectoryOS(),
+                ),
+              ),
+            ).whenComplete(() {
+              homeRefresh();
+            });
+          },
+          quickScanOnPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ViewDocument(
+                  quickScan: true,
+                  directoryOS: DirectoryOS(),
+                ),
+              ),
+            ).whenComplete(() {
+              homeRefresh();
+            });
+          },
+          galleryOnPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ViewDocument(
+                  quickScan: false,
+                  directoryOS: DirectoryOS(),
+                  fromGallery: true,
+                ),
+              ),
+            ).whenComplete(() {
+              homeRefresh();
+            });
+          },
         ),
       ),
     );
   }
 }
+

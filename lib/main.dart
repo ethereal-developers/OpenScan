@@ -5,7 +5,6 @@ import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/about_screen.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/home_screen.dart';
-import 'package:openscan/screens/loading_screen.dart';
 import 'package:openscan/screens/view_document.dart';
 
 import 'screens/splash_screen.dart';
@@ -14,12 +13,7 @@ void main() async {
   runApp(OpenScan());
 }
 
-class OpenScan extends StatefulWidget {
-  @override
-  _OpenScanState createState() => _OpenScanState();
-}
-
-class _OpenScanState extends State<OpenScan> {
+class OpenScan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
@@ -38,7 +32,6 @@ class _OpenScanState extends State<OpenScan> {
       routes: {
         SplashScreen.route: (context) => SplashScreen(),
         GettingStartedScreen.route: (context) => GettingStartedScreen(),
-        LoadingScreen.route: (context) => LoadingScreen(),
         HomeScreen.route: (context) => HomeScreen(),
         ViewDocument.route: (context) => ViewDocument(),
         AboutScreen.route: (context) => AboutScreen(),

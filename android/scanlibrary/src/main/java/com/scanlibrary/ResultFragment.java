@@ -34,7 +34,6 @@ public class ResultFragment extends Fragment {
     private Button bwButton;
     private Bitmap transformed;
     private static ProgressDialogFragment progressDialogFragment;
-    private boolean shouldCompress = true;
 
     public ResultFragment() {
     }
@@ -61,7 +60,6 @@ public class ResultFragment extends Fragment {
         setScannedImage(bitmap);
         doneButton = (Button) view.findViewById(R.id.doneButton);
         doneButton.setOnClickListener(new DoneButtonClickListener());
-        shouldCompress = getShouldCompress();
     }
 
     private Bitmap getBitmap() {
@@ -72,12 +70,6 @@ public class ResultFragment extends Fragment {
     private String getPath() {
         String path = getArguments().getString(ScanConstants.SCANNED_RESULT);
         return path;
-    }
-
-    private boolean getShouldCompress() {
-        String shouldCompressStr = getArguments().getString(ScanConstants.SHOULD_COMPRESS);
-        boolean shouldCompressBoolean = Boolean.parseBoolean(shouldCompressStr);
-        return shouldCompressBoolean;
     }
 
     public void setScannedImage(Bitmap scannedImage) {
@@ -98,12 +90,8 @@ public class ResultFragment extends Fragment {
                         if (bitmap == null) {
                             bitmap = original;
                         }
-                        if(shouldCompress) {
-                            uri = Utils.getUri(bitmap, getPath(), true);
-                        }
-                        else {
-                            uri = Utils.getUri(bitmap, getPath(), false);
-                        }
+                        uri = Utils.getUri(bitmap, getPath());
+                        
                         Log.d("onDoneButtonClickUri", uri);
                         data.putExtra(ScanConstants.SCANNED_RESULT, uri);
                         getActivity().setResult(Activity.RESULT_OK, data);

@@ -11,5 +11,4 @@ public class ScanConstants {
     public final static String SELECTED_BITMAP = "selectedBitmap";
     public final static String TEMP_DIR = "appDocDir";
     public final static String IMAGE_PATH = "imagePath";
-    public final static String SHOULD_COMPRESS = "shouldCompress";
 }

@@ -6,14 +6,16 @@ import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:open_file/open_file.dart';
 import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/DatabaseHelper.dart';
 import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
+import 'package:openscan/Widgets/FAB.dart';
 import 'package:openscan/Widgets/Image_Card.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:share_extend/share_extend.dart';
+import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 bool enableSelect = false;
 bool enableReorder = false;
@@ -36,7 +38,8 @@ class ViewDocument extends StatefulWidget {
   _ViewDocumentState createState() => _ViewDocumentState();
 }
 
-class _ViewDocumentState extends State<ViewDocument> {
+class _ViewDocumentState extends State<ViewDocument>
+    with TickerProviderStateMixin {
   final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
   TransformationController _controller = TransformationController();
   DatabaseHelper database = DatabaseHelper();
@@ -51,9 +54,11 @@ class _ViewDocumentState extends State<ViewDocument> {
   List<ImageOS> initDirectoryImages = [];
   bool enableSelectionIcons = false;
   bool resetReorder = false;
-  bool quickScan = false;
   ImageOS displayImage;
   int imageQuality = 3;
+  AnimationController _animationController;
+  Animation<double> _progress;
+  TapDownDetails _doubleTapDetails;
 
   void getDirectoryData({
     bool updateFirstImage = false,
@@ -65,9 +70,9 @@ class _ViewDocumentState extends State<ViewDocument> {
     selectedImageIndex = [];
     int index = 1;
     directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
-    print('Directory table[$widget.directoryOS.dirName] => $directoryData');
+    print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
     for (var image in directoryData) {
-      // Updating first image path after delete
+      /// Updating first image path after delete
       if (updateFirstImage) {
         database.updateFirstImagePath(
             imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
@@ -75,7 +80,7 @@ class _ViewDocumentState extends State<ViewDocument> {
       }
       var i = image['idx'];
 
-      // Updating index of images after delete
+      /// Updating index of images after delete
       if (updateIndex) {
         i = index;
         database.updateImageIndex(
@@ -87,55 +92,47 @@ class _ViewDocumentState extends State<ViewDocument> {
         );
       }
 
+      ImageOS tempImageOS = ImageOS(
+        idx: i,
+        imgPath: image['img_path'],
+      );
       directoryImages.add(
-        ImageOS(
-          idx: i,
-          imgPath: image['img_path'],
-        ),
+        tempImageOS,
       );
       initDirectoryImages.add(
-        ImageOS(
-          idx: i,
-          imgPath: image['img_path'],
+        tempImageOS,
+      );
+
+      imageCards.add(
+        ImageCard(
+          imageOS: tempImageOS,
+          directoryOS: widget.directoryOS,
+          fileEditCallback: () {
+            fileEditCallback(imageOS: tempImageOS);
+          },
+          selectCallback: () {
+            selectionCallback(imageOS: tempImageOS);
+          },
+          imageViewerCallback: () {
+            imageViewerCallback(imageOS: tempImageOS);
+          },
         ),
       );
+
       imageFilesPath.add(image['img_path']);
       selectedImageIndex.add(false);
       index += 1;
     }
-    print(selectedImageIndex.length);
     setState(() {});
-  }
-
-  getImageCards() {
-    imageCards = [];
-    print(selectedImageIndex);
-    for (var image in directoryImages) {
-      ImageCard imageCard = ImageCard(
-        imageOS: image,
-        directoryOS: widget.directoryOS,
-        fileEditCallback: () {
-          fileEditCallback(imageOS: image);
-        },
-        selectCallback: () {
-          selectionCallback(imageOS: image);
-        },
-        imageViewerCallback: () {
-          imageViewerCallback(imageOS: image);
-        },
-      );
-      if (!imageCards.contains(imageCard)) {
-        imageCards.add(imageCard);
-      }
-    }
-    return imageCards;
   }
 
   Future<void> createDirectoryPath() async {
     Directory appDir = await getExternalStorageDirectory();
     dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
     fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
+    widget.directoryOS.dirPath = dirPath;
     widget.directoryOS.dirName = fileName;
+    // print('New Directory => ${widget.directoryOS.dirName}');
   }
 
   Future<dynamic> createImage({
@@ -143,31 +140,48 @@ class _ViewDocumentState extends State<ViewDocument> {
     bool fromGallery = false,
   }) async {
     File image;
+    List<File> galleryImages;
     if (fromGallery) {
-      image = await fileOperations.openGallery();
+      galleryImages = await fileOperations.openGallery();
     } else {
       image = await fileOperations.openCamera();
     }
     Directory cacheDir = await getTemporaryDirectory();
-    if (image != null) {
-      if (!quickScan) {
+    if (image != null || galleryImages != null) {
+      if (!quickScan && !fromGallery) {
         imageFilePath = await FlutterScannerCropper.openCrop(
           src: image.path,
           dest: cacheDir.path,
-          shouldCompress: true,
         );
       }
-      File imageFile = File(imageFilePath ?? image.path);
-      setState(() {});
-      await fileOperations.saveImage(
-        image: imageFile,
-        index: directoryImages.length + 1,
-        dirPath: dirPath,
-        shouldCompress: quickScan ? 1 : 0,
-      );
-      await fileOperations.deleteTemporaryFiles();
-      if (quickScan) {
-        createImage(quickScan: quickScan);
+
+      if (fromGallery) {
+        for (File galleryImage in galleryImages) {
+          if (galleryImage.existsSync()) {
+            await fileOperations.saveImage(
+              image: galleryImage,
+              index: directoryImages.length + 1,
+              dirPath: dirPath,
+            );
+          }
+          directoryImages.length++;
+        }
+        setState(() {});
+      } else {
+        File imageFile = File(imageFilePath ?? image.path);
+        await fileOperations.saveImage(
+          image: imageFile,
+          index: directoryImages.length + 1,
+          dirPath: dirPath,
+        );
+
+        await fileOperations.deleteTemporaryFiles();
+        if (quickScan) {
+          getDirectoryData();
+          return createImage(quickScan: quickScan);
+        }
+        setState(() {});
+        imageFilePath = null;
       }
       getDirectoryData();
     }
@@ -203,14 +217,6 @@ class _ViewDocumentState extends State<ViewDocument> {
     });
   }
 
-  void _onReorder(int oldIndex, int newIndex) {
-    print(newIndex);
-    Widget image = imageCards.removeAt(oldIndex);
-    imageCards.insert(newIndex, image);
-    ImageOS image1 = directoryImages.removeAt(oldIndex);
-    directoryImages.insert(newIndex, image1);
-  }
-
   void handleClick(String value) {
     switch (value) {
       case 'Reorder':
@@ -234,9 +240,7 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   removeSelection() {
     setState(() {
-      for (var i = 0; i < selectedImageIndex.length; i++) {
-        selectedImageIndex[i] = false;
-      }
+      selectedImageIndex = selectedImageIndex.map((e) => false).toList();
       enableSelect = false;
     });
   }
@@ -245,7 +249,7 @@ class _ViewDocumentState extends State<ViewDocument> {
     bool isFirstImage = false;
     for (var i = 0; i < directoryImages.length; i++) {
       if (selectedImageIndex[i]) {
-        print('${directoryImages[i].idx}: ${directoryImages[i].imgPath}');
+        // print('${directoryImages[i].idx}: ${directoryImages[i].imgPath}');
         if (directoryImages[i].imgPath == widget.directoryOS.firstImgPath) {
           isFirstImage = true;
         }
@@ -283,16 +287,23 @@ class _ViewDocumentState extends State<ViewDocument> {
       getDirectoryData();
     } else {
       createDirectoryPath();
-      quickScan = widget.quickScan;
       if (widget.fromGallery) {
         createImage(
           quickScan: false,
           fromGallery: true,
         );
       } else {
-        createImage(quickScan: quickScan);
+        createImage(quickScan: widget.quickScan);
       }
     }
+
+    _animationController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 200))
+          ..addListener(() {
+            setState(() {});
+          });
+    _progress =
+        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
   }
 
   @override
@@ -373,7 +384,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                 image: directoryImages[i - 1],
                                 tableName: widget.directoryOS.dirName,
                               );
-                              print('$i: ${directoryImages[i - 1].imgPath}');
+                              // print('$i: ${directoryImages[i - 1].imgPath}');
                             }
                             setState(() {
                               enableReorder = false;
@@ -422,7 +433,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                   setState(() {
                                     String _openResult =
                                         "type=${result.type}  message=${result.message}";
-                                    print(_openResult);
+                                    // print(_openResult);
                                   });
                                 },
                               ),
@@ -449,12 +460,17 @@ class _ViewDocumentState extends State<ViewDocument> {
                                               content: Text(
                                                   'Do you really want to delete this file?'),
                                               actions: <Widget>[
-                                                FlatButton(
+                                                TextButton(
                                                   onPressed: () =>
                                                       Navigator.pop(context),
-                                                  child: Text('Cancel'),
+                                                  child: Text(
+                                                    'Cancel',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
                                                 ),
-                                                FlatButton(
+                                                TextButton(
                                                   onPressed:
                                                       deleteMultipleImages,
                                                   child: Text(
@@ -546,8 +562,28 @@ class _ViewDocumentState extends State<ViewDocument> {
                           runSpacing: 10,
                           minMainAxisCount: 2,
                           crossAxisAlignment: WrapCrossAlignment.center,
-                          children: getImageCards(),
-                          onReorder: _onReorder,
+                          children: directoryImages.map((image) {
+                            return ImageCard(
+                              imageOS: image,
+                              directoryOS: widget.directoryOS,
+                              fileEditCallback: () {
+                                fileEditCallback(imageOS: image);
+                              },
+                              selectCallback: () {
+                                selectionCallback(imageOS: image);
+                              },
+                              imageViewerCallback: () {
+                                imageViewerCallback(imageOS: image);
+                              },
+                            );
+                          }).toList(),
+                          onReorder: (int oldIndex, int newIndex) {
+                            Widget image = imageCards.removeAt(oldIndex);
+                            imageCards.insert(newIndex, image);
+                            ImageOS image1 = directoryImages.removeAt(oldIndex);
+                            directoryImages.insert(newIndex, image1);
+                            setState(() {});
+                          },
                           onNoReorder: (int index) {
                             debugPrint(
                                 '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:$index');
@@ -562,51 +598,16 @@ class _ViewDocumentState extends State<ViewDocument> {
                   ),
                 ),
               ),
-              floatingActionButton: SpeedDial(
-                marginRight: 18,
-                marginBottom: 20,
-                animatedIcon: AnimatedIcons.menu_close,
-                animatedIconTheme: IconThemeData(size: 22.0),
-                visible: true,
-                closeManually: false,
-                curve: Curves.bounceIn,
-                overlayColor: primaryColor,
-                overlayOpacity: 0.5,
-                tooltip: 'Scan Options',
-                heroTag: 'speed-dial-hero-tag',
-                backgroundColor: secondaryColor,
-                foregroundColor: primaryColor,
-                elevation: 8.0,
-                shape: CircleBorder(),
-                children: [
-                  SpeedDialChild(
-                    child: Icon(Icons.camera_alt),
-                    backgroundColor: Colors.white,
-                    label: 'Normal Scan',
-                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-                    onTap: () {
-                      createImage(quickScan: false);
-                    },
-                  ),
-                  SpeedDialChild(
-                    child: Icon(Icons.add_a_photo),
-                    backgroundColor: Colors.white,
-                    label: 'Quick Scan',
-                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-                    onTap: () {
-                      createImage(quickScan: true);
-                    },
-                  ),
-                  SpeedDialChild(
-                    child: Icon(Icons.image),
-                    backgroundColor: Colors.white,
-                    label: 'Import from Gallery',
-                    labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
-                    onTap: () {
-                      createImage(quickScan: false, fromGallery: true);
-                    },
-                  ),
-                ],
+              floatingActionButton: FAB(
+                normalScanOnPressed: () {
+                  createImage(quickScan: false);
+                },
+                quickScanOnPressed: () {
+                  createImage(quickScan: true);
+                },
+                galleryOnPressed: () {
+                  createImage(quickScan: false, fromGallery: true);
+                },
               ),
             ),
             (showImage)
@@ -621,15 +622,27 @@ class _ViewDocumentState extends State<ViewDocument> {
                       height: size.height,
                       padding: EdgeInsets.all(20),
                       color: primaryColor.withOpacity(0.8),
-                      child: InteractiveViewer(
-                        transformationController: _controller,
-                        onInteractionEnd: (details) {
-                          _controller.value = Matrix4.identity();
+                      child: GestureDetector(
+                        onDoubleTapDown: (details) {
+                          _doubleTapDetails = details;
                         },
-                        maxScale: 10,
-                        child: GestureDetector(
-                          child: Image.file(
-                            File(displayImage.imgPath),
+                        onDoubleTap: () {
+                          if (_controller.value != Matrix4.identity()) {
+                            _controller.value = Matrix4.identity();
+                          } else {
+                            final position = _doubleTapDetails.localPosition;
+                            _controller.value = Matrix4.identity()
+                              ..translate(-position.dx, -position.dy)
+                              ..scale(2.0);
+                          }
+                        },
+                        child: InteractiveViewer(
+                          transformationController: _controller,
+                          maxScale: 10,
+                          child: GestureDetector(
+                            child: Image.file(
+                              File(displayImage.imgPath),
+                            ),
                           ),
                         ),
                       ),
@@ -652,7 +665,7 @@ class _ViewDocumentState extends State<ViewDocument> {
         selectedCount += (i) ? 1 : 0;
       }
       selectedFileName = fileName + ' $selectedCount';
-      print(selectedFileName);
+      // print(selectedFileName);
     }
 
     return Container(
@@ -822,18 +835,17 @@ class _ViewDocumentState extends State<ViewDocument> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      FlatButton(
+                                      TextButton(
                                         onPressed: () {
                                           Navigator.pop(context);
                                         },
                                         child: Text('Cancel'),
                                       ),
-                                      FlatButton(
+                                      TextButton(
                                         onPressed: () {
                                           imageQuality = imageQualityTemp;
                                           print(
                                               'Selected Image Quality: $imageQuality');
-                                          //TODO: Change export quality
                                           Navigator.pop(context);
                                           showModalBottomSheet(
                                             context: context,
@@ -886,7 +898,6 @@ class _ViewDocumentState extends State<ViewDocument> {
                   selectedImages.add(image);
                 }
               }
-              print(selectedImages.length);
               await fileOperations.saveToAppDirectory(
                 context: context,
                 fileName: (enableSelect) ? selectedFileName : fileName,
@@ -963,7 +974,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                FlatButton(
+                                TextButton(
                                   onPressed: () {
                                     Navigator.pop(context);
                                   },
@@ -971,7 +982,6 @@ class _ViewDocumentState extends State<ViewDocument> {
                                     'Done',
                                     style: TextStyle(color: secondaryColor),
                                   ),
-                                  padding: EdgeInsets.all(0),
                                 ),
                               ],
                             ),
@@ -999,59 +1009,65 @@ class _ViewDocumentState extends State<ViewDocument> {
               Navigator.pop(context);
             },
           ),
-          (enableSelect)
-              ? Container()
-              : ListTile(
-                  leading: Icon(
-                    Icons.delete,
-                    color: Colors.redAccent,
-                  ),
-                  title: Text(
-                    'Delete All',
-                    style: TextStyle(color: Colors.redAccent),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(10),
-                            ),
-                          ),
-                          title: Text('Delete'),
-                          content:
-                              Text('Do you really want to delete this file?'),
-                          actions: <Widget>[
-                            FlatButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text('Cancel'),
-                            ),
-                            FlatButton(
-                              onPressed: () {
-                                Directory(dirPath).deleteSync(recursive: true);
-                                DatabaseHelper()
-                                  ..deleteDirectory(dirPath: dirPath);
-                                Navigator.popUntil(
-                                  context,
-                                  ModalRoute.withName(HomeScreen.route),
-                                );
-                              },
-                              child: Text(
-                                'Delete',
-                                style: TextStyle(color: Colors.redAccent),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
+          // (enableSelect)
+          //     ? Container()
+          //     : ListTile(
+          //         leading: Icon(
+          //           Icons.delete,
+          //           color: Colors.redAccent,
+          //         ),
+          //         title: Text(
+          //           'Delete All',
+          //           style: TextStyle(color: Colors.redAccent),
+          //         ),
+          //         onTap: () {
+          //           Navigator.pop(context);
+          //           showDialog(
+          //             context: context,
+          //             builder: (context) {
+          //               return AlertDialog(
+          //                 shape: RoundedRectangleBorder(
+          //                   borderRadius: BorderRadius.all(
+          //                     Radius.circular(10),
+          //                   ),
+          //                 ),
+          //                 title: Text('Delete'),
+          //                 content:
+          //                     Text('Do you really want to delete this file?'),
+          //                 actions: <Widget>[
+          //                   TextButton(
+          //                     onPressed: () => Navigator.pop(context),
+          //                     child: Text('Cancel'),
+          //                   ),
+          //                   TextButton(
+          //                     onPressed: () {
+          //                       Directory(dirPath).deleteSync(recursive: true);
+          //                       DatabaseHelper()
+          //                         ..deleteDirectory(dirPath: dirPath);
+          //                       Navigator.popUntil(
+          //                         context,
+          //                         ModalRoute.withName(HomeScreen.route),
+          //                       );
+          //                     },
+          //                     child: Text(
+          //                       'Delete',
+          //                       style: TextStyle(color: Colors.redAccent),
+          //                     ),
+          //                   ),
+          //                 ],
+          //               );
+          //             },
+          //           );
+          //         },
+          //       ),
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _animationController.dispose();
   }
 }

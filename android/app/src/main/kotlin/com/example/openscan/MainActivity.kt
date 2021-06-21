@@ -1,4 +1,4 @@
-package com.example.openscan
+package com.ethereal.openscan
 
 import io.flutter.embedding.android.FlutterActivity
 

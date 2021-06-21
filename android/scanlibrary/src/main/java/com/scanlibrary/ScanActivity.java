@@ -43,20 +43,13 @@ public class ScanActivity extends Activity implements IScanner, ComponentCallbac
         Log.d("onGetAppDocDirPath", path);
         return path;
     }
-
-    private String getShouldCompress() {
-        String shouldCompress = getIntent().getStringExtra(ScanConstants.SHOULD_COMPRESS);
-        Log.d("onGetShouldCompress", shouldCompress);
-        return shouldCompress;
-    }
-
+    
     @Override
     public void onScanFinish(String path) {
         ResultFragment fragment = new ResultFragment();
         Bundle bundle = new Bundle();
         bundle.putString(ScanConstants.SCANNED_RESULT, path);
         bundle.putString(ScanConstants.TEMP_DIR, getAppDocDirPath());
-        bundle.putString(ScanConstants.SHOULD_COMPRESS, getShouldCompress());
         fragment.setArguments(bundle);
         android.app.FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
