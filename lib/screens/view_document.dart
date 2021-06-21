@@ -1009,57 +1009,57 @@ class _ViewDocumentState extends State<ViewDocument>
               Navigator.pop(context);
             },
           ),
-          (enableSelect)
-              ? Container()
-              : ListTile(
-                  leading: Icon(
-                    Icons.delete,
-                    color: Colors.redAccent,
-                  ),
-                  title: Text(
-                    'Delete All',
-                    style: TextStyle(color: Colors.redAccent),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(
-                              Radius.circular(10),
-                            ),
-                          ),
-                          title: Text('Delete'),
-                          content:
-                              Text('Do you really want to delete this file?'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Directory(dirPath).deleteSync(recursive: true);
-                                DatabaseHelper()
-                                  ..deleteDirectory(dirPath: dirPath);
-                                Navigator.popUntil(
-                                  context,
-                                  ModalRoute.withName(HomeScreen.route),
-                                );
-                              },
-                              child: Text(
-                                'Delete',
-                                style: TextStyle(color: Colors.redAccent),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
+          // (enableSelect)
+          //     ? Container()
+          //     : ListTile(
+          //         leading: Icon(
+          //           Icons.delete,
+          //           color: Colors.redAccent,
+          //         ),
+          //         title: Text(
+          //           'Delete All',
+          //           style: TextStyle(color: Colors.redAccent),
+          //         ),
+          //         onTap: () {
+          //           Navigator.pop(context);
+          //           showDialog(
+          //             context: context,
+          //             builder: (context) {
+          //               return AlertDialog(
+          //                 shape: RoundedRectangleBorder(
+          //                   borderRadius: BorderRadius.all(
+          //                     Radius.circular(10),
+          //                   ),
+          //                 ),
+          //                 title: Text('Delete'),
+          //                 content:
+          //                     Text('Do you really want to delete this file?'),
+          //                 actions: <Widget>[
+          //                   TextButton(
+          //                     onPressed: () => Navigator.pop(context),
+          //                     child: Text('Cancel'),
+          //                   ),
+          //                   TextButton(
+          //                     onPressed: () {
+          //                       Directory(dirPath).deleteSync(recursive: true);
+          //                       DatabaseHelper()
+          //                         ..deleteDirectory(dirPath: dirPath);
+          //                       Navigator.popUntil(
+          //                         context,
+          //                         ModalRoute.withName(HomeScreen.route),
+          //                       );
+          //                     },
+          //                     child: Text(
+          //                       'Delete',
+          //                       style: TextStyle(color: Colors.redAccent),
+          //                     ),
+          //                   ),
+          //                 ],
+          //               );
+          //             },
+          //           );
+          //         },
+          //       ),
         ],
       ),
     );

@@ -28,8 +28,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   DatabaseHelper database = DatabaseHelper();
   List<Map<String, dynamic>> masterData;
   List<DirectoryOS> masterDirectories = [];
-  AnimationController _animationController;
-  Animation<double> _progress;
   QuickActions quickActions = QuickActions();
 
   Future homeRefresh() async {
@@ -89,15 +87,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     askPermission();
     getMasterData();
-
-    // FAB related
-    _animationController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 200))
-          ..addListener(() {
-            setState(() {});
-          });
-    _progress =
-        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
 
     // Quick Action related
     quickActions.initialize((String shortcutType) {
@@ -555,12 +544,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _animationController.dispose();
   }
 }
 

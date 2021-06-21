@@ -92,4 +92,10 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
       ],
     );
   }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _animationController.dispose();
+  }
 }
