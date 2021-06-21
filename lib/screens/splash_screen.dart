@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/screens/getting_started_screen.dart';
 import 'package:openscan/screens/home_screen.dart';
-import 'package:openscan/screens/loading_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -35,10 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Duration(milliseconds: 500),
       () {
         (visitingFlag)
-            ? (databaseFlag)
-                ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
-                : Navigator.of(context)
-                    .pushReplacementNamed(LoadingScreen.route)
+            ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
             : Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (context) => GettingStartedScreen(
