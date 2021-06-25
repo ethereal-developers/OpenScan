@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_absolute_path/flutter_absolute_path.dart';
 import 'package:multi_image_picker/multi_image_picker.dart';
@@ -199,12 +198,13 @@ class FileOperations {
 
     Directory cacheDir = await getTemporaryDirectory();
     for (ImageOS image in images) {
-      path = await FlutterScannerCropper.compressImage(
-        src: image.imgPath,
-        dest: cacheDir.path,
-        desiredQuality: desiredQuality,
-      );
-      tempImages.add(File(path));
+      // path = await FlutterScannerCropper.compressImage(
+      //   src: image.imgPath,
+      //   dest: cacheDir.path,
+      //   desiredQuality: desiredQuality,
+      // );
+      // tempImages.add(File(path));
+      tempImages.add(image);
     }
     images = tempImages;
 

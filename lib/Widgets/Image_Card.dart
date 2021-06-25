@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/Classes.dart';
@@ -68,37 +67,37 @@ class _ImageCardState extends State<ImageCard> {
                   style: TextStyle(color: Colors.black),
                 ),
                 onPressed: () async {
-                  Directory cacheDir = await getTemporaryDirectory();
-                  String imageFilePath = await FlutterScannerCropper.openCrop(
-                    src: widget.imageOS.imgPath,
-                    dest: cacheDir.path,
-                  );
-                  File image = File(imageFilePath);
-                  File temp = File(widget.imageOS.imgPath.substring(
-                          0, widget.imageOS.imgPath.lastIndexOf(".")) +
-                      "c.jpg");
-                  File(widget.imageOS.imgPath).deleteSync();
-                  if (image != null) {
-                    image.copySync(temp.path);
-                  }
-                  widget.imageOS.imgPath = temp.path;
-                  database.updateImagePath(
-                    tableName: widget.directoryOS.dirName,
-                    image: widget.imageOS,
-                  );
-                  if (widget.imageOS.idx == 1) {
-                    database.updateFirstImagePath(
-                      imagePath: widget.imageOS.imgPath,
-                      dirPath: widget.directoryOS.dirPath,
-                    );
-                  }
+                  // Directory cacheDir = await getTemporaryDirectory();
+                  // String imageFilePath = await FlutterScannerCropper.openCrop(
+                  //   src: widget.imageOS.imgPath,
+                  //   dest: cacheDir.path,
+                  // );
+                  // File image = File(imageFilePath);
+                  // File temp = File(widget.imageOS.imgPath.substring(
+                  //         0, widget.imageOS.imgPath.lastIndexOf(".")) +
+                  //     "c.jpg");
+                  // File(widget.imageOS.imgPath).deleteSync();
+                  // if (image != null) {
+                  //   image.copySync(temp.path);
+                  // }
+                  // widget.imageOS.imgPath = temp.path;
+                  // database.updateImagePath(
+                  //   tableName: widget.directoryOS.dirName,
+                  //   image: widget.imageOS,
+                  // );
+                  // if (widget.imageOS.idx == 1) {
+                  //   database.updateFirstImagePath(
+                  //     imagePath: widget.imageOS.imgPath,
+                  //     dirPath: widget.directoryOS.dirPath,
+                  //   );
+                  // }
                   // if (widget.imageOS.shouldCompress == 1) {
                   //   database.updateShouldCompress(
                   //     image: widget.imageOS,
                   //     tableName: widget.directoryOS.dirName,
                   //   );
                   // }
-                  widget.fileEditCallback();
+                  // widget.fileEditCallback();
                 },
                 trailingIcon: Icon(
                   Icons.crop,

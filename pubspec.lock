@@ -132,15 +132,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.11"
-  flutter_scanner_cropper:
-    dependency: "direct main"
-    description:
-      path: "flutter_scanner_cropper/"
-      ref: HEAD
-      resolved-ref: "07fdd3e5b9a0ea622c5a39f34a4b3c8abcfdff58"
-      url: "https://github.com/Ethereal-Developers-Inc/flutter-scanner-plugin.git"
-    source: git
-    version: "0.0.1"
   flutter_speed_dial:
     dependency: "direct main"
     description:

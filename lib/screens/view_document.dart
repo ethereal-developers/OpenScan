@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:open_file/open_file.dart';
 import 'package:openscan/Utilities/Classes.dart';
@@ -149,10 +148,11 @@ class _ViewDocumentState extends State<ViewDocument>
     Directory cacheDir = await getTemporaryDirectory();
     if (image != null || galleryImages != null) {
       if (!quickScan && !fromGallery) {
-        imageFilePath = await FlutterScannerCropper.openCrop(
-          src: image.path,
-          dest: cacheDir.path,
-        );
+        // imageFilePath = await FlutterScannerCropper.openCrop(
+        //   src: image.path,
+        //   dest: cacheDir.path,
+        // );
+        imageFilePath = image.path;
       }
 
       if (fromGallery) {
