@@ -63,3 +63,7 @@ android {
 flutter {
     source '../..'
 }
+
+dependencies {
+    implementation project(path: ':openCVLibrary3413')
+}

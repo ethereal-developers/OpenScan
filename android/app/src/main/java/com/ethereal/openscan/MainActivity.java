@@ -16,13 +16,12 @@ import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
 
-//import org.opencv.android.OpenCVLoader;
-//import org.opencv.android.Utils;
-//import org.opencv.core.Core;
-//import org.opencv.core.CvType;
-//import org.opencv.core.Mat;
-//import org.opencv.core.Size;
-//import org.opencv.imgproc.Imgproc;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "com.ethereal.openscan/cropper";
@@ -37,47 +36,47 @@ public class MainActivity extends FlutterActivity {
                             String path = call.argument("path").toString();
                             switch (methodCalled) {
                                 case "cropImage": {
-//                                    Log.d("onCropImageCalled", "Crop started");
-//                                    Bitmap bitmap = BitmapFactory.decodeFile(path);
-//                                    int height = bitmap.getHeight();
-//                                    int width = bitmap.getWidth();
-//                                    double tl_x = call.argument("tl_x");
-//                                    double tl_y = call.argument("tl_y");
-//                                    double tr_x = call.argument("tr_x");
-//                                    double tr_y = call.argument("tr_y");
-//                                    double bl_x = call.argument("bl_x");
-//                                    double bl_y = call.argument("bl_y");
-//                                    double br_x = call.argument("br_x");
-//                                    double br_y = call.argument("br_y");
-//                                    try {
-//                                        if (OpenCVLoader.initDebug()) {
-//                                            Log.d("onOpenCVCalled", "OpenCV started");
-//                                            Mat mat = new Mat();
-//                                            Utils.bitmapToMat(bitmap, mat);
-//
-//                                            Mat src_mat = new Mat(4, 1, CvType.CV_32FC2);
-//                                            Mat dst_mat = new Mat(4, 1, CvType.CV_32FC2);
-//                                            src_mat.put(0, 0, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y);
-//                                            dst_mat.put(0, 0, 0.0, 0.0, width, 0.0, 0.0, height, width, height);
-//                                            Mat perspectiveTransform = Imgproc.getPerspectiveTransform(src_mat, dst_mat);
-//
-//                                            Imgproc.warpPerspective(mat, mat, perspectiveTransform, new Size(width, height));
-//
-//                                            Utils.matToBitmap(mat, bitmap);
-//                                            FileOutputStream stream = null;
-//                                            try {
-//                                                stream = new FileOutputStream(new File(path));
-//                                            } catch (FileNotFoundException e) {
-//                                                e.printStackTrace();
-//                                            }
-//                                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-//                                            String temp = stream.toString();
-//                                            Log.d("onCropOver", temp);
-//                                            result.success(true);
-//                                        }
-//                                    } catch (Exception e) {
-//                                        e.printStackTrace();
-//                                    }
+                                    Log.d("onCropImageCalled", "Crop started");
+                                    Bitmap bitmap = BitmapFactory.decodeFile(path);
+                                    int height = bitmap.getHeight();
+                                    int width = bitmap.getWidth();
+                                    double tl_x = call.argument("tl_x");
+                                    double tl_y = call.argument("tl_y");
+                                    double tr_x = call.argument("tr_x");
+                                    double tr_y = call.argument("tr_y");
+                                    double bl_x = call.argument("bl_x");
+                                    double bl_y = call.argument("bl_y");
+                                    double br_x = call.argument("br_x");
+                                    double br_y = call.argument("br_y");
+                                    try {
+                                        if (OpenCVLoader.initDebug()) {
+                                            Log.d("onOpenCVCalled", "OpenCV started");
+                                            Mat mat = new Mat();
+                                            Utils.bitmapToMat(bitmap, mat);
+
+                                            Mat src_mat = new Mat(4, 1, CvType.CV_32FC2);
+                                            Mat dst_mat = new Mat(4, 1, CvType.CV_32FC2);
+                                            src_mat.put(0, 0, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y);
+                                            dst_mat.put(0, 0, 0.0, 0.0, width, 0.0, 0.0, height, width, height);
+                                            Mat perspectiveTransform = Imgproc.getPerspectiveTransform(src_mat, dst_mat);
+
+                                            Imgproc.warpPerspective(mat, mat, perspectiveTransform, new Size(width, height));
+
+                                            Utils.matToBitmap(mat, bitmap);
+                                            FileOutputStream stream = null;
+                                            try {
+                                                stream = new FileOutputStream(new File(path));
+                                            } catch (FileNotFoundException e) {
+                                                e.printStackTrace();
+                                            }
+                                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                                            String temp = stream.toString();
+                                            Log.d("onCropOver", temp);
+                                            result.success(true);
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
                                     break;
                                 }
                                 case "getImageSize": {
