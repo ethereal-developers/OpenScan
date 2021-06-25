@@ -3,4 +3,6 @@
       package="org.opencv"
       android:versionCode="34130"
       android:versionName="3.4.13">
+
+    <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="30" />
 </manifest>
