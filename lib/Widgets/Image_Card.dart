@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-import 'package:openscan/Utilities/Classes.dart';
+import 'package:openscan/Utilities/classes.dart';
 import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/screens/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
@@ -83,18 +83,21 @@ class _ImageCardState extends State<ImageCard> {
                     ),
                   ).then((value) => croppedImage = value);
                   File image = croppedImage;
-                  // File temp = File(widget.imageOS.imgPath.substring(
-                  //         0, widget.imageOS.imgPath.lastIndexOf(".")) +
-                  //     "c.jpg");
-                  File temp = File(widget.imageOS.imgPath.substring(
-                          0, widget.imageOS.imgPath.lastIndexOf("/")) + '/' +
-                      DateTime.now().toString() +
-                      '.jpg');
-                  File(widget.imageOS.imgPath).deleteSync();
+
                   if (image != null) {
+                    File temp = File(widget.imageOS.imgPath.substring(
+                            0, widget.imageOS.imgPath.lastIndexOf("/")) +
+                        '/' +
+                        DateTime.now().toString() +
+                        '.jpg');
+                    // File temp = File(widget.imageOS.imgPath.substring(
+                    //         0, widget.imageOS.imgPath.lastIndexOf(".")) +
+                    //     "c.jpg");
                     image.copySync(temp.path);
+                    File(widget.imageOS.imgPath).deleteSync();
+                    widget.imageOS.imgPath = temp.path;
                   }
-                  widget.imageOS.imgPath = temp.path;
+
                   database.updateImagePath(
                     tableName: widget.directoryOS.dirName,
                     image: widget.imageOS,
