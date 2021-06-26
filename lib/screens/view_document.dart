@@ -16,6 +16,8 @@ import 'package:reorderables/reorderables.dart';
 import 'package:share_extend/share_extend.dart';
 import 'package:simple_animated_icon/simple_animated_icon.dart';
 
+import 'crop_screen.dart';
+
 bool enableSelect = false;
 bool enableReorder = false;
 bool showImage = false;
@@ -58,6 +60,7 @@ class _ViewDocumentState extends State<ViewDocument>
   AnimationController _animationController;
   Animation<double> _progress;
   TapDownDetails _doubleTapDetails;
+  File croppedImage;
 
   void getDirectoryData({
     bool updateFirstImage = false,
@@ -152,7 +155,20 @@ class _ViewDocumentState extends State<ViewDocument>
         //   src: image.path,
         //   dest: cacheDir.path,
         // );
-        imageFilePath = image.path;
+        // File imageFileTemp;
+        // imageFileTemp = File(
+        //   "${cacheDir.path}/Pictures/${DateTime.now()}.jpg",
+        // );
+        // image.copySync(imageFileTemp.path);
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CropImage(
+              file: image,
+            ),
+          ),
+        ).then((value) => croppedImage = value);
+        // imageFilePath = image.path;
       }
 
       if (fromGallery) {
@@ -168,7 +184,7 @@ class _ViewDocumentState extends State<ViewDocument>
         }
         setState(() {});
       } else {
-        File imageFile = File(imageFilePath ?? image.path);
+        File imageFile = File(croppedImage.path ?? image.path);
         await fileOperations.saveImage(
           image: imageFile,
           index: directoryImages.length + 1,
@@ -1009,57 +1025,57 @@ class _ViewDocumentState extends State<ViewDocument>
               Navigator.pop(context);
             },
           ),
-          // (enableSelect)
-          //     ? Container()
-          //     : ListTile(
-          //         leading: Icon(
-          //           Icons.delete,
-          //           color: Colors.redAccent,
-          //         ),
-          //         title: Text(
-          //           'Delete All',
-          //           style: TextStyle(color: Colors.redAccent),
-          //         ),
-          //         onTap: () {
-          //           Navigator.pop(context);
-          //           showDialog(
-          //             context: context,
-          //             builder: (context) {
-          //               return AlertDialog(
-          //                 shape: RoundedRectangleBorder(
-          //                   borderRadius: BorderRadius.all(
-          //                     Radius.circular(10),
-          //                   ),
-          //                 ),
-          //                 title: Text('Delete'),
-          //                 content:
-          //                     Text('Do you really want to delete this file?'),
-          //                 actions: <Widget>[
-          //                   TextButton(
-          //                     onPressed: () => Navigator.pop(context),
-          //                     child: Text('Cancel'),
-          //                   ),
-          //                   TextButton(
-          //                     onPressed: () {
-          //                       Directory(dirPath).deleteSync(recursive: true);
-          //                       DatabaseHelper()
-          //                         ..deleteDirectory(dirPath: dirPath);
-          //                       Navigator.popUntil(
-          //                         context,
-          //                         ModalRoute.withName(HomeScreen.route),
-          //                       );
-          //                     },
-          //                     child: Text(
-          //                       'Delete',
-          //                       style: TextStyle(color: Colors.redAccent),
-          //                     ),
-          //                   ),
-          //                 ],
-          //               );
-          //             },
-          //           );
-          //         },
-          //       ),
+          (enableSelect)
+              ? Container()
+              : ListTile(
+                  leading: Icon(
+                    Icons.delete,
+                    color: Colors.redAccent,
+                  ),
+                  title: Text(
+                    'Delete All',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(
+                              Radius.circular(10),
+                            ),
+                          ),
+                          title: Text('Delete'),
+                          content:
+                              Text('Do you really want to delete this file?'),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Directory(dirPath).deleteSync(recursive: true);
+                                DatabaseHelper()
+                                  ..deleteDirectory(dirPath: dirPath);
+                                Navigator.popUntil(
+                                  context,
+                                  ModalRoute.withName(HomeScreen.route),
+                                );
+                              },
+                              child: Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.redAccent),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
         ],
       ),
     );
