@@ -89,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Padding(
               padding: EdgeInsets.only(bottom: 20.0),
               child: Text(
-                'Made with ❤ in India',
+                'Made with ❤ from India',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.normal,

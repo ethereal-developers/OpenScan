@@ -53,18 +53,74 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     await _requestPermission();
   }
 
+  pushView({String scanType, DirectoryOS masterDirectory}) {
+    switch (scanType) {
+      case 'Normal Scan':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ViewDocument(
+              quickScan: false,
+              directoryOS: DirectoryOS(),
+            ),
+          ),
+        ).whenComplete(() {
+          homeRefresh();
+        });
+        break;
+      case 'Quick Scan':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ViewDocument(
+              quickScan: true,
+              directoryOS: DirectoryOS(),
+            ),
+          ),
+        ).whenComplete(() {
+          homeRefresh();
+        });
+        break;
+      case 'Import from Gallery':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ViewDocument(
+              quickScan: false,
+              directoryOS: DirectoryOS(),
+              fromGallery: true,
+            ),
+          ),
+        ).whenComplete(() {
+          homeRefresh();
+        });
+        break;
+      default:
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ViewDocument(
+              directoryOS: masterDirectory,
+            ),
+          ),
+        ).whenComplete(() {
+          homeRefresh();
+        });
+    }
+  }
+
   Future<List<DirectoryOS>> getMasterData() async {
     masterDirectories = [];
     masterData = await database.getMasterData();
     print('Master Table => $masterData');
     for (var directory in masterData) {
-      var flag = false;
+      var alreadyExistsFlag = false;
       for (var dir in masterDirectories) {
         if (dir.dirPath == directory['dir_path']) {
-          flag = true;
+          alreadyExistsFlag = true;
         }
       }
-      if (!flag) {
+      if (!alreadyExistsFlag) {
         masterDirectories.add(
           DirectoryOS(
             dirName: directory['dir_name'],
@@ -90,48 +146,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
     // Quick Action related
     quickActions.initialize((String shortcutType) {
-      switch (shortcutType) {
-        case 'Normal Scan':
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ViewDocument(
-                quickScan: false,
-                directoryOS: DirectoryOS(),
-              ),
-            ),
-          ).whenComplete(() {
-            homeRefresh();
-          });
-          break;
-        case 'Quick Scan':
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ViewDocument(
-                quickScan: true,
-                directoryOS: DirectoryOS(),
-              ),
-            ),
-          ).whenComplete(() {
-            homeRefresh();
-          });
-          break;
-        case 'Import from Gallery':
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ViewDocument(
-                quickScan: false,
-                directoryOS: DirectoryOS(),
-                fromGallery: true,
-              ),
-            ),
-          ).whenComplete(() {
-            homeRefresh();
-          });
-          break;
-      }
+      pushView(scanType: shortcutType);
     });
     quickActions.setShortcutItems(<ShortcutItem>[
       ShortcutItem(
@@ -326,16 +341,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 color: secondaryColor,
                               ),
                               onTap: () async {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ViewDocument(
-                                      directoryOS: masterDirectories[index],
-                                    ),
-                                  ),
-                                ).whenComplete(() {
-                                  homeRefresh();
-                                });
+                                pushView(
+                                    scanType: 'default',
+                                    masterDirectory: masterDirectories[index]);
                               },
                             ),
                             menuItems: [
@@ -502,48 +510,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         floatingActionButton: FAB(
           normalScanOnPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ViewDocument(
-                  quickScan: false,
-                  directoryOS: DirectoryOS(),
-                ),
-              ),
-            ).whenComplete(() {
-              homeRefresh();
-            });
+            pushView(scanType: 'Normal Scan');
           },
           quickScanOnPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ViewDocument(
-                  quickScan: true,
-                  directoryOS: DirectoryOS(),
-                ),
-              ),
-            ).whenComplete(() {
-              homeRefresh();
-            });
+            pushView(scanType: 'Quick Scan');
           },
           galleryOnPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ViewDocument(
-                  quickScan: false,
-                  directoryOS: DirectoryOS(),
-                  fromGallery: true,
-                ),
-              ),
-            ).whenComplete(() {
-              homeRefresh();
-            });
+            pushView(scanType: 'Import from Gallery');
           },
         ),
       ),
     );
   }
 }
-
