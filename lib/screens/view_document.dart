@@ -4,12 +4,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:open_file/open_file.dart';
-import 'package:openscan/Utilities/Classes.dart';
+import 'package:openscan/Utilities/classes.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/Utilities/file_operations.dart';
 import 'package:openscan/Widgets/FAB.dart';
-import 'package:openscan/Widgets/Image_Card.dart';
+import 'package:openscan/Widgets/image_card.dart';
 import 'package:openscan/screens/home_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:reorderables/reorderables.dart';
@@ -297,6 +297,7 @@ class _ViewDocumentState extends State<ViewDocument>
   void initState() {
     super.initState();
     fileOperations = FileOperations();
+
     if (widget.directoryOS.dirPath != null) {
       dirPath = widget.directoryOS.dirPath;
       fileName = widget.directoryOS.newName;
