@@ -45,7 +45,7 @@ class _CropImageState extends State<CropImage> {
     /// The reason this is called recursively is to ensure that the dimensions
     /// are obtained even in cases where the build time of widgets is longer.
     WidgetsBinding.instance.addPostFrameCallback(
-          (_) => getImageSize(false),
+      (_) => getImageSize(false),
     );
   }
 
@@ -55,7 +55,7 @@ class _CropImageState extends State<CropImage> {
       el.visitChildren(rebuild);
       print('Rebuilding');
       WidgetsBinding.instance.addPostFrameCallback(
-            (_) => getImageSize(false),
+        (_) => getImageSize(false),
       );
     }
 
@@ -70,7 +70,7 @@ class _CropImageState extends State<CropImage> {
     width = imageBox.size.width;
     height = imageBox.size.height;
 
-    //TODO: Doesn't work for square images
+    // TODO: Doesn't work for square images
     if ((width == 0 && height == 0) ||
         (width == prevWidth && height == prevHeight)) {
       Timer(Duration(milliseconds: 100), () => getImageSize(false));
@@ -97,21 +97,20 @@ class _CropImageState extends State<CropImage> {
     if (isRenderBoxValuesCorrect) return;
   }
 
-  checkPolygon(Offset p1, Offset q1, Offset p2, Offset q2){
-    bool onSegment(Offset p, Offset q, Offset r)
-    {
-      if (q.dx <= max(p.dx, r.dx) && q.dx >= min(p.dx, r.dx) &&
-          q.dy <= max(p.dy, r.dy) && q.dy >= min(p.dy, r.dy))
-        return true;
+  checkPolygon(Offset p1, Offset q1, Offset p2, Offset q2) {
+    bool onSegment(Offset p, Offset q, Offset r) {
+      if (q.dx <= max(p.dx, r.dx) &&
+          q.dx >= min(p.dx, r.dx) &&
+          q.dy <= max(p.dy, r.dy) &&
+          q.dy >= min(p.dy, r.dy)) return true;
       return false;
     }
 
-    int orientation(Offset p, Offset q, Offset r)
-    {
-      double val = (q.dy - p.dy) * (r.dx - q.dx) -
-          (q.dx - p.dx) * (r.dy - q.dy);
+    int orientation(Offset p, Offset q, Offset r) {
+      double val =
+          (q.dy - p.dy) * (r.dx - q.dx) - (q.dx - p.dx) * (r.dy - q.dy);
       if (val == 0) return 0;
-      return (val > 0)? 1: 2;
+      return (val > 0) ? 1 : 2;
     }
 
     int o1 = orientation(p1, q1, p2);
@@ -119,8 +118,7 @@ class _CropImageState extends State<CropImage> {
     int o3 = orientation(p2, q2, p1);
     int o4 = orientation(p2, q2, q1);
 
-    if (o1 != o2 && o3 != o4)
-      return true;
+    if (o1 != o2 && o3 != o4) return true;
 
     if (o1 == 0 && onSegment(p1, p2, q1)) return true;
     if (o2 == 0 && onSegment(p1, q2, q1)) return true;
@@ -155,9 +153,13 @@ class _CropImageState extends State<CropImage> {
         x1 < width &&
         x1 >= 0) {
       setState(() {
-        bool isConvexPolygon = checkPolygon(Offset(tl.dx - crossoverThreshold, tl.dy + crossoverThreshold), br, tr, bl);
+        bool isConvexPolygon = checkPolygon(
+            Offset(tl.dx - crossoverThreshold, tl.dy + crossoverThreshold),
+            br,
+            tr,
+            bl);
         if (tl.dx < tr.dx - crossoverThreshold) {
-          if(!isConvexPolygon){
+          if (!isConvexPolygon) {
             tl = Offset(tl.dx - crossoverAdjust, tl.dy - crossoverAdjust);
           } else {
             tl = points.localPosition;
@@ -177,9 +179,10 @@ class _CropImageState extends State<CropImage> {
         x1 < width &&
         x1 >= 0) {
       setState(() {
-        bool isConvexPolygon = checkPolygon(tl, br, Offset(tr.dx - crossoverThreshold, tr.dy - crossoverThreshold), bl);
+        bool isConvexPolygon = checkPolygon(tl, br,
+            Offset(tr.dx - crossoverThreshold, tr.dy - crossoverThreshold), bl);
         if (tr.dx > tl.dx + crossoverThreshold) {
-          if(!isConvexPolygon){
+          if (!isConvexPolygon) {
             tr = Offset(tr.dx + crossoverAdjust, tr.dy - crossoverAdjust);
           } else {
             tr = points.localPosition;
@@ -199,9 +202,10 @@ class _CropImageState extends State<CropImage> {
         x1 < width &&
         x1 >= 0) {
       setState(() {
-        bool isConvexPolygon = checkPolygon(tl, br, tr, Offset(bl.dx + crossoverThreshold, bl.dy - crossoverThreshold));
+        bool isConvexPolygon = checkPolygon(tl, br, tr,
+            Offset(bl.dx + crossoverThreshold, bl.dy - crossoverThreshold));
         if (bl.dx < br.dx - crossoverThreshold) {
-          if(!isConvexPolygon){
+          if (!isConvexPolygon) {
             bl = Offset(bl.dx - crossoverAdjust, bl.dy + crossoverAdjust);
           } else {
             bl = points.localPosition;
@@ -221,9 +225,13 @@ class _CropImageState extends State<CropImage> {
         x1 < width &&
         x1 >= 0) {
       setState(() {
-        bool isConvexPolygon = checkPolygon(tl, Offset(br.dx - crossoverThreshold, br.dy - crossoverThreshold), tr, bl);
+        bool isConvexPolygon = checkPolygon(
+            tl,
+            Offset(br.dx - crossoverThreshold, br.dy - crossoverThreshold),
+            tr,
+            bl);
         if (br.dx > bl.dx + crossoverThreshold) {
-          if(!isConvexPolygon){
+          if (!isConvexPolygon) {
             br = Offset(br.dx + crossoverAdjust, br.dy + crossoverAdjust);
           } else {
             br = points.localPosition;
@@ -243,7 +251,7 @@ class _CropImageState extends State<CropImage> {
         x1 < width &&
         x1 >= 0) {
       setState(() {
-        if(t.dy + crossoverThreshold < b.dy){
+        if (t.dy + crossoverThreshold < b.dy) {
           t = Offset(t.dx, points.localPosition.dy);
         } else {
           t = Offset(t.dx, t.dy - crossoverAdjust);
@@ -264,7 +272,7 @@ class _CropImageState extends State<CropImage> {
         x1 < width &&
         x1 >= 0) {
       setState(() {
-        if(t.dy < b.dy - crossoverThreshold){
+        if (t.dy < b.dy - crossoverThreshold) {
           b = Offset(b.dx, points.localPosition.dy);
         } else {
           b = Offset(b.dx, b.dy + crossoverAdjust);
@@ -285,7 +293,7 @@ class _CropImageState extends State<CropImage> {
         x1 < width &&
         x1 >= 0) {
       setState(() {
-        if(l.dx < r.dx - crossoverThreshold){
+        if (l.dx < r.dx - crossoverThreshold) {
           l = Offset(points.localPosition.dx, l.dy);
         } else {
           l = Offset(l.dx, l.dy - crossoverAdjust);
@@ -306,7 +314,7 @@ class _CropImageState extends State<CropImage> {
         x1 < width &&
         x1 >= 0) {
       setState(() {
-        if(l.dx < r.dx - crossoverThreshold){
+        if (l.dx < r.dx - crossoverThreshold) {
           r = Offset(points.localPosition.dx, r.dy);
         } else {
           r = Offset(r.dx, r.dy + crossoverAdjust);
@@ -406,48 +414,48 @@ class _CropImageState extends State<CropImage> {
             alignment: Alignment.center,
             child: !isLoading
                 ? GestureDetector(
-              onPanDown: (points) => updatePolygon(points),
-              onPanUpdate: (points) => updatePolygon(points),
-              child: Stack(
-                children: <Widget>[
-                  Container(
-                    color: primaryColor,
-                    child: CustomPaint(
-                      child: Image.file(
-                        imageFile,
-                        key: key,
-                      ),
-                    ),
-                  ),
-                  hasWidgetLoaded
-                      ? Container(
-                    constraints: BoxConstraints(
-                      maxWidth:
-                      MediaQuery.of(context).size.width - 20,
-                    ),
-                    child: CustomPaint(
-                      painter: PolygonPainter(
-                        tl: tl,
-                        tr: tr,
-                        bl: bl,
-                        br: br,
-                        t: t,
-                        l: l,
-                        b: b,
-                        r: r,
-                      ),
+                    onPanDown: (points) => updatePolygon(points),
+                    onPanUpdate: (points) => updatePolygon(points),
+                    child: Stack(
+                      children: <Widget>[
+                        Container(
+                          color: primaryColor,
+                          child: CustomPaint(
+                            child: Image.file(
+                              imageFile,
+                              key: key,
+                            ),
+                          ),
+                        ),
+                        hasWidgetLoaded
+                            ? Container(
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      MediaQuery.of(context).size.width - 20,
+                                ),
+                                child: CustomPaint(
+                                  painter: PolygonPainter(
+                                    tl: tl,
+                                    tr: tr,
+                                    bl: bl,
+                                    br: br,
+                                    t: t,
+                                    l: l,
+                                    b: b,
+                                    r: r,
+                                  ),
+                                ),
+                              )
+                            : Container()
+                      ],
                     ),
                   )
-                      : Container()
-                ],
-              ),
-            )
                 : CircularProgressIndicator(
-              strokeWidth: 4,
-              valueColor: AlwaysStoppedAnimation(
-                secondaryColor,
-              ),
-            ),
+                    strokeWidth: 4,
+                    valueColor: AlwaysStoppedAnimation(
+                      secondaryColor,
+                    ),
+                  ),
           ),
           bottomNavigationBar: bottomSheet(),
         ),
@@ -481,7 +489,7 @@ class _CropImageState extends State<CropImage> {
                 imageFile = File(tempImageFile.path);
               });
               WidgetsBinding.instance.addPostFrameCallback(
-                    (_) => getImageSize(false),
+                (_) => getImageSize(false),
               );
               // tempImageFile.deleteSync();
             },
@@ -493,7 +501,7 @@ class _CropImageState extends State<CropImage> {
               color: secondaryColor,
               onPressed: () async {
                 File tempImageFile = File(imageFile.path
-                    .substring(0, imageFile.path.lastIndexOf('.')) +
+                        .substring(0, imageFile.path.lastIndexOf('.')) +
                     'r.jpg');
                 imageFile.copySync(tempImageFile.path);
                 await channel.invokeMethod("rotateImage", {
@@ -506,7 +514,7 @@ class _CropImageState extends State<CropImage> {
                   imageFile = File(tempImageFile.path);
                 });
                 WidgetsBinding.instance.addPostFrameCallback(
-                      (_) => getImageSize(false),
+                  (_) => getImageSize(false),
                 );
                 // rebuildAllChildren(context);
                 // tempImageFile.deleteSync();
