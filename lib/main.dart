@@ -2,12 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/screens/about_screen.dart';
-import 'package:openscan/screens/getting_started_screen.dart';
-import 'package:openscan/screens/home_screen.dart';
-import 'package:openscan/screens/view_document.dart';
-
-import 'screens/splash_screen.dart';
+import 'package:openscan/presentation/screens/about_screen.dart';
+import 'package:openscan/presentation/screens/getting_started_screen.dart';
+import 'package:openscan/presentation/screens/home_screen.dart';
+import 'package:openscan/presentation/screens/splash_screen.dart';
+import 'package:openscan/presentation/screens/view_document.dart';
 
 void main() async {
   runApp(OpenScan());
