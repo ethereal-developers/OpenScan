@@ -70,7 +70,7 @@ class _CropImageState extends State<CropImage> {
     width = imageBox.size.width;
     height = imageBox.size.height;
 
-    //TODO: Doesn't work for square images
+    // TODO: Doesn't work for square images
     if ((width == 0 && height == 0) ||
         (width == prevWidth && height == prevHeight)) {
       Timer(Duration(milliseconds: 100), () => getImageSize(false));
