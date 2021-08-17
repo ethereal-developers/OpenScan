@@ -1,6 +1,4 @@
-part of 'directory_cubit.dart';
-
-class DirectoryState {
+class DirectoryOS {
   String dirName;
   String dirPath;
   DateTime created;
@@ -8,9 +6,8 @@ class DirectoryState {
   String firstImgPath;
   DateTime lastModified;
   String newName;
-  List<ImageOS> images;
 
-  DirectoryState({
+  DirectoryOS({
     this.dirName,
     this.created,
     this.dirPath,
@@ -18,6 +15,17 @@ class DirectoryState {
     this.imageCount,
     this.lastModified,
     this.newName,
-    this.images,
+  });
+}
+
+class ImageOS {
+  int idx;
+  String imgPath;
+  int shouldCompress;
+
+  ImageOS({
+    this.idx,
+    this.imgPath,
+    this.shouldCompress,
   });
 }

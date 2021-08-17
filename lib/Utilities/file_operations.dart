@@ -221,16 +221,13 @@ class FileOperations {
   }
 
   Future<bool> saveToAppDirectory(
-      {BuildContext context, String fileName, dynamic images}) async {
+      {BuildContext context, String fileName, List<ImageOS> images}) async {
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
-    List<ImageOS> foo = [];
-    if (images.runtimeType == foo.runtimeType) {
-      var tempImages = [];
-      for (ImageOS image in images) {
-        tempImages.add(File(image.imgPath));
-      }
-      images = tempImages;
+    var tempImages = [];
+    for (ImageOS image in images) {
+      tempImages.add(File(image.imgPath));
     }
+    images = tempImages;
     pdfStatus = await createPdf(
       selectedDirectory: selectedDirectory,
       fileName: fileName,

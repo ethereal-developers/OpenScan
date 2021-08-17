@@ -11,7 +11,7 @@ import 'package:openscan/Utilities/database_helper.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/screens/about_screen.dart';
-import 'package:openscan/presentation/screens/getting_started_screen.dart';
+import 'package:openscan/presentation/screens/demo_screen.dart';
 import 'package:openscan/presentation/screens/view_document.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quick_actions/quick_actions.dart';
@@ -107,6 +107,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 imageCount: masterDirectory.imageCount,
                 lastModified: masterDirectory.lastModified,
                 newName: masterDirectory.newName,
+                images: <ImageOS>[],
               ),
               child: ViewDocument(
                 directoryOS: masterDirectory,

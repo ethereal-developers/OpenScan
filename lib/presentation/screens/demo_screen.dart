@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/presentation/Widgets/gettingStarted/slide_dots.dart';
-import 'package:openscan/presentation/Widgets/gettingStarted/slide_item.dart';
+import 'package:openscan/presentation/Widgets/demo/slide_dots.dart';
+import 'package:openscan/presentation/Widgets/demo/slide_item.dart';
 import 'package:openscan/presentation/screens/home_screen.dart';
 
 class GettingStartedScreen extends StatefulWidget {

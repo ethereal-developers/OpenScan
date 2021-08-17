@@ -7,11 +7,11 @@ import 'package:focused_menu/modals.dart';
 import 'package:openscan/Utilities/classes.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/database_helper.dart';
-import 'package:openscan/presentation/Widgets/deleteDialog.dart';
 import 'package:openscan/presentation/screens/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../screens/view_document.dart';
+import '../delete_dialog.dart';
 
 class ImageCard extends StatefulWidget {
   final DirectoryOS directoryOS;

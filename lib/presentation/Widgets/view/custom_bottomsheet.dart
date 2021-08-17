@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:openscan/Utilities/constants.dart';
 import 'package:openscan/Utilities/database_helper.dart';
-import 'package:openscan/presentation/Widgets/deleteDialog.dart';
+import 'package:openscan/presentation/Widgets/delete_dialog.dart';
 import 'package:openscan/presentation/screens/home_screen.dart';
 import 'package:openscan/presentation/screens/view_document.dart';
 
