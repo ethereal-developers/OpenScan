@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:bloc/bloc.dart';
-import 'package:openscan/Utilities/Classes.dart';
+import 'package:openscan/Utilities/classes.dart';
 import 'package:openscan/Utilities/database_helper.dart';
+import 'package:openscan/Utilities/file_operations.dart';
+import 'package:path_provider/path_provider.dart';
 
 part 'directory_state.dart';
 
@@ -13,6 +17,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     imageCount,
     lastModified,
     newName,
+    images,
   }) : super(DirectoryState(
           dirName: dirName,
           dirPath: dirPath,
@@ -21,11 +26,12 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           imageCount: imageCount,
           lastModified: lastModified,
           newName: newName,
+          images: images,
         ));
+  DatabaseHelper database = DatabaseHelper();
+  FileOperations fileOperations = FileOperations();
 
   getImageData() async {
-    DatabaseHelper database = DatabaseHelper();
-
     var directoryData = await database.getDirectoryData(state.dirName);
     print('From Cubit => $directoryData');
     for (var image in directoryData) {
@@ -83,6 +89,78 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       // imageFilesPath.add(image['img_path']);
       // selectedImageIndex.add(false);
       // index += 1;
+    }
+  }
+
+  onReorderImages(int oldIndex, int newIndex) {
+    ImageOS image1 = state.images.removeAt(oldIndex);
+    state.images.insert(newIndex, image1);
+    emit(state);
+  }
+
+  confirmReorderImages() {
+    for (var i = 1; i <= state.images.length; i++) {
+      state.images[i - 1].idx = i;
+      if (i == 1) {
+        database.updateFirstImagePath(
+          dirPath: state.dirPath,
+          imagePath: state.images[i - 1].imgPath,
+        );
+        state.firstImgPath = state.images[i - 1].imgPath;
+      }
+      database.updateImagePath(
+        image: state.images[i - 1],
+        tableName: state.dirName,
+      );
+      emit(state);
+    }
+  }
+
+  createImage({
+    bool quickScan,
+    bool fromGallery = false,
+    Function imageCropper,
+  }) async {
+    File image;
+    List<File> galleryImages;
+
+    if (fromGallery) {
+      galleryImages = await fileOperations.openGallery();
+    } else {
+      image = await fileOperations.openCamera();
+    }
+    Directory cacheDir = await getTemporaryDirectory();
+    if (image != null || galleryImages != null) {
+      if (!quickScan && !fromGallery) {
+        image = imageCropper();
+      }
+
+      if (fromGallery) {
+        for (File galleryImage in galleryImages) {
+          if (galleryImage.existsSync()) {
+            await fileOperations.saveImage(
+              image: galleryImage,
+              index: state.images.length + 1,
+              dirPath: state.dirPath,
+            );
+          }
+          state.images.length++;
+        }
+      } else {
+        File imageFile = File(image.path);
+        await fileOperations.saveImage(
+          image: imageFile,
+          index: state.images.length + 1,
+          dirPath: state.dirPath,
+        );
+
+        await fileOperations.deleteTemporaryFiles();
+        if (quickScan) {
+          getImageData();
+          return createImage(quickScan: quickScan);
+        }
+      }
+      getImageData();
     }
   }
 }
