@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/core/constants.dart';
 import 'package:openscan/presentation/screens/about_screen.dart';
 import 'package:openscan/presentation/screens/demo_screen.dart';
 import 'package:openscan/presentation/screens/home_screen.dart';

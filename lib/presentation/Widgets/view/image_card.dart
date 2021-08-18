@@ -4,9 +4,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-import 'package:openscan/Utilities/classes.dart';
-import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/Utilities/database_helper.dart';
+import 'package:openscan/core/constants.dart';
+import 'package:openscan/core/data/database_helper.dart';
+import 'package:openscan/core/models.dart';
 import 'package:openscan/presentation/screens/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
 

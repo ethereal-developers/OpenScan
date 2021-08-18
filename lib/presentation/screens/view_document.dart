@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:open_file/open_file.dart';
-import 'package:openscan/Utilities/classes.dart';
-import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/Utilities/database_helper.dart';
-import 'package:openscan/Utilities/file_operations.dart';
+import 'package:openscan/core/constants.dart';
+import 'package:openscan/core/data/database_helper.dart';
+import 'package:openscan/core/data/file_operations.dart';
+import 'package:openscan/core/models.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/delete_dialog.dart';
 import 'package:openscan/presentation/Widgets/view/custom_bottomsheet.dart';
@@ -106,10 +106,10 @@ class _ViewDocumentState extends State<ViewDocument>
         );
       }
 
-      ImageOS tempImageOS = ImageOS(
-        idx: i,
-        imgPath: image['img_path'],
-      );
+      // ImageOS tempImageOS = ImageOS(
+      //   idx: i,
+      //   imgPath: image['img_path'],
+      // );
       // directoryImages.add(
       //   tempImageOS,
       // );
@@ -151,7 +151,7 @@ class _ViewDocumentState extends State<ViewDocument>
 
   imageCropper(File image) async {
     File croppedImage;
-    print('Inside cropper');
+    print('Inside cropper 1');
 
     // imageFilePath = await FlutterScannerCropper.openCrop(
     //   src: image.path,
@@ -171,6 +171,8 @@ class _ViewDocumentState extends State<ViewDocument>
         ),
       ),
     ).then((value) => croppedImage = value);
+    print('Inside cropper 2');
+
     // imageFilePath = image.path;
 
     return croppedImage ?? image;
@@ -308,6 +310,8 @@ class _ViewDocumentState extends State<ViewDocument>
           // TODO: implement listener
         },
         builder: (context, state) {
+          print('Listview tester');
+          print('image count = ${state.imageCount}');
           return WillPopScope(
             onWillPop: () {
               if (enableSelect || enableReorder || showImage) {
@@ -473,9 +477,9 @@ class _ViewDocumentState extends State<ViewDocument>
                               minMainAxisCount: 2,
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: state.images.map((image) {
-                                print('Listview tester');
-                                print(state.imageCount);
-                                print(image.imgPath);
+                                // print('Listview tester');
+                                // print(state.imageCount);
+                                // print(image.imgPath);
                                 return ImageCard(
                                   imageOS: image,
                                   directoryOS: widget.directoryOS,

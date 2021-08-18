@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/core/constants.dart';
 
 class PolygonPainter extends CustomPainter {
   final Offset tl, tr, bl, br, t, l, r, b;
   final double dotRadius = 15.0;
 
-  PolygonPainter( {this.tl, this.tr, this.bl, this.br, this.t, this.l, this.r, this.b});
+  PolygonPainter(
+      {this.tl, this.tr, this.bl, this.br, this.t, this.l, this.r, this.b});
 
   Paint linesConnectingDots = Paint()
     ..color = secondaryColor.withOpacity(0.4)

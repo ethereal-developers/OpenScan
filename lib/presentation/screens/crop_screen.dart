@@ -5,7 +5,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:openscan/Utilities/constants.dart';
+import 'package:openscan/core/constants.dart';
 import 'package:openscan/presentation/Widgets/cropper/polygon_painter.dart';
 
 class CropImage extends StatefulWidget {

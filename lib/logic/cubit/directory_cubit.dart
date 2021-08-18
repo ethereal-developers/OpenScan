@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
-import 'package:openscan/Utilities/classes.dart';
-import 'package:openscan/Utilities/database_helper.dart';
-import 'package:openscan/Utilities/file_operations.dart';
+import 'package:openscan/core/data/database_helper.dart';
+import 'package:openscan/core/data/file_operations.dart';
+import 'package:openscan/core/models.dart';
 import 'package:path_provider/path_provider.dart';
 
 part 'directory_state.dart';
@@ -163,19 +163,21 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         );
         print('test 2');
         state.images.add(imageOS);
+        print('test 2.5');
         // emit(state);
 
         await fileOperations.deleteTemporaryFiles();
         if (quickScan) {
           // emit(state);
-          getImageData();
+          // getImageData();
           return createImage(quickScan: quickScan);
         }
       }
       print('test 3');
 
-      // emit(state);
-      getImageData();
+      emit(state);
+
+      // getImageData();
     }
   }
 }
