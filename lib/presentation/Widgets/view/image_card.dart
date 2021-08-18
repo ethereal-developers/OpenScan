@@ -167,30 +167,30 @@ class _ImageCardState extends State<ImageCard> {
             ),
           ),
         ),
-        (selectedImageIndex[widget.imageOS.idx - 1] && enableSelect)
-            ? Positioned.fill(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedImageIndex[widget.imageOS.idx - 1] = false;
-                    });
-                    widget.selectCallback();
-                  },
-                  child: Container(
-                    foregroundDecoration: BoxDecoration(
-                      border: Border.all(
-                        width: 3,
-                        color: secondaryColor,
-                      ),
-                    ),
-                    color: secondaryColor.withOpacity(0.3),
-                  ),
-                ),
-              )
-            : Container(
-                width: 0.001,
-                height: 0.001,
-              ),
+        // (selectedImageIndex[widget.imageOS.idx - 1] && enableSelect)
+        //     ? Positioned.fill(
+        //         child: GestureDetector(
+        //           onTap: () {
+        //             setState(() {
+        //               selectedImageIndex[widget.imageOS.idx - 1] = false;
+        //             });
+        //             widget.selectCallback();
+        //           },
+        //           child: Container(
+        //             foregroundDecoration: BoxDecoration(
+        //               border: Border.all(
+        //                 width: 3,
+        //                 color: secondaryColor,
+        //               ),
+        //             ),
+        //             color: secondaryColor.withOpacity(0.3),
+        //           ),
+        //         ),
+        //       )
+        //     : Container(
+        //         width: 0.001,
+        //         height: 0.001,
+        //       ),
         (enableReorder)
             ? Positioned.fill(
                 child: Container(

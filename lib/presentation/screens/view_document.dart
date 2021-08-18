@@ -137,7 +137,7 @@ class _ViewDocumentState extends State<ViewDocument>
       selectedImageIndex.add(false);
       index += 1;
     }
-    setState(() {});
+    // setState(() {});
   }
 
   Future<void> createDirectoryPath() async {
@@ -178,13 +178,13 @@ class _ViewDocumentState extends State<ViewDocument>
 
   selectionCallback({ImageOS imageOS}) {
     if (selectedImageIndex.contains(true)) {
-      setState(() {
-        enableSelectionIcons = true;
-      });
+      // setState(() {
+      enableSelectionIcons = true;
+      // });
     } else {
-      setState(() {
-        enableSelectionIcons = false;
-      });
+      // setState(() {
+      enableSelectionIcons = false;
+      // });
     }
   }
 
@@ -193,30 +193,30 @@ class _ViewDocumentState extends State<ViewDocument>
     if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
       isFirstImage = true;
     }
-    getDirectoryData(
-      updateFirstImage: isFirstImage,
-      updateIndex: true,
-    );
+    // getDirectoryData(
+    //   updateFirstImage: isFirstImage,
+    //   updateIndex: true,
+    // );
   }
 
   imageViewerCallback({ImageOS imageOS}) {
-    setState(() {
-      displayImage = imageOS;
-      showImage = true;
-    });
+    // setState(() {
+    displayImage = imageOS;
+    showImage = true;
+    // });
   }
 
   void handleClick(String value) {
     switch (value) {
       case 'Reorder':
-        setState(() {
-          enableReorder = true;
-        });
+        // setState(() {
+        enableReorder = true;
+        // });
         break;
       case 'Select':
-        setState(() {
-          enableSelect = true;
-        });
+        // setState(() {
+        enableSelect = true;
+        // });
         break;
       case 'Export':
         showModalBottomSheet(
@@ -228,10 +228,10 @@ class _ViewDocumentState extends State<ViewDocument>
   }
 
   removeSelection() {
-    setState(() {
-      selectedImageIndex = selectedImageIndex.map((e) => false).toList();
-      enableSelect = false;
-    });
+    // setState(() {
+    selectedImageIndex = selectedImageIndex.map((e) => false).toList();
+    enableSelect = false;
+    // });
   }
 
   // TODO: Delete Multiple Images
@@ -273,12 +273,11 @@ class _ViewDocumentState extends State<ViewDocument>
   @override
   void initState() {
     super.initState();
-    BlocProvider.of<DirectoryCubit>(context).getImageData();
 
     if (widget.directoryOS.dirPath != null) {
       dirPath = widget.directoryOS.dirPath;
       fileName = widget.directoryOS.newName;
-      getDirectoryData();
+      BlocProvider.of<DirectoryCubit>(context).getImageData();
     } else {
       createDirectoryPath();
       if (widget.fromGallery) {
@@ -304,18 +303,20 @@ class _ViewDocumentState extends State<ViewDocument>
     return SafeArea(
       child: BlocConsumer<DirectoryCubit, DirectoryState>(
         listener: (context, state) {
+          print('Inside listener');
+          print(state.images.length);
           // TODO: implement listener
         },
         builder: (context, state) {
           return WillPopScope(
             onWillPop: () {
               if (enableSelect || enableReorder || showImage) {
-                setState(() {
-                  enableSelect = false;
-                  removeSelection();
-                  enableReorder = false;
-                  showImage = false;
-                });
+                // setState(() {
+                enableSelect = false;
+                removeSelection();
+                enableReorder = false;
+                showImage = false;
+                // });
               } else {
                 Navigator.pop(context);
               }
@@ -372,9 +373,9 @@ class _ViewDocumentState extends State<ViewDocument>
                               onTap: () {
                                 BlocProvider.of<DirectoryCubit>(context)
                                     .confirmReorderImages();
-                                setState(() {
-                                  enableReorder = false;
-                                });
+                                // setState(() {
+                                enableReorder = false;
+                                // });
                               },
                               child: Container(
                                 padding: EdgeInsets.only(right: 25),
@@ -416,11 +417,11 @@ class _ViewDocumentState extends State<ViewDocument>
                                           await getApplicationDocumentsDirectory();
                                       final result = await OpenFile.open(
                                           '${storedDirectory.path}/.pdf');
-                                      setState(() {
-                                        String _openResult =
-                                            "type=${result.type}  message=${result.message}";
-                                        // print(_openResult);
-                                      });
+                                      // setState(() {
+                                      String _openResult =
+                                          "type=${result.type}  message=${result.message}";
+                                      // print(_openResult);
+                                      // });
                                     },
                                   ),
                             (enableSelect)
@@ -472,6 +473,9 @@ class _ViewDocumentState extends State<ViewDocument>
                               minMainAxisCount: 2,
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: state.images.map((image) {
+                                print('Listview tester');
+                                print(state.imageCount);
+                                print(image.imgPath);
                                 return ImageCard(
                                   imageOS: image,
                                   directoryOS: widget.directoryOS,
@@ -529,9 +533,9 @@ class _ViewDocumentState extends State<ViewDocument>
                 (showImage)
                     ? GestureDetector(
                         onTap: () {
-                          setState(() {
-                            showImage = false;
-                          });
+                          // setState(() {
+                          showImage = false;
+                          // });
                         },
                         child: Container(
                           width: size.width,

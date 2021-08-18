@@ -138,7 +138,7 @@ packages:
       name: flutter_bloc
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "7.0.1"
+    version: "7.1.0"
   flutter_full_pdf_viewer:
     dependency: "direct main"
     description:

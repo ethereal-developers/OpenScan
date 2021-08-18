@@ -32,6 +32,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   FileOperations fileOperations = FileOperations();
 
   getImageData() async {
+    state.images = [];
     var directoryData = await database.getDirectoryData(state.dirName);
     print('From Cubit => $directoryData');
     for (var image in directoryData) {
@@ -129,37 +130,51 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     } else {
       image = await fileOperations.openCamera();
     }
+    print('test 1');
+
     Directory cacheDir = await getTemporaryDirectory();
     if (image != null || galleryImages != null) {
       if (!quickScan && !fromGallery) {
-        image = imageCropper();
+        image = await imageCropper(image);
       }
+      print('test 1.5');
 
       if (fromGallery) {
-        for (File galleryImage in galleryImages) {
-          if (galleryImage.existsSync()) {
-            await fileOperations.saveImage(
-              image: galleryImage,
-              index: state.images.length + 1,
-              dirPath: state.dirPath,
-            );
-          }
-          state.images.length++;
-        }
+        // for (File galleryImage in galleryImages) {
+        //   if (galleryImage.existsSync()) {
+        //     await fileOperations.saveImage(
+        //       image: galleryImage,
+        //       index: state.images.length + 1,
+        //       dirPath: state.dirPath,
+        //     );
+        //   }
+        //   state.images.length++;
+        // }
       } else {
-        File imageFile = File(image.path);
         await fileOperations.saveImage(
-          image: imageFile,
+          image: image,
           index: state.images.length + 1,
           dirPath: state.dirPath,
         );
 
+        ImageOS imageOS = ImageOS(
+          idx: state.imageCount + 1,
+          imgPath: image.path,
+        );
+        print('test 2');
+        state.images.add(imageOS);
+        // emit(state);
+
         await fileOperations.deleteTemporaryFiles();
         if (quickScan) {
+          // emit(state);
           getImageData();
           return createImage(quickScan: quickScan);
         }
       }
+      print('test 3');
+
+      // emit(state);
       getImageData();
     }
   }
