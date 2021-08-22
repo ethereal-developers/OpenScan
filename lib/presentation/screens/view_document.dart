@@ -254,14 +254,14 @@ class _ViewDocumentState extends State<ViewDocument>
       createDirectoryPath();
       if (widget.fromGallery) {
         BlocProvider.of<DirectoryCubit>(context).createImage(
+          context,
           quickScan: false,
           fromGallery: true,
-          context: context,
         );
       } else {
         BlocProvider.of<DirectoryCubit>(context).createImage(
+          context,
           quickScan: widget.quickScan,
-          context: context,
         );
       }
     }
@@ -270,272 +270,263 @@ class _ViewDocumentState extends State<ViewDocument>
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
-    print('Building View');
-
     return SafeArea(
-      child: BlocConsumer<DirectoryCubit, DirectoryState>(
-        listener: (context, state) {
-          print('Inside listener');
-          print(state.images.length);
-          // TODO: implement listener
+      child: WillPopScope(
+        onWillPop: () {
+          if (enableSelect || enableReorder) {
+            // setState(() {
+            enableSelect = false;
+            removeSelection();
+            enableReorder = false;
+            // showImage = false;
+            // });
+          } else {
+            Navigator.pop(context);
+          }
+          return;
         },
-        builder: (context, state) {
-          print('Listview tester');
-          print('image count = ${state.imageCount}');
-          return WillPopScope(
-            onWillPop: () {
-              if (enableSelect || enableReorder) {
-                // setState(() {
-                enableSelect = false;
-                removeSelection();
-                enableReorder = false;
-                // showImage = false;
-                // });
-              } else {
-                Navigator.pop(context);
-              }
-              return;
-            },
-            child: Stack(
-              children: [
-                Scaffold(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  key: scaffoldKey,
-                  appBar: AppBar(
-                    elevation: 0,
-                    backgroundColor: Theme.of(context).primaryColor,
-                    leading: (enableSelect || enableReorder)
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.close,
-                              size: 30,
-                            ),
-                            onPressed: (enableSelect)
-                                ? () {
-                                    removeSelection();
-                                  }
-                                : () {
-                                    // TODO: Revert Reorder
+        child: Stack(
+          children: [
+            Scaffold(
+              backgroundColor: Theme.of(context).primaryColor,
+              key: scaffoldKey,
+              appBar: AppBar(
+                elevation: 0,
+                backgroundColor: Theme.of(context).primaryColor,
+                leading: (enableSelect || enableReorder)
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          size: 30,
+                        ),
+                        onPressed: (enableSelect)
+                            ? () {
+                                removeSelection();
+                              }
+                            : () {
+                                // TODO: Revert Reorder
 
-                                    // setState(() {
-                                    //   // Reverting reorder
-                                    //   directoryImages = [];
-                                    //   for (var image in initDirectoryImages) {
-                                    //     directoryImages.add(image);
-                                    //   }
-                                    //   enableReorder = false;
-                                    // });
-                                  },
-                          )
-                        : IconButton(
-                            icon: Icon(Icons.arrow_back_ios),
-                            onPressed: () {
-                              Navigator.pop(context, true);
-                            },
-                          ),
-                    title: Text(
-                      fileName,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    actions: (enableReorder)
-                        ? [
-                            GestureDetector(
-                              onTap: () {
-                                BlocProvider.of<DirectoryCubit>(context)
-                                    .confirmReorderImages();
                                 // setState(() {
-                                enableReorder = false;
+                                //   // Reverting reorder
+                                //   directoryImages = [];
+                                //   for (var image in initDirectoryImages) {
+                                //     directoryImages.add(image);
+                                //   }
+                                //   enableReorder = false;
                                 // });
                               },
-                              child: Container(
-                                padding: EdgeInsets.only(right: 25),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Done',
-                                  style: TextStyle(
-                                      color: Theme.of(context).accentColor),
-                                ),
-                              ),
-                            ),
-                          ]
-                        : [
-                            (enableSelect)
-                                ? IconButton(
-                                    icon: Icon(
-                                      Icons.share,
-                                      color: (enableSelectionIcons)
-                                          ? Colors.white
-                                          : Colors.grey,
-                                    ),
-                                    onPressed: (enableSelectionIcons)
-                                        ? () {
-                                            showModalBottomSheet(
-                                              context: context,
-                                              builder: _buildBottomSheet,
-                                            );
-                                          }
-                                        : () {},
-                                  )
-                                : IconButton(
-                                    icon: Icon(Icons.picture_as_pdf),
-                                    onPressed: () async {
-                                      await fileOperations.saveToAppDirectory(
-                                        context: context,
-                                        fileName: fileName,
-                                        images: state.images,
-                                      );
-                                      Directory storedDirectory =
-                                          await getApplicationDocumentsDirectory();
-                                      final result = await OpenFile.open(
-                                          '${storedDirectory.path}/.pdf');
-                                      // setState(() {
-                                      String _openResult =
-                                          "type=${result.type}  message=${result.message}";
-                                      // print(_openResult);
-                                      // });
-                                    },
-                                  ),
-                            (enableSelect)
-                                ? IconButton(
-                                    icon: Icon(
-                                      Icons.delete,
-                                      color: (enableSelectionIcons)
-                                          ? Colors.red
-                                          : Colors.grey,
-                                    ),
-                                    onPressed: (enableSelectionIcons)
-                                        ? () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (context) {
-                                                return DeleteDialog(
-                                                  // deleteOnPressed:
-                                                  //     deleteMultipleImages,
-                                                  cancelOnPressed: () =>
-                                                      Navigator.pop(context),
-                                                );
-                                              },
-                                            );
-                                          }
-                                        : () {},
-                                  )
-                                : CustomPopupMenuButton(
-                                    onSelected: handleClick,
-                                    itemList: ['Select', 'Reorder', 'Export'],
-                                  ),
-                          ],
+                      )
+                    : IconButton(
+                        icon: Icon(Icons.arrow_back_ios),
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                      ),
+                title: Text(
+                  fileName,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                   ),
-                  body: Padding(
-                    padding: EdgeInsets.all(size.width * 0.01),
-                    child: ListView(
-                      children: [
-                        ReorderableWrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          minMainAxisCount: 2,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: state.images.map((image) {
-                            return ImageCard(
-                              imageOS: image,
-                              directoryOS: widget.directoryOS,
-                              // fileEditCallback: () {
-                              //   fileEditCallback(imageOS: image);
-                              // },
-                              selectCallback: () {
-                                selectionCallback(imageOS: image);
-                              },
-                              // imageViewerCallback: () {
-                              //   imageViewerCallback(imageOS: image);
-                              // },
-                            );
-                          }).toList(),
-                          onReorder: (int oldIndex, int newIndex) {
+                  overflow: TextOverflow.ellipsis,
+                ),
+                actions: (enableReorder)
+                    ? [
+                        GestureDetector(
+                          onTap: () {
                             BlocProvider.of<DirectoryCubit>(context)
-                                .onReorderImages(oldIndex, newIndex);
+                                .confirmReorderImages();
+                            // setState(() {
+                            enableReorder = false;
+                            // });
                           },
-                          onNoReorder: (int index) {
-                            debugPrint(
-                                '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
-                          },
-                          onReorderStarted: (int index) {
-                            debugPrint(
-                                '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
-                          },
+                          child: Container(
+                            padding: EdgeInsets.only(right: 25),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Done',
+                              style: TextStyle(
+                                  color: Theme.of(context).accentColor),
+                            ),
+                          ),
                         ),
+                      ]
+                    : [
+                        (enableSelect)
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.share,
+                                  color: (enableSelectionIcons)
+                                      ? Colors.white
+                                      : Colors.grey,
+                                ),
+                                onPressed: (enableSelectionIcons)
+                                    ? () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          builder: _buildBottomSheet,
+                                        );
+                                      }
+                                    : () {},
+                              )
+                            : IconButton(
+                                icon: Icon(Icons.picture_as_pdf),
+                                onPressed: () async {
+                                  // TODO: Preview PDF
+                                  // await fileOperations.saveToAppDirectory(
+                                  //   context: context,
+                                  //   fileName: fileName,
+                                  //   images: state.images,
+                                  // );
+                                  // Directory storedDirectory =
+                                  //     await getApplicationDocumentsDirectory();
+                                  // final result = await OpenFile.open(
+                                  //     '${storedDirectory.path}/.pdf');
+                                  // setState(() {
+                                  // String _openResult =
+                                  //     "type=${result.type}  message=${result.message}";
+                                  // print(_openResult);
+                                  // });
+                                },
+                              ),
+                        (enableSelect)
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.delete,
+                                  color: (enableSelectionIcons)
+                                      ? Colors.red
+                                      : Colors.grey,
+                                ),
+                                onPressed: (enableSelectionIcons)
+                                    ? () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return DeleteDialog(
+                                              // deleteOnPressed:
+                                              //     deleteMultipleImages,
+                                              cancelOnPressed: () =>
+                                                  Navigator.pop(context),
+                                            );
+                                          },
+                                        );
+                                      }
+                                    : () {},
+                              )
+                            : CustomPopupMenuButton(
+                                onSelected: handleClick,
+                                itemList: ['Select', 'Reorder', 'Export'],
+                              ),
                       ],
-                    ),
-                  ),
-                  floatingActionButton: FAB(
-                    normalScanOnPressed: () {
-                      BlocProvider.of<DirectoryCubit>(context).createImage(
-                        quickScan: false,
-                        context: context,
-                      );
-                    },
-                    quickScanOnPressed: () {
-                      BlocProvider.of<DirectoryCubit>(context).createImage(
-                        quickScan: true,
-                        context: context,
-                      );
-                    },
-                    galleryOnPressed: () {
-                      BlocProvider.of<DirectoryCubit>(context).createImage(
-                        quickScan: false,
-                        fromGallery: true,
-                        context: context,
+              ),
+              body: Padding(
+                padding: EdgeInsets.all(size.width * 0.01),
+                child: SingleChildScrollView(
+                  child: BlocConsumer<DirectoryCubit, DirectoryState>(
+                    listener: (context, state) {},
+                    builder: (context, state) {
+                      return ReorderableWrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        minMainAxisCount: 2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: state.images.map((image) {
+                          return ImageCard(
+                            imageOS: image,
+                            directoryOS: widget.directoryOS,
+                            // fileEditCallback: () {
+                            //   fileEditCallback(imageOS: image);
+                            // },
+                            selectCallback: () {
+                              selectionCallback(imageOS: image);
+                            },
+                            // imageViewerCallback: () {
+                            //   imageViewerCallback(imageOS: image);
+                            // },
+                          );
+                        }).toList(),
+                        onReorder: (int oldIndex, int newIndex) {
+                          BlocProvider.of<DirectoryCubit>(context)
+                              .onReorderImages(oldIndex, newIndex);
+                        },
+                        onNoReorder: (int index) {
+                          debugPrint(
+                              '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
+                        },
+                        onReorderStarted: (int index) {
+                          debugPrint(
+                              '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
+                        },
                       );
                     },
                   ),
                 ),
-                // (showImage)
-                //     ? GestureDetector(
-                //         onTap: () {
-                //           // setState(() {
-                //           showImage = false;
-                //           // });
-                //         },
-                //         child: Container(
-                //           width: size.width,
-                //           height: size.height,
-                //           padding: EdgeInsets.all(20),
-                //           color:
-                //               Theme.of(context).primaryColor.withOpacity(0.8),
-                //           child: GestureDetector(
-                //             onDoubleTapDown: (details) {
-                //               _doubleTapDetails = details;
-                //             },
-                //             onDoubleTap: () {
-                //               if (_controller.value != Matrix4.identity()) {
-                //                 _controller.value = Matrix4.identity();
-                //               } else {
-                //                 final position =
-                //                     _doubleTapDetails.localPosition;
-                //                 _controller.value = Matrix4.identity()
-                //                   ..translate(-position.dx, -position.dy)
-                //                   ..scale(2.0);
-                //               }
-                //             },
-                //             child: InteractiveViewer(
-                //               transformationController: _controller,
-                //               maxScale: 10,
-                //               child: GestureDetector(
-                //                 child: Image.file(
-                //                   File(displayImage.imgPath),
-                //                 ),
-                //               ),
-                //             ),
-                //           ),
-                //         ),
-                //       )
-                //     : Container(),
-              ],
+              ),
+              floatingActionButton: FAB(
+                normalScanOnPressed: () {
+                  BlocProvider.of<DirectoryCubit>(context).createImage(
+                    context,
+                    quickScan: false,
+                  );
+                },
+                quickScanOnPressed: () {
+                  BlocProvider.of<DirectoryCubit>(context).createImage(
+                    context,
+                    quickScan: true,
+                  );
+                },
+                galleryOnPressed: () {
+                  BlocProvider.of<DirectoryCubit>(context).createImage(
+                    context,
+                    quickScan: false,
+                    fromGallery: true,
+                  );
+                },
+              ),
             ),
-          );
-        },
+            // (showImage)
+            //     ? GestureDetector(
+            //         onTap: () {
+            //           // setState(() {
+            //           showImage = false;
+            //           // });
+            //         },
+            //         child: Container(
+            //           width: size.width,
+            //           height: size.height,
+            //           padding: EdgeInsets.all(20),
+            //           color:
+            //               Theme.of(context).primaryColor.withOpacity(0.8),
+            //           child: GestureDetector(
+            //             onDoubleTapDown: (details) {
+            //               _doubleTapDetails = details;
+            //             },
+            //             onDoubleTap: () {
+            //               if (_controller.value != Matrix4.identity()) {
+            //                 _controller.value = Matrix4.identity();
+            //               } else {
+            //                 final position =
+            //                     _doubleTapDetails.localPosition;
+            //                 _controller.value = Matrix4.identity()
+            //                   ..translate(-position.dx, -position.dy)
+            //                   ..scale(2.0);
+            //               }
+            //             },
+            //             child: InteractiveViewer(
+            //               transformationController: _controller,
+            //               maxScale: 10,
+            //               child: GestureDetector(
+            //                 child: Image.file(
+            //                   File(displayImage.imgPath),
+            //                 ),
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       )
+            //     : Container(),
+          ],
+        ),
       ),
     );
   }

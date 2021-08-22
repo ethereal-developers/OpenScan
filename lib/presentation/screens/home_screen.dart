@@ -108,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 newName: masterDirectory.newName,
                 images: <ImageOS>[],
               ),
+              lazy: false,
               child: ViewDocument(
                 directoryOS: masterDirectory,
               ),

@@ -119,10 +119,10 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
   }
 
-  createImage({
+  createImage(
+    context, {
     bool quickScan,
     bool fromGallery = false,
-    BuildContext context,
   }) async {
     File image;
     List<File> galleryImages;
@@ -169,9 +169,39 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         if (quickScan) {
           // emit(state);
           // getImageData();
-          return createImage(quickScan: quickScan);
+          return createImage(context, quickScan: quickScan);
         }
       }
     }
+  }
+
+  cropImage(context, {imageOS}) async {
+    File image = await imageCropper(
+      context,
+      File(imageOS.imgPath),
+    );
+
+    if (image != null) {
+      File temp = File(
+          imageOS.imgPath.substring(0, imageOS.imgPath.lastIndexOf("/")) +
+              '/' +
+              DateTime.now().toString() +
+              '.jpg');
+      image.copySync(temp.path);
+      File(imageOS.imgPath).deleteSync();
+      imageOS.imgPath = temp.path;
+    }
+
+    database.updateImagePath(
+      tableName: state.dirName,
+      image: imageOS,
+    );
+    if (imageOS.idx == 1) {
+      database.updateFirstImagePath(
+        imagePath: imageOS.imgPath,
+        dirPath: state.dirPath,
+      );
+    }
+    emit(state);
   }
 }
