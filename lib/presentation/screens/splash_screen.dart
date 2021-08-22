@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:openscan/core/constants.dart';
 import 'package:openscan/presentation/screens/demo_screen.dart';
 import 'package:openscan/presentation/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -56,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: primaryColor,
+      backgroundColor: Theme.of(context).primaryColor,
       body: Center(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -66,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen> {
               flex: 7,
             ),
             CircleAvatar(
-              backgroundColor: primaryColor,
+              backgroundColor: Theme.of(context).primaryColor,
               child: new Container(
                 child: Image.asset('assets/scan_g.jpeg'),
               ),
@@ -79,7 +78,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 style: TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
                 children: [
                   TextSpan(
-                      text: 'Scan', style: TextStyle(color: secondaryColor))
+                      text: 'Scan',
+                      style: TextStyle(color: Theme.of(context).accentColor))
                 ],
               ),
             ),

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:openscan/core/constants.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/presentation/Widgets/delete_dialog.dart';
 import 'package:openscan/presentation/screens/home_screen.dart';
@@ -27,7 +26,7 @@ class CustomBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: primaryColor,
+      color: Theme.of(context).primaryColor,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,

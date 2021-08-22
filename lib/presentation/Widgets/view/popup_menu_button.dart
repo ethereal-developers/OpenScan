@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/core/constants.dart';
 
 class CustomPopupMenuButton extends StatelessWidget {
   final Function onSelected;
@@ -10,7 +9,7 @@ class CustomPopupMenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       onSelected: onSelected,
-      color: primaryColor.withOpacity(0.95),
+      color: Theme.of(context).primaryColor.withOpacity(0.95),
       elevation: 30,
       offset: Offset.fromDirection(20, 20),
       icon: Icon(Icons.more_vert),

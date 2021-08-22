@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/core/constants.dart';
 
 class SlideDots extends StatelessWidget {
   final bool isActive;
@@ -14,7 +13,7 @@ class SlideDots extends StatelessWidget {
       height: isActive ? 12 : 8,
       width: isActive ? 12 : 8,
       decoration: BoxDecoration(
-        color: isActive ? secondaryColor : Colors.black,
+        color: isActive ? Theme.of(context).accentColor : Colors.black,
         borderRadius: BorderRadius.all(Radius.circular(10)),
       ),
     );

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/core/constants.dart';
 
 class QualitySelector extends StatefulWidget {
   final int imageQuality;
@@ -67,15 +66,20 @@ class _QualitySelectorState extends State<QualitySelector> {
                       topLeft: Radius.circular(5),
                       bottomLeft: Radius.circular(5),
                     ),
-                    border: Border.all(color: secondaryColor.withOpacity(0.5)),
-                    color: (quality == 1) ? secondaryColor : primaryColor,
+                    border: Border.all(
+                        color: Theme.of(context).accentColor.withOpacity(0.5)),
+                    color: (quality == 1)
+                        ? Theme.of(context).accentColor
+                        : Theme.of(context).primaryColor,
                   ),
                   height: 35,
                   width: 70,
                   child: Text(
                     'Low',
                     style: TextStyle(
-                      color: (quality == 1) ? primaryColor : secondaryColor,
+                      color: (quality == 1)
+                          ? Theme.of(context).primaryColor
+                          : Theme.of(context).accentColor,
                     ),
                   ),
                   alignment: Alignment.center,
@@ -93,9 +97,11 @@ class _QualitySelectorState extends State<QualitySelector> {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: (quality == 2) ? secondaryColor : primaryColor,
+                    color: (quality == 2)
+                        ? Theme.of(context).accentColor
+                        : Theme.of(context).primaryColor,
                     border: Border.all(
-                      color: secondaryColor.withOpacity(0.5),
+                      color: Theme.of(context).accentColor.withOpacity(0.5),
                     ),
                   ),
                   height: 35,
@@ -103,7 +109,9 @@ class _QualitySelectorState extends State<QualitySelector> {
                   child: Text(
                     'Medium',
                     style: TextStyle(
-                      color: (quality == 2) ? primaryColor : secondaryColor,
+                      color: (quality == 2)
+                          ? Theme.of(context).primaryColor
+                          : Theme.of(context).accentColor,
                     ),
                   ),
                   alignment: Alignment.center,
@@ -126,16 +134,20 @@ class _QualitySelectorState extends State<QualitySelector> {
                       bottomRight: Radius.circular(5),
                     ),
                     border: Border.all(
-                      color: secondaryColor.withOpacity(0.5),
+                      color: Theme.of(context).accentColor.withOpacity(0.5),
                     ),
-                    color: (quality == 3) ? secondaryColor : primaryColor,
+                    color: (quality == 3)
+                        ? Theme.of(context).accentColor
+                        : Theme.of(context).primaryColor,
                   ),
                   height: 35,
                   width: 70,
                   child: Text(
                     'High',
                     style: TextStyle(
-                      color: (quality == 3) ? primaryColor : secondaryColor,
+                      color: (quality == 3)
+                          ? Theme.of(context).primaryColor
+                          : Theme.of(context).accentColor,
                     ),
                   ),
                   alignment: Alignment.center,
@@ -161,7 +173,7 @@ class _QualitySelectorState extends State<QualitySelector> {
                 },
                 child: Text(
                   'Done',
-                  style: TextStyle(color: secondaryColor),
+                  style: TextStyle(color: Theme.of(context).accentColor),
                 ),
               ),
             ],

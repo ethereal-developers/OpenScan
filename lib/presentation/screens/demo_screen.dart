@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:openscan/core/constants.dart';
 import 'package:openscan/presentation/Widgets/demo/slide_dots.dart';
 import 'package:openscan/presentation/Widgets/demo/slide_item.dart';
 import 'package:openscan/presentation/screens/home_screen.dart';
@@ -38,11 +37,11 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: primaryColor,
+      backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
-        backgroundColor: primaryColor,
+        backgroundColor: Theme.of(context).primaryColor,
         leading: (!widget.showSkip)
             ? IconButton(
                 icon: Icon(Icons.arrow_back_ios),
@@ -72,7 +71,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                           child: Text(
                             (isDone) ? 'Done' : 'Skip',
                             style: TextStyle(
-                              color: secondaryColor,
+                              color: Theme.of(context).accentColor,
                               fontSize: 17,
                               fontWeight: (isDone)
                                   ? FontWeight.w600
@@ -87,7 +86,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                             : Icon(
                                 Icons.arrow_forward_ios,
                                 size: 17,
-                                color: secondaryColor,
+                                color: Theme.of(context).accentColor,
                               )
                       ],
                     ),
@@ -97,7 +96,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
             : null,
       ),
       body: Container(
-        color: primaryColor,
+        color: Theme.of(context).primaryColor,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           child: Column(
@@ -109,7 +108,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                   children: <Widget>[
                     Theme(
                       data: Theme.of(context).copyWith(
-                        accentColor: primaryColor,
+                        accentColor: Theme.of(context).primaryColor,
                       ),
                       child: PageView.builder(
                         scrollDirection: Axis.horizontal,

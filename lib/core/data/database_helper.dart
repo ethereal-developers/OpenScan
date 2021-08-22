@@ -106,6 +106,8 @@ class DatabaseHelper {
     getDirectoryTableName(tableName);
     await db
         .delete(_dirTableName, where: 'img_path == ?', whereArgs: [imgPath]);
+
+    updateImageCount(tableName: tableName);
   }
 
   /// <---- Master Table Operations ---->

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:open_file/open_file.dart';
-import 'package:openscan/core/constants.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
@@ -64,7 +63,7 @@ class _ViewDocumentState extends State<ViewDocument>
   ImageOS displayImage;
   int imageQuality = 3;
   TapDownDetails _doubleTapDetails;
-  bool showImage = false;
+  // bool showImage = false;
 
   void getDirectoryData({
     bool updateFirstImage = false,
@@ -149,35 +148,6 @@ class _ViewDocumentState extends State<ViewDocument>
     // print('New Directory => ${widget.directoryOS.dirName}');
   }
 
-  imageCropper(File image) async {
-    File croppedImage;
-    print('Inside cropper 1');
-
-    // imageFilePath = await FlutterScannerCropper.openCrop(
-    //   src: image.path,
-    //   dest: cacheDir.path,
-    // );
-    // File imageFileTemp;
-    // imageFileTemp = File(
-    //   "${cacheDir.path}/Pictures/${DateTime.now()}.jpg",
-    // );
-    // image.copySync(imageFileTemp.path);
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CropImage(
-          file: image,
-        ),
-      ),
-    ).then((value) => croppedImage = value);
-    print('Inside cropper 2');
-
-    // imageFilePath = image.path;
-
-    return croppedImage ?? image;
-  }
-
   selectionCallback({ImageOS imageOS}) {
     if (selectedImageIndex.contains(true)) {
       // setState(() {
@@ -190,23 +160,23 @@ class _ViewDocumentState extends State<ViewDocument>
     }
   }
 
-  void fileEditCallback({ImageOS imageOS}) {
-    bool isFirstImage = false;
-    if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
-      isFirstImage = true;
-    }
-    // getDirectoryData(
-    //   updateFirstImage: isFirstImage,
-    //   updateIndex: true,
-    // );
-  }
+  // void fileEditCallback({ImageOS imageOS}) {
+  //   bool isFirstImage = false;
+  //   if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
+  //     isFirstImage = true;
+  //   }
+  //   // getDirectoryData(
+  //   //   updateFirstImage: isFirstImage,
+  //   //   updateIndex: true,
+  //   // );
+  // }
 
-  imageViewerCallback({ImageOS imageOS}) {
-    // setState(() {
-    displayImage = imageOS;
-    showImage = true;
-    // });
-  }
+  // imageViewerCallback({ImageOS imageOS}) {
+  //   setState(() {
+  //     displayImage = imageOS;
+  //     showImage = true;
+  //   });
+  // }
 
   void handleClick(String value) {
     switch (value) {
@@ -286,12 +256,12 @@ class _ViewDocumentState extends State<ViewDocument>
         BlocProvider.of<DirectoryCubit>(context).createImage(
           quickScan: false,
           fromGallery: true,
-          imageCropper: imageCropper,
+          context: context,
         );
       } else {
         BlocProvider.of<DirectoryCubit>(context).createImage(
           quickScan: widget.quickScan,
-          imageCropper: imageCropper,
+          context: context,
         );
       }
     }
@@ -314,12 +284,12 @@ class _ViewDocumentState extends State<ViewDocument>
           print('image count = ${state.imageCount}');
           return WillPopScope(
             onWillPop: () {
-              if (enableSelect || enableReorder || showImage) {
+              if (enableSelect || enableReorder) {
                 // setState(() {
                 enableSelect = false;
                 removeSelection();
                 enableReorder = false;
-                showImage = false;
+                // showImage = false;
                 // });
               } else {
                 Navigator.pop(context);
@@ -329,11 +299,11 @@ class _ViewDocumentState extends State<ViewDocument>
             child: Stack(
               children: [
                 Scaffold(
-                  backgroundColor: primaryColor,
+                  backgroundColor: Theme.of(context).primaryColor,
                   key: scaffoldKey,
                   appBar: AppBar(
                     elevation: 0,
-                    backgroundColor: primaryColor,
+                    backgroundColor: Theme.of(context).primaryColor,
                     leading: (enableSelect || enableReorder)
                         ? IconButton(
                             icon: Icon(
@@ -386,7 +356,8 @@ class _ViewDocumentState extends State<ViewDocument>
                                 alignment: Alignment.center,
                                 child: Text(
                                   'Done',
-                                  style: TextStyle(color: secondaryColor),
+                                  style: TextStyle(
+                                      color: Theme.of(context).accentColor),
                                 ),
                               ),
                             ),
@@ -458,122 +429,109 @@ class _ViewDocumentState extends State<ViewDocument>
                                   ),
                           ],
                   ),
-                  body: RefreshIndicator(
-                    backgroundColor: primaryColor,
-                    color: secondaryColor,
-                    onRefresh: () async {
-                      getDirectoryData();
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.all(size.width * 0.01),
-                      child: Theme(
-                        data: Theme.of(context)
-                            .copyWith(accentColor: primaryColor),
-                        child: ListView(
-                          children: [
-                            ReorderableWrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              minMainAxisCount: 2,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: state.images.map((image) {
-                                // print('Listview tester');
-                                // print(state.imageCount);
-                                // print(image.imgPath);
-                                return ImageCard(
-                                  imageOS: image,
-                                  directoryOS: widget.directoryOS,
-                                  fileEditCallback: () {
-                                    fileEditCallback(imageOS: image);
-                                  },
-                                  selectCallback: () {
-                                    selectionCallback(imageOS: image);
-                                  },
-                                  imageViewerCallback: () {
-                                    imageViewerCallback(imageOS: image);
-                                  },
-                                );
-                              }).toList(),
-                              onReorder: (int oldIndex, int newIndex) {
-                                BlocProvider.of<DirectoryCubit>(context)
-                                    .onReorderImages(oldIndex, newIndex);
+                  body: Padding(
+                    padding: EdgeInsets.all(size.width * 0.01),
+                    child: ListView(
+                      children: [
+                        ReorderableWrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          minMainAxisCount: 2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: state.images.map((image) {
+                            return ImageCard(
+                              imageOS: image,
+                              directoryOS: widget.directoryOS,
+                              // fileEditCallback: () {
+                              //   fileEditCallback(imageOS: image);
+                              // },
+                              selectCallback: () {
+                                selectionCallback(imageOS: image);
                               },
-                              onNoReorder: (int index) {
-                                debugPrint(
-                                    '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
-                              },
-                              onReorderStarted: (int index) {
-                                debugPrint(
-                                    '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
-                              },
-                            ),
-                          ],
+                              // imageViewerCallback: () {
+                              //   imageViewerCallback(imageOS: image);
+                              // },
+                            );
+                          }).toList(),
+                          onReorder: (int oldIndex, int newIndex) {
+                            BlocProvider.of<DirectoryCubit>(context)
+                                .onReorderImages(oldIndex, newIndex);
+                          },
+                          onNoReorder: (int index) {
+                            debugPrint(
+                                '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
+                          },
+                          onReorderStarted: (int index) {
+                            debugPrint(
+                                '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
+                          },
                         ),
-                      ),
+                      ],
                     ),
                   ),
                   floatingActionButton: FAB(
                     normalScanOnPressed: () {
                       BlocProvider.of<DirectoryCubit>(context).createImage(
                         quickScan: false,
-                        imageCropper: imageCropper,
+                        context: context,
                       );
                     },
                     quickScanOnPressed: () {
                       BlocProvider.of<DirectoryCubit>(context).createImage(
                         quickScan: true,
-                        imageCropper: imageCropper,
+                        context: context,
                       );
                     },
                     galleryOnPressed: () {
                       BlocProvider.of<DirectoryCubit>(context).createImage(
                         quickScan: false,
                         fromGallery: true,
-                        imageCropper: imageCropper,
+                        context: context,
                       );
                     },
                   ),
                 ),
-                (showImage)
-                    ? GestureDetector(
-                        onTap: () {
-                          // setState(() {
-                          showImage = false;
-                          // });
-                        },
-                        child: Container(
-                          width: size.width,
-                          height: size.height,
-                          padding: EdgeInsets.all(20),
-                          color: primaryColor.withOpacity(0.8),
-                          child: GestureDetector(
-                            onDoubleTapDown: (details) {
-                              _doubleTapDetails = details;
-                            },
-                            onDoubleTap: () {
-                              if (_controller.value != Matrix4.identity()) {
-                                _controller.value = Matrix4.identity();
-                              } else {
-                                final position =
-                                    _doubleTapDetails.localPosition;
-                                _controller.value = Matrix4.identity()
-                                  ..translate(-position.dx, -position.dy)
-                                  ..scale(2.0);
-                              }
-                            },
-                            child: InteractiveViewer(
-                              transformationController: _controller,
-                              maxScale: 10,
-                              child: GestureDetector(
-                                child: Image.file(
-                                  File(displayImage.imgPath),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    : Container(),
+                // (showImage)
+                //     ? GestureDetector(
+                //         onTap: () {
+                //           // setState(() {
+                //           showImage = false;
+                //           // });
+                //         },
+                //         child: Container(
+                //           width: size.width,
+                //           height: size.height,
+                //           padding: EdgeInsets.all(20),
+                //           color:
+                //               Theme.of(context).primaryColor.withOpacity(0.8),
+                //           child: GestureDetector(
+                //             onDoubleTapDown: (details) {
+                //               _doubleTapDetails = details;
+                //             },
+                //             onDoubleTap: () {
+                //               if (_controller.value != Matrix4.identity()) {
+                //                 _controller.value = Matrix4.identity();
+                //               } else {
+                //                 final position =
+                //                     _doubleTapDetails.localPosition;
+                //                 _controller.value = Matrix4.identity()
+                //                   ..translate(-position.dx, -position.dy)
+                //                   ..scale(2.0);
+                //               }
+                //             },
+                //             child: InteractiveViewer(
+                //               transformationController: _controller,
+                //               maxScale: 10,
+                //               child: GestureDetector(
+                //                 child: Image.file(
+                //                   File(displayImage.imgPath),
+                //                 ),
+                //               ),
+                //             ),
+                //           ),
+                //         ),
+                //       )
+                //     : Container(),
               ],
             ),
           );

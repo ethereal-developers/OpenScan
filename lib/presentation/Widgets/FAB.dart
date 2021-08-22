@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:openscan/core/constants.dart';
 import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 class FAB extends StatefulWidget {
@@ -57,8 +56,8 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
       overlayOpacity: 0.5,
       tooltip: 'Scan Options',
       heroTag: 'speed-dial-hero-tag',
-      backgroundColor: secondaryColor,
-      foregroundColor: primaryColor,
+      backgroundColor: Theme.of(context).accentColor,
+      foregroundColor: Theme.of(context).primaryColor,
       elevation: 8.0,
       shape: CircleBorder(),
       onOpen: () {

@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-import 'package:openscan/core/constants.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/presentation/screens/crop_screen.dart';
@@ -17,16 +16,16 @@ class ImageCard extends StatefulWidget {
   final DirectoryOS directoryOS;
   final ImageOS imageOS;
 
-  final Function fileEditCallback;
+  // final Function fileEditCallback;
   final Function selectCallback;
-  final Function imageViewerCallback;
+  // final Function imageViewerCallback;
 
   const ImageCard({
     this.directoryOS,
     this.imageOS,
-    this.fileEditCallback,
+    // this.fileEditCallback,
     this.selectCallback,
-    this.imageViewerCallback,
+    // this.imageViewerCallback,
   });
 
   @override
@@ -50,18 +49,14 @@ class _ImageCardState extends State<ImageCard> {
       children: [
         MaterialButton(
           elevation: 20,
-          color: primaryColor,
+          color: Theme.of(context).primaryColor,
           onPressed: () {
-            (enableSelect)
-                ? selectionOnPressed()
-                : widget.imageViewerCallback();
+            (enableSelect) ? selectionOnPressed() : null;
           },
           child: FocusedMenuHolder(
             menuWidth: size.width * 0.45,
             onPressed: () {
-              (enableSelect)
-                  ? selectionOnPressed()
-                  : widget.imageViewerCallback();
+              (enableSelect) ? selectionOnPressed() : null;
             },
             menuItems: [
               FocusedMenuItem(
@@ -75,16 +70,10 @@ class _ImageCardState extends State<ImageCard> {
                   //   src: widget.imageOS.imgPath,
                   //   dest: cacheDir.path,
                   // );
-                  File croppedImage;
-                  await Navigator.push(
+                  File image = await imageCropper(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => CropImage(
-                        file: File(widget.imageOS.imgPath),
-                      ),
-                    ),
-                  ).then((value) => croppedImage = value);
-                  File image = croppedImage;
+                    File(widget.imageOS.imgPath),
+                  );
 
                   if (image != null) {
                     File temp = File(widget.imageOS.imgPath.substring(
@@ -116,7 +105,7 @@ class _ImageCardState extends State<ImageCard> {
                   //     tableName: widget.directoryOS.dirName,
                   //   );
                   // }
-                  widget.fileEditCallback();
+                  // widget.fileEditCallback();
                 },
                 trailingIcon: Icon(
                   Icons.crop,
@@ -137,9 +126,6 @@ class _ImageCardState extends State<ImageCard> {
                             imgPath: widget.imageOS.imgPath,
                             tableName: widget.directoryOS.dirName,
                           );
-                          database.updateImageCount(
-                            tableName: widget.directoryOS.dirName,
-                          );
                           try {
                             Directory(widget.directoryOS.dirPath)
                                 .deleteSync(recursive: false);
@@ -147,7 +133,7 @@ class _ImageCardState extends State<ImageCard> {
                                 dirPath: widget.directoryOS.dirPath);
                             Navigator.pop(context);
                           } catch (e) {
-                            widget.fileEditCallback();
+                            // widget.fileEditCallback();
                           }
                           widget.selectCallback();
                           Navigator.pop(context);

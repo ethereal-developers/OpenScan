@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:openscan/core/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void launchWebsite(String urlString) async {
@@ -21,11 +20,11 @@ class AboutScreen extends StatelessWidget {
     Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
-        backgroundColor: primaryColor,
+        backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           elevation: 0,
           centerTitle: true,
-          backgroundColor: primaryColor,
+          backgroundColor: Theme.of(context).primaryColor,
           title: RichText(
             text: TextSpan(
               text: 'About',
@@ -40,7 +39,8 @@ class AboutScreen extends StatelessWidget {
         body: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Theme(
-            data: Theme.of(context).copyWith(accentColor: primaryColor),
+            data: Theme.of(context)
+                .copyWith(accentColor: Theme.of(context).primaryColor),
             child: ListView(
               children: <Widget>[
                 Center(
@@ -60,7 +60,8 @@ class AboutScreen extends StatelessWidget {
                       children: [
                         TextSpan(
                             text: 'Scan',
-                            style: TextStyle(color: secondaryColor)),
+                            style: TextStyle(
+                                color: Theme.of(context).accentColor)),
                         TextSpan(
                           text:
                               ' is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file.',
@@ -158,7 +159,8 @@ class AboutScreen extends StatelessWidget {
                     children: [
                       TextSpan(
                           text: '2.1.0',
-                          style: TextStyle(color: secondaryColor)),
+                          style:
+                              TextStyle(color: Theme.of(context).accentColor)),
                     ],
                   ),
                 ),
@@ -198,7 +200,7 @@ class ContactCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
               CircleAvatar(
-                backgroundColor: secondaryColor,
+                backgroundColor: Theme.of(context).accentColor,
                 radius: size.width * 0.13,
                 backgroundImage: image,
               ),

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-import 'package:openscan/core/constants.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
@@ -183,24 +182,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
-        backgroundColor: primaryColor,
+        backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           elevation: 0,
           centerTitle: true,
-          backgroundColor: primaryColor,
+          backgroundColor: Theme.of(context).primaryColor,
           title: RichText(
             text: TextSpan(
               text: 'Open',
               style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
               children: [
-                TextSpan(text: 'Scan', style: TextStyle(color: secondaryColor))
+                TextSpan(
+                    text: 'Scan',
+                    style: TextStyle(color: Theme.of(context).accentColor))
               ],
             ),
           ),
         ),
         drawer: Container(
           width: size.width * 0.55,
-          color: primaryColor,
+          color: Theme.of(context).primaryColor,
           child: Column(
             children: <Widget>[
               Spacer(),
@@ -288,15 +289,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               IconButton(
                 icon: Icon(Icons.arrow_back_ios),
                 onPressed: () => Navigator.pop(context),
-                color: secondaryColor,
+                color: Theme.of(context).accentColor,
               ),
               Spacer(),
             ],
           ),
         ),
         body: RefreshIndicator(
-          backgroundColor: primaryColor,
-          color: secondaryColor,
+          backgroundColor: Theme.of(context).primaryColor,
+          color: Theme.of(context).accentColor,
           onRefresh: homeRefresh,
           child: Column(
             children: <Widget>[
@@ -311,207 +312,205 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: FutureBuilder(
                   future: getMasterData(),
                   builder: (BuildContext context, AsyncSnapshot snapshot) {
-                    return Theme(
-                      data:
-                          Theme.of(context).copyWith(accentColor: primaryColor),
-                      child: ListView.builder(
-                        itemCount: masterDirectories.length,
-                        itemBuilder: (context, index) {
-                          return FocusedMenuHolder(
-                            onPressed: null,
-                            menuWidth: size.width * 0.44,
-                            child: ListTile(
-                              leading: Image.file(
-                                File(masterDirectories[index].firstImgPath),
-                                width: 50,
-                                height: 50,
-                              ),
+                    return ListView.builder(
+                      itemCount: masterDirectories.length,
+                      itemBuilder: (context, index) {
+                        return FocusedMenuHolder(
+                          onPressed: null,
+                          menuWidth: size.width * 0.44,
+                          child: ListTile(
+                            leading: Image.file(
+                              File(masterDirectories[index].firstImgPath),
+                              width: 50,
+                              height: 50,
+                            ),
+                            title: Text(
+                              masterDirectories[index].newName ??
+                                  masterDirectories[index].dirName,
+                              style: TextStyle(fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Last Modified: ${masterDirectories[index].lastModified.day}-${masterDirectories[index].lastModified.month}-${masterDirectories[index].lastModified.year}',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                                Text(
+                                  '${masterDirectories[index].imageCount} ${(masterDirectories[index].imageCount == 1) ? 'image' : 'images'}',
+                                  style: TextStyle(fontSize: 11),
+                                ),
+                              ],
+                            ),
+                            trailing: Icon(
+                              Icons.arrow_right,
+                              size: 30,
+                              color: Theme.of(context).accentColor,
+                            ),
+                            onTap: () async {
+                              pushView(
+                                  scanType: 'default',
+                                  masterDirectory: masterDirectories[index]);
+                            },
+                          ),
+                          menuItems: [
+                            FocusedMenuItem(
                               title: Text(
-                                masterDirectories[index].newName ??
-                                    masterDirectories[index].dirName,
-                                style: TextStyle(fontSize: 14),
-                                overflow: TextOverflow.ellipsis,
+                                'Rename',
+                                style: TextStyle(color: Colors.black),
                               ),
-                              subtitle: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Last Modified: ${masterDirectories[index].lastModified.day}-${masterDirectories[index].lastModified.month}-${masterDirectories[index].lastModified.year}',
-                                    style: TextStyle(fontSize: 11),
-                                  ),
-                                  Text(
-                                    '${masterDirectories[index].imageCount} ${(masterDirectories[index].imageCount == 1) ? 'image' : 'images'}',
-                                    style: TextStyle(fontSize: 11),
-                                  ),
-                                ],
+                              trailingIcon: Icon(
+                                Icons.edit,
+                                color: Colors.black,
                               ),
-                              trailing: Icon(
-                                Icons.arrow_right,
-                                size: 30,
-                                color: secondaryColor,
-                              ),
-                              onTap: () async {
-                                pushView(
-                                    scanType: 'default',
-                                    masterDirectory: masterDirectories[index]);
+                              onPressed: () {
+                                bool isEmptyError = false;
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    String fileName;
+                                    return StatefulBuilder(
+                                      builder: (BuildContext context,
+                                          void Function(void Function())
+                                              setState) {
+                                        return AlertDialog(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(10),
+                                            ),
+                                          ),
+                                          title: Text('Rename File'),
+                                          content: TextField(
+                                            controller: TextEditingController(
+                                              text: fileName ??
+                                                  masterDirectories[index]
+                                                      .newName,
+                                            ),
+                                            onChanged: (value) {
+                                              fileName = value;
+                                            },
+                                            cursorColor:
+                                                Theme.of(context).accentColor,
+                                            textCapitalization:
+                                                TextCapitalization.words,
+                                            decoration: InputDecoration(
+                                              prefixStyle: TextStyle(
+                                                  color: Colors.white),
+                                              focusedBorder:
+                                                  UnderlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                              ),
+                                              errorText: isEmptyError
+                                                  ? 'Error! File name cannot be empty'
+                                                  : null,
+                                            ),
+                                          ),
+                                          actions: <Widget>[
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: Text(
+                                                'Cancel',
+                                                style: TextStyle(
+                                                    color: Colors.white),
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () {
+                                                fileName = fileName.trim();
+                                                fileName = fileName.replaceAll(
+                                                    '/', '');
+                                                if (fileName.isNotEmpty) {
+                                                  masterDirectories[index]
+                                                      .newName = fileName;
+                                                  database.renameDirectory(
+                                                      directory:
+                                                          masterDirectories[
+                                                              index]);
+                                                  Navigator.pop(context);
+                                                  homeRefresh();
+                                                } else {
+                                                  setState(() {
+                                                    isEmptyError = true;
+                                                  });
+                                                }
+                                              },
+                                              child: Text(
+                                                'Save',
+                                                style: TextStyle(
+                                                    color: Theme.of(context)
+                                                        .accentColor),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                ).whenComplete(() {
+                                  setState(() {});
+                                });
                               },
                             ),
-                            menuItems: [
-                              FocusedMenuItem(
-                                title: Text(
-                                  'Rename',
-                                  style: TextStyle(color: Colors.black),
-                                ),
-                                trailingIcon: Icon(
-                                  Icons.edit,
-                                  color: Colors.black,
-                                ),
-                                onPressed: () {
-                                  bool isEmptyError = false;
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      String fileName;
-                                      return StatefulBuilder(
-                                        builder: (BuildContext context,
-                                            void Function(void Function())
-                                                setState) {
-                                          return AlertDialog(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.all(
-                                                Radius.circular(10),
-                                              ),
-                                            ),
-                                            title: Text('Rename File'),
-                                            content: TextField(
-                                              controller: TextEditingController(
-                                                text: fileName ??
-                                                    masterDirectories[index]
-                                                        .newName,
-                                              ),
-                                              onChanged: (value) {
-                                                fileName = value;
-                                              },
-                                              cursorColor: secondaryColor,
-                                              textCapitalization:
-                                                  TextCapitalization.words,
-                                              decoration: InputDecoration(
-                                                prefixStyle: TextStyle(
-                                                    color: Colors.white),
-                                                focusedBorder:
-                                                    UnderlineInputBorder(
-                                                  borderSide: BorderSide(
-                                                      color: secondaryColor),
-                                                ),
-                                                errorText: isEmptyError
-                                                    ? 'Error! File name cannot be empty'
-                                                    : null,
-                                              ),
-                                            ),
-                                            actions: <Widget>[
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(context),
-                                                child: Text(
-                                                  'Cancel',
-                                                  style: TextStyle(
-                                                      color: Colors.white),
-                                                ),
-                                              ),
-                                              TextButton(
-                                                onPressed: () {
-                                                  fileName = fileName.trim();
-                                                  fileName = fileName
-                                                      .replaceAll('/', '');
-                                                  if (fileName.isNotEmpty) {
-                                                    masterDirectories[index]
-                                                        .newName = fileName;
-                                                    database.renameDirectory(
-                                                        directory:
-                                                            masterDirectories[
-                                                                index]);
-                                                    Navigator.pop(context);
-                                                    homeRefresh();
-                                                  } else {
-                                                    setState(() {
-                                                      isEmptyError = true;
-                                                    });
-                                                  }
-                                                },
-                                                child: Text(
-                                                  'Save',
-                                                  style: TextStyle(
-                                                      color: secondaryColor),
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
-                                    },
-                                  ).whenComplete(() {
-                                    setState(() {});
-                                  });
-                                },
-                              ),
-                              FocusedMenuItem(
-                                title: Text('Delete'),
-                                trailingIcon: Icon(Icons.delete),
-                                backgroundColor: Colors.redAccent,
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(10),
+                            FocusedMenuItem(
+                              title: Text('Delete'),
+                              trailingIcon: Icon(Icons.delete),
+                              backgroundColor: Colors.redAccent,
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                          Radius.circular(10),
+                                        ),
+                                      ),
+                                      title: Text('Delete'),
+                                      content: Text(
+                                          'Do you really want to delete file?'),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: Text(
+                                            'Cancel',
+                                            style:
+                                                TextStyle(color: Colors.white),
                                           ),
                                         ),
-                                        title: Text('Delete'),
-                                        content: Text(
-                                            'Do you really want to delete file?'),
-                                        actions: <Widget>[
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: Text(
-                                              'Cancel',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Directory(masterDirectories[index]
+                                                    .dirPath)
+                                                .deleteSync(recursive: true);
+                                            database.deleteDirectory(
+                                                dirPath:
+                                                    masterDirectories[index]
+                                                        .dirPath);
+                                            Navigator.pop(context);
+                                            homeRefresh();
+                                          },
+                                          child: Text(
+                                            'Delete',
+                                            style: TextStyle(
+                                                color: Colors.redAccent),
                                           ),
-                                          TextButton(
-                                            onPressed: () {
-                                              Directory(masterDirectories[index]
-                                                      .dirPath)
-                                                  .deleteSync(recursive: true);
-                                              database.deleteDirectory(
-                                                  dirPath:
-                                                      masterDirectories[index]
-                                                          .dirPath);
-                                              Navigator.pop(context);
-                                              homeRefresh();
-                                            },
-                                            child: Text(
-                                              'Delete',
-                                              style: TextStyle(
-                                                  color: Colors.redAccent),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ).whenComplete(() {
-                                    setState(() {});
-                                  });
-                                },
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ).whenComplete(() {
+                                  setState(() {});
+                                });
+                              },
+                            ),
+                          ],
+                        );
+                      },
                     );
                   },
                 ),

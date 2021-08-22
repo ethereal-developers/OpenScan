@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
+import 'package:openscan/presentation/screens/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
 
 part 'directory_state.dart';
@@ -120,7 +122,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   createImage({
     bool quickScan,
     bool fromGallery = false,
-    Function imageCropper,
+    BuildContext context,
   }) async {
     File image;
     List<File> galleryImages;
@@ -130,26 +132,24 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     } else {
       image = await fileOperations.openCamera();
     }
-    print('test 1');
 
     Directory cacheDir = await getTemporaryDirectory();
     if (image != null || galleryImages != null) {
       if (!quickScan && !fromGallery) {
-        image = await imageCropper(image);
+        image = await imageCropper(context, image);
       }
-      print('test 1.5');
 
       if (fromGallery) {
-        // for (File galleryImage in galleryImages) {
-        //   if (galleryImage.existsSync()) {
-        //     await fileOperations.saveImage(
-        //       image: galleryImage,
-        //       index: state.images.length + 1,
-        //       dirPath: state.dirPath,
-        //     );
-        //   }
-        //   state.images.length++;
-        // }
+        for (File galleryImage in galleryImages) {
+          if (galleryImage.existsSync()) {
+            await fileOperations.saveImage(
+              image: galleryImage,
+              index: state.images.length + 1,
+              dirPath: state.dirPath,
+            );
+          }
+          state.images.length++;
+        }
       } else {
         await fileOperations.saveImage(
           image: image,
@@ -161,10 +161,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           idx: state.imageCount + 1,
           imgPath: image.path,
         );
-        print('test 2');
         state.images.add(imageOS);
-        print('test 2.5');
-        // emit(state);
+        state.imageCount = state.images.length;
+        emit(state);
 
         await fileOperations.deleteTemporaryFiles();
         if (quickScan) {
@@ -173,11 +172,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           return createImage(quickScan: quickScan);
         }
       }
-      print('test 3');
-
-      emit(state);
-
-      // getImageData();
     }
   }
 }
