@@ -50,25 +50,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
       emit(state);
 
-      // // Updating first image path after delete
-      // if (updateFirstImage) {
-      //   database.updateFirstImagePath(
-      //       imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
-      //   updateFirstImage = false;
-      // }
-
-      // Updating index of images after delete
-      // if (updateIndex) {
-      //   i = index;
-      //   database.updateImageIndex(
-      //     image: ImageOS(
-      //       idx: i,
-      //       imgPath: image['img_path'],
-      //     ),
-      //     tableName: widget.directoryOS.dirName,
-      //   );
-      // }
-
       // initDirectoryImages.add(
       //   tempImageOS,
       // );
@@ -205,12 +186,15 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     emit(state);
   }
 
-  deleteImage(context, {imageOS}) {
-    File(imageOS.imgPath).deleteSync();
+  deleteImage(context, {ImageOS imageToDelete}) {
+    // Deleting image from database
+    File(imageToDelete.imgPath).deleteSync();
     database.deleteImage(
-      imgPath: imageOS.imgPath,
+      imgPath: imageToDelete.imgPath,
       tableName: state.dirName,
     );
+
+    // Deleting image from directory
     try {
       Directory(state.dirPath).deleteSync(recursive: false);
       database.deleteDirectory(dirPath: state.dirPath);
@@ -218,5 +202,27 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     } catch (e) {
       print('Directory cant be deleted as it contains other files');
     }
+
+    // Deleting image from cubit
+    state.images.removeAt(imageToDelete.idx - 1);
+    state.imageCount = state.images.length;
+
+    // Updating index of images
+    for (int i = imageToDelete.idx - 1; i < state.imageCount; i++) {
+      state.images[i].idx = i + 1;
+      database.updateImageIndex(
+        image: state.images[i],
+        tableName: state.dirName,
+      );
+    }
+
+    // Updating first image path
+    if (imageToDelete.idx == 1) {
+      database.updateFirstImagePath(
+        imagePath: state.images[1].imgPath,
+        dirPath: state.dirPath,
+      );
+    }
+    emit(state);
   }
 }

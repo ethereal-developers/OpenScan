@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:open_file/open_file.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
@@ -15,7 +14,6 @@ import 'package:openscan/presentation/Widgets/view/popup_menu_button.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/Widgets/view/image_card.dart';
 import 'package:openscan/presentation/Widgets/view/quality_selector.dart';
-import 'package:openscan/presentation/screens/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:share_extend/share_extend.dart';
@@ -415,7 +413,11 @@ class _ViewDocumentState extends State<ViewDocument>
                               )
                             : CustomPopupMenuButton(
                                 onSelected: handleClick,
-                                itemList: ['Select', 'Reorder', 'Export'],
+                                itemsMap: {
+                                  'Select': Icons.select_all,
+                                  'Reorder': Icons.reorder,
+                                  'Export': Icons.share,
+                                },
                               ),
                       ],
               ),

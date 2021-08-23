@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 
 class CustomPopupMenuButton extends StatelessWidget {
   final Function onSelected;
-  final List<String> itemList;
-  CustomPopupMenuButton({@required this.onSelected, this.itemList});
+  final Map<String, dynamic> itemsMap;
+  // final Map<>
+
+  CustomPopupMenuButton({@required this.onSelected, this.itemsMap});
 
   @override
   Widget build(BuildContext context) {
+    List<MapEntry> items = itemsMap.entries.toList();
+
     return PopupMenuButton<String>(
       onSelected: onSelected,
       color: Theme.of(context).primaryColor.withOpacity(0.95),
@@ -17,14 +21,14 @@ class CustomPopupMenuButton extends StatelessWidget {
         return List.generate(
           3,
           (index) => PopupMenuItem(
-            value: itemList[index],
+            value: items[index].key,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(itemList[index]),
+                Text(items[index].key),
                 SizedBox(width: 10),
                 Icon(
-                  Icons.select_all,
+                  items[index].value,
                   size: 20,
                 ),
               ],
