@@ -67,6 +67,7 @@ class _ImageCardState extends State<ImageCard> {
                 onPressed: () async {
                   BlocProvider.of<DirectoryCubit>(context).cropImage(
                     context,
+                    // TODO: Avoid passing imageOS
                     imageOS: widget.imageOS,
                   );
 
@@ -108,23 +109,13 @@ class _ImageCardState extends State<ImageCard> {
                 onPressed: () {
                   showDialog(
                     context: context,
-                    builder: (context) {
+                    builder: (_) {
                       return DeleteDialog(
                         deleteOnPressed: () {
-                          File(widget.imageOS.imgPath).deleteSync();
-                          database.deleteImage(
-                            imgPath: widget.imageOS.imgPath,
-                            tableName: widget.directoryOS.dirName,
+                          BlocProvider.of<DirectoryCubit>(context).deleteImage(
+                            context,
+                            imageOS: widget.imageOS,
                           );
-                          try {
-                            Directory(widget.directoryOS.dirPath)
-                                .deleteSync(recursive: false);
-                            database.deleteDirectory(
-                                dirPath: widget.directoryOS.dirPath);
-                            Navigator.pop(context);
-                          } catch (e) {
-                            // widget.fileEditCallback();
-                          }
                           widget.selectCallback();
                           Navigator.pop(context);
                         },

@@ -204,4 +204,19 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
     emit(state);
   }
+
+  deleteImage(context, {imageOS}) {
+    File(imageOS.imgPath).deleteSync();
+    database.deleteImage(
+      imgPath: imageOS.imgPath,
+      tableName: state.dirName,
+    );
+    try {
+      Directory(state.dirPath).deleteSync(recursive: false);
+      database.deleteDirectory(dirPath: state.dirPath);
+      Navigator.pop(context);
+    } catch (e) {
+      print('Directory cant be deleted as it contains other files');
+    }
+  }
 }
