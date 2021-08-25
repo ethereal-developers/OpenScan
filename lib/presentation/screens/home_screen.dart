@@ -22,7 +22,7 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   DatabaseHelper database = DatabaseHelper();
   List<Map<String, dynamic>> masterData;
   List<DirectoryOS> masterDirectories = [];
@@ -47,9 +47,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return false;
   }
 
-  void askPermission() async {
-    await _requestPermission();
-  }
+  // void askPermission() async {
+  //   await _requestPermission();
+  // }
 
   pushView({String scanType, DirectoryOS masterDirectory}) {
     switch (scanType) {
@@ -57,9 +57,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ViewDocument(
-              quickScan: false,
-              directoryOS: DirectoryOS(),
+            builder: (context) => BlocProvider<DirectoryCubit>(
+              create: (context) => DirectoryCubit()..createDirectory(),
+              child: ViewDocument(
+                quickScan: false,
+                directoryOS: DirectoryOS(),
+              ),
             ),
           ),
         ).whenComplete(() {
@@ -70,9 +73,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ViewDocument(
-              quickScan: true,
-              directoryOS: DirectoryOS(),
+            builder: (context) => BlocProvider<DirectoryCubit>(
+              create: (context) => DirectoryCubit()..createDirectory(),
+              child: ViewDocument(
+                quickScan: true,
+                directoryOS: DirectoryOS(),
+              ),
             ),
           ),
         ).whenComplete(() {
@@ -83,10 +89,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ViewDocument(
-              quickScan: false,
-              directoryOS: DirectoryOS(),
-              fromGallery: true,
+            builder: (context) => BlocProvider<DirectoryCubit>(
+              create: (context) => DirectoryCubit()..createDirectory(),
+              child: ViewDocument(
+                quickScan: false,
+                directoryOS: DirectoryOS(),
+                fromGallery: true,
+              ),
             ),
           ),
         ).whenComplete(() {
@@ -97,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => BlocProvider<DirectoryCubit>(
+            builder: (context) => BlocProvider<DirectoryCubit>(
               create: (context) => DirectoryCubit(
                 dirName: masterDirectory.dirName,
                 created: masterDirectory.created,
@@ -107,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 lastModified: masterDirectory.lastModified,
                 newName: masterDirectory.newName,
                 images: <ImageOS>[],
-              ),
+              )..getImageData(),
               lazy: false,
               child: ViewDocument(
                 directoryOS: masterDirectory,
@@ -152,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    askPermission();
+    _requestPermission();
     getMasterData();
 
     // Quick Action related

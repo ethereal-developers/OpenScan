@@ -3,9 +3,6 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:openscan/core/data/database_helper.dart';
-import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/delete_dialog.dart';
@@ -13,17 +10,16 @@ import 'package:openscan/presentation/Widgets/view/custom_bottomsheet.dart';
 import 'package:openscan/presentation/Widgets/view/popup_menu_button.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/Widgets/view/image_card.dart';
-import 'package:openscan/presentation/Widgets/view/quality_selector.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:reorderables/reorderables.dart';
-import 'package:share_extend/share_extend.dart';
-
-bool enableSelect = false;
-bool enableReorder = false;
-List<bool> selectedImageIndex = [];
 
 class ViewDocument extends StatefulWidget {
   static String route = "ViewDocument";
+
+  static bool enableSelect = false;
+  static bool enableReorder = false;
+  // static List<bool> selectedImageIndex = [];
+
   final DirectoryOS directoryOS;
   final bool quickScan;
   final bool fromGallery;
@@ -43,24 +39,23 @@ class ViewDocument extends StatefulWidget {
 ///   ImageOS => addImage, deleteImage, updateImagePath, updateImageIndex, revertReorder
 ///   DirectoryOS => updateFirstImagePath, updateImageCount, deleteDirectory
 
-class _ViewDocumentState extends State<ViewDocument>
-    with TickerProviderStateMixin {
-  final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
-  TransformationController _controller = TransformationController();
-  DatabaseHelper database = DatabaseHelper();
-  List<String> imageFilesPath = [];
-  // List<Widget> imageCards = [];
-  FileOperations fileOperations = FileOperations();
+class _ViewDocumentState extends State<ViewDocument> {
   String dirPath;
-  String fileName = '';
-  List<Map<String, dynamic>> directoryData;
+  String dirName = '';
+  bool enableSelectionIcons = false;
+
+  List<String> imageFilesPath = [];
+
+  // final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
+  // TransformationController _controller = TransformationController();
+  // DatabaseHelper database = DatabaseHelper();
+  // List<Widget> imageCards = [];
+  // FileOperations fileOperations = FileOperations();
+  // List<Map<String, dynamic>> directoryData;
   // List<ImageOS> directoryImages = [];
   // List<ImageOS> initDirectoryImages = [];
-  bool enableSelectionIcons = false;
-  bool resetReorder = false;
-  ImageOS displayImage;
-  int imageQuality = 3;
-  TapDownDetails _doubleTapDetails;
+  // bool resetReorder = false;
+  // ImageOS displayImage;
   // bool showImage = false;
 
   void getDirectoryData({
@@ -70,7 +65,7 @@ class _ViewDocumentState extends State<ViewDocument>
     // directoryImages = [];
     // initDirectoryImages = [];
     imageFilesPath = [];
-    selectedImageIndex = [];
+    // ViewDocument.selectedImageIndex = [];
     int index = 1;
 
     // BlocListener<DirectoryCubit, DirectoryState>(
@@ -79,85 +74,69 @@ class _ViewDocumentState extends State<ViewDocument>
     //   directoryData = await database.getDirectoryData(state.dirName);
     //   // print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
     // });
-
-    directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
+    // directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
     // print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
-    for (var image in directoryData) {
-      // Updating first image path after delete
-      if (updateFirstImage) {
-        database.updateFirstImagePath(
-            imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
-        updateFirstImage = false;
-      }
-      var i = image['idx'];
-
-      // Updating index of images after delete
-      if (updateIndex) {
-        i = index;
-        database.updateImageIndex(
-          image: ImageOS(
-            idx: i,
-            imgPath: image['img_path'],
-          ),
-          tableName: widget.directoryOS.dirName,
-        );
-      }
-
-      // ImageOS tempImageOS = ImageOS(
-      //   idx: i,
-      //   imgPath: image['img_path'],
-      // );
-      // directoryImages.add(
-      //   tempImageOS,
-      // );
-      // initDirectoryImages.add(
-      //   tempImageOS,
-      // );
-
-      // imageCards.add(
-      //   ImageCard(
-      //     imageOS: tempImageOS,
-      //     directoryOS: widget.directoryOS,
-      //     fileEditCallback: () {
-      //       fileEditCallback(imageOS: tempImageOS);
-      //     },
-      //     selectCallback: () {
-      //       selectionCallback(imageOS: tempImageOS);
-      //     },
-      //     imageViewerCallback: () {
-      //       imageViewerCallback(imageOS: tempImageOS);
-      //     },
-      //   ),
-      // );
-
-      imageFilesPath.add(image['img_path']);
-      selectedImageIndex.add(false);
-      index += 1;
-    }
-    // setState(() {});
+    // for (var image in directoryData) {
+    // Updating first image path after delete
+    // if (updateFirstImage) {
+    //   database.updateFirstImagePath(
+    //       imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
+    //   updateFirstImage = false;
+    // }
+    // var i = image['idx'];
+    // Updating index of images after delete
+    // if (updateIndex) {
+    //   i = index;
+    //   database.updateImageIndex(
+    //     image: ImageOS(
+    //       idx: i,
+    //       imgPath: image['img_path'],
+    //     ),
+    //     tableName: widget.directoryOS.dirName,
+    //   );
+    // }
+    // ImageOS tempImageOS = ImageOS(
+    //   idx: i,
+    //   imgPath: image['img_path'],
+    // );
+    // directoryImages.add(
+    //   tempImageOS,
+    // );
+    // initDirectoryImages.add(
+    //   tempImageOS,
+    // );
+    // imageCards.add(
+    //   ImageCard(
+    //     imageOS: tempImageOS,
+    //     directoryOS: widget.directoryOS,
+    //     fileEditCallback: () {
+    //       fileEditCallback(imageOS: tempImageOS);
+    //     },
+    //     selectCallback: () {
+    //       selectionCallback(imageOS: tempImageOS);
+    //     },
+    //     imageViewerCallback: () {
+    //       imageViewerCallback(imageOS: tempImageOS);
+    //     },
+    //   ),
+    // );
+    // imageFilesPath.add(image['img_path']);
+    // ViewDocument.selectedImageIndex.add(false);
+    index += 1;
+    // }
   }
 
-  Future<void> createDirectoryPath() async {
-    Directory appDir = await getExternalStorageDirectory();
-    dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
-    fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
-    widget.directoryOS.dirPath = dirPath;
-    widget.directoryOS.dirName = fileName;
-    // print('New Directory => ${widget.directoryOS.dirName}');
-  }
-
-  selectionCallback({ImageOS imageOS}) {
-    if (selectedImageIndex.contains(true)) {
-      // setState(() {
-      enableSelectionIcons = true;
-      // });
-    } else {
-      // setState(() {
-      enableSelectionIcons = false;
-      // });
-    }
-  }
-
+  // selectionCallback({ImageOS imageOS}) {
+  //   if (ViewDocument.selectedImageIndex.contains(true)) {
+  //     setState(() {
+  //       enableSelectionIcons = true;
+  //     });
+  //   } else {
+  //     setState(() {
+  //       enableSelectionIcons = false;
+  //     });
+  //   }
+  // }
   // void fileEditCallback({ImageOS imageOS}) {
   //   bool isFirstImage = false;
   //   if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
@@ -168,77 +147,60 @@ class _ViewDocumentState extends State<ViewDocument>
   //   //   updateIndex: true,
   //   // );
   // }
-
   // imageViewerCallback({ImageOS imageOS}) {
   //   setState(() {
   //     displayImage = imageOS;
   //     showImage = true;
   //   });
   // }
+  // removeSelection() {
+  //   setState(() {
+  //     ViewDocument.selectedImageIndex =
+  //         ViewDocument.selectedImageIndex.map((e) => false).toList();
+  //     ViewDocument.enableSelect = false;
+  //   });
+  // }
 
-  void handleClick(String value) {
+  void handleClick(context, {String value}) {
     switch (value) {
       case 'Reorder':
-        // setState(() {
-        enableReorder = true;
-        // });
+        setState(() {
+          ViewDocument.enableReorder = true;
+        });
         break;
       case 'Select':
-        // setState(() {
-        enableSelect = true;
-        // });
+        setState(() {
+          ViewDocument.enableSelect = true;
+        });
         break;
       case 'Export':
         showModalBottomSheet(
           context: context,
-          builder: _buildBottomSheet,
+          builder: (context) {
+            return CustomBottomSheet();
+          },
         );
         break;
     }
   }
 
-  removeSelection() {
-    // setState(() {
-    selectedImageIndex = selectedImageIndex.map((e) => false).toList();
-    enableSelect = false;
-    // });
+  Future<void> createDirectoryPath() async {
+    Directory appDir = await getExternalStorageDirectory();
+    dirName = 'OpenScan ${DateTime.now()}';
+    dirPath = "${appDir.path}/$dirName";
+    widget.directoryOS.dirPath = dirPath;
+    widget.directoryOS.dirName = dirName;
+    // print('New Directory => ${widget.directoryOS.dirName}');
   }
 
+  // TODO: Bugs
+  // Create Image - crop not reflecting
+  // Delete image not reflecting
+  // Bloc not provided to bottomSheet
+
+  // TODO: Select images
+
   // TODO: Delete Multiple Images
-
-  // deleteMultipleImages() {
-  //   bool isFirstImage = false;
-  //   for (var i = 0; i < directoryImages.length; i++) {
-  //     if (selectedImageIndex[i]) {
-  //       // print('${directoryImages[i].idx}: ${directoryImages[i].imgPath}');
-  //       if (directoryImages[i].imgPath == widget.directoryOS.firstImgPath) {
-  //         isFirstImage = true;
-  //       }
-  //
-  //       File(directoryImages[i].imgPath).deleteSync();
-  //       database.deleteImage(
-  //         imgPath: directoryImages[i].imgPath,
-  //         tableName: widget.directoryOS.dirName,
-  //       );
-  //     }
-  //   }
-  //   database.updateImageCount(
-  //     tableName: widget.directoryOS.dirName,
-  //   );
-  //   try {
-  //     Directory(widget.directoryOS.dirPath).deleteSync(recursive: false);
-  //     database.deleteDirectory(dirPath: widget.directoryOS.dirPath);
-  //   } catch (e) {
-  //     getDirectoryData(
-  //       updateFirstImage: isFirstImage,
-  //       updateIndex: true,
-  //     );
-  //   }
-  //   removeSelection();
-  //   Navigator.pop(context);
-  // }
-
-  // TODO: Create Image - test
 
   @override
   void initState() {
@@ -246,8 +208,8 @@ class _ViewDocumentState extends State<ViewDocument>
 
     if (widget.directoryOS.dirPath != null) {
       dirPath = widget.directoryOS.dirPath;
-      fileName = widget.directoryOS.newName;
-      BlocProvider.of<DirectoryCubit>(context).getImageData();
+      dirName = widget.directoryOS.newName;
+      // BlocProvider.of<DirectoryCubit>(context).getImageData();
     } else {
       createDirectoryPath();
       if (widget.fromGallery) {
@@ -271,11 +233,11 @@ class _ViewDocumentState extends State<ViewDocument>
     return SafeArea(
       child: WillPopScope(
         onWillPop: () {
-          if (enableSelect || enableReorder) {
+          if (ViewDocument.enableSelect || ViewDocument.enableReorder) {
             // setState(() {
-            enableSelect = false;
-            removeSelection();
-            enableReorder = false;
+            ViewDocument.enableSelect = false;
+            // removeSelection();
+            ViewDocument.enableReorder = false;
             // showImage = false;
             // });
           } else {
@@ -287,55 +249,56 @@ class _ViewDocumentState extends State<ViewDocument>
           children: [
             Scaffold(
               backgroundColor: Theme.of(context).primaryColor,
-              key: scaffoldKey,
+              // key: scaffoldKey,
               appBar: AppBar(
                 elevation: 0,
                 backgroundColor: Theme.of(context).primaryColor,
-                leading: (enableSelect || enableReorder)
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.close,
-                          size: 30,
-                        ),
-                        onPressed: (enableSelect)
-                            ? () {
-                                removeSelection();
-                              }
-                            : () {
-                                // TODO: Revert Reorder
+                leading:
+                    (ViewDocument.enableSelect || ViewDocument.enableReorder)
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.close,
+                              size: 30,
+                            ),
+                            onPressed: (ViewDocument.enableSelect)
+                                ? () {
+                                    // removeSelection();
+                                  }
+                                : () {
+                                    // TODO: Revert Reorder
 
-                                // setState(() {
-                                //   // Reverting reorder
-                                //   directoryImages = [];
-                                //   for (var image in initDirectoryImages) {
-                                //     directoryImages.add(image);
-                                //   }
-                                //   enableReorder = false;
-                                // });
-                              },
-                      )
-                    : IconButton(
-                        icon: Icon(Icons.arrow_back_ios),
-                        onPressed: () {
-                          Navigator.pop(context, true);
-                        },
-                      ),
+                                    // setState(() {
+                                    //   // Reverting reorder
+                                    //   directoryImages = [];
+                                    //   for (var image in initDirectoryImages) {
+                                    //     directoryImages.add(image);
+                                    //   }
+                                    //   enableReorder = false;
+                                    // });
+                                  },
+                          )
+                        : IconButton(
+                            icon: Icon(Icons.arrow_back_ios),
+                            onPressed: () {
+                              Navigator.pop(context, true);
+                            },
+                          ),
                 title: Text(
-                  fileName,
+                  dirName,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
-                actions: (enableReorder)
+                actions: (ViewDocument.enableReorder)
                     ? [
                         GestureDetector(
                           onTap: () {
                             BlocProvider.of<DirectoryCubit>(context)
                                 .confirmReorderImages();
                             // setState(() {
-                            enableReorder = false;
+                            ViewDocument.enableReorder = false;
                             // });
                           },
                           child: Container(
@@ -350,7 +313,7 @@ class _ViewDocumentState extends State<ViewDocument>
                         ),
                       ]
                     : [
-                        (enableSelect)
+                        (ViewDocument.enableSelect)
                             ? IconButton(
                                 icon: Icon(
                                   Icons.share,
@@ -362,7 +325,9 @@ class _ViewDocumentState extends State<ViewDocument>
                                     ? () {
                                         showModalBottomSheet(
                                           context: context,
-                                          builder: _buildBottomSheet,
+                                          builder: (context) {
+                                            return CustomBottomSheet();
+                                          },
                                         );
                                       }
                                     : () {},
@@ -387,7 +352,7 @@ class _ViewDocumentState extends State<ViewDocument>
                                   // });
                                 },
                               ),
-                        (enableSelect)
+                        (ViewDocument.enableSelect)
                             ? IconButton(
                                 icon: Icon(
                                   Icons.delete,
@@ -412,7 +377,10 @@ class _ViewDocumentState extends State<ViewDocument>
                                     : () {},
                               )
                             : CustomPopupMenuButton(
-                                onSelected: handleClick,
+                                onSelected: (value) => handleClick(
+                                  context,
+                                  value: value,
+                                ),
                                 itemsMap: {
                                   'Select': Icons.select_all,
                                   'Reorder': Icons.reorder,
@@ -425,7 +393,13 @@ class _ViewDocumentState extends State<ViewDocument>
                 padding: EdgeInsets.all(size.width * 0.01),
                 child: SingleChildScrollView(
                   child: BlocConsumer<DirectoryCubit, DirectoryState>(
-                    listener: (context, state) {},
+                    listener: (context, state) {
+                      print('ImageCount => ${state.imageCount}');
+                      // if (state.images.every((element) => !element.selected))
+                      //   ViewDocument.enableSelect = true;
+                      // else
+                      //   ViewDocument.enableSelect = false;
+                    },
                     builder: (context, state) {
                       return ReorderableWrap(
                         spacing: 10,
@@ -435,13 +409,13 @@ class _ViewDocumentState extends State<ViewDocument>
                         children: state.images.map((image) {
                           return ImageCard(
                             imageOS: image,
-                            directoryOS: widget.directoryOS,
+                            selectCallback: () {
+                              // selectionCallback(imageOS: image);
+                            },
+                            // directoryOS: widget.directoryOS,
                             // fileEditCallback: () {
                             //   fileEditCallback(imageOS: image);
                             // },
-                            selectCallback: () {
-                              selectionCallback(imageOS: image);
-                            },
                             // imageViewerCallback: () {
                             //   imageViewerCallback(imageOS: image);
                             // },
@@ -486,6 +460,7 @@ class _ViewDocumentState extends State<ViewDocument>
                 },
               ),
             ),
+            // Image Preview
             // (showImage)
             //     ? GestureDetector(
             //         onTap: () {
@@ -530,108 +505,6 @@ class _ViewDocumentState extends State<ViewDocument>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildBottomSheet(BuildContext context) {
-    FileOperations fileOperations = FileOperations();
-    String selectedFileName;
-
-    updateSelectedFileName() {
-      int selectedCount = 0;
-      for (bool i in selectedImageIndex) {
-        selectedCount += (i) ? 1 : 0;
-      }
-      selectedFileName = fileName + ' $selectedCount';
-    }
-
-    return BlocConsumer<DirectoryCubit, DirectoryState>(
-      listener: (context, state) {
-        // TODO: implement listener
-      },
-      builder: (context, state) {
-        return CustomBottomSheet(
-          fileName: fileName,
-          qualitySelection: () {
-            Navigator.pop(context);
-            showDialog(
-              context: context,
-              builder: (context) {
-                return QualitySelector(
-                  imageQuality: imageQuality,
-                  qualitySelected: (quality) {
-                    imageQuality = quality;
-                    print('Selected Image Quality: ');
-                    Navigator.pop(context);
-                    showModalBottomSheet(
-                      context: context,
-                      builder: _buildBottomSheet,
-                    );
-                  },
-                );
-              },
-            );
-          },
-          sharePdf: () async {
-            if (enableSelect) {
-              updateSelectedFileName();
-            }
-            List<ImageOS> selectedImages = [];
-            for (var image in state.images) {
-              if (selectedImageIndex.elementAt(image.idx - 1)) {
-                selectedImages.add(image);
-              }
-            }
-            await fileOperations.saveToAppDirectory(
-              context: context,
-              fileName: (enableSelect) ? selectedFileName : fileName,
-              images: (enableSelect) ? selectedImages : state.images,
-            );
-            Directory storedDirectory =
-                await getApplicationDocumentsDirectory();
-            ShareExtend.share(
-                '${storedDirectory.path}/${(enableSelect) ? selectedFileName : fileName}.pdf',
-                'file');
-            Navigator.pop(context);
-          },
-          saveToDevice: () async {
-            if (enableSelect) {
-              updateSelectedFileName();
-            }
-            List<ImageOS> selectedImages = [];
-            for (var image in state.images) {
-              if (selectedImageIndex.elementAt(image.idx - 1)) {
-                selectedImages.add(image);
-              }
-            }
-            String savedDirectory;
-            savedDirectory = await fileOperations.saveToDevice(
-              context: context,
-              fileName: (enableSelect) ? selectedFileName : fileName,
-              images: (enableSelect) ? selectedImages : state.images,
-              quality: imageQuality,
-            );
-            Navigator.pop(context);
-            String displayText;
-            (savedDirectory != null)
-                ? displayText = "PDF Saved at\n"
-                : displayText = "Failed to generate pdf. Try Again.";
-
-            Fluttertoast.showToast(msg: displayText);
-          },
-          shareImages: () {
-            List<String> selectedImagesPath = [];
-            for (var image in state.images) {
-              if (selectedImageIndex.elementAt(image.idx - 1)) {
-                selectedImagesPath.add(image.imgPath);
-              }
-            }
-            ShareExtend.shareMultiple(
-                (enableSelect) ? selectedImagesPath : imageFilesPath, 'file');
-            Navigator.pop(context);
-          },
-        );
-      },
     );
   }
 }

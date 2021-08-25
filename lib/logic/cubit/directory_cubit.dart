@@ -30,8 +30,23 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           newName: newName,
           images: images,
         ));
+
   DatabaseHelper database = DatabaseHelper();
   FileOperations fileOperations = FileOperations();
+
+  createDirectory() async {
+    Directory appDir = await getExternalStorageDirectory();
+    var now = DateTime.now();
+
+    state.dirName = 'OpenScan $now';
+    state.created = now;
+    state.dirPath = '${appDir.path}/${state.dirName}';
+    state.firstImgPath = '';
+    state.imageCount = 0;
+    state.lastModified = now;
+    state.newName = null;
+    state.images = <ImageOS>[];
+  }
 
   getImageData() async {
     state.images = [];
@@ -134,7 +149,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       } else {
         await fileOperations.saveImage(
           image: image,
-          index: state.images.length + 1,
+          index: state.imageCount + 1,
           dirPath: state.dirPath,
         );
 
@@ -144,6 +159,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         );
         state.images.add(imageOS);
         state.imageCount = state.images.length;
+
+        print('Image Saved');
         emit(state);
 
         await fileOperations.deleteTemporaryFiles();
@@ -156,7 +173,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
   }
 
-  cropImage(context, {imageOS}) async {
+  cropImage(context, {ImageOS imageOS}) async {
     File image = await imageCropper(
       context,
       File(imageOS.imgPath),
@@ -219,10 +236,39 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     // Updating first image path
     if (imageToDelete.idx == 1) {
       database.updateFirstImagePath(
-        imagePath: state.images[1].imgPath,
+        imagePath: state.images[0].imgPath,
         dirPath: state.dirPath,
       );
     }
     emit(state);
+  }
+
+  deleteMultipleImages() {
+    bool isFirstImage = false;
+    // for (var i = 0; i < directoryImages.length; i++) {
+    //   if (selectedImageIndex[i]) {
+    //     // print('${directoryImages[i].idx}: ${directoryImages[i].imgPath}');
+    //     if (directoryImages[i].imgPath == state.firstImgPath) {
+    //       isFirstImage = true;
+    //     }
+
+    //     File(directoryImages[i].imgPath).deleteSync();
+    //     database.deleteImage(
+    //       imgPath: directoryImages[i].imgPath,
+    //       tableName: state.dirName,
+    //     );
+    //   }
+    // }
+    database.updateImageCount(
+      tableName: state.dirName,
+    );
+    try {
+      Directory(state.dirPath).deleteSync(recursive: false);
+      database.deleteDirectory(dirPath: state.dirPath);
+    } catch (e) {
+      print('Directory cant be deleted as it contains other files');
+    }
+    // removeSelection();
+    // Navigator.pop(context);
   }
 }

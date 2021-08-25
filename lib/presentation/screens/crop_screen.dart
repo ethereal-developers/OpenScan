@@ -29,6 +29,7 @@ imageCropper(BuildContext context, File image) async {
     ),
   ).then((value) => croppedImage = value);
 
+  print(croppedImage.path ?? image.path);
   return croppedImage ?? image;
 }
 

@@ -7,25 +7,19 @@ import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/models.dart';
+import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 
 import '../../screens/view_document.dart';
 import '../delete_dialog.dart';
 
 class ImageCard extends StatefulWidget {
-  final DirectoryOS directoryOS;
   final ImageOS imageOS;
-
-  // final Function fileEditCallback;
   final Function selectCallback;
-  // final Function imageViewerCallback;
 
   const ImageCard({
-    this.directoryOS,
     this.imageOS,
-    // this.fileEditCallback,
     this.selectCallback,
-    // this.imageViewerCallback,
   });
 
   @override
@@ -35,12 +29,12 @@ class ImageCard extends StatefulWidget {
 class _ImageCardState extends State<ImageCard> {
   DatabaseHelper database = DatabaseHelper();
 
-  selectionOnPressed() {
-    setState(() {
-      selectedImageIndex[widget.imageOS.idx - 1] = true;
-    });
-    widget.selectCallback();
-  }
+  // selectionOnPressed() {
+  //   setState(() {
+  //     ViewDocument.selectedImageIndex[widget.imageOS.idx - 1] = true;
+  //   });
+  //   widget.selectCallback();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +45,12 @@ class _ImageCardState extends State<ImageCard> {
           elevation: 20,
           color: Theme.of(context).primaryColor,
           onPressed: () {
-            (enableSelect) ? selectionOnPressed() : null;
+            // (ViewDocument.enableSelect) ? selectionOnPressed() : null;
           },
           child: FocusedMenuHolder(
             menuWidth: size.width * 0.45,
             onPressed: () {
-              (enableSelect) ? selectionOnPressed() : null;
+              // (ViewDocument.enableSelect) ? selectionOnPressed() : null;
             },
             menuItems: [
               FocusedMenuItem(
@@ -114,7 +108,7 @@ class _ImageCardState extends State<ImageCard> {
                         deleteOnPressed: () {
                           BlocProvider.of<DirectoryCubit>(context).deleteImage(
                             context,
-                            imageOS: widget.imageOS,
+                            imageToDelete: widget.imageOS,
                           );
                           widget.selectCallback();
                           Navigator.pop(context);
@@ -134,31 +128,32 @@ class _ImageCardState extends State<ImageCard> {
             ),
           ),
         ),
-        // (selectedImageIndex[widget.imageOS.idx - 1] && enableSelect)
-        //     ? Positioned.fill(
-        //         child: GestureDetector(
-        //           onTap: () {
-        //             setState(() {
-        //               selectedImageIndex[widget.imageOS.idx - 1] = false;
-        //             });
-        //             widget.selectCallback();
-        //           },
-        //           child: Container(
-        //             foregroundDecoration: BoxDecoration(
-        //               border: Border.all(
-        //                 width: 3,
-        //                 color: secondaryColor,
-        //               ),
-        //             ),
-        //             color: secondaryColor.withOpacity(0.3),
-        //           ),
-        //         ),
-        //       )
-        //     : Container(
-        //         width: 0.001,
-        //         height: 0.001,
-        //       ),
-        (enableReorder)
+        (widget.imageOS.selected)
+            ? Positioned.fill(
+                child: GestureDetector(
+                  onTap: () {
+                    // setState(() {
+                    //   ViewDocument.selectedImageIndex[widget.imageOS.idx - 1] =
+                    //       false;
+                    // });
+                    widget.selectCallback();
+                  },
+                  child: Container(
+                    foregroundDecoration: BoxDecoration(
+                      border: Border.all(
+                        width: 3,
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                    color: AppTheme.accentColor.withOpacity(0.3),
+                  ),
+                ),
+              )
+            : Container(
+                width: 0.001,
+                height: 0.001,
+              ),
+        (ViewDocument.enableReorder)
             ? Positioned.fill(
                 child: Container(
                   color: Colors.transparent,
