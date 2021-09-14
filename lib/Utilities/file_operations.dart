@@ -31,8 +31,9 @@ class FileOperations {
     }
   }
 
-  // CREATE PDF
-  Future<bool> createPdf({selectedDirectory, fileName, images}) async {
+  /// Create new PDF
+  Future<bool> createPdf(
+      {selectedDirectory, fileName, List<File> images}) async {
     try {
       final output = File("${selectedDirectory.path}/$fileName.pdf");
 
@@ -41,16 +42,11 @@ class FileOperations {
       final doc = pw.Document();
 
       for (i = 0; i < images.length; i++) {
-        final image = PdfImage.file(
-          doc.document,
-          bytes: images[i].readAsBytesSync(),
-        );
-
+        final image = pw.MemoryImage(images[i].readAsBytesSync());
         doc.addPage(
           pw.Page(
             build: (pw.Context context) {
               return pw.Center(
-                // child: pw.Image.provider(image),
                 child: pw.Image(image),
               );
             },
@@ -59,9 +55,10 @@ class FileOperations {
         );
       }
 
-      output.writeAsBytesSync(doc.save());
+      output.writeAsBytesSync(await doc.save());
       return true;
     } catch (e) {
+      print(e);
       return false;
     }
   }
@@ -69,7 +66,7 @@ class FileOperations {
   // ADD IMAGES
   Future<File> openCamera() async {
     File image;
-    var picture = await ImagePicker.pickImage(source: ImageSource.camera);
+    var picture = await ImagePicker().pickImage(source: ImageSource.camera);
     if (picture != null) {
       image = File(picture.path);
     }
@@ -123,7 +120,7 @@ class FileOperations {
       );
     }
 
-    /// Removed Index in image path
+    // Removed Index in image path
     File tempPic = File("$dirPath/${DateTime.now()}.jpg");
     image.copy(tempPic.path);
     database.createImage(
@@ -166,7 +163,7 @@ class FileOperations {
   Future<String> saveToDevice(
       {BuildContext context,
       String fileName,
-      dynamic images,
+      List<ImageOS> images,
       int quality}) async {
     Directory selectedDirectory;
     Directory openscanDir = Directory("/storage/emulated/0/OpenScan");
@@ -184,7 +181,7 @@ class FileOperations {
       selectedDirectory = await pickDirectory(context, selectedDirectory);
     }
 
-    var tempImages = [];
+    List<File> imageFiles = [];
     String path;
 
     if (quality == 1) {
@@ -204,9 +201,8 @@ class FileOperations {
         dest: cacheDir.path,
         desiredQuality: desiredQuality,
       );
-      tempImages.add(File(path));
+      imageFiles.add(File(path));
     }
-    images = tempImages;
 
     fileName = fileName.replaceAll('-', '');
     fileName = fileName.replaceAll('.', '');
@@ -215,7 +211,7 @@ class FileOperations {
     pdfStatus = await createPdf(
       selectedDirectory: selectedDirectory,
       fileName: fileName,
-      images: images,
+      images: imageFiles,
     );
     return (pdfStatus) ? selectedDirectory.path : null;
   }
@@ -239,8 +235,8 @@ class FileOperations {
     return pdfStatus;
   }
 
+  /// Delete the temporary files created by the image_picker package
   Future<void> deleteTemporaryFiles() async {
-    // Delete the temporary files created by the image_picker package
     Directory appDocDir = await getExternalStorageDirectory();
     Directory cacheDir = await getTemporaryDirectory();
     String appDocPath = "${appDocDir.path}/Pictures/";
