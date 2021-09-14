@@ -28,12 +28,9 @@ public class Utils {
         try {
             file = new File(tempDirPath);
             FileOutputStream outStream = new FileOutputStream(file);
-         
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
-            
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
             outStream.flush();
             outStream.close();
-
             Log.d("onGetUriCall", file.getPath());
             return file.getPath();
         } catch (FileNotFoundException e) {

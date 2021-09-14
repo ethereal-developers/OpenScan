@@ -60,13 +60,11 @@ public class ResultFragment extends Fragment {
     }
 
     private Bitmap getBitmap() {
-        Bitmap bitmap = BitmapFactory.decodeFile(getPath());
-        return bitmap;
+        return BitmapFactory.decodeFile(getPath());
     }
 
     private String getPath() {
-        String path = getArguments().getString(ScanConstants.SCANNED_RESULT);
-        return path;
+        return getArguments().getString(ScanConstants.SCANNED_RESULT);
     }
 
     public void setScannedImage(Bitmap scannedImage) {
