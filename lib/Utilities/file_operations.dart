@@ -9,7 +9,6 @@ import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/database_helper.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class FileOperations {
@@ -141,7 +140,7 @@ class FileOperations {
     Directory directory = selectedDirectory;
     try {
       if (Platform.isAndroid) {
-        directory = Directory("/storage/emulated/0/");
+        directory = Directory("/storage/emulated/0/Documents/");
       } else {
         directory = await getExternalStorageDirectory();
       }
@@ -166,8 +165,9 @@ class FileOperations {
       List<ImageOS> images,
       int quality}) async {
     Directory selectedDirectory;
-    Directory openscanDir = Directory("/storage/emulated/0/OpenScan");
-    Directory openscanPdfDir = Directory("/storage/emulated/0/OpenScan/PDF");
+    Directory openscanDir = Directory("/storage/emulated/0/Documents/OpenScan");
+    Directory openscanPdfDir =
+        Directory("/storage/emulated/0/Documents/OpenScan/PDF");
     int desiredQuality = 100;
 
     try {
@@ -185,11 +185,13 @@ class FileOperations {
     String path;
 
     if (quality == 1) {
-      desiredQuality = 60;
+      desiredQuality = 20;
     } else if (quality == 2) {
-      desiredQuality = 80;
-    } else {
+      desiredQuality = 60;
+    } else if (quality == 3) {
       desiredQuality = 100;
+    } else {
+      desiredQuality = 60;
     }
 
     print(desiredQuality);
@@ -219,18 +221,20 @@ class FileOperations {
   Future<bool> saveToAppDirectory(
       {BuildContext context, String fileName, dynamic images}) async {
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
-    List<ImageOS> foo = [];
-    if (images.runtimeType == foo.runtimeType) {
-      var tempImages = [];
+
+    List<ImageOS> imageOSList = [];
+    List<File> imageFiles = [];
+
+    if (images.runtimeType == imageOSList.runtimeType) {
       for (ImageOS image in images) {
-        tempImages.add(File(image.imgPath));
+        imageFiles.add(File(image.imgPath));
       }
-      images = tempImages;
     }
+
     pdfStatus = await createPdf(
       selectedDirectory: selectedDirectory,
       fileName: fileName,
-      images: images,
+      images: imageFiles,
     );
     return pdfStatus;
   }

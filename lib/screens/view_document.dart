@@ -55,7 +55,7 @@ class _ViewDocumentState extends State<ViewDocument>
   bool enableSelectionIcons = false;
   bool resetReorder = false;
   ImageOS displayImage;
-  int imageQuality = 3;
+  int imageQuality = 2;
   AnimationController _animationController;
   Animation<double> _progress;
   TapDownDetails _doubleTapDetails;
