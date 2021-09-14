@@ -22,11 +22,11 @@ dependencies:
   flutter_full_pdf_viewer: ^1.0.6
   flutter_speed_dial: ^1.2.5
   focused_menu: ^1.0.1
-  image_picker: ^0.6.4
+  image_picker: ^0.8.4
   multi_image_picker: ^4.8.0
   open_file: ^3.0.3
   path_provider: ^2.0.2
-  pdf: ^1.9.0
+  pdf: ^3.6.0
   permission_handler: ^8.0.1
   quick_actions: ^0.6.0+2
   reorderables: ^0.3.2
