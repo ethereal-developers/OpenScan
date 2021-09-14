@@ -273,7 +273,7 @@ public class ScanFragment extends Fragment {
 
         @Override
         protected Bitmap doInBackground(Void... params) {
-            Bitmap bitmap =  getScannedBitmap(original, points);
+            Bitmap bitmap = getScannedBitmap(original, points);
             path = String.format("%s/%d.jpg", path, System.currentTimeMillis() / 1000);
             String uri = Utils.getUri(bitmap, path);
             scanner.onScanFinish(uri);
