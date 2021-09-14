@@ -6,7 +6,6 @@ import android.app.FragmentManager;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,9 +14,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.Toast;
 
-import java.io.IOException;
+import com.bumptech.glide.Glide;
 
 /**
  * Created by jhansi on 29/03/15.
@@ -55,11 +53,10 @@ public class ResultFragment extends Fragment {
         grayModeButton.setOnClickListener(new GrayButtonClickListener());
         bwButton = (Button) view.findViewById(R.id.BWMode);
         bwButton.setOnClickListener(new BWButtonClickListener());
-        Bitmap bitmap = getBitmap();
-        original = bitmap;
-        setScannedImage(bitmap);
+        original = getBitmap();
         doneButton = (Button) view.findViewById(R.id.doneButton);
         doneButton.setOnClickListener(new DoneButtonClickListener());
+        setScannedImage(original);
     }
 
     private Bitmap getBitmap() {
@@ -73,7 +70,7 @@ public class ResultFragment extends Fragment {
     }
 
     public void setScannedImage(Bitmap scannedImage) {
-        scannedImageView.setImageBitmap(scannedImage);
+        Glide.with(this).load(scannedImage).into(scannedImageView);
     }
 
     private class DoneButtonClickListener implements View.OnClickListener {
@@ -91,7 +88,7 @@ public class ResultFragment extends Fragment {
                             bitmap = original;
                         }
                         uri = Utils.getUri(bitmap, getPath());
-                        
+
                         Log.d("onDoneButtonClickUri", uri);
                         data.putExtra(ScanConstants.SCANNED_RESULT, uri);
                         getActivity().setResult(Activity.RESULT_OK, data);
@@ -126,7 +123,7 @@ public class ResultFragment extends Fragment {
                             @Override
                             public void run() {
                                 transformed = original;
-                                scannedImageView.setImageBitmap(original);
+                                setScannedImage(original);
                                 e.printStackTrace();
                                 dismissDialog();
                                 onClick(v);
@@ -136,7 +133,7 @@ public class ResultFragment extends Fragment {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            scannedImageView.setImageBitmap(transformed);
+                            setScannedImage(transformed);
                             dismissDialog();
                         }
                     });
@@ -159,7 +156,7 @@ public class ResultFragment extends Fragment {
                             @Override
                             public void run() {
                                 transformed = original;
-                                scannedImageView.setImageBitmap(original);
+                                setScannedImage(original);
                                 e.printStackTrace();
                                 dismissDialog();
                                 onClick(v);
@@ -169,7 +166,7 @@ public class ResultFragment extends Fragment {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            scannedImageView.setImageBitmap(transformed);
+                            setScannedImage(transformed);
                             dismissDialog();
                         }
                     });
@@ -184,7 +181,7 @@ public class ResultFragment extends Fragment {
             try {
                 showProgressDialog(getResources().getString(R.string.applying_filter));
                 transformed = original;
-                scannedImageView.setImageBitmap(original);
+                setScannedImage(original);
                 dismissDialog();
             } catch (OutOfMemoryError e) {
                 e.printStackTrace();
@@ -207,7 +204,7 @@ public class ResultFragment extends Fragment {
                             @Override
                             public void run() {
                                 transformed = original;
-                                scannedImageView.setImageBitmap(original);
+                                setScannedImage(original);
                                 e.printStackTrace();
                                 dismissDialog();
                                 onClick(v);
@@ -217,7 +214,7 @@ public class ResultFragment extends Fragment {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            scannedImageView.setImageBitmap(transformed);
+                            setScannedImage(transformed);
                             dismissDialog();
                         }
                     });
