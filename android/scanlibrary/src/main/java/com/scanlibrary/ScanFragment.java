@@ -129,16 +129,8 @@ public class ScanFragment extends Fragment {
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
     }
 
-    private Bitmap scaledBitmap2(Bitmap bitmap) {
-        Matrix m = new Matrix();
-        m.setRectToRect(new RectF(0, 0, bitmap.getWidth(), bitmap.getHeight()), new RectF(0, 0, bitmap.getWidth(), bitmap.getHeight()), Matrix.ScaleToFit.CENTER);
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
-    }
-
-
     private void setBitmap(Bitmap original) {
         Bitmap scaledBitmap = scaledBitmap(original, sourceFrame.getWidth(), sourceFrame.getHeight());
-        this.original = scaledBitmap2(original);
         sourceImageView.setImageBitmap(scaledBitmap);
         Bitmap tempBitmap = ((BitmapDrawable) sourceImageView.getDrawable()).getBitmap();
         Map<Integer, PointF> pointFs = getEdgePoints(tempBitmap);
