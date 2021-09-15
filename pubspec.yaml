@@ -23,7 +23,7 @@ dependencies:
   focused_menu: ^1.0.1
   image_picker: ^0.8.4
   multi_image_picker: ^4.8.0
-  open_file: ^3.0.3
+  open_file: ^3.2.1
   path_provider: ^2.0.2
   pdf: ^3.6.0
   permission_handler: ^8.0.1
