@@ -4,8 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_absolute_path/flutter_absolute_path.dart';
-import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:openscan/Utilities/Classes.dart';
 import 'package:openscan/Utilities/database_helper.dart';
 import 'package:path_provider/path_provider.dart';
@@ -73,9 +71,9 @@ class FileOperations {
   }
 
   Future<dynamic> openGallery() async {
-    List<Asset> pic;
+    List<XFile> pic;
     try {
-      pic = await MultiImagePicker.pickImages(maxImages: 30);
+      pic = await ImagePicker().pickMultiImage();
     } catch (e) {
       print(e);
     }
@@ -83,12 +81,8 @@ class FileOperations {
     List<File> imageFiles = [];
 
     if (pic != null) {
-      for (Asset imagePath in pic) {
-        imageFiles.add(
-          File(
-            await FlutterAbsolutePath.getAbsolutePath(imagePath.identifier),
-          ),
-        );
+      for (XFile image in pic) {
+        imageFiles.add(File(image.path));
       }
     }
     print(imageFiles);
@@ -148,13 +142,6 @@ class FileOperations {
       print(e);
       directory = await getExternalStorageDirectory();
     }
-
-    // Directory newDirectory = await DirectoryPicker.pick(
-    //     allowFolderCreation: true,
-    //     context: context,
-    //     rootDirectory: directory,
-    //     shape: RoundedRectangleBorder(
-    //         borderRadius: BorderRadius.all(Radius.circular(10))));
 
     return directory;
   }
