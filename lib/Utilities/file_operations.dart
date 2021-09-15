@@ -163,7 +163,7 @@ class FileOperations {
       {BuildContext context,
       String fileName,
       List<ImageOS> images,
-      int quality}) async {
+      int quality,}) async {
     Directory selectedDirectory;
     Directory openscanDir = Directory("/storage/emulated/0/Documents/OpenScan");
     Directory openscanPdfDir =
@@ -191,7 +191,7 @@ class FileOperations {
     } else if (quality == 3) {
       desiredQuality = 100;
     } else {
-      desiredQuality = 60;
+      desiredQuality = 50;
     }
 
     print(desiredQuality);
