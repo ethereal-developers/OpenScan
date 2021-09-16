@@ -397,40 +397,43 @@ class _ViewScreenState extends State<ViewScreen> {
                       //   ViewDocument.enableSelect = false;
                     },
                     builder: (context, state) {
-                      //TODO: Check if image exists
-                      return ReorderableWrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        minMainAxisCount: 2,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: state.images.map((image) {
-                          return ImageCard(
-                            imageOS: image,
-                            selectCallback: () {
-                              // selectionCallback(imageOS: image);
-                            },
-                            // directoryOS: widget.directoryOS,
-                            // fileEditCallback: () {
-                            //   fileEditCallback(imageOS: image);
-                            // },
-                            // imageViewerCallback: () {
-                            //   imageViewerCallback(imageOS: image);
-                            // },
-                          );
-                        }).toList(),
-                        onReorder: (int oldIndex, int newIndex) {
-                          BlocProvider.of<DirectoryCubit>(context)
-                              .onReorderImages(oldIndex, newIndex);
-                        },
-                        onNoReorder: (int index) {
-                          debugPrint(
-                              '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
-                        },
-                        onReorderStarted: (int index) {
-                          debugPrint(
-                              '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
-                        },
-                      );
+                      if (state.images != null) {
+                        return ReorderableWrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          minMainAxisCount: 2,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: state.images.map((image) {
+                            return ImageCard(
+                              imageOS: image,
+                              selectCallback: () {
+                                // selectionCallback(imageOS: image);
+                              },
+                              // directoryOS: widget.directoryOS,
+                              // fileEditCallback: () {
+                              //   fileEditCallback(imageOS: image);
+                              // },
+                              // imageViewerCallback: () {
+                              //   imageViewerCallback(imageOS: image);
+                              // },
+                            );
+                          }).toList(),
+                          onReorder: (int oldIndex, int newIndex) {
+                            BlocProvider.of<DirectoryCubit>(context)
+                                .onReorderImages(oldIndex, newIndex);
+                          },
+                          onNoReorder: (int index) {
+                            debugPrint(
+                                '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
+                          },
+                          onReorderStarted: (int index) {
+                            debugPrint(
+                                '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
+                          },
+                        );
+                      }
+                      // TODO: Loading
+                      return Container();
                     },
                   ),
                 ),

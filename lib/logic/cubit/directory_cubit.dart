@@ -46,6 +46,19 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     print('Change Notifier => ${state.imageCount}');
   }
 
+  emitState(state) {
+    emit(DirectoryState(
+      dirName: state.dirName,
+      created: state.created,
+      dirPath: state.dirPath,
+      firstImgPath: state.firstImgPath,
+      imageCount: state.imageCount,
+      lastModified: state.lastModified,
+      newName: state.newName,
+      images: state.images,
+    ));
+  }
+
   createDirectory() async {
     Directory appDir = await getExternalStorageDirectory();
     var now = DateTime.now();
@@ -59,7 +72,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     state.newName = null;
     state.images = <ImageOS>[];
 
-    emit(state);
+    emitState(state);
   }
 
   getImageData() async {
@@ -77,7 +90,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         tempImageOS,
       );
 
-      emit(state);
+      emitState(state);
 
       // initDirectoryImages.add(
       //   tempImageOS,
@@ -108,7 +121,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   onReorderImages(int oldIndex, int newIndex) {
     ImageOS image1 = state.images.removeAt(oldIndex);
     state.images.insert(newIndex, image1);
-    emit(state);
+    emitState(state);
   }
 
   confirmReorderImages() {
@@ -125,7 +138,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         image: state.images[i - 1],
         tableName: state.dirName,
       );
-      emit(state);
+      emitState(state);
     }
   }
 
@@ -135,7 +148,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     bool fromGallery = false,
   }) async {
     List<File> imageList = [];
-    emit(state);
 
     if (fromGallery) {
       imageList = await fileOperations.openGallery();
@@ -161,8 +173,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         state.images.add(imageOS);
         state.imageCount = state.images.length;
 
-        print('Image Saved');
-        await Future.delayed(const Duration(milliseconds: 1000));
+        // print('Image Saved');
+        emitState(state);
 
         await fileOperations.deleteTemporaryFiles();
         if (quickScan) {
@@ -204,7 +216,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       );
     }
 
-    emit(state);
+    emitState(state);
   }
 
   deleteImage(context, {ImageOS imageToDelete}) async {
@@ -214,7 +226,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       imgPath: imageToDelete.imgPath,
       tableName: state.dirName,
     );
-    DirectoryState old = state;
 
     try {
       // Delete directory if 1 image exists
@@ -225,7 +236,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     } catch (e) {
       state.images.removeAt(imageToDelete.idx - 1);
       state.imageCount = state.images.length;
-      // print('State Changed ${state.images.length} - $old');
 
       // Updating index of images
       for (int i = imageToDelete.idx - 1; i < state.imageCount; i++) {
@@ -245,14 +255,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       }
     }
 
-    state.dirName = '';
-
-    print((old.dirName != state.dirName) ? "State Changed" : "Nooooooooo!!!");
-
-    await Future.delayed(const Duration(milliseconds: 1000));
-
-    emit(state);
-    print('Deleted?');
+    emitState(state);
   }
 
   deleteMultipleImages() {
