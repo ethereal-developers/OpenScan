@@ -4,18 +4,18 @@ import 'package:openscan/presentation/Widgets/demo/slide_dots.dart';
 import 'package:openscan/presentation/Widgets/demo/slide_item.dart';
 import 'package:openscan/presentation/screens/home_screen.dart';
 
-class GettingStartedScreen extends StatefulWidget {
+class DemoScreen extends StatefulWidget {
   static String route = 'GettingStarted';
 
-  GettingStartedScreen({this.showSkip});
+  DemoScreen({this.showSkip});
 
   final bool showSkip;
 
   @override
-  _GettingStartedScreenState createState() => _GettingStartedScreenState();
+  _DemoScreenState createState() => _DemoScreenState();
 }
 
-class _GettingStartedScreenState extends State<GettingStartedScreen> {
+class _DemoScreenState extends State<DemoScreen> {
   int _currentPage = 0;
   bool isDone = false;
 

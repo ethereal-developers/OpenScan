@@ -10,7 +10,7 @@ import 'package:openscan/core/models.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 
-import '../../screens/view_document.dart';
+import '../../screens/view_screen.dart';
 import '../delete_dialog.dart';
 
 class ImageCard extends StatefulWidget {
@@ -153,7 +153,7 @@ class _ImageCardState extends State<ImageCard> {
                 width: 0.001,
                 height: 0.001,
               ),
-        (ViewDocument.enableReorder)
+        (ViewScreen.enableReorder)
             ? Positioned.fill(
                 child: Container(
                   color: Colors.transparent,

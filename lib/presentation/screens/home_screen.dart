@@ -11,7 +11,7 @@ import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/screens/about_screen.dart';
 import 'package:openscan/presentation/screens/demo_screen.dart';
-import 'package:openscan/presentation/screens/view_document.dart';
+import 'package:openscan/presentation/screens/view_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quick_actions/quick_actions.dart';
 
@@ -58,11 +58,10 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => BlocProvider<DirectoryCubit>(
-              create: (context) => DirectoryCubit()..createDirectory(),
-              child: ViewDocument(
-                quickScan: false,
-                directoryOS: DirectoryOS(),
-              ),
+              create: (context) => DirectoryCubit()
+                ..createDirectory()
+                ..createImage(context),
+              child: ViewScreen(),
             ),
           ),
         ).whenComplete(() {
@@ -74,11 +73,13 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => BlocProvider<DirectoryCubit>(
-              create: (context) => DirectoryCubit()..createDirectory(),
-              child: ViewDocument(
-                quickScan: true,
-                directoryOS: DirectoryOS(),
-              ),
+              create: (context) => DirectoryCubit()
+                ..createDirectory()
+                ..createImage(
+                  context,
+                  quickScan: true,
+                ),
+              child: ViewScreen(),
             ),
           ),
         ).whenComplete(() {
@@ -90,12 +91,13 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => BlocProvider<DirectoryCubit>(
-              create: (context) => DirectoryCubit()..createDirectory(),
-              child: ViewDocument(
-                quickScan: false,
-                directoryOS: DirectoryOS(),
-                fromGallery: true,
-              ),
+              create: (context) => DirectoryCubit()
+                ..createDirectory()
+                ..createImage(
+                  context,
+                  fromGallery: true,
+                ),
+              child: ViewScreen(),
             ),
           ),
         ).whenComplete(() {
@@ -118,9 +120,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 images: <ImageOS>[],
               )..getImageData(),
               lazy: false,
-              child: ViewDocument(
-                directoryOS: masterDirectory,
-              ),
+              child: ViewScreen(
+                  // directoryOS: masterDirectory,
+                  ),
             ),
           ),
         ).whenComplete(() {
@@ -280,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => GettingStartedScreen(
+                      builder: (context) => DemoScreen(
                         showSkip: false,
                       ),
                     ),

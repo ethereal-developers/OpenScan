@@ -5,7 +5,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/presentation/Widgets/view/quality_selector.dart';
-import 'package:openscan/presentation/screens/view_document.dart';
+import 'package:openscan/presentation/screens/view_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_extend/share_extend.dart';
 
@@ -94,7 +94,7 @@ class CustomBottomSheet extends StatelessWidget {
             leading: Icon(Icons.picture_as_pdf),
             title: Text('Share PDF'),
             onTap: () async {
-              if (ViewDocument.enableSelect) {
+              if (ViewScreen.enableSelect) {
                 // updateSelectedFileName();
               }
               List<ImageOS> selectedImages = [];
@@ -106,14 +106,14 @@ class CustomBottomSheet extends StatelessWidget {
               await fileOperations.saveToAppDirectory(
                 context: context,
                 fileName:
-                    (ViewDocument.enableSelect) ? selectedFileName : fileName,
+                    (ViewScreen.enableSelect) ? selectedFileName : fileName,
                 // images:
                 //     (ViewDocument.enableSelect) ? selectedImages : state.images,
               );
               Directory storedDirectory =
                   await getApplicationDocumentsDirectory();
               ShareExtend.share(
-                  '${storedDirectory.path}/${(ViewDocument.enableSelect) ? selectedFileName : fileName}.pdf',
+                  '${storedDirectory.path}/${(ViewScreen.enableSelect) ? selectedFileName : fileName}.pdf',
                   'file');
               Navigator.pop(context);
             },
@@ -122,7 +122,7 @@ class CustomBottomSheet extends StatelessWidget {
             leading: Icon(Icons.phone_android),
             title: Text('Save to device'),
             onTap: () async {
-              if (ViewDocument.enableSelect) {
+              if (ViewScreen.enableSelect) {
                 // updateSelectedFileName();
               }
               List<ImageOS> selectedImages = [];
@@ -135,7 +135,7 @@ class CustomBottomSheet extends StatelessWidget {
               savedDirectory = await fileOperations.saveToDevice(
                 context: context,
                 fileName:
-                    (ViewDocument.enableSelect) ? selectedFileName : fileName,
+                    (ViewScreen.enableSelect) ? selectedFileName : fileName,
                 // images:
                 //     (ViewDocument.enableSelect) ? selectedImages : state.images,
                 quality: imageQuality,

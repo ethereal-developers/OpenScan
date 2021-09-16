@@ -1,11 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/presentation/screens/about_screen.dart';
 import 'package:openscan/presentation/screens/demo_screen.dart';
 import 'package:openscan/presentation/screens/home_screen.dart';
 import 'package:openscan/presentation/screens/splash_screen.dart';
-import 'package:openscan/presentation/screens/view_document.dart';
+import 'package:openscan/presentation/screens/view_screen.dart';
 
 import 'core/theme/appTheme.dart';
 
@@ -32,14 +33,15 @@ class OpenScan extends StatelessWidget {
         accentColor: AppTheme.accentColor,
       ),
       themeMode: ThemeMode.dark,
-      initialRoute: SplashScreen.route,
-      routes: {
-        SplashScreen.route: (context) => SplashScreen(),
-        GettingStartedScreen.route: (context) => GettingStartedScreen(),
-        HomeScreen.route: (context) => HomeScreen(),
-        ViewDocument.route: (context) => ViewDocument(),
-        AboutScreen.route: (context) => AboutScreen(),
-      },
+      initialRoute: AppRouter.SPLASH_SCREEN,
+      onGenerateRoute: AppRouter.onGenerateRoute,
+      // routes: {
+      //   SplashScreen.route: (context) => SplashScreen(),
+      //   DemoScreen.route: (context) => DemoScreen(),
+      //   HomeScreen.route: (context) => HomeScreen(),
+      //   ViewScreen.route: (context) => ViewScreen(),
+      //   AboutScreen.route: (context) => AboutScreen(),
+      // },
     );
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,35 +11,30 @@ import 'package:openscan/presentation/Widgets/view/image_card.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:reorderables/reorderables.dart';
 
-class ViewDocument extends StatefulWidget {
+class ViewScreen extends StatefulWidget {
   static String route = "ViewDocument";
 
   static bool enableSelect = false;
   static bool enableReorder = false;
   // static List<bool> selectedImageIndex = [];
 
-  final DirectoryOS directoryOS;
+  // final DirectoryOS directoryOS;
   final bool quickScan;
   final bool fromGallery;
 
-  ViewDocument({
+  ViewScreen({
     this.quickScan = false,
-    this.directoryOS,
+    // this.directoryOS,
     this.fromGallery = false,
   });
 
   @override
-  _ViewDocumentState createState() => _ViewDocumentState();
+  _ViewScreenState createState() => _ViewScreenState();
 }
 
-/// Parameters: @required directoryOS, [imageOS]
-/// Methods:
-///   ImageOS => addImage, deleteImage, updateImagePath, updateImageIndex, revertReorder
-///   DirectoryOS => updateFirstImagePath, updateImageCount, deleteDirectory
-
-class _ViewDocumentState extends State<ViewDocument> {
-  String dirPath;
-  String dirName = '';
+class _ViewScreenState extends State<ViewScreen> {
+  // String dirPath;
+  // String dirName = '';
   bool enableSelectionIcons = false;
 
   List<String> imageFilesPath = [];
@@ -165,12 +158,12 @@ class _ViewDocumentState extends State<ViewDocument> {
     switch (value) {
       case 'Reorder':
         setState(() {
-          ViewDocument.enableReorder = true;
+          ViewScreen.enableReorder = true;
         });
         break;
       case 'Select':
         setState(() {
-          ViewDocument.enableSelect = true;
+          ViewScreen.enableSelect = true;
         });
         break;
       case 'Export':
@@ -184,14 +177,14 @@ class _ViewDocumentState extends State<ViewDocument> {
     }
   }
 
-  Future<void> createDirectoryPath() async {
-    Directory appDir = await getExternalStorageDirectory();
-    dirName = 'OpenScan ${DateTime.now()}';
-    dirPath = "${appDir.path}/$dirName";
-    widget.directoryOS.dirPath = dirPath;
-    widget.directoryOS.dirName = dirName;
-    // print('New Directory => ${widget.directoryOS.dirName}');
-  }
+  // Future<void> createDirectoryPath() async {
+  //   Directory appDir = await getExternalStorageDirectory();
+  //   dirName = 'OpenScan ${DateTime.now()}';
+  //   dirPath = "${appDir.path}/$dirName";
+  //   // widget.directoryOS.dirPath = dirPath;
+  //   // widget.directoryOS.dirName = dirName;
+  //   // print('New Directory => ${widget.directoryOS.dirName}');
+  // }
 
   // TODO: Bugs
   // Create Image - crop not reflecting
@@ -202,30 +195,29 @@ class _ViewDocumentState extends State<ViewDocument> {
 
   // TODO: Delete Multiple Images
 
-  @override
-  void initState() {
-    super.initState();
-
-    if (widget.directoryOS.dirPath != null) {
-      dirPath = widget.directoryOS.dirPath;
-      dirName = widget.directoryOS.newName;
-      // BlocProvider.of<DirectoryCubit>(context).getImageData();
-    } else {
-      createDirectoryPath();
-      if (widget.fromGallery) {
-        BlocProvider.of<DirectoryCubit>(context).createImage(
-          context,
-          quickScan: false,
-          fromGallery: true,
-        );
-      } else {
-        BlocProvider.of<DirectoryCubit>(context).createImage(
-          context,
-          quickScan: widget.quickScan,
-        );
-      }
-    }
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  // if (widget.directoryOS.dirPath != null) {
+  //   dirPath = widget.directoryOS.dirPath;
+  //   dirName = widget.directoryOS.newName;
+  //   // BlocProvider.of<DirectoryCubit>(context).getImageData();
+  // } else {
+  //   // createDirectoryPath();
+  //   if (widget.fromGallery) {
+  //     // BlocProvider.of<DirectoryCubit>(context).createImage(
+  //     //   context,
+  //     //   quickScan: false,
+  //     //   fromGallery: true,
+  //     // );
+  //   } else {
+  //     BlocProvider.of<DirectoryCubit>(context).createImage(
+  //       context,
+  //       quickScan: widget.quickScan,
+  //     );
+  //   }
+  // }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -233,11 +225,11 @@ class _ViewDocumentState extends State<ViewDocument> {
     return SafeArea(
       child: WillPopScope(
         onWillPop: () {
-          if (ViewDocument.enableSelect || ViewDocument.enableReorder) {
+          if (ViewScreen.enableSelect || ViewScreen.enableReorder) {
             // setState(() {
-            ViewDocument.enableSelect = false;
+            ViewScreen.enableSelect = false;
             // removeSelection();
-            ViewDocument.enableReorder = false;
+            ViewScreen.enableReorder = false;
             // showImage = false;
             // });
           } else {
@@ -253,52 +245,56 @@ class _ViewDocumentState extends State<ViewDocument> {
               appBar: AppBar(
                 elevation: 0,
                 backgroundColor: Theme.of(context).primaryColor,
-                leading:
-                    (ViewDocument.enableSelect || ViewDocument.enableReorder)
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.close,
-                              size: 30,
-                            ),
-                            onPressed: (ViewDocument.enableSelect)
-                                ? () {
-                                    // removeSelection();
-                                  }
-                                : () {
-                                    // TODO: Revert Reorder
+                leading: (ViewScreen.enableSelect || ViewScreen.enableReorder)
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          size: 30,
+                        ),
+                        onPressed: (ViewScreen.enableSelect)
+                            ? () {
+                                // removeSelection();
+                              }
+                            : () {
+                                // TODO: Revert Reorder
 
-                                    // setState(() {
-                                    //   // Reverting reorder
-                                    //   directoryImages = [];
-                                    //   for (var image in initDirectoryImages) {
-                                    //     directoryImages.add(image);
-                                    //   }
-                                    //   enableReorder = false;
-                                    // });
-                                  },
-                          )
-                        : IconButton(
-                            icon: Icon(Icons.arrow_back_ios),
-                            onPressed: () {
-                              Navigator.pop(context, true);
-                            },
-                          ),
-                title: Text(
-                  dirName,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                                // setState(() {
+                                //   // Reverting reorder
+                                //   directoryImages = [];
+                                //   for (var image in initDirectoryImages) {
+                                //     directoryImages.add(image);
+                                //   }
+                                //   enableReorder = false;
+                                // });
+                              },
+                      )
+                    : IconButton(
+                        icon: Icon(Icons.arrow_back_ios),
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                      ),
+                title: BlocConsumer<DirectoryCubit, DirectoryState>(
+                  listener: (context, state) {},
+                  builder: (context, state) {
+                    return Text(
+                      state.dirName,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  },
                 ),
-                actions: (ViewDocument.enableReorder)
+                actions: (ViewScreen.enableReorder)
                     ? [
                         GestureDetector(
                           onTap: () {
                             BlocProvider.of<DirectoryCubit>(context)
                                 .confirmReorderImages();
                             // setState(() {
-                            ViewDocument.enableReorder = false;
+                            ViewScreen.enableReorder = false;
                             // });
                           },
                           child: Container(
@@ -313,7 +309,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                         ),
                       ]
                     : [
-                        (ViewDocument.enableSelect)
+                        (ViewScreen.enableSelect)
                             ? IconButton(
                                 icon: Icon(
                                   Icons.share,
@@ -352,7 +348,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                                   // });
                                 },
                               ),
-                        (ViewDocument.enableSelect)
+                        (ViewScreen.enableSelect)
                             ? IconButton(
                                 icon: Icon(
                                   Icons.delete,
@@ -401,6 +397,7 @@ class _ViewDocumentState extends State<ViewDocument> {
                       //   ViewDocument.enableSelect = false;
                     },
                     builder: (context, state) {
+                      //TODO: Check if image exists
                       return ReorderableWrap(
                         spacing: 10,
                         runSpacing: 10,

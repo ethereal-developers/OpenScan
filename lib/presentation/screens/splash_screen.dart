@@ -36,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
             : Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                  builder: (context) => GettingStartedScreen(
+                  builder: (context) => DemoScreen(
                     showSkip: true,
                   ),
                 ),
