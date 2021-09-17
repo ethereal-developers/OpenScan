@@ -130,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           break;
       }
     });
+    
     quickActions.setShortcutItems(<ShortcutItem>[
       ShortcutItem(
         type: 'Normal Scan',

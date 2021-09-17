@@ -50,7 +50,7 @@ vector<Point> getPoints(Mat image)
             // Canny helps to catch squares with gradient shading
             if (l == 0)
             {
-                Canny(gray0, gray, 75, 200, 3); //
+                Canny(gray0, gray, 75, 175, 3); //
 
                 // Dilate helps to remove potential holes between edge segments
                 dilate(gray, gray, Mat(), Point(-1, -1));
@@ -306,12 +306,27 @@ JNIEXPORT jobject JNICALL Java_com_scanlibrary_ScanActivity_getMagicColorBitmap(
         __android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "AndroidBitmap_lockPixels() failed ! error=%d", ret);
     }
 
+    // Mat mbgra(info.height, info.width, CV_8UC4, pixels);
+    // Mat dst = mbgra.clone();
+    // // init our output image
+    // float alpha = 1.9;
+    // float beta = -80;
+    // dst.convertTo(dst, -1, alpha, beta);
+
     Mat mbgra(info.height, info.width, CV_8UC4, pixels);
     Mat dst = mbgra.clone();
-    // init our output image
-    float alpha = 1.9;
-    float beta = -80;
-    dst.convertTo(dst, -1, alpha, beta);
+    float tmp;
+
+    // 1
+    threshold(dst, dst, 150, 255, THRESH_TRUNC);
+    subtract(dst, (0, 0, 0), dst);
+    tmp = (255.0f) / ((float)150 - 0);
+    multiply(dst, (tmp, tmp, tmp), dst);
+
+    // 2
+    subtract(dst, (66, 66, 66), dst);
+    tmp = (255.0f) / (255.0f - 66);
+    multiply(dst, (tmp, tmp, tmp), dst);
 
     //get source bitmap's config
     jclass java_bitmap_class = (jclass)env->FindClass("android/graphics/Bitmap");
@@ -352,12 +367,10 @@ JNIEXPORT jobject JNICALL Java_com_scanlibrary_ScanActivity_getBWBitmap(JNIEnv *
     Mat dst = mbgra.clone();
 
     cvtColor(mbgra, dst, CV_BGR2GRAY);
-    // float alpha = 2.2;
-    // float beta = 0;
-    // dst.convertTo(dst, -1, alpha, beta);
 
-    threshold(dst, dst, 0, 255, THRESH_BINARY | THRESH_OTSU);
-    // fastNlMeansDenoising(dst, dst, 11, 31, 9);
+    cv::blur(dst, dst, Size(2, 2));
+    adaptiveThreshold(dst, dst, 255, 1, 1, 7, 2);
+    bitwise_not(dst, dst);
 
     //get source bitmap's config
     jclass java_bitmap_class = (jclass)env->FindClass("android/graphics/Bitmap");
