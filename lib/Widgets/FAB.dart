@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:openscan/Utilities/constants.dart';
+import '../Utilities/constants.dart';
 import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 class FAB extends StatefulWidget {

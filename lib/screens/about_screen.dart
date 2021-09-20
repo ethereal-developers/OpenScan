@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:openscan/Utilities/constants.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../Utilities/constants.dart';
 
 void launchWebsite(String urlString) async {
   if (await canLaunch(urlString)) {

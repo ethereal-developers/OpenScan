@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/database_helper.dart';
+import 'Classes.dart';
+import 'database_helper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 

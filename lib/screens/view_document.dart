@@ -3,19 +3,16 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:open_file/open_file.dart';
-import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/Utilities/database_helper.dart';
-import 'package:openscan/Utilities/file_operations.dart';
-import 'package:openscan/Widgets/FAB.dart';
-import 'package:openscan/Widgets/Image_Card.dart';
-import 'package:openscan/screens/home_screen.dart';
+import '../Utilities/Classes.dart';
+import '../Utilities/constants.dart';
+import '../Utilities/database_helper.dart';
+import '../Utilities/file_operations.dart';
+import '../Widgets/FAB.dart';
+import '../Widgets/Image_Card.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:share_extend/share_extend.dart';
-import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 bool enableSelect = false;
 bool enableReorder = false;
@@ -152,6 +149,7 @@ class _ViewDocumentState extends State<ViewDocument>
         imageFilePath = await FlutterScannerCropper.openCrop(
           src: image.path,
           dest: cacheDir.path,
+          shouldCompress: true,
         );
       }
 

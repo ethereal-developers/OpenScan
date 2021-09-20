@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/Utilities/slide.dart';
-import 'package:openscan/Widgets/slide_dots.dart';
-import 'package:openscan/Widgets/slide_item.dart';
-import 'package:openscan/screens/home_screen.dart';
+import '../Utilities/constants.dart';
+import '../Utilities/slide.dart';
+import '../Widgets/slide_dots.dart';
+import '../Widgets/slide_item.dart';
+import 'home_screen.dart';
 
 class GettingStartedScreen extends StatefulWidget {
   static String route = 'GettingStarted';

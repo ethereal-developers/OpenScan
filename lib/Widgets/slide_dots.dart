@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/Utilities/constants.dart';
+import '../Utilities/constants.dart';
 
 class SlideDots extends StatelessWidget {
   final bool isActive;

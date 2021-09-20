@@ -123,6 +123,12 @@ public class ScanFragment extends Fragment {
         return getArguments().getString(ScanConstants.TEMP_DIR);
     }
 
+    private boolean getShouldCompress() {
+        String shouldCompressStr = getArguments().getString(ScanConstants.SHOULD_COMPRESS);
+        boolean shouldCompressBoolean = Boolean.parseBoolean(shouldCompressStr);
+        return shouldCompressBoolean;
+    }
+
     private Bitmap scaledBitmap(Bitmap bitmap, int width, int height) {
         Matrix m = new Matrix();
         m.setRectToRect(new RectF(0, 0, bitmap.getWidth(), bitmap.getHeight()), new RectF(0, 0, width, height), Matrix.ScaleToFit.CENTER);
@@ -132,6 +138,9 @@ public class ScanFragment extends Fragment {
     private void setBitmap(Bitmap original) {
         Bitmap scaledBitmap = scaledBitmap(original, sourceFrame.getWidth(), sourceFrame.getHeight());
         sourceImageView.setImageBitmap(scaledBitmap);
+        if(getShouldCompress()) {
+            this.original = scaledBitmap(this.original, this.original.getWidth() / 3, this.original.getHeight() / 3);
+        }
         Bitmap tempBitmap = ((BitmapDrawable) sourceImageView.getDrawable()).getBitmap();
         Map<Integer, PointF> pointFs = getEdgePoints(tempBitmap);
         polygonView.setPoints(pointFs);
