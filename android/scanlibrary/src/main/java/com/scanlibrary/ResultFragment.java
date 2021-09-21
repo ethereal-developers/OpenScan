@@ -67,6 +67,12 @@ public class ResultFragment extends Fragment {
         return getArguments().getString(ScanConstants.SCANNED_RESULT);
     }
 
+    private boolean getShouldCompress() {
+        String shouldCompressStr = getArguments().getString(ScanConstants.SHOULD_COMPRESS);
+        boolean shouldCompressBoolean = Boolean.parseBoolean(shouldCompressStr);
+        return shouldCompressBoolean;
+    }
+
     public void setScannedImage(Bitmap scannedImage) {
         Glide.with(this).load(scannedImage).into(scannedImageView);
     }
@@ -85,7 +91,7 @@ public class ResultFragment extends Fragment {
                         if (bitmap == null) {
                             bitmap = original;
                         }
-                        uri = Utils.getUri(bitmap, getPath());
+                        uri = Utils.getUri(bitmap, getPath(), getShouldCompress());
 
                         Log.d("onDoneButtonClickUri", uri);
                         data.putExtra(ScanConstants.SCANNED_RESULT, uri);

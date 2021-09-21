@@ -56,6 +56,7 @@ public class ScanActivity extends Activity implements IScanner, ComponentCallbac
         Bundle bundle = new Bundle();
         bundle.putString(ScanConstants.SCANNED_RESULT, path);
         bundle.putString(ScanConstants.TEMP_DIR, getAppDocDirPath());
+        bundle.putString(ScanConstants.SHOULD_COMPRESS, getShouldCompress());
         fragment.setArguments(bundle);
         android.app.FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
