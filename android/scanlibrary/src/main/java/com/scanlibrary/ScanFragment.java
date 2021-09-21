@@ -139,7 +139,7 @@ public class ScanFragment extends Fragment {
         Bitmap scaledBitmap = scaledBitmap(original, sourceFrame.getWidth(), sourceFrame.getHeight());
         sourceImageView.setImageBitmap(scaledBitmap);
         if(getShouldCompress()) {
-            this.original = scaledBitmap(this.original, this.original.getWidth() / 3, this.original.getHeight() / 3);
+            this.original = scaledBitmap(this.original, this.original.getWidth() / 2, this.original.getHeight() / 2);
         }
         Bitmap tempBitmap = ((BitmapDrawable) sourceImageView.getDrawable()).getBitmap();
         Map<Integer, PointF> pointFs = getEdgePoints(tempBitmap);
