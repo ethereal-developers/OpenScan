@@ -123,7 +123,10 @@ class _ImageCardState extends State<ImageCard> {
                         actions: <Widget>[
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: Text('Cancel'),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                           TextButton(
                             onPressed: () {

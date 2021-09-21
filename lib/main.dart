@@ -27,7 +27,8 @@ class OpenScan extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
+      theme: ThemeData.dark().copyWith(
+          accentColor: secondaryColor, accentColorBrightness: Brightness.dark),
       initialRoute: SplashScreen.route,
       routes: {
         SplashScreen.route: (context) => SplashScreen(),

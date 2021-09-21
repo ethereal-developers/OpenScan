@@ -8,7 +8,9 @@ An open source app that enables users to scan hardcopies of documents or notes a
 
 (Build instructions present at the bottom of the file)
 
+<p align="center">
 <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/scan_g.jpeg" height=400>
+</p>
 
 # About this app
 
@@ -50,17 +52,15 @@ We _differentiate_ our self from the rest of the apps in the market by:
 - flutter_scanner_cropper:
   - git:
     - url: https://github.com/Ethereal-Developers-Inc/flutter-scanner-plugin.git
+    - ref: master
     - path: flutter_scanner_cropper/
 - cupertino_icons: ^0.1.3
-- flutter_absolute_path: ^1.0.6
-- flutter_full_pdf_viewer: ^1.0.6
 - flutter_speed_dial: ^1.2.5
 - focused_menu: ^1.0.1
-- image_picker: ^0.6.4
-- multi_image_picker: ^4.8.0
-- open_file: ^3.0.3
+- image_picker: ^0.8.4
+- open_file: ^3.2.1
 - path_provider: ^2.0.2
-- pdf: ^1.9.0
+- pdf: ^3.6.0
 - permission_handler: ^8.0.1
 - quick_actions: ^0.6.0+2
 - reorderables: ^0.3.2

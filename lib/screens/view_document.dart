@@ -837,7 +837,10 @@ class _ViewDocumentState extends State<ViewDocument>
                                         onPressed: () {
                                           Navigator.pop(context);
                                         },
-                                        child: Text('Cancel'),
+                                        child: Text(
+                                          'Cancel',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
                                       ),
                                       TextButton(
                                         onPressed: () {
