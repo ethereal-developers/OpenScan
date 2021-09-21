@@ -47,7 +47,7 @@ class FileOperations {
                 child: pw.Image(image),
               );
             },
-            margin: pw.EdgeInsets.all(5.0),
+            margin: pw.EdgeInsets.all(2.0),
           ),
         );
       }
