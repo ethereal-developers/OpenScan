@@ -1,11 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/screens/about_screen.dart';
-import 'package:openscan/screens/getting_started_screen.dart';
-import 'package:openscan/screens/home_screen.dart';
-import 'package:openscan/screens/view_document.dart';
+import 'Utilities/constants.dart';
+import 'screens/about_screen.dart';
+import 'screens/getting_started_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/view_document.dart';
 
 import 'screens/splash_screen.dart';
 
@@ -27,7 +27,8 @@ class OpenScan extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
+      theme: ThemeData.dark().copyWith(
+          accentColor: secondaryColor, accentColorBrightness: Brightness.dark),
       initialRoute: SplashScreen.route,
       routes: {
         SplashScreen.route: (context) => SplashScreen(),

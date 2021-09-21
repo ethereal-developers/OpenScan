@@ -2,20 +2,17 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/Utilities/database_helper.dart';
-import 'package:openscan/Widgets/FAB.dart';
-import 'package:openscan/screens/about_screen.dart';
-import 'package:openscan/screens/getting_started_screen.dart';
-import 'package:openscan/screens/view_document.dart';
+import '../Utilities/Classes.dart';
+import '../Utilities/constants.dart';
+import '../Utilities/database_helper.dart';
+import '../Widgets/FAB.dart';
+import 'about_screen.dart';
+import 'getting_started_screen.dart';
+import 'view_document.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quick_actions/quick_actions.dart';
-import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   static String route = "HomeScreen";
@@ -133,6 +130,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           break;
       }
     });
+    
     quickActions.setShortcutItems(<ShortcutItem>[
       ShortcutItem(
         type: 'Normal Scan',

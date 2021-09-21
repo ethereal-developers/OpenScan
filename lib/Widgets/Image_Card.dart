@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
-import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/database_helper.dart';
+import '../Utilities/Classes.dart';
+import '../Utilities/database_helper.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../Utilities/constants.dart';
@@ -123,7 +123,10 @@ class _ImageCardState extends State<ImageCard> {
                         actions: <Widget>[
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: Text('Cancel'),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                           TextButton(
                             onPressed: () {

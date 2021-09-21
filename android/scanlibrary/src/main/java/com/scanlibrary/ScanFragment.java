@@ -112,24 +112,35 @@ public class ScanFragment extends Fragment {
     }
 
     private Bitmap getBitmap() {
-        Bitmap bitmap = BitmapFactory.decodeFile(getPath());
-        return bitmap;
+        return BitmapFactory.decodeFile(getPath());
     }
 
     private String getPath() {
-        String path = getArguments().getString(ScanConstants.SELECTED_BITMAP);
-        return path;
+        return getArguments().getString(ScanConstants.SELECTED_BITMAP);
     }
 
     private String getTempPath() {
-        String path = getArguments().getString(ScanConstants.TEMP_DIR);
-        return path;
+        return getArguments().getString(ScanConstants.TEMP_DIR);
+    }
+
+    private boolean getShouldCompress() {
+        String shouldCompressStr = getArguments().getString(ScanConstants.SHOULD_COMPRESS);
+        boolean shouldCompressBoolean = Boolean.parseBoolean(shouldCompressStr);
+        return shouldCompressBoolean;
+    }
+
+    private Bitmap scaledBitmap(Bitmap bitmap, int width, int height) {
+        Matrix m = new Matrix();
+        m.setRectToRect(new RectF(0, 0, bitmap.getWidth(), bitmap.getHeight()), new RectF(0, 0, width, height), Matrix.ScaleToFit.CENTER);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
     }
 
     private void setBitmap(Bitmap original) {
         Bitmap scaledBitmap = scaledBitmap(original, sourceFrame.getWidth(), sourceFrame.getHeight());
-        this.original = scaledBitmap;
         sourceImageView.setImageBitmap(scaledBitmap);
+        if(getShouldCompress()) {
+            this.original = scaledBitmap(this.original, this.original.getWidth() / 2, this.original.getHeight() / 2);
+        }
         Bitmap tempBitmap = ((BitmapDrawable) sourceImageView.getDrawable()).getBitmap();
         Map<Integer, PointF> pointFs = getEdgePoints(tempBitmap);
         polygonView.setPoints(pointFs);
@@ -226,12 +237,6 @@ public class ScanFragment extends Fragment {
         return points.size() == 4;
     }
 
-    private Bitmap scaledBitmap(Bitmap bitmap, int width, int height) {
-        Matrix m = new Matrix();
-        m.setRectToRect(new RectF(0, 0, bitmap.getWidth(), bitmap.getHeight()), new RectF(0, 0, width, height), Matrix.ScaleToFit.CENTER);
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
-    }
-
     private Bitmap getScannedBitmap(Bitmap original, Map<Integer, PointF> points) {
         int width = original.getWidth();
         int height = original.getHeight();
@@ -269,7 +274,7 @@ public class ScanFragment extends Fragment {
 
         @Override
         protected Bitmap doInBackground(Void... params) {
-            Bitmap bitmap =  getScannedBitmap(original, points);
+            Bitmap bitmap = getScannedBitmap(original, points);
             path = String.format("%s/%d.jpg", path, System.currentTimeMillis() / 1000);
             String uri = Utils.getUri(bitmap, path);
             scanner.onScanFinish(uri);

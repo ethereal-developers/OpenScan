@@ -26,6 +26,7 @@ public class ScanActivity extends Activity implements IScanner, ComponentCallbac
         Bundle bundle = new Bundle();
         bundle.putString(ScanConstants.SELECTED_BITMAP, getImagePath());
         bundle.putString(ScanConstants.TEMP_DIR, getAppDocDirPath());
+        bundle.putString(ScanConstants.SHOULD_COMPRESS, getShouldCompress());
         fragment.setArguments(bundle);
         android.app.FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
@@ -43,6 +44,11 @@ public class ScanActivity extends Activity implements IScanner, ComponentCallbac
         Log.d("onGetAppDocDirPath", path);
         return path;
     }
+
+    private String getShouldCompress() {
+        String shouldCompressStr = getIntent().getStringExtra(ScanConstants.SHOULD_COMPRESS);
+        return shouldCompressStr;
+    }
     
     @Override
     public void onScanFinish(String path) {
@@ -50,6 +56,7 @@ public class ScanActivity extends Activity implements IScanner, ComponentCallbac
         Bundle bundle = new Bundle();
         bundle.putString(ScanConstants.SCANNED_RESULT, path);
         bundle.putString(ScanConstants.TEMP_DIR, getAppDocDirPath());
+        bundle.putString(ScanConstants.SHOULD_COMPRESS, getShouldCompress());
         fragment.setArguments(bundle);
         android.app.FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();

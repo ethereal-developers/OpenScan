@@ -4,12 +4,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_absolute_path/flutter_absolute_path.dart';
-import 'package:multi_image_picker/multi_image_picker.dart';
-import 'package:openscan/Utilities/Classes.dart';
-import 'package:openscan/Utilities/database_helper.dart';
+import 'Classes.dart';
+import 'database_helper.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class FileOperations {
@@ -31,8 +28,9 @@ class FileOperations {
     }
   }
 
-  // CREATE PDF
-  Future<bool> createPdf({selectedDirectory, fileName, images}) async {
+  /// Create new PDF
+  Future<bool> createPdf(
+      {selectedDirectory, fileName, List<File> images}) async {
     try {
       final output = File("${selectedDirectory.path}/$fileName.pdf");
 
@@ -41,27 +39,23 @@ class FileOperations {
       final doc = pw.Document();
 
       for (i = 0; i < images.length; i++) {
-        final image = PdfImage.file(
-          doc.document,
-          bytes: images[i].readAsBytesSync(),
-        );
-
+        final image = pw.MemoryImage(images[i].readAsBytesSync());
         doc.addPage(
           pw.Page(
             build: (pw.Context context) {
               return pw.Center(
-                // child: pw.Image.provider(image),
                 child: pw.Image(image),
               );
             },
-            margin: pw.EdgeInsets.all(5.0),
+            margin: pw.EdgeInsets.all(2.0),
           ),
         );
       }
 
-      output.writeAsBytesSync(doc.save());
+      output.writeAsBytesSync(await doc.save());
       return true;
     } catch (e) {
+      print(e);
       return false;
     }
   }
@@ -69,7 +63,7 @@ class FileOperations {
   // ADD IMAGES
   Future<File> openCamera() async {
     File image;
-    var picture = await ImagePicker.pickImage(source: ImageSource.camera);
+    var picture = await ImagePicker().pickImage(source: ImageSource.camera);
     if (picture != null) {
       image = File(picture.path);
     }
@@ -77,9 +71,9 @@ class FileOperations {
   }
 
   Future<dynamic> openGallery() async {
-    List<Asset> pic;
+    List<XFile> pic;
     try {
-      pic = await MultiImagePicker.pickImages(maxImages: 30);
+      pic = await ImagePicker().pickMultiImage();
     } catch (e) {
       print(e);
     }
@@ -87,12 +81,8 @@ class FileOperations {
     List<File> imageFiles = [];
 
     if (pic != null) {
-      for (Asset imagePath in pic) {
-        imageFiles.add(
-          File(
-            await FlutterAbsolutePath.getAbsolutePath(imagePath.identifier),
-          ),
-        );
+      for (XFile image in pic) {
+        imageFiles.add(File(image.path));
       }
     }
     print(imageFiles);
@@ -123,7 +113,7 @@ class FileOperations {
       );
     }
 
-    /// Removed Index in image path
+    // Removed Index in image path
     File tempPic = File("$dirPath/${DateTime.now()}.jpg");
     image.copy(tempPic.path);
     database.createImage(
@@ -144,7 +134,7 @@ class FileOperations {
     Directory directory = selectedDirectory;
     try {
       if (Platform.isAndroid) {
-        directory = Directory("/storage/emulated/0/");
+        directory = Directory("/storage/emulated/0/Documents/");
       } else {
         directory = await getExternalStorageDirectory();
       }
@@ -153,24 +143,18 @@ class FileOperations {
       directory = await getExternalStorageDirectory();
     }
 
-    // Directory newDirectory = await DirectoryPicker.pick(
-    //     allowFolderCreation: true,
-    //     context: context,
-    //     rootDirectory: directory,
-    //     shape: RoundedRectangleBorder(
-    //         borderRadius: BorderRadius.all(Radius.circular(10))));
-
     return directory;
   }
 
   Future<String> saveToDevice(
       {BuildContext context,
       String fileName,
-      dynamic images,
-      int quality}) async {
+      List<ImageOS> images,
+      int quality,}) async {
     Directory selectedDirectory;
-    Directory openscanDir = Directory("/storage/emulated/0/OpenScan");
-    Directory openscanPdfDir = Directory("/storage/emulated/0/OpenScan/PDF");
+    Directory openscanDir = Directory("/storage/emulated/0/Documents/OpenScan");
+    Directory openscanPdfDir =
+        Directory("/storage/emulated/0/Documents/OpenScan/PDF");
     int desiredQuality = 100;
 
     try {
@@ -184,15 +168,17 @@ class FileOperations {
       selectedDirectory = await pickDirectory(context, selectedDirectory);
     }
 
-    var tempImages = [];
+    List<File> imageFiles = [];
     String path;
 
     if (quality == 1) {
-      desiredQuality = 60;
+      desiredQuality = 20;
     } else if (quality == 2) {
-      desiredQuality = 80;
-    } else {
+      desiredQuality = 60;
+    } else if (quality == 3) {
       desiredQuality = 100;
+    } else {
+      desiredQuality = 50;
     }
 
     print(desiredQuality);
@@ -204,9 +190,8 @@ class FileOperations {
         dest: cacheDir.path,
         desiredQuality: desiredQuality,
       );
-      tempImages.add(File(path));
+      imageFiles.add(File(path));
     }
-    images = tempImages;
 
     fileName = fileName.replaceAll('-', '');
     fileName = fileName.replaceAll('.', '');
@@ -215,7 +200,7 @@ class FileOperations {
     pdfStatus = await createPdf(
       selectedDirectory: selectedDirectory,
       fileName: fileName,
-      images: images,
+      images: imageFiles,
     );
     return (pdfStatus) ? selectedDirectory.path : null;
   }
@@ -223,24 +208,26 @@ class FileOperations {
   Future<bool> saveToAppDirectory(
       {BuildContext context, String fileName, dynamic images}) async {
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
-    List<ImageOS> foo = [];
-    if (images.runtimeType == foo.runtimeType) {
-      var tempImages = [];
+
+    List<ImageOS> imageOSList = [];
+    List<File> imageFiles = [];
+
+    if (images.runtimeType == imageOSList.runtimeType) {
       for (ImageOS image in images) {
-        tempImages.add(File(image.imgPath));
+        imageFiles.add(File(image.imgPath));
       }
-      images = tempImages;
     }
+
     pdfStatus = await createPdf(
       selectedDirectory: selectedDirectory,
       fileName: fileName,
-      images: images,
+      images: imageFiles,
     );
     return pdfStatus;
   }
 
+  /// Delete the temporary files created by the image_picker package
   Future<void> deleteTemporaryFiles() async {
-    // Delete the temporary files created by the image_picker package
     Directory appDocDir = await getExternalStorageDirectory();
     Directory cacheDir = await getTemporaryDirectory();
     String appDocPath = "${appDocDir.path}/Pictures/";

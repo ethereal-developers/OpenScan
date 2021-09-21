@@ -23,17 +23,37 @@ public class Utils {
 
     }
 
+    public static String getUri(Bitmap bitmap, String tempDirPath, boolean shouldCompress) {
+        File file = null;
+        try {
+            file = new File(tempDirPath);
+            FileOutputStream outStream = new FileOutputStream(file);
+
+            if (shouldCompress) {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 60, outStream);
+            } else {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
+            }
+            outStream.flush();
+            outStream.close();
+            Log.d("onGetUriCall", file.getPath());
+            return file.getPath();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public static String getUri(Bitmap bitmap, String tempDirPath) {
         File file = null;
         try {
             file = new File(tempDirPath);
             FileOutputStream outStream = new FileOutputStream(file);
-         
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
-            
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream);
             outStream.flush();
             outStream.close();
-
             Log.d("onGetUriCall", file.getPath());
             return file.getPath();
         } catch (FileNotFoundException e) {
