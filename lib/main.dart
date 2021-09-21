@@ -2,11 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:openscan/core/appRouter.dart';
-import 'package:openscan/presentation/screens/about_screen.dart';
-import 'package:openscan/presentation/screens/demo_screen.dart';
-import 'package:openscan/presentation/screens/home_screen.dart';
-import 'package:openscan/presentation/screens/splash_screen.dart';
-import 'package:openscan/presentation/screens/view_screen.dart';
 
 import 'core/theme/appTheme.dart';
 
@@ -21,10 +16,16 @@ class OpenScan extends StatelessWidget {
       systemNavigationBarColor: AppTheme.primaryColor,
       systemNavigationBarIconBrightness: Brightness.light,
       statusBarColor: AppTheme.primaryColor,
-      statusBarBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
     ));
-    SystemChrome.setPreferredOrientations(
-        [DeviceOrientation.portraitDown, DeviceOrientation.portraitUp]);
+    SystemChrome.setEnabledSystemUIOverlays([
+      SystemUiOverlay.bottom,
+      SystemUiOverlay.top,
+    ]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.portraitUp,
+    ]);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,

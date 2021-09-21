@@ -9,6 +9,7 @@ import 'package:openscan/presentation/Widgets/cropper/polygon_painter.dart';
 
 imageCropper(BuildContext context, File image) async {
   File croppedImage;
+  print('Before ${image.path}');
 
   // imageFilePath = await FlutterScannerCropper.openCrop(
   //   src: image.path,
@@ -29,7 +30,7 @@ imageCropper(BuildContext context, File image) async {
     ),
   ).then((value) => croppedImage = value);
 
-  print(croppedImage.path ?? image.path);
+  print('After ${croppedImage.path ?? image.path}');
   return croppedImage ?? image;
 }
 

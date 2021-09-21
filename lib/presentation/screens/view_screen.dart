@@ -1,14 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:openscan/core/models.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
+import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/Widgets/delete_dialog.dart';
 import 'package:openscan/presentation/Widgets/view/custom_bottomsheet.dart';
-import 'package:openscan/presentation/Widgets/view/popup_menu_button.dart';
-import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/Widgets/view/image_card.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:openscan/presentation/Widgets/view/popup_menu_button.dart';
 import 'package:reorderables/reorderables.dart';
 
 class ViewScreen extends StatefulWidget {
@@ -33,8 +31,6 @@ class ViewScreen extends StatefulWidget {
 }
 
 class _ViewScreenState extends State<ViewScreen> {
-  // String dirPath;
-  // String dirName = '';
   bool enableSelectionIcons = false;
 
   List<String> imageFilesPath = [];
@@ -51,15 +47,15 @@ class _ViewScreenState extends State<ViewScreen> {
   // ImageOS displayImage;
   // bool showImage = false;
 
-  void getDirectoryData({
-    bool updateFirstImage = false,
-    bool updateIndex = false,
-  }) async {
+  // void getDirectoryData({
+  //   bool updateFirstImage = false,
+  //   bool updateIndex = false,
+  // }) async {
     // directoryImages = [];
     // initDirectoryImages = [];
-    imageFilesPath = [];
+    // imageFilesPath = [];
     // ViewDocument.selectedImageIndex = [];
-    int index = 1;
+    // int index = 1;
 
     // BlocListener<DirectoryCubit, DirectoryState>(
     //     listener: (context, state) async {
@@ -115,9 +111,9 @@ class _ViewScreenState extends State<ViewScreen> {
     // );
     // imageFilesPath.add(image['img_path']);
     // ViewDocument.selectedImageIndex.add(false);
-    index += 1;
+    // index += 1;
     // }
-  }
+  // }
 
   // selectionCallback({ImageOS imageOS}) {
   //   if (ViewDocument.selectedImageIndex.contains(true)) {
@@ -186,15 +182,6 @@ class _ViewScreenState extends State<ViewScreen> {
   //   // print('New Directory => ${widget.directoryOS.dirName}');
   // }
 
-  // TODO: Bugs
-  // Create Image - crop not reflecting
-  // Delete image not reflecting
-  // Bloc not provided to bottomSheet
-
-  // TODO: Select images
-
-  // TODO: Delete Multiple Images
-
   // @override
   // void initState() {
   //   super.initState();
@@ -218,6 +205,15 @@ class _ViewScreenState extends State<ViewScreen> {
   //   }
   // }
   // }
+
+  // TODO: Bugs
+  // Create Image - crop not reflecting
+  // Delete image not reflecting
+  // Bloc not provided to bottomSheet
+
+  // TODO: Select images
+
+  // TODO: Delete Multiple Images
 
   @override
   Widget build(BuildContext context) {
@@ -404,18 +400,21 @@ class _ViewScreenState extends State<ViewScreen> {
                           minMainAxisCount: 2,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: state.images.map((image) {
-                            return ImageCard(
-                              imageOS: image,
-                              selectCallback: () {
-                                // selectionCallback(imageOS: image);
-                              },
-                              // directoryOS: widget.directoryOS,
-                              // fileEditCallback: () {
-                              //   fileEditCallback(imageOS: image);
-                              // },
-                              // imageViewerCallback: () {
-                              //   imageViewerCallback(imageOS: image);
-                              // },
+                            return BlocProvider.value(
+                              value: image,
+                              child: ImageCard(
+                                // imageOS: image,
+                                selectCallback: () {
+                                  // selectionCallback(imageOS: image);
+                                },
+                                // directoryOS: widget.directoryOS,
+                                // fileEditCallback: () {
+                                //   fileEditCallback(imageOS: image);
+                                // },
+                                // imageViewerCallback: () {
+                                //   imageViewerCallback(imageOS: image);
+                                // },
+                              ),
                             );
                           }).toList(),
                           onReorder: (int oldIndex, int newIndex) {

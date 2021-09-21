@@ -132,7 +132,7 @@ class DatabaseHelper {
 
   void updateImageCount({String tableName}) async {
     Database db = await instance.database;
-    var data = await getDirectoryData(tableName);
+    var data = await getImageData(tableName);
     db.update(
       _masterTableName,
       {'image_count': data.length},
@@ -143,35 +143,36 @@ class DatabaseHelper {
 
   /// <---- Directory Table Operations ---->
 
-  Future getDirectoryData(String tableName) async {
+  Future getImageData(String tableName) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     List<Map<String, dynamic>> data = await db.query(_dirTableName);
     return data;
   }
 
-  Future<int> updateImagePath({String tableName, ImageOS image}) async {
+  Future<int> updateImagePath(
+      {String tableName, String imgPath, int idx}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     return await db.update(
         _dirTableName,
         {
-          'img_path': image.imgPath,
+          'img_path': imgPath,
         },
         where: 'idx == ?',
-        whereArgs: [image.idx]);
+        whereArgs: [idx]);
   }
 
-  Future<int> updateImageIndex({ImageOS image, String tableName}) async {
+  Future<int> updateImageIndex({String imgPath, int idx, String tableName}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     return await db.update(
         _dirTableName,
         {
-          'idx': image.idx,
+          'idx': idx,
         },
         where: 'img_path == ?',
-        whereArgs: [image.imgPath]);
+        whereArgs: [imgPath]);
   }
 
   // Future<int> updateShouldCompress({ImageOS image, String tableName}) async {

@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
+import 'package:openscan/logic/cubit/image_cubit.dart';
 import 'package:openscan/presentation/screens/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -70,25 +71,28 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     state.imageCount = 0;
     state.lastModified = now;
     state.newName = null;
-    state.images = <ImageOS>[];
+    state.images = <ImageCubit>[];
 
     emitState(state);
   }
 
   getImageData() async {
     state.images = [];
-    var directoryData = await database.getDirectoryData(state.dirName);
+    var directoryData = await database.getImageData(state.dirName);
     print('From Cubit => $directoryData');
     for (var image in directoryData) {
       var i = image['idx'];
 
-      ImageOS tempImageOS = ImageOS(
+      ImageCubit tempImage = ImageCubit(
         idx: i,
         imgPath: image['img_path'],
       );
+      print('${tempImage.state.imgPath} => ${tempImage.state.idx}');
       state.images.add(
-        tempImageOS,
+        tempImage,
       );
+
+      // state.imageCount = state.images.length;
 
       emitState(state);
 
@@ -119,23 +123,24 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   onReorderImages(int oldIndex, int newIndex) {
-    ImageOS image1 = state.images.removeAt(oldIndex);
+    ImageCubit image1 = state.images.removeAt(oldIndex);
     state.images.insert(newIndex, image1);
     emitState(state);
   }
 
   confirmReorderImages() {
     for (var i = 1; i <= state.images.length; i++) {
-      state.images[i - 1].idx = i;
+      state.images[i - 1].state.idx = i;
       if (i == 1) {
         database.updateFirstImagePath(
           dirPath: state.dirPath,
-          imagePath: state.images[i - 1].imgPath,
+          imagePath: state.images[i - 1].state.imgPath,
         );
-        state.firstImgPath = state.images[i - 1].imgPath;
+        state.firstImgPath = state.images[i - 1].state.imgPath;
       }
       database.updateImagePath(
-        image: state.images[i - 1],
+        imgPath: state.images[i - 1].state.imgPath,
+        idx: state.images[i - 1].state.idx,
         tableName: state.dirName,
       );
       emitState(state);
@@ -160,17 +165,23 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
     for (File image in imageList) {
       if (image.existsSync()) {
+        File tempPic = File("${state.dirPath}/${DateTime.now()}.jpg");
+        image.copy(tempPic.path);
+        image = tempPic;
+
+        print('Saving ${image.path}');
         await fileOperations.saveImage(
           image: image,
           index: state.images.length + 1,
           dirPath: state.dirPath,
         );
 
-        ImageOS imageOS = ImageOS(
+        ImageCubit tempImage = ImageCubit(
           idx: state.imageCount + 1,
           imgPath: image.path,
         );
-        state.images.add(imageOS);
+        print(tempImage.state.idx);
+        state.images.add(tempImage);
         state.imageCount = state.images.length;
 
         // print('Image Saved');
@@ -184,39 +195,40 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
   }
 
-  cropImage(context, {ImageOS imageOS}) async {
-    File image = await imageCropper(
-      context,
-      File(imageOS.imgPath),
-    );
-
+  cropImage({ImageCubit imageCubit}) async {
+    // File image = await imageCropper(
+    //   context,
+    //   File(imageOS.imgPath),
+    // );
+    // File image = imageCubit.cropImage(context);
     // Creating new imagePath for cropped image
-    if (image != null) {
-      File temp = File(
-          imageOS.imgPath.substring(0, imageOS.imgPath.lastIndexOf("/")) +
-              '/' +
-              DateTime.now().toString() +
-              '.jpg');
-      image.copySync(temp.path);
-      File(imageOS.imgPath).deleteSync();
-      imageOS.imgPath = temp.path;
-    }
+    // if (image != null) {
+    //   File temp = File(
+    //       imageOS.imgPath.substring(0, imageOS.imgPath.lastIndexOf("/")) +
+    //           '/' +
+    //           DateTime.now().toString() +
+    //           '.jpg');
+    //   image.copySync(temp.path);
+    //   File(imageOS.imgPath).deleteSync();
+    //   imageOS.imgPath = temp.path;
+    // }
 
     database.updateImagePath(
       tableName: state.dirName,
-      image: imageOS,
+      imgPath: imageCubit.state.imgPath,
+      idx: imageCubit.state.idx,
     );
+    print(imageCubit.state.idx);
 
-    state.images[imageOS.idx - 1] = imageOS;
+    state.images[imageCubit.state.idx - 1] = imageCubit;
 
-    if (imageOS.idx == 1) {
+    if (imageCubit.state.idx == 1) {
       database.updateFirstImagePath(
-        imagePath: imageOS.imgPath,
+        imagePath: imageCubit.state.imgPath,
         dirPath: state.dirPath,
       );
     }
-
-    emitState(state);
+    print('Image paths updated');
   }
 
   deleteImage(context, {ImageOS imageToDelete}) async {
@@ -228,7 +240,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     );
 
     try {
-      // Delete directory if 1 image exists
+      // Delete directory if only 1 image exists
       Directory(state.dirPath).deleteSync(recursive: false);
       database.deleteDirectory(dirPath: state.dirPath);
       Navigator.pop(context);
@@ -239,9 +251,11 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
       // Updating index of images
       for (int i = imageToDelete.idx - 1; i < state.imageCount; i++) {
-        state.images[i].idx = i + 1;
+        state.images[i].state.idx = i + 1;
+        print('image[$i] = ${i + 1}');
         database.updateImageIndex(
-          image: state.images[i],
+          imgPath: state.images[i].state.imgPath,
+          idx: state.images[i].state.idx,
           tableName: state.dirName,
         );
       }
@@ -249,7 +263,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       // Updating first image path
       if (imageToDelete.idx == 1) {
         database.updateFirstImagePath(
-          imagePath: state.images[0].imgPath,
+          imagePath: state.images[0].state.imgPath,
           dirPath: state.dirPath,
         );
       }
@@ -281,7 +295,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       Directory(state.dirPath).deleteSync(recursive: false);
       database.deleteDirectory(dirPath: state.dirPath);
     } catch (e) {
-      print('Directory cant be deleted as it contains other files');
+      print('Directory can\'t be deleted as it contains other files');
     }
     // removeSelection();
     // Navigator.pop(context);

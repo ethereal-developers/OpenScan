@@ -123,17 +123,17 @@ class FileOperations {
     }
 
     /// Removed Index in image path
-    File tempPic = File("$dirPath/${DateTime.now()}.jpg");
-    image.copy(tempPic.path);
+    // File tempPic = File("$dirPath/${DateTime.now()}.jpg");
+    // image.copy(tempPic.path);
     database.createImage(
       image: ImageOS(
-        imgPath: tempPic.path,
+        imgPath: image.path,
         idx: index,
       ),
       tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
     );
     if (index == 1) {
-      database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
+      database.updateFirstImagePath(imagePath: image.path, dirPath: dirPath);
     }
   }
 
