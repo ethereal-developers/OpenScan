@@ -2,16 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/core/theme/appTheme.dart';
-import 'package:openscan/logic/cubit/directory_cubit.dart';
 
 import '../../screens/view_screen.dart';
-import '../delete_dialog.dart';
 
 class ImageCard extends StatefulWidget {
   final ImageOS image;

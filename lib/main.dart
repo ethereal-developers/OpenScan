@@ -31,18 +31,8 @@ class OpenScan extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        primaryColor: AppTheme.primaryColor,
-        accentColor: AppTheme.accentColor,
-        // iconTheme: IconThemeData(color: Colors.white),
-        //       textTheme: TextTheme(
-        //         subtitle1: TextStyle(color: Colors.white),
-        //         subtitle2: TextStyle(color: Colors.white),
-        //         bodyText1: TextStyle(color: Colors.white),
-        //         bodyText2: TextStyle(color: Colors.white),
-        //         caption: TextStyle(color: Colors.white),
-        //       ),
-      ),
+      // theme: ThemeData.dark().copyWith(accentColor: AppTheme.accentColor),
+      theme: AppTheme.appTheme,
       themeMode: ThemeMode.dark,
       initialRoute: AppRouter.SPLASH_SCREEN,
       onGenerateRoute: AppRouter.onGenerateRoute,

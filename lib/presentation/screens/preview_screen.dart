@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
+import 'package:openscan/presentation/Widgets/delete_dialog.dart';
 
 class PreviewScreen extends StatefulWidget {
   final int initialIndex;
@@ -90,12 +91,32 @@ class _PreviewScreenState extends State<PreviewScreen> {
                       icon: Icon(Icons.crop),
                       onPressed: () {
                         BlocProvider.of<DirectoryCubit>(context).cropImage(
-                            context,
-                            state.images[_pageController.page.toInt()]);
+                          context,
+                          state.images[_pageController.page.toInt()],
+                        );
                       },
                     ),
-                    Icon(
-                      Icons.delete,
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) {
+                            return DeleteDialog(
+                              deleteOnPressed: () {
+                                BlocProvider.of<DirectoryCubit>(context)
+                                    .deleteImage(
+                                  context,
+                                  imageToDelete: state
+                                      .images[_pageController.page.toInt()],
+                                );
+                                Navigator.pop(context);
+                              },
+                              cancelOnPressed: () => Navigator.pop(context),
+                            );
+                          },
+                        );
+                      },
                     ),
                     Icon(
                       Icons.more_vert,

@@ -8,5 +8,14 @@ class AppTheme {
   static final appTheme = ThemeData(
     primaryColor: primaryColor,
     accentColor: accentColor,
+    brightness: Brightness.dark,
+    iconTheme: IconThemeData(color: Colors.white),
+    textTheme: TextTheme(
+      subtitle1: TextStyle(color: Colors.white),
+      subtitle2: TextStyle(color: Colors.white),
+      bodyText1: TextStyle(color: Colors.white),
+      bodyText2: TextStyle(color: Colors.white),
+      caption: TextStyle(color: Colors.white),
+    ),
   );
 }

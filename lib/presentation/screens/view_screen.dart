@@ -402,6 +402,7 @@ class _ViewScreenState extends State<ViewScreen> {
                   builder: (context, state) {
                     if (state.images != null) {
                       return ReorderableWrap(
+                        needsLongPressDraggable: false,
                         spacing: 10,
                         runSpacing: 10,
                         minMainAxisCount: 2,
