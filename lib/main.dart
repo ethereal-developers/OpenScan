@@ -15,13 +15,15 @@ class OpenScan extends StatelessWidget {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
       systemNavigationBarColor: AppTheme.primaryColor,
       systemNavigationBarIconBrightness: Brightness.light,
+      systemNavigationBarDividerColor: AppTheme.primaryColor,
+      statusBarIconBrightness: Brightness.light,
       statusBarColor: AppTheme.primaryColor,
       statusBarBrightness: Brightness.dark,
     ));
-    SystemChrome.setEnabledSystemUIOverlays([
-      SystemUiOverlay.bottom,
-      SystemUiOverlay.top,
-    ]);
+    // SystemChrome.setEnabledSystemUIOverlays([
+    //   SystemUiOverlay.bottom,
+    //   SystemUiOverlay.top,
+    // ]);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitDown,
       DeviceOrientation.portraitUp,
@@ -32,6 +34,14 @@ class OpenScan extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         primaryColor: AppTheme.primaryColor,
         accentColor: AppTheme.accentColor,
+        // iconTheme: IconThemeData(color: Colors.white),
+        //       textTheme: TextTheme(
+        //         subtitle1: TextStyle(color: Colors.white),
+        //         subtitle2: TextStyle(color: Colors.white),
+        //         bodyText1: TextStyle(color: Colors.white),
+        //         bodyText2: TextStyle(color: Colors.white),
+        //         caption: TextStyle(color: Colors.white),
+        //       ),
       ),
       themeMode: ThemeMode.dark,
       initialRoute: AppRouter.SPLASH_SCREEN,

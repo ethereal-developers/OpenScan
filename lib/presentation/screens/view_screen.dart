@@ -1,12 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/Widgets/delete_dialog.dart';
 import 'package:openscan/presentation/Widgets/view/custom_bottomsheet.dart';
 import 'package:openscan/presentation/Widgets/view/image_card.dart';
 import 'package:openscan/presentation/Widgets/view/popup_menu_button.dart';
+import 'package:openscan/presentation/screens/preview_screen.dart';
 import 'package:reorderables/reorderables.dart';
 
 class ViewScreen extends StatefulWidget {
@@ -51,68 +53,68 @@ class _ViewScreenState extends State<ViewScreen> {
   //   bool updateFirstImage = false,
   //   bool updateIndex = false,
   // }) async {
-    // directoryImages = [];
-    // initDirectoryImages = [];
-    // imageFilesPath = [];
-    // ViewDocument.selectedImageIndex = [];
-    // int index = 1;
+  // directoryImages = [];
+  // initDirectoryImages = [];
+  // imageFilesPath = [];
+  // ViewDocument.selectedImageIndex = [];
+  // int index = 1;
 
-    // BlocListener<DirectoryCubit, DirectoryState>(
-    //     listener: (context, state) async {
-    //   print('hello');
-    //   directoryData = await database.getDirectoryData(state.dirName);
-    //   // print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
-    // });
-    // directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
-    // print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
-    // for (var image in directoryData) {
-    // Updating first image path after delete
-    // if (updateFirstImage) {
-    //   database.updateFirstImagePath(
-    //       imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
-    //   updateFirstImage = false;
-    // }
-    // var i = image['idx'];
-    // Updating index of images after delete
-    // if (updateIndex) {
-    //   i = index;
-    //   database.updateImageIndex(
-    //     image: ImageOS(
-    //       idx: i,
-    //       imgPath: image['img_path'],
-    //     ),
-    //     tableName: widget.directoryOS.dirName,
-    //   );
-    // }
-    // ImageOS tempImageOS = ImageOS(
-    //   idx: i,
-    //   imgPath: image['img_path'],
-    // );
-    // directoryImages.add(
-    //   tempImageOS,
-    // );
-    // initDirectoryImages.add(
-    //   tempImageOS,
-    // );
-    // imageCards.add(
-    //   ImageCard(
-    //     imageOS: tempImageOS,
-    //     directoryOS: widget.directoryOS,
-    //     fileEditCallback: () {
-    //       fileEditCallback(imageOS: tempImageOS);
-    //     },
-    //     selectCallback: () {
-    //       selectionCallback(imageOS: tempImageOS);
-    //     },
-    //     imageViewerCallback: () {
-    //       imageViewerCallback(imageOS: tempImageOS);
-    //     },
-    //   ),
-    // );
-    // imageFilesPath.add(image['img_path']);
-    // ViewDocument.selectedImageIndex.add(false);
-    // index += 1;
-    // }
+  // BlocListener<DirectoryCubit, DirectoryState>(
+  //     listener: (context, state) async {
+  //   print('hello');
+  //   directoryData = await database.getDirectoryData(state.dirName);
+  //   // print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
+  // });
+  // directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
+  // print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
+  // for (var image in directoryData) {
+  // Updating first image path after delete
+  // if (updateFirstImage) {
+  //   database.updateFirstImagePath(
+  //       imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
+  //   updateFirstImage = false;
+  // }
+  // var i = image['idx'];
+  // Updating index of images after delete
+  // if (updateIndex) {
+  //   i = index;
+  //   database.updateImageIndex(
+  //     image: ImageOS(
+  //       idx: i,
+  //       imgPath: image['img_path'],
+  //     ),
+  //     tableName: widget.directoryOS.dirName,
+  //   );
+  // }
+  // ImageOS tempImageOS = ImageOS(
+  //   idx: i,
+  //   imgPath: image['img_path'],
+  // );
+  // directoryImages.add(
+  //   tempImageOS,
+  // );
+  // initDirectoryImages.add(
+  //   tempImageOS,
+  // );
+  // imageCards.add(
+  //   ImageCard(
+  //     imageOS: tempImageOS,
+  //     directoryOS: widget.directoryOS,
+  //     fileEditCallback: () {
+  //       fileEditCallback(imageOS: tempImageOS);
+  //     },
+  //     selectCallback: () {
+  //       selectionCallback(imageOS: tempImageOS);
+  //     },
+  //     imageViewerCallback: () {
+  //       imageViewerCallback(imageOS: tempImageOS);
+  //     },
+  //   ),
+  // );
+  // imageFilesPath.add(image['img_path']);
+  // ViewDocument.selectedImageIndex.add(false);
+  // index += 1;
+  // }
   // }
 
   // selectionCallback({ImageOS imageOS}) {
@@ -236,7 +238,7 @@ class _ViewScreenState extends State<ViewScreen> {
         child: Stack(
           children: [
             Scaffold(
-              backgroundColor: Theme.of(context).primaryColor,
+              backgroundColor: AppTheme.backgroundColor,
               // key: scaffoldKey,
               appBar: AppBar(
                 elevation: 0,
@@ -271,10 +273,16 @@ class _ViewScreenState extends State<ViewScreen> {
                         },
                       ),
                 title: BlocConsumer<DirectoryCubit, DirectoryState>(
-                  listener: (context, state) {},
+                  listener: (context, state) {
+                    print('DirName updated: ${state.dirName}');
+                  },
+                  buildWhen: (previousState, state) {
+                    if (previousState.dirName != state.dirName) return true;
+                    return false;
+                  },
                   builder: (context, state) {
                     return Text(
-                      state.dirName,
+                      state.dirName ?? '',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -381,60 +389,83 @@ class _ViewScreenState extends State<ViewScreen> {
                               ),
                       ],
               ),
-              body: Padding(
-                padding: EdgeInsets.all(size.width * 0.01),
-                child: SingleChildScrollView(
-                  child: BlocConsumer<DirectoryCubit, DirectoryState>(
-                    listener: (context, state) {
-                      print('ImageCount => ${state.imageCount}');
-                      // if (state.images.every((element) => !element.selected))
-                      //   ViewDocument.enableSelect = true;
-                      // else
-                      //   ViewDocument.enableSelect = false;
-                    },
-                    builder: (context, state) {
-                      if (state.images != null) {
-                        return ReorderableWrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          minMainAxisCount: 2,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: state.images.map((image) {
-                            return BlocProvider.value(
-                              value: image,
-                              child: ImageCard(
-                                // imageOS: image,
-                                selectCallback: () {
-                                  // selectionCallback(imageOS: image);
+              body: SingleChildScrollView(
+                padding: EdgeInsets.all(10),
+                child: BlocConsumer<DirectoryCubit, DirectoryState>(
+                  listener: (context, state) {
+                    print('ImageCount => ${state.imageCount}');
+                    // if (state.images.every((element) => !element.selected))
+                    //   ViewDocument.enableSelect = true;
+                    // else
+                    //   ViewDocument.enableSelect = false;
+                  },
+                  builder: (context, state) {
+                    if (state.images != null) {
+                      return ReorderableWrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        minMainAxisCount: 2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: state.images.map((image) {
+                          return ImageCard(
+                            image: image,
+                            onCrop: () {
+                              BlocProvider.of<DirectoryCubit>(context)
+                                  .cropImage(context, image);
+                            },
+                            onDelete: () {
+                              showDialog(
+                                context: context,
+                                builder: (_) {
+                                  return DeleteDialog(
+                                    deleteOnPressed: () {
+                                      BlocProvider.of<DirectoryCubit>(context)
+                                          .deleteImage(
+                                        context,
+                                        imageToDelete: image,
+                                      );
+                                      Navigator.pop(context);
+                                    },
+                                    cancelOnPressed: () =>
+                                        Navigator.pop(context),
+                                  );
                                 },
-                                // directoryOS: widget.directoryOS,
-                                // fileEditCallback: () {
-                                //   fileEditCallback(imageOS: image);
-                                // },
-                                // imageViewerCallback: () {
-                                //   imageViewerCallback(imageOS: image);
-                                // },
-                              ),
-                            );
-                          }).toList(),
-                          onReorder: (int oldIndex, int newIndex) {
-                            BlocProvider.of<DirectoryCubit>(context)
-                                .onReorderImages(oldIndex, newIndex);
-                          },
-                          onNoReorder: (int index) {
-                            debugPrint(
-                                '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
-                          },
-                          onReorderStarted: (int index) {
-                            debugPrint(
-                                '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
-                          },
-                        );
-                      }
-                      // TODO: Loading
-                      return Container();
-                    },
-                  ),
+                              );
+                            },
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      BlocProvider<DirectoryCubit>.value(
+                                    value: BlocProvider.of<DirectoryCubit>(
+                                        context),
+                                    child: PreviewScreen(
+                                      initialIndex: image.idx - 1,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
+                        onReorder: (int oldIndex, int newIndex) {
+                          BlocProvider.of<DirectoryCubit>(context)
+                              .onReorderImages(oldIndex, newIndex);
+                        },
+                        onNoReorder: (int index) {
+                          debugPrint(
+                              '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
+                        },
+                        onReorderStarted: (int index) {
+                          debugPrint(
+                              '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
+                        },
+                      );
+                    }
+                    // TODO: Loading
+                    return Container();
+                  },
                 ),
               ),
               floatingActionButton: FAB(

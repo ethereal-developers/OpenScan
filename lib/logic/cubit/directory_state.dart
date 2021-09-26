@@ -8,7 +8,7 @@ class DirectoryState {
   String firstImgPath;
   DateTime lastModified;
   String newName;
-  List<ImageCubit> images;
+  List<ImageOS> images;
 
   DirectoryState({
     this.dirName,

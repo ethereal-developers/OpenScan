@@ -98,7 +98,7 @@ class FileOperations {
     return imageFiles;
   }
 
-  Future<void> saveImage({File image, int index, String dirPath}) async {
+  Future<File> saveImage({File image, int index, String dirPath}) async {
     if (!await Directory(dirPath).exists()) {
       new Directory(dirPath).create();
       await database.createDirectory(
@@ -123,18 +123,19 @@ class FileOperations {
     }
 
     /// Removed Index in image path
-    // File tempPic = File("$dirPath/${DateTime.now()}.jpg");
-    // image.copy(tempPic.path);
+    File tempPic = File("$dirPath/${DateTime.now()}.jpg");
+    image.copy(tempPic.path);
     database.createImage(
       image: ImageOS(
-        imgPath: image.path,
+        imgPath: tempPic.path,
         idx: index,
       ),
       tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
     );
     if (index == 1) {
-      database.updateFirstImagePath(imagePath: image.path, dirPath: dirPath);
+      database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
     }
+    return tempPic;
   }
 
   // SAVE TO DEVICE

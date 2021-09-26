@@ -295,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.white24,
             ),
             Spacer(
-              flex: 9,
+              flex: 4,
             ),
             IconButton(
               icon: Icon(Icons.arrow_back_ios),
@@ -345,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Last Modified: ${masterDirectories[index].lastModified.day}-${masterDirectories[index].lastModified.month}-${masterDirectories[index].lastModified.year}',
+                                'Last Updated: ${masterDirectories[index].lastModified.day}-${masterDirectories[index].lastModified.month}-${masterDirectories[index].lastModified.year}',
                                 style: TextStyle(fontSize: 11),
                               ),
                               Text(
