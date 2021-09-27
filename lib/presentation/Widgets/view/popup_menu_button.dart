@@ -16,17 +16,17 @@ class CustomPopupMenuButton extends StatelessWidget {
       color: Theme.of(context).primaryColor.withOpacity(0.95),
       elevation: 30,
       offset: Offset.fromDirection(20, 20),
-      icon: Icon(Icons.more_vert),
+      icon: Icon(Icons.more_vert_rounded),
       itemBuilder: (context) {
         return List.generate(
-          3,
+          items.length,
           (index) => PopupMenuItem(
             value: items[index].key,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(items[index].key),
-                SizedBox(width: 10),
+                SizedBox(width: 14),
                 Icon(
                   items[index].value,
                   size: 20,

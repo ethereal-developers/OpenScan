@@ -4,10 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
-import 'package:openscan/presentation/Widgets/delete_dialog.dart';
 import 'package:openscan/presentation/Widgets/view/custom_bottomsheet.dart';
 import 'package:openscan/presentation/Widgets/view/image_card.dart';
 import 'package:openscan/presentation/Widgets/view/popup_menu_button.dart';
+import 'package:openscan/presentation/extensions.dart';
 import 'package:openscan/presentation/screens/preview_screen.dart';
 import 'package:reorderables/reorderables.dart';
 
@@ -153,16 +153,10 @@ class _ViewScreenState extends State<ViewScreen> {
   // }
 
   void handleClick(context, {String value}) {
+    print(value);
     switch (value) {
-      case 'Reorder':
-        setState(() {
-          ViewScreen.enableReorder = true;
-        });
-        break;
-      case 'Select':
-        setState(() {
-          ViewScreen.enableSelect = true;
-        });
+      case 'Delete':
+        // TODO: Delete Mutiple
         break;
       case 'Export':
         showModalBottomSheet(
@@ -246,7 +240,7 @@ class _ViewScreenState extends State<ViewScreen> {
                 leading: (ViewScreen.enableSelect || ViewScreen.enableReorder)
                     ? IconButton(
                         icon: Icon(
-                          Icons.close,
+                          Icons.close_rounded,
                           size: 30,
                         ),
                         onPressed: (ViewScreen.enableSelect)
@@ -283,111 +277,62 @@ class _ViewScreenState extends State<ViewScreen> {
                   builder: (context, state) {
                     return Text(
                       state.dirName ?? '',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle().appBarStyle,
                       overflow: TextOverflow.ellipsis,
                     );
                   },
                 ),
-                actions: (ViewScreen.enableReorder)
-                    ? [
-                        GestureDetector(
-                          onTap: () {
-                            BlocProvider.of<DirectoryCubit>(context)
-                                .confirmReorderImages();
+                actions: [
+                  (ViewScreen.enableSelect)
+                      ? IconButton(
+                          icon: Icon(
+                            Icons.select_all_rounded,
+                            color: (enableSelectionIcons)
+                                ? Colors.white
+                                : Colors.grey,
+                          ),
+                          onPressed: (enableSelectionIcons)
+                              ? () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    builder: (context) {
+                                      return CustomBottomSheet();
+                                    },
+                                  );
+                                }
+                              : () {},
+                        )
+                      : IconButton(
+                          icon: Icon(Icons.picture_as_pdf_rounded),
+                          onPressed: () async {
+                            // TODO: Preview PDF
+                            // await fileOperations.saveToAppDirectory(
+                            //   context: context,
+                            //   fileName: fileName,
+                            //   images: state.images,
+                            // );
+                            // Directory storedDirectory =
+                            //     await getApplicationDocumentsDirectory();
+                            // final result = await OpenFile.open(
+                            //     '${storedDirectory.path}/.pdf');
                             // setState(() {
-                            ViewScreen.enableReorder = false;
+                            // String _openResult =
+                            //     "type=${result.type}  message=${result.message}";
+                            // print(_openResult);
                             // });
                           },
-                          child: Container(
-                            padding: EdgeInsets.only(right: 25),
-                            alignment: Alignment.center,
-                            child: Text(
-                              'Done',
-                              style: TextStyle(
-                                  color: Theme.of(context).accentColor),
-                            ),
-                          ),
                         ),
-                      ]
-                    : [
-                        (ViewScreen.enableSelect)
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.share,
-                                  color: (enableSelectionIcons)
-                                      ? Colors.white
-                                      : Colors.grey,
-                                ),
-                                onPressed: (enableSelectionIcons)
-                                    ? () {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          builder: (context) {
-                                            return CustomBottomSheet();
-                                          },
-                                        );
-                                      }
-                                    : () {},
-                              )
-                            : IconButton(
-                                icon: Icon(Icons.picture_as_pdf),
-                                onPressed: () async {
-                                  // TODO: Preview PDF
-                                  // await fileOperations.saveToAppDirectory(
-                                  //   context: context,
-                                  //   fileName: fileName,
-                                  //   images: state.images,
-                                  // );
-                                  // Directory storedDirectory =
-                                  //     await getApplicationDocumentsDirectory();
-                                  // final result = await OpenFile.open(
-                                  //     '${storedDirectory.path}/.pdf');
-                                  // setState(() {
-                                  // String _openResult =
-                                  //     "type=${result.type}  message=${result.message}";
-                                  // print(_openResult);
-                                  // });
-                                },
-                              ),
-                        (ViewScreen.enableSelect)
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.delete,
-                                  color: (enableSelectionIcons)
-                                      ? Colors.red
-                                      : Colors.grey,
-                                ),
-                                onPressed: (enableSelectionIcons)
-                                    ? () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) {
-                                            return DeleteDialog(
-                                              // deleteOnPressed:
-                                              //     deleteMultipleImages,
-                                              cancelOnPressed: () =>
-                                                  Navigator.pop(context),
-                                            );
-                                          },
-                                        );
-                                      }
-                                    : () {},
-                              )
-                            : CustomPopupMenuButton(
-                                onSelected: (value) => handleClick(
-                                  context,
-                                  value: value,
-                                ),
-                                itemsMap: {
-                                  'Select': Icons.select_all,
-                                  'Reorder': Icons.reorder,
-                                  'Export': Icons.share,
-                                },
-                              ),
-                      ],
+                  CustomPopupMenuButton(
+                    onSelected: (value) => handleClick(
+                      context,
+                      value: value,
+                    ),
+                    itemsMap: {
+                      'Export': Icons.share_rounded,
+                      'Delete': Icons.delete_rounded,
+                    },
+                  ),
+                ],
               ),
               body: SingleChildScrollView(
                 padding: EdgeInsets.all(10),
@@ -410,28 +355,8 @@ class _ViewScreenState extends State<ViewScreen> {
                         children: state.images.map((image) {
                           return ImageCard(
                             image: image,
-                            onCrop: () {
-                              BlocProvider.of<DirectoryCubit>(context)
-                                  .cropImage(context, image);
-                            },
-                            onDelete: () {
-                              showDialog(
-                                context: context,
-                                builder: (_) {
-                                  return DeleteDialog(
-                                    deleteOnPressed: () {
-                                      BlocProvider.of<DirectoryCubit>(context)
-                                          .deleteImage(
-                                        context,
-                                        imageToDelete: image,
-                                      );
-                                      Navigator.pop(context);
-                                    },
-                                    cancelOnPressed: () =>
-                                        Navigator.pop(context),
-                                  );
-                                },
-                              );
+                            onLongPressed: () {
+                              //TODO: Select image
                             },
                             onPressed: () {
                               Navigator.push(

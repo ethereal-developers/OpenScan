@@ -270,6 +270,13 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     emitState(state);
   }
 
+  selectImage(ImageOS imageOS) {
+    state.images[imageOS.idx].selected = !state.images[imageOS.idx].selected;
+    emitState(state);
+  }
+
+  resetSelection() {}
+
   deleteMultipleImages() {
     bool isFirstImage = false;
     // for (var i = 0; i < directoryImages.length; i++) {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:openscan/presentation/Widgets/demo/slide_dots.dart';
 import 'package:openscan/presentation/Widgets/demo/slide_item.dart';
 import 'package:openscan/presentation/screens/home_screen.dart';
+import 'package:openscan/presentation/extensions.dart';
 
 class DemoScreen extends StatefulWidget {
   static String route = 'GettingStarted';
@@ -50,10 +51,7 @@ class _DemoScreenState extends State<DemoScreen> {
             : null,
         title: Text(
           'How to use the app?',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle().appBarStyle,
         ),
         actions: (widget.showSkip)
             ? <Widget>[

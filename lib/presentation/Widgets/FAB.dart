@@ -32,7 +32,7 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
     _animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 200))
           ..addListener(() {
-            // setState(() {});
+            setState(() {});
           });
     _progress =
         Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
@@ -44,8 +44,8 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
       marginRight: 18,
       marginBottom: 20,
       child: SimpleAnimatedIcon(
-        startIcon: Icons.add,
-        endIcon: Icons.close,
+        startIcon: Icons.add_rounded,
+        endIcon: Icons.close_rounded,
         size: 30,
         progress: _progress,
       ),
@@ -68,24 +68,36 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
       },
       children: [
         SpeedDialChild(
-          child: Icon(Icons.camera_alt),
+          child: Icon(
+            Icons.camera_alt_rounded,
+            color: Theme.of(context).primaryColor,
+          ),
           backgroundColor: Colors.white,
           label: 'Normal Scan',
-          labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+          labelStyle:
+              TextStyle(fontSize: 18.0, color: Theme.of(context).primaryColor),
           onTap: widget.normalScanOnPressed,
         ),
         SpeedDialChild(
-          child: Icon(Icons.timelapse),
+          child: Icon(
+            Icons.timelapse_rounded,
+            color: Theme.of(context).primaryColor,
+          ),
           backgroundColor: Colors.white,
           label: 'Quick Scan',
-          labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+          labelStyle:
+              TextStyle(fontSize: 18.0, color: Theme.of(context).primaryColor),
           onTap: widget.quickScanOnPressed,
         ),
         SpeedDialChild(
-          child: Icon(Icons.image),
+          child: Icon(
+            Icons.image_rounded,
+            color: Theme.of(context).primaryColor,
+          ),
           backgroundColor: Colors.white,
           label: 'Import from Gallery',
-          labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+          labelStyle:
+              TextStyle(fontSize: 18.0, color: Theme.of(context).primaryColor),
           onTap: widget.galleryOnPressed,
         ),
       ],

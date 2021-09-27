@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:openscan/presentation/Widgets/cropper/polygon_painter.dart';
+import 'package:openscan/presentation/extensions.dart';
 
 imageCropper(BuildContext context, File image) async {
   File croppedImage;
@@ -417,10 +418,7 @@ class _CropImageState extends State<CropImage> {
           appBar: AppBar(
             title: Text(
               'Crop Image',
-              style: TextStyle(
-                fontSize: 23,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle().appBarStyle,
             ),
             centerTitle: true,
             elevation: 0.0,

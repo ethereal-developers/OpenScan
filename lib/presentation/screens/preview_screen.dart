@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/delete_dialog.dart';
+import 'package:openscan/presentation/extensions.dart';
 
 class PreviewScreen extends StatefulWidget {
   final int initialIndex;
@@ -40,10 +41,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
               return RichText(
                 text: TextSpan(
                   text: state.dirName,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle().appBarStyle,
                 ),
                 overflow: TextOverflow.ellipsis,
               );
@@ -85,10 +83,10 @@ class _PreviewScreenState extends State<PreviewScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     Icon(
-                      Icons.edit,
+                      Icons.edit_rounded,
                     ),
                     IconButton(
-                      icon: Icon(Icons.crop),
+                      icon: Icon(Icons.crop_rounded),
                       onPressed: () {
                         BlocProvider.of<DirectoryCubit>(context).cropImage(
                           context,
@@ -97,7 +95,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
                       },
                     ),
                     IconButton(
-                      icon: Icon(Icons.delete),
+                      icon: Icon(Icons.delete_rounded),
                       onPressed: () {
                         showDialog(
                           context: context,
@@ -119,7 +117,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
                       },
                     ),
                     Icon(
-                      Icons.more_vert,
+                      Icons.more_vert_rounded,
                     ),
                   ],
                 ),

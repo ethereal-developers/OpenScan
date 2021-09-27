@@ -7,6 +7,7 @@ import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/models.dart';
+import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/screens/about_screen.dart';
@@ -204,8 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
             children: [
               TextSpan(
-                  text: 'Scan',
-                  style: TextStyle(color: Theme.of(context).accentColor))
+                text: 'Scan',
+                style: TextStyle(color: AppTheme.accentColor),
+              ),
             ],
           ),
         ),
@@ -355,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                           ),
                           trailing: Icon(
-                            Icons.arrow_right,
+                            Icons.arrow_right_rounded,
                             size: 30,
                             color: Theme.of(context).accentColor,
                           ),
@@ -372,7 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: TextStyle(color: Colors.black),
                             ),
                             trailingIcon: Icon(
-                              Icons.edit,
+                              Icons.edit_rounded,
                               color: Colors.black,
                             ),
                             onPressed: () {
@@ -467,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           FocusedMenuItem(
                             title: Text('Delete'),
-                            trailingIcon: Icon(Icons.delete),
+                            trailingIcon: Icon(Icons.delete_rounded),
                             backgroundColor: Colors.redAccent,
                             onPressed: () {
                               showDialog(

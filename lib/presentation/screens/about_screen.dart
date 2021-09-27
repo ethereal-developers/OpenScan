@@ -2,7 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_neumorphic/flutter_neumorphic.dart';
+// import 'package:flutter_neumorphic/flutter_neumorphic.dart' as neumorphic;
+import 'package:openscan/presentation/extensions.dart';
 
 void launchWebsite(String urlString) async {
   if (await canLaunch(urlString)) {
@@ -30,7 +31,7 @@ class AboutScreen extends StatelessWidget {
           title: RichText(
             text: TextSpan(
               text: 'About',
-              style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
+              style: TextStyle().appBarStyle,
             ),
           ),
           leading: IconButton(
@@ -85,16 +86,16 @@ class AboutScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
-                ContactCard(
-                  name: "Vijay",
-                  link: vjLink,
-                  image: AssetImage('assets/vj_jpg.JPG'),
-                ),
-                ContactCard(
-                  name: "Vikram",
-                  link: vikramLink,
-                  image: AssetImage('assets/vikkiboi.jpg'),
-                ),
+                // ContactCard(
+                //   name: "Vijay",
+                //   link: vjLink,
+                //   image: AssetImage('assets/vj_jpg.JPG'),
+                // ),
+                // ContactCard(
+                //   name: "Vikram",
+                //   link: vikramLink,
+                //   image: AssetImage('assets/vikkiboi.jpg'),
+                // ),
               ],
             ),
             SizedBox(
@@ -155,7 +156,7 @@ class AboutScreen extends StatelessWidget {
                 children: [
                   TextSpan(
                       text: '3.0.0',
-                      style: TextStyle(color: Theme.of(context).accentColor)),
+                      style: TextStyle(color: Theme.of(context).secondaryHeaderColor)),
                 ],
               ),
             ),
@@ -169,53 +170,53 @@ class AboutScreen extends StatelessWidget {
   }
 }
 
-class ContactCard extends StatelessWidget {
-  final String link;
-  final String name;
-  final AssetImage image;
+// class ContactCard extends StatelessWidget {
+//   final String link;
+//   final String name;
+//   final AssetImage image;
 
-  const ContactCard({this.link, this.name, this.image});
+//   const ContactCard({this.link, this.name, this.image});
 
-  @override
-  Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
-    return NeumorphicButton(
-      onPressed: () => launchWebsite(link),
-      style: NeumorphicStyle(
-        shape: NeumorphicShape.concave,
-        color: AppTheme.backgroundColor,
-        shadowLightColor: Colors.grey[600],
-        shadowDarkColor: Colors.black87,
-        boxShape: NeumorphicBoxShape.roundRect(BorderRadius.circular(10)),
-      ),
-      padding: EdgeInsets.all(0),
-      child: Container(
-        padding: EdgeInsets.all(8.0),
-        height: size.width * 0.45,
-        width: size.width * 0.4,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            CircleAvatar(
-              backgroundColor: Theme.of(context).accentColor,
-              radius: size.width * 0.13,
-              backgroundImage: image,
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 8.0, 0, 0),
-              child: Text(
-                name,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-            Text(
-              'Tap for more',
-              style: TextStyle(color: Colors.grey[700], fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     Size size = MediaQuery.of(context).size;
+//     return neumorphic.NeumorphicButton(
+//       onPressed: () => launchWebsite(link),
+//       style: neumorphic.NeumorphicStyle(
+//         shape: neumorphic.NeumorphicShape.concave,
+//         color: AppTheme.backgroundColor,
+//         shadowLightColor: Colors.grey[600],
+//         shadowDarkColor: Colors.black87,
+//         boxShape: neumorphic.NeumorphicBoxShape.roundRect(BorderRadius.circular(10)),
+//       ),
+//       padding: EdgeInsets.all(0),
+//       child: Container(
+//         padding: EdgeInsets.all(8.0),
+//         height: size.width * 0.45,
+//         width: size.width * 0.4,
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//           children: <Widget>[
+//             CircleAvatar(
+//               backgroundColor: Theme.of(context).accentColor,
+//               radius: size.width * 0.13,
+//               backgroundImage: image,
+//             ),
+//             Padding(
+//               padding: const EdgeInsets.fromLTRB(0, 8.0, 0, 0),
+//               child: Text(
+//                 name,
+//                 textAlign: TextAlign.center,
+//                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+//               ),
+//             ),
+//             Text(
+//               'Tap for more',
+//               style: TextStyle(color: Colors.grey[700], fontSize: 12),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }

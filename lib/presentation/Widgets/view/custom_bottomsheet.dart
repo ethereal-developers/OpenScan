@@ -91,7 +91,7 @@ class CustomBottomSheet extends StatelessWidget {
             color: Colors.white,
           ),
           ListTile(
-            leading: Icon(Icons.picture_as_pdf),
+            leading: Icon(Icons.picture_as_pdf_rounded),
             title: Text('Share PDF'),
             onTap: () async {
               if (ViewScreen.enableSelect) {
@@ -119,7 +119,7 @@ class CustomBottomSheet extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: Icon(Icons.phone_android),
+            leading: Icon(Icons.phone_android_rounded),
             title: Text('Save to device'),
             onTap: () async {
               if (ViewScreen.enableSelect) {
@@ -150,7 +150,7 @@ class CustomBottomSheet extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: Icon(Icons.image),
+            leading: Icon(Icons.image_rounded),
             title: Text('Share images'),
             onTap: () {
               List<String> selectedImagesPath = [];

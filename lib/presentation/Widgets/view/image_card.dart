@@ -13,10 +13,9 @@ import '../../screens/view_screen.dart';
 class ImageCard extends StatefulWidget {
   final ImageOS image;
   final Function onPressed;
-  final Function onCrop;
-  final Function onDelete;
+  final Function onLongPressed;
 
-  ImageCard({this.image, this.onPressed, this.onCrop, this.onDelete});
+  ImageCard({this.image, this.onPressed, this.onLongPressed});
 
   @override
   _ImageCardState createState() => _ImageCardState();
@@ -39,67 +38,13 @@ class _ImageCardState extends State<ImageCard> {
       children: [
         MaterialButton(
           elevation: 0,
+          onLongPress: widget.onLongPressed,
           color: Theme.of(context).primaryColor,
           onPressed: widget.onPressed,
-          child: FocusedMenuHolder(
-            menuWidth: size.width * 0.45,
-            onPressed: widget.onPressed,
-            menuItems: [
-              FocusedMenuItem(
-                title: Text(
-                  'Crop',
-                  style: TextStyle(color: Colors.black),
-                ),
-                onPressed: widget.onCrop,
-                // onPressed: () async {
-                // BlocProvider.of<ImageCubit>(context).cropImage(
-                //   context,
-                // );
-
-                // Directory cacheDir = await getTemporaryDirectory();
-                // File image = await imageCropper(
-                //   context,
-                //   File(widget.imageOS.imgPath),
-                // );
-                // if (image != null) {
-                //   File temp = File(widget.imageOS.imgPath.substring(
-                //           0, widget.imageOS.imgPath.lastIndexOf("/")) +
-                //       '/' +
-                //       DateTime.now().toString() +
-                //       '.jpg');
-                //   image.copySync(temp.path);
-                //   File(widget.imageOS.imgPath).deleteSync();
-                //   widget.imageOS.imgPath = temp.path;
-                // }
-                // database.updateImagePath(
-                //   tableName: widget.directoryOS.dirName,
-                //   image: widget.imageOS,
-                // );
-                // if (widget.imageOS.idx == 1) {
-                //   database.updateFirstImagePath(
-                //     imagePath: widget.imageOS.imgPath,
-                //     dirPath: widget.directoryOS.dirPath,
-                //   );
-                // }
-                // widget.fileEditCallback();
-                // },
-                trailingIcon: Icon(
-                  Icons.crop,
-                  color: Colors.black,
-                ),
-              ),
-              FocusedMenuItem(
-                title: Text('Delete'),
-                trailingIcon: Icon(Icons.delete),
-                onPressed: widget.onDelete,
-                backgroundColor: Colors.redAccent,
-              ),
-            ],
-            child: Container(
-              child: Image.file(File(widget.image.imgPath)),
-              height: size.height * 0.25,
-              width: size.width * 0.387,
-            ),
+          child: Container(
+            child: Image.file(File(widget.image.imgPath)),
+            height: size.height * 0.25,
+            width: size.width * 0.387,
           ),
         ),
         (widget.image.selected)
