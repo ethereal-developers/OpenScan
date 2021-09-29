@@ -94,59 +94,59 @@ class CustomBottomSheet extends StatelessWidget {
             leading: Icon(Icons.picture_as_pdf_rounded),
             title: Text('Share PDF'),
             onTap: () async {
-              if (ViewScreen.enableSelect) {
+              // if (ViewScreen.selectionEnabled) {
                 // updateSelectedFileName();
-              }
-              List<ImageOS> selectedImages = [];
+              // }
+              // List<ImageOS> selectedImages = [];
               // for (var image in state.images) {
               //   if (ViewDocument.selectedImageIndex.elementAt(image.idx - 1)) {
               //     selectedImages.add(image);
               //   }
               // }
-              await fileOperations.saveToAppDirectory(
-                context: context,
-                fileName:
-                    (ViewScreen.enableSelect) ? selectedFileName : fileName,
+              // await fileOperations.saveToAppDirectory(
+              //   context: context,
+              //   fileName:
+              //       (ViewScreen.selectionEnabled) ? selectedFileName : fileName,
                 // images:
                 //     (ViewDocument.enableSelect) ? selectedImages : state.images,
-              );
-              Directory storedDirectory =
-                  await getApplicationDocumentsDirectory();
-              ShareExtend.share(
-                  '${storedDirectory.path}/${(ViewScreen.enableSelect) ? selectedFileName : fileName}.pdf',
-                  'file');
-              Navigator.pop(context);
+              // );
+              // Directory storedDirectory =
+              //     await getApplicationDocumentsDirectory();
+              // ShareExtend.share(
+              //     '${storedDirectory.path}/${(ViewScreen.selectionEnabled) ? selectedFileName : fileName}.pdf',
+              //     'file');
+              // Navigator.pop(context);
             },
           ),
           ListTile(
             leading: Icon(Icons.phone_android_rounded),
             title: Text('Save to device'),
             onTap: () async {
-              if (ViewScreen.enableSelect) {
+              // if (ViewScreen.selectionEnabled) {
                 // updateSelectedFileName();
-              }
-              List<ImageOS> selectedImages = [];
+              // }
+              // List<ImageOS> selectedImages = [];
               // for (var image in state.images) {
               //   if (ViewDocument.selectedImageIndex.elementAt(image.idx - 1)) {
               //     selectedImages.add(image);
               //   }
               // }
-              String savedDirectory;
-              savedDirectory = await fileOperations.saveToDevice(
-                context: context,
-                fileName:
-                    (ViewScreen.enableSelect) ? selectedFileName : fileName,
+              // String savedDirectory;
+              // savedDirectory = await fileOperations.saveToDevice(
+              //   context: context,
+              //   fileName:
+              //       (ViewScreen.selectionEnabled) ? selectedFileName : fileName,
                 // images:
                 //     (ViewDocument.enableSelect) ? selectedImages : state.images,
-                quality: imageQuality,
-              );
-              Navigator.pop(context);
-              String displayText;
-              (savedDirectory != null)
-                  ? displayText = "PDF Saved at\n"
-                  : displayText = "Failed to generate pdf. Try Again.";
+              //   quality: imageQuality,
+              // );
+              // Navigator.pop(context);
+              // String displayText;
+              // (savedDirectory != null)
+              //     ? displayText = "PDF Saved at\n"
+              //     : displayText = "Failed to generate pdf. Try Again.";
 
-              Fluttertoast.showToast(msg: displayText);
+              // Fluttertoast.showToast(msg: displayText);
             },
           ),
           ListTile(

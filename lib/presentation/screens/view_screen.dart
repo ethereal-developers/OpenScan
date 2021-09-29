@@ -5,6 +5,7 @@ import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/Widgets/view/custom_bottomsheet.dart';
+import 'package:openscan/presentation/Widgets/view/icon_gesture.dart';
 import 'package:openscan/presentation/Widgets/view/image_card.dart';
 import 'package:openscan/presentation/Widgets/view/popup_menu_button.dart';
 import 'package:openscan/presentation/extensions.dart';
@@ -14,8 +15,6 @@ import 'package:reorderables/reorderables.dart';
 class ViewScreen extends StatefulWidget {
   static String route = "ViewDocument";
 
-  static bool enableSelect = false;
-  static bool enableReorder = false;
   // static List<bool> selectedImageIndex = [];
 
   // final DirectoryOS directoryOS;
@@ -34,7 +33,8 @@ class ViewScreen extends StatefulWidget {
 
 class _ViewScreenState extends State<ViewScreen> {
   bool enableSelectionIcons = false;
-
+  static bool selectionEnabled = false;
+  static bool reorderEnabled = true;
   List<String> imageFilesPath = [];
 
   // selectionCallback({ImageOS imageOS}) {
@@ -76,6 +76,9 @@ class _ViewScreenState extends State<ViewScreen> {
     print(value);
     switch (value) {
       case 'Reorder':
+        setState(() {
+          reorderEnabled = false;
+        });
         break;
       case 'Delete':
         // TODO: Delete Mutiple
@@ -92,16 +95,23 @@ class _ViewScreenState extends State<ViewScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    reorderEnabled = true;
+    selectionEnabled = false;
+  }
+
+  @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: WillPopScope(
         onWillPop: () {
-          if (ViewScreen.enableSelect || ViewScreen.enableReorder) {
+          if (selectionEnabled || reorderEnabled) {
             // setState(() {
-            ViewScreen.enableSelect = false;
+            selectionEnabled = false;
             // removeSelection();
-            ViewScreen.enableReorder = false;
+            reorderEnabled = false;
             // showImage = false;
             // });
           } else {
@@ -117,13 +127,13 @@ class _ViewScreenState extends State<ViewScreen> {
               appBar: AppBar(
                 elevation: 0,
                 backgroundColor: Theme.of(context).primaryColor,
-                leading: (ViewScreen.enableSelect || ViewScreen.enableReorder)
+                leading: (selectionEnabled)
                     ? IconButton(
                         icon: Icon(
                           Icons.close_rounded,
                           size: 30,
                         ),
-                        onPressed: (ViewScreen.enableSelect)
+                        onPressed: (selectionEnabled)
                             ? () {
                                 // removeSelection();
                               }
@@ -162,115 +172,76 @@ class _ViewScreenState extends State<ViewScreen> {
                     );
                   },
                 ),
-                actions: [
-                  (ViewScreen.enableSelect)
-                      ? IconButton(
-                          icon: Icon(
-                            Icons.select_all_rounded,
-                            color: (enableSelectionIcons)
-                                ? Colors.white
-                                : Colors.grey,
-                          ),
-                          onPressed: (enableSelectionIcons)
-                              ? () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    builder: (context) {
-                                      return CustomBottomSheet();
-                                    },
-                                  );
-                                }
-                              : () {},
-                        )
-                      : IconButton(
-                          icon: Icon(Icons.picture_as_pdf_rounded),
-                          onPressed: () async {
-                            // TODO: Preview PDF
-                            // await fileOperations.saveToAppDirectory(
-                            //   context: context,
-                            //   fileName: fileName,
-                            //   images: state.images,
-                            // );
-                            // Directory storedDirectory =
-                            //     await getApplicationDocumentsDirectory();
-                            // final result = await OpenFile.open(
-                            //     '${storedDirectory.path}/.pdf');
-                            // setState(() {
-                            // String _openResult =
-                            //     "type=${result.type}  message=${result.message}";
-                            // print(_openResult);
-                            // });
+                actions: (selectionEnabled)
+                    ? [
+                        IconGestureDetector(
+                          icon: Icon(Icons.select_all_rounded),
+                          onTap: () {
+                            print('select all');
+                            // TODO: Select all images @DirectoryCubit
                           },
                         ),
-                  CustomPopupMenuButton(
-                    onSelected: (value) => handleClick(
-                      context,
-                      value: value,
-                    ),
-                    itemsMap: {
-                      'Export': Icons.share_rounded,
-                      'Reorder': Icons.reorder_rounded,
-                      'Delete': Icons.delete_rounded,
-                    },
-                  ),
-                ],
+                        IconGestureDetector(
+                          icon: Icon(Icons.delete_rounded),
+                          onTap: () {
+                            print('delete');
+                          },
+                        ),
+                      ]
+                    : [
+                        IconGestureDetector(
+                          icon: Icon(Icons.share_rounded),
+                          onTap: () {
+                            print('share');
+                          },
+                        ),
+                        IconGestureDetector(
+                          icon: Icon(Icons.check_box_rounded),
+                          onTap: () {
+                            print('select');
+                          },
+                        ),
+                        IconGestureDetector(
+                          icon: Icon(Icons.delete_rounded),
+                          onTap: () {
+                            print('delete');
+                          },
+                        ),
+                      ],
               ),
               body: SingleChildScrollView(
                 padding: EdgeInsets.all(10),
                 child: BlocConsumer<DirectoryCubit, DirectoryState>(
-                  listener: (context, state) {
-                    print('ImageCount => ${state.imageCount}');
-                    // if (state.images.every((element) => !element.selected))
-                    //   ViewDocument.enableSelect = true;
-                    // else
-                    //   ViewDocument.enableSelect = false;
-                  },
+                  listener: (context, state) {},
                   builder: (context, state) {
                     if (state.images != null) {
-                      return ReorderableWrap(
-                        needsLongPressDraggable: false,
-                        spacing: 10,
-                        runSpacing: 10,
-                        minMainAxisCount: 2,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: state.images.map((image) {
-                          return ImageCard(
-                            image: image,
-                            onLongPressed: () {
-                              // TODO: Select image
-                            },
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      BlocProvider<DirectoryCubit>.value(
-                                    value: BlocProvider.of<DirectoryCubit>(
-                                        context),
-                                    child: PreviewScreen(
-                                      initialIndex: image.idx - 1,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                            onReorder: () {},
-                            onSelect: () {},
-                          );
-                        }).toList(),
-                        onReorder: (int oldIndex, int newIndex) {
-                          BlocProvider.of<DirectoryCubit>(context)
-                              .onReorderImages(oldIndex, newIndex);
-                        },
-                        onNoReorder: (int index) {
-                          debugPrint(
-                              '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
-                        },
-                        onReorderStarted: (int index) {
-                          debugPrint(
-                              '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
-                        },
-                      );
+                      return selectionEnabled
+                          ? ReorderableWrap(
+                              needsLongPressDraggable: false,
+                              spacing: 10,
+                              runSpacing: 10,
+                              minMainAxisCount: 2,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: getImageCards(state),
+                              onReorder: (int oldIndex, int newIndex) {
+                                BlocProvider.of<DirectoryCubit>(context)
+                                    .onReorderImages(oldIndex, newIndex);
+                              },
+                              onNoReorder: (int index) {
+                                debugPrint(
+                                    '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
+                              },
+                              onReorderStarted: (int index) {
+                                debugPrint(
+                                    '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
+                              },
+                            )
+                          : Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: getImageCards(state),
+                            );
                     }
                     // TODO: Loading
                     return Container();
@@ -303,5 +274,33 @@ class _ViewScreenState extends State<ViewScreen> {
         ),
       ),
     );
+  }
+
+  List<Widget> getImageCards(state) {
+    return state.images.map<Widget>((image) {
+      return ImageCard(
+        image: image,
+        onLongPressed: () {
+          // TODO: Select image
+          setState(() {
+            selectionEnabled = true;
+          });
+        },
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BlocProvider<DirectoryCubit>.value(
+                value: BlocProvider.of<DirectoryCubit>(context),
+                child: PreviewScreen(
+                  initialIndex: image.idx - 1,
+                ),
+              ),
+            ),
+          );
+        },
+        onSelect: () {},
+      );
+    }).toList();
   }
 }

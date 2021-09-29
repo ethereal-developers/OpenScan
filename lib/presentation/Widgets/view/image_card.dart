@@ -14,14 +14,12 @@ class ImageCard extends StatefulWidget {
   final ImageOS image;
   final Function onPressed;
   final Function onLongPressed;
-  final Function onReorder;
   final Function onSelect;
 
   ImageCard({
     this.image,
     this.onPressed,
     this.onLongPressed,
-    this.onReorder,
     this.onSelect,
   });
 
@@ -49,28 +47,10 @@ class _ImageCardState extends State<ImageCard> {
           onLongPress: widget.onLongPressed,
           color: Theme.of(context).primaryColor,
           onPressed: widget.onPressed,
-          child: FocusedMenuHolder(
-            menuItems: [
-              FocusedMenuItem(
-                title: Text('Reorder'),
-                trailingIcon: Icon(Icons.reorder_rounded),
-                onPressed: widget.onReorder,
-                backgroundColor: Theme.of(context).primaryColor,
-              ),
-              FocusedMenuItem(
-                title: Text('Select'),
-                trailingIcon: Icon(Icons.select_all_rounded),
-                onPressed: widget.onSelect,
-                backgroundColor: Theme.of(context).primaryColor,
-              ),
-            ],
-            menuWidth: size.width * 0.4,
-            onPressed: widget.onPressed,
-            child: Container(
-              child: Image.file(File(widget.image.imgPath)),
-              height: size.height * 0.25,
-              width: size.width * 0.387,
-            ),
+          child: Container(
+            child: Image.file(File(widget.image.imgPath)),
+            height: size.height * 0.25,
+            width: size.width * 0.387,
           ),
         ),
         (widget.image.selected)
@@ -98,16 +78,16 @@ class _ImageCardState extends State<ImageCard> {
                 width: 0.001,
                 height: 0.001,
               ),
-        (ViewScreen.enableReorder)
-            ? Positioned.fill(
-                child: Container(
-                  color: Colors.transparent,
-                ),
-              )
-            : Container(
-                width: 0.001,
-                height: 0.001,
-              ),
+        // (enableReorder)
+        //     ? Positioned.fill(
+        //         child: Container(
+        //           color: Colors.transparent,
+        //         ),
+        //       )
+        //     : Container(
+        //         width: 0.001,
+        //         height: 0.001,
+        //       ),
       ],
     );
   }
