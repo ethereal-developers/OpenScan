@@ -5,8 +5,32 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:openscan/Utilities/constants.dart';
-import 'package:openscan/Widgets/polygon_painter.dart';
+import 'package:openscan/presentation/Widgets/cropper/polygon_painter.dart';
+import 'package:openscan/presentation/extensions.dart';
+
+imageCropper(BuildContext context, File image) async {
+  File croppedImage;
+
+  // imageFilePath = await FlutterScannerCropper.openCrop(
+  //   src: image.path,
+  //   dest: cacheDir.path,
+  // );
+  // File imageFileTemp;
+  // imageFileTemp = File(
+  //   "${cacheDir.path}/Pictures/${DateTime.now()}.jpg",
+  // );
+  // image.copySync(imageFileTemp.path);
+
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => CropImage(
+        file: image,
+      ),
+    ),
+  ).then((value) => croppedImage = value);
+  return croppedImage ?? image;
+}
 
 class CropImage extends StatefulWidget {
   final File file;
@@ -389,19 +413,16 @@ class _CropImageState extends State<CropImage> {
           return;
         },
         child: Scaffold(
-          backgroundColor: primaryColor,
+          backgroundColor: Theme.of(context).primaryColor,
           key: _scaffoldKey,
           appBar: AppBar(
             title: Text(
               'Crop Image',
-              style: TextStyle(
-                fontSize: 23,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle().appBarStyle,
             ),
             centerTitle: true,
             elevation: 0.0,
-            backgroundColor: primaryColor,
+            backgroundColor: Theme.of(context).primaryColor,
             leading: IconButton(
               icon: Icon(Icons.arrow_back_ios),
               onPressed: () {
@@ -419,7 +440,7 @@ class _CropImageState extends State<CropImage> {
                     child: Stack(
                       children: <Widget>[
                         Container(
-                          color: primaryColor,
+                          color: Theme.of(context).primaryColor,
                           child: CustomPaint(
                             child: Image.file(
                               imageFile,
@@ -453,7 +474,7 @@ class _CropImageState extends State<CropImage> {
                 : CircularProgressIndicator(
                     strokeWidth: 4,
                     valueColor: AlwaysStoppedAnimation(
-                      secondaryColor,
+                      Theme.of(context).accentColor,
                     ),
                   ),
           ),
@@ -465,14 +486,14 @@ class _CropImageState extends State<CropImage> {
 
   Widget bottomSheet() {
     return Container(
-      color: primaryColor,
+      color: Theme.of(context).primaryColor,
       width: MediaQuery.of(context).size.width,
       height: 50,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
           MaterialButton(
-            color: secondaryColor,
+            color: Theme.of(context).accentColor,
             child: Text('Rotate left'),
             onPressed: () async {
               File tempImageFile = File(
@@ -498,7 +519,7 @@ class _CropImageState extends State<CropImage> {
             padding: EdgeInsets.symmetric(horizontal: 4.0),
             child: MaterialButton(
               child: Text('Rotate right'),
-              color: secondaryColor,
+              color: Theme.of(context).accentColor,
               onPressed: () async {
                 File tempImageFile = File(imageFile.path
                         .substring(0, imageFile.path.lastIndexOf('.')) +
@@ -529,9 +550,9 @@ class _CropImageState extends State<CropImage> {
               child: MaterialButton(
                 onPressed: () => crop(),
                 color: hasWidgetLoaded || !isLoading
-                    ? secondaryColor
-                    : secondaryColor.withOpacity(0.6),
-                disabledColor: secondaryColor.withOpacity(0.5),
+                    ? Theme.of(context).accentColor
+                    : Theme.of(context).accentColor.withOpacity(0.6),
+                disabledColor: Theme.of(context).accentColor.withOpacity(0.5),
                 disabledTextColor: Colors.white.withOpacity(0.5),
                 child: Text(
                   "Continue",

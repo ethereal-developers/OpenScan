@@ -11,12 +11,14 @@ environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
+  bloc: ^7.2.0
+  cupertino_icons: ^0.1.3
   flutter:
     sdk: flutter
-  cupertino_icons: ^0.1.3
-  flutter_absolute_path: ^1.0.6
-  flutter_full_pdf_viewer: ^1.0.6
+  flutter_bloc: ^7.3.0
+  # flutter_neumorphic: ^3.1.0
   flutter_speed_dial: ^1.2.5
+  fluttertoast: ^8.0.8
   focused_menu: ^1.0.1
   image_picker: ^0.8.2
   multi_image_picker: ^4.8.0
