@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'package:openscan/Utilities/constants.dart';
 import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 class FAB extends StatefulWidget {
@@ -31,10 +30,10 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _animationController =
-    AnimationController(vsync: this, duration: Duration(milliseconds: 200))
-      ..addListener(() {
-        setState(() {});
-      });
+        AnimationController(vsync: this, duration: Duration(milliseconds: 200))
+          ..addListener(() {
+            setState(() {});
+          });
     _progress =
         Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
   }
@@ -45,8 +44,8 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
       marginRight: 18,
       marginBottom: 20,
       child: SimpleAnimatedIcon(
-        startIcon: Icons.add,
-        endIcon: Icons.close,
+        startIcon: Icons.add_rounded,
+        endIcon: Icons.close_rounded,
         size: 30,
         progress: _progress,
       ),
@@ -57,8 +56,8 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
       overlayOpacity: 0.5,
       tooltip: 'Scan Options',
       heroTag: 'speed-dial-hero-tag',
-      backgroundColor: secondaryColor,
-      foregroundColor: primaryColor,
+      backgroundColor: Theme.of(context).accentColor,
+      foregroundColor: Theme.of(context).primaryColor,
       elevation: 8.0,
       shape: CircleBorder(),
       onOpen: () {
@@ -69,24 +68,36 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
       },
       children: [
         SpeedDialChild(
-          child: Icon(Icons.camera_alt),
+          child: Icon(
+            Icons.camera_alt_rounded,
+            color: Theme.of(context).primaryColor,
+          ),
           backgroundColor: Colors.white,
           label: 'Normal Scan',
-          labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+          labelStyle:
+              TextStyle(fontSize: 18.0, color: Theme.of(context).primaryColor),
           onTap: widget.normalScanOnPressed,
         ),
         SpeedDialChild(
-          child: Icon(Icons.timelapse),
+          child: Icon(
+            Icons.timelapse_rounded,
+            color: Theme.of(context).primaryColor,
+          ),
           backgroundColor: Colors.white,
           label: 'Quick Scan',
-          labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+          labelStyle:
+              TextStyle(fontSize: 18.0, color: Theme.of(context).primaryColor),
           onTap: widget.quickScanOnPressed,
         ),
         SpeedDialChild(
-          child: Icon(Icons.image),
+          child: Icon(
+            Icons.image_rounded,
+            color: Theme.of(context).primaryColor,
+          ),
           backgroundColor: Colors.white,
           label: 'Import from Gallery',
-          labelStyle: TextStyle(fontSize: 18.0, color: Colors.black),
+          labelStyle:
+              TextStyle(fontSize: 18.0, color: Theme.of(context).primaryColor),
           onTap: widget.galleryOnPressed,
         ),
       ],
