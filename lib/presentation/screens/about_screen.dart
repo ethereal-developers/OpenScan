@@ -155,8 +155,9 @@ class AboutScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14),
                 children: [
                   TextSpan(
-                      text: '3.0.0',
-                      style: TextStyle(color: Theme.of(context).secondaryHeaderColor)),
+                    text: '3.0.0',
+                    style: TextStyle(color: Theme.of(context).accentColor),
+                  ),
                 ],
               ),
             ),

@@ -37,86 +37,6 @@ class _ViewScreenState extends State<ViewScreen> {
 
   List<String> imageFilesPath = [];
 
-  // final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
-  // TransformationController _controller = TransformationController();
-  // DatabaseHelper database = DatabaseHelper();
-  // List<Widget> imageCards = [];
-  // FileOperations fileOperations = FileOperations();
-  // List<Map<String, dynamic>> directoryData;
-  // List<ImageOS> directoryImages = [];
-  // List<ImageOS> initDirectoryImages = [];
-  // bool resetReorder = false;
-  // ImageOS displayImage;
-  // bool showImage = false;
-
-  // void getDirectoryData({
-  //   bool updateFirstImage = false,
-  //   bool updateIndex = false,
-  // }) async {
-  // directoryImages = [];
-  // initDirectoryImages = [];
-  // imageFilesPath = [];
-  // ViewDocument.selectedImageIndex = [];
-  // int index = 1;
-
-  // BlocListener<DirectoryCubit, DirectoryState>(
-  //     listener: (context, state) async {
-  //   print('hello');
-  //   directoryData = await database.getDirectoryData(state.dirName);
-  //   // print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
-  // });
-  // directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
-  // print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
-  // for (var image in directoryData) {
-  // Updating first image path after delete
-  // if (updateFirstImage) {
-  //   database.updateFirstImagePath(
-  //       imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
-  //   updateFirstImage = false;
-  // }
-  // var i = image['idx'];
-  // Updating index of images after delete
-  // if (updateIndex) {
-  //   i = index;
-  //   database.updateImageIndex(
-  //     image: ImageOS(
-  //       idx: i,
-  //       imgPath: image['img_path'],
-  //     ),
-  //     tableName: widget.directoryOS.dirName,
-  //   );
-  // }
-  // ImageOS tempImageOS = ImageOS(
-  //   idx: i,
-  //   imgPath: image['img_path'],
-  // );
-  // directoryImages.add(
-  //   tempImageOS,
-  // );
-  // initDirectoryImages.add(
-  //   tempImageOS,
-  // );
-  // imageCards.add(
-  //   ImageCard(
-  //     imageOS: tempImageOS,
-  //     directoryOS: widget.directoryOS,
-  //     fileEditCallback: () {
-  //       fileEditCallback(imageOS: tempImageOS);
-  //     },
-  //     selectCallback: () {
-  //       selectionCallback(imageOS: tempImageOS);
-  //     },
-  //     imageViewerCallback: () {
-  //       imageViewerCallback(imageOS: tempImageOS);
-  //     },
-  //   ),
-  // );
-  // imageFilesPath.add(image['img_path']);
-  // ViewDocument.selectedImageIndex.add(false);
-  // index += 1;
-  // }
-  // }
-
   // selectionCallback({ImageOS imageOS}) {
   //   if (ViewDocument.selectedImageIndex.contains(true)) {
   //     setState(() {
@@ -155,6 +75,8 @@ class _ViewScreenState extends State<ViewScreen> {
   void handleClick(context, {String value}) {
     print(value);
     switch (value) {
+      case 'Reorder':
+        break;
       case 'Delete':
         // TODO: Delete Mutiple
         break;
@@ -168,48 +90,6 @@ class _ViewScreenState extends State<ViewScreen> {
         break;
     }
   }
-
-  // Future<void> createDirectoryPath() async {
-  //   Directory appDir = await getExternalStorageDirectory();
-  //   dirName = 'OpenScan ${DateTime.now()}';
-  //   dirPath = "${appDir.path}/$dirName";
-  //   // widget.directoryOS.dirPath = dirPath;
-  //   // widget.directoryOS.dirName = dirName;
-  //   // print('New Directory => ${widget.directoryOS.dirName}');
-  // }
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  // if (widget.directoryOS.dirPath != null) {
-  //   dirPath = widget.directoryOS.dirPath;
-  //   dirName = widget.directoryOS.newName;
-  //   // BlocProvider.of<DirectoryCubit>(context).getImageData();
-  // } else {
-  //   // createDirectoryPath();
-  //   if (widget.fromGallery) {
-  //     // BlocProvider.of<DirectoryCubit>(context).createImage(
-  //     //   context,
-  //     //   quickScan: false,
-  //     //   fromGallery: true,
-  //     // );
-  //   } else {
-  //     BlocProvider.of<DirectoryCubit>(context).createImage(
-  //       context,
-  //       quickScan: widget.quickScan,
-  //     );
-  //   }
-  // }
-  // }
-
-  // TODO: Bugs
-  // Create Image - crop not reflecting
-  // Delete image not reflecting
-  // Bloc not provided to bottomSheet
-
-  // TODO: Select images
-
-  // TODO: Delete Multiple Images
 
   @override
   Widget build(BuildContext context) {
@@ -329,6 +209,7 @@ class _ViewScreenState extends State<ViewScreen> {
                     ),
                     itemsMap: {
                       'Export': Icons.share_rounded,
+                      'Reorder': Icons.reorder_rounded,
                       'Delete': Icons.delete_rounded,
                     },
                   ),
@@ -356,7 +237,7 @@ class _ViewScreenState extends State<ViewScreen> {
                           return ImageCard(
                             image: image,
                             onLongPressed: () {
-                              //TODO: Select image
+                              // TODO: Select image
                             },
                             onPressed: () {
                               Navigator.push(
@@ -373,6 +254,8 @@ class _ViewScreenState extends State<ViewScreen> {
                                 ),
                               );
                             },
+                            onReorder: () {},
+                            onSelect: () {},
                           );
                         }).toList(),
                         onReorder: (int oldIndex, int newIndex) {
@@ -416,48 +299,6 @@ class _ViewScreenState extends State<ViewScreen> {
                 },
               ),
             ),
-            // Image Preview
-            // (showImage)
-            //     ? GestureDetector(
-            //         onTap: () {
-            //           // setState(() {
-            //           showImage = false;
-            //           // });
-            //         },
-            //         child: Container(
-            //           width: size.width,
-            //           height: size.height,
-            //           padding: EdgeInsets.all(20),
-            //           color:
-            //               Theme.of(context).primaryColor.withOpacity(0.8),
-            //           child: GestureDetector(
-            //             onDoubleTapDown: (details) {
-            //               _doubleTapDetails = details;
-            //             },
-            //             onDoubleTap: () {
-            //               if (_controller.value != Matrix4.identity()) {
-            //                 _controller.value = Matrix4.identity();
-            //               } else {
-            //                 final position =
-            //                     _doubleTapDetails.localPosition;
-            //                 _controller.value = Matrix4.identity()
-            //                   ..translate(-position.dx, -position.dy)
-            //                   ..scale(2.0);
-            //               }
-            //             },
-            //             child: InteractiveViewer(
-            //               transformationController: _controller,
-            //               maxScale: 10,
-            //               child: GestureDetector(
-            //                 child: Image.file(
-            //                   File(displayImage.imgPath),
-            //                 ),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //       )
-            //     : Container(),
           ],
         ),
       ),

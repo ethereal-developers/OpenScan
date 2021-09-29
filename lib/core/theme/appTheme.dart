@@ -7,7 +7,7 @@ class AppTheme {
 
   static final appTheme = ThemeData(
     primaryColor: primaryColor,
-    secondaryHeaderColor: accentColor,
+    accentColor: accentColor,
     brightness: Brightness.dark,
     iconTheme: IconThemeData(color: Colors.white),
     textTheme: TextTheme(
