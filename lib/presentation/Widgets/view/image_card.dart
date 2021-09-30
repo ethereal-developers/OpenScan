@@ -2,15 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:focused_menu/focused_menu.dart';
-import 'package:focused_menu/modals.dart';
-import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 
-import '../../screens/view_screen.dart';
-
-class ImageCard extends StatefulWidget {
+class ImageCard extends StatelessWidget {
   final ImageOS image;
   final Function onPressed;
   final Function onLongPressed;
@@ -24,45 +19,25 @@ class ImageCard extends StatefulWidget {
   });
 
   @override
-  _ImageCardState createState() => _ImageCardState();
-}
-
-class _ImageCardState extends State<ImageCard> {
-  DatabaseHelper database = DatabaseHelper();
-
-  // selectionOnPressed() {
-  //   setState(() {
-  //     ViewDocument.selectedImageIndex[widget.imageOS.idx - 1] = true;
-  //   });
-  //   widget.selectCallback();
-  // }
-
-  @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return Stack(
       children: [
         MaterialButton(
           elevation: 0,
-          onLongPress: widget.onLongPressed,
+          onLongPress: onLongPressed,
           color: Theme.of(context).primaryColor,
-          onPressed: widget.onPressed,
+          onPressed: onPressed,
           child: Container(
-            child: Image.file(File(widget.image.imgPath)),
+            child: Image.file(File(image.imgPath)),
             height: size.height * 0.25,
-            width: size.width * 0.387,
+            width: size.width * 0.38,
           ),
         ),
-        (widget.image.selected)
+        (image.selected)
             ? Positioned.fill(
                 child: GestureDetector(
-                  onTap: () {
-                    // setState(() {
-                    //   ViewDocument.selectedImageIndex[widget.imageOS.idx - 1] =
-                    //       false;
-                    // });
-                    // widget.selectCallback();
-                  },
+                  onTap: onPressed,
                   child: Container(
                     foregroundDecoration: BoxDecoration(
                       border: Border.all(
@@ -75,9 +50,9 @@ class _ImageCardState extends State<ImageCard> {
                 ),
               )
             : Container(
-                width: 0.001,
-                height: 0.001,
-              ),
+              width: 0.0001,
+              height: 0.0001,
+            ),
         // (enableReorder)
         //     ? Positioned.fill(
         //         child: Container(

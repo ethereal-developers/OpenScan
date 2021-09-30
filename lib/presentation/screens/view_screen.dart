@@ -4,10 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
-import 'package:openscan/presentation/Widgets/view/custom_bottomsheet.dart';
 import 'package:openscan/presentation/Widgets/view/icon_gesture.dart';
 import 'package:openscan/presentation/Widgets/view/image_card.dart';
-import 'package:openscan/presentation/Widgets/view/popup_menu_button.dart';
 import 'package:openscan/presentation/extensions.dart';
 import 'package:openscan/presentation/screens/preview_screen.dart';
 import 'package:reorderables/reorderables.dart';
@@ -72,27 +70,27 @@ class _ViewScreenState extends State<ViewScreen> {
   //   });
   // }
 
-  void handleClick(context, {String value}) {
-    print(value);
-    switch (value) {
-      case 'Reorder':
-        setState(() {
-          reorderEnabled = false;
-        });
-        break;
-      case 'Delete':
-        // TODO: Delete Mutiple
-        break;
-      case 'Export':
-        showModalBottomSheet(
-          context: context,
-          builder: (context) {
-            return CustomBottomSheet();
-          },
-        );
-        break;
-    }
-  }
+  // void handleClick(context, {String value}) {
+  //   print(value);
+  //   switch (value) {
+  //     case 'Reorder':
+  //       setState(() {
+  //         reorderEnabled = false;
+  //       });
+  //       break;
+  //     case 'Delete':
+  //       // TODO: Delete Mutiple
+  //       break;
+  //     case 'Export':
+  //       showModalBottomSheet(
+  //         context: context,
+  //         builder: (context) {
+  //           return CustomBottomSheet();
+  //         },
+  //       );
+  //       break;
+  //   }
+  // }
 
   @override
   void initState() {
@@ -103,7 +101,6 @@ class _ViewScreenState extends State<ViewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: WillPopScope(
         onWillPop: () {
@@ -127,28 +124,19 @@ class _ViewScreenState extends State<ViewScreen> {
               appBar: AppBar(
                 elevation: 0,
                 backgroundColor: Theme.of(context).primaryColor,
-                leading: (selectionEnabled)
+                leading: selectionEnabled
                     ? IconButton(
                         icon: Icon(
                           Icons.close_rounded,
                           size: 30,
                         ),
-                        onPressed: (selectionEnabled)
-                            ? () {
-                                // removeSelection();
-                              }
-                            : () {
-                                // TODO: Revert Reorder
-
-                                // setState(() {
-                                //   // Reverting reorder
-                                //   directoryImages = [];
-                                //   for (var image in initDirectoryImages) {
-                                //     directoryImages.add(image);
-                                //   }
-                                //   enableReorder = false;
-                                // });
-                              },
+                        onPressed: () {
+                          BlocProvider.of<DirectoryCubit>(context)
+                              .resetSelection();
+                          setState(() {
+                            selectionEnabled = false;
+                          });
+                        },
                       )
                     : IconButton(
                         icon: Icon(Icons.arrow_back_ios),
@@ -158,7 +146,7 @@ class _ViewScreenState extends State<ViewScreen> {
                       ),
                 title: BlocConsumer<DirectoryCubit, DirectoryState>(
                   listener: (context, state) {
-                    print('DirName updated: ${state.dirName}');
+                    // print('DirName updated: ${state.dirName}');
                   },
                   buildWhen: (previousState, state) {
                     if (previousState.dirName != state.dirName) return true;
@@ -178,7 +166,8 @@ class _ViewScreenState extends State<ViewScreen> {
                           icon: Icon(Icons.select_all_rounded),
                           onTap: () {
                             print('select all');
-                            // TODO: Select all images @DirectoryCubit
+                            BlocProvider.of<DirectoryCubit>(context)
+                                .selectAllImages();
                           },
                         ),
                         IconGestureDetector(
@@ -198,7 +187,10 @@ class _ViewScreenState extends State<ViewScreen> {
                         IconGestureDetector(
                           icon: Icon(Icons.check_box_rounded),
                           onTap: () {
-                            print('select');
+                            setState(() {
+                              selectionEnabled = true;
+                              print('selection Enabled');
+                            });
                           },
                         ),
                         IconGestureDetector(
@@ -216,13 +208,20 @@ class _ViewScreenState extends State<ViewScreen> {
                   builder: (context, state) {
                     if (state.images != null) {
                       return selectionEnabled
-                          ? ReorderableWrap(
-                              needsLongPressDraggable: false,
+                          ? Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: getImageCards(state),
+                            )
+                          : ReorderableWrap(
                               spacing: 10,
                               runSpacing: 10,
                               minMainAxisCount: 2,
                               crossAxisAlignment: WrapCrossAlignment.center,
-                              children: getImageCards(state),
+                              children: getImageCards(
+                                state,
+                              ),
                               onReorder: (int oldIndex, int newIndex) {
                                 BlocProvider.of<DirectoryCubit>(context)
                                     .onReorderImages(oldIndex, newIndex);
@@ -235,12 +234,6 @@ class _ViewScreenState extends State<ViewScreen> {
                                 debugPrint(
                                     '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
                               },
-                            )
-                          : Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: getImageCards(state),
                             );
                     }
                     // TODO: Loading
@@ -280,25 +273,20 @@ class _ViewScreenState extends State<ViewScreen> {
     return state.images.map<Widget>((image) {
       return ImageCard(
         image: image,
-        onLongPressed: () {
-          // TODO: Select image
-          setState(() {
-            selectionEnabled = true;
-          });
-        },
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => BlocProvider<DirectoryCubit>.value(
-                value: BlocProvider.of<DirectoryCubit>(context),
-                child: PreviewScreen(
-                  initialIndex: image.idx - 1,
+        onLongPressed: selectionEnabled ? null : () {},
+        onPressed: selectionEnabled
+            ? () => BlocProvider.of<DirectoryCubit>(context).selectImage(image)
+            : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider<DirectoryCubit>.value(
+                      value: BlocProvider.of<DirectoryCubit>(context),
+                      child: PreviewScreen(
+                        initialIndex: image.idx - 1,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          );
-        },
         onSelect: () {},
       );
     }).toList();
