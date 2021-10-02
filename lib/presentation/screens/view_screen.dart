@@ -12,16 +12,11 @@ import 'package:reorderables/reorderables.dart';
 
 class ViewScreen extends StatefulWidget {
   static String route = "ViewDocument";
-
-  // static List<bool> selectedImageIndex = [];
-
-  // final DirectoryOS directoryOS;
   final bool quickScan;
   final bool fromGallery;
 
   ViewScreen({
     this.quickScan = false,
-    // this.directoryOS,
     this.fromGallery = false,
   });
 
@@ -35,63 +30,6 @@ class _ViewScreenState extends State<ViewScreen> {
   static bool reorderEnabled = true;
   List<String> imageFilesPath = [];
 
-  // selectionCallback({ImageOS imageOS}) {
-  //   if (ViewDocument.selectedImageIndex.contains(true)) {
-  //     setState(() {
-  //       enableSelectionIcons = true;
-  //     });
-  //   } else {
-  //     setState(() {
-  //       enableSelectionIcons = false;
-  //     });
-  //   }
-  // }
-  // void fileEditCallback({ImageOS imageOS}) {
-  //   bool isFirstImage = false;
-  //   if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
-  //     isFirstImage = true;
-  //   }
-  //   // getDirectoryData(
-  //   //   updateFirstImage: isFirstImage,
-  //   //   updateIndex: true,
-  //   // );
-  // }
-  // imageViewerCallback({ImageOS imageOS}) {
-  //   setState(() {
-  //     displayImage = imageOS;
-  //     showImage = true;
-  //   });
-  // }
-  // removeSelection() {
-  //   setState(() {
-  //     ViewDocument.selectedImageIndex =
-  //         ViewDocument.selectedImageIndex.map((e) => false).toList();
-  //     ViewDocument.enableSelect = false;
-  //   });
-  // }
-
-  // void handleClick(context, {String value}) {
-  //   print(value);
-  //   switch (value) {
-  //     case 'Reorder':
-  //       setState(() {
-  //         reorderEnabled = false;
-  //       });
-  //       break;
-  //     case 'Delete':
-  //       // TODO: Delete Mutiple
-  //       break;
-  //     case 'Export':
-  //       showModalBottomSheet(
-  //         context: context,
-  //         builder: (context) {
-  //           return CustomBottomSheet();
-  //         },
-  //       );
-  //       break;
-  //   }
-  // }
-
   @override
   void initState() {
     super.initState();
@@ -104,13 +42,8 @@ class _ViewScreenState extends State<ViewScreen> {
     return SafeArea(
       child: WillPopScope(
         onWillPop: () {
-          if (selectionEnabled || reorderEnabled) {
-            // setState(() {
+          if (selectionEnabled) {
             selectionEnabled = false;
-            // removeSelection();
-            reorderEnabled = false;
-            // showImage = false;
-            // });
           } else {
             Navigator.pop(context);
           }
@@ -219,9 +152,7 @@ class _ViewScreenState extends State<ViewScreen> {
                               runSpacing: 10,
                               minMainAxisCount: 2,
                               crossAxisAlignment: WrapCrossAlignment.center,
-                              children: getImageCards(
-                                state,
-                              ),
+                              children: getImageCards(state),
                               onReorder: (int oldIndex, int newIndex) {
                                 BlocProvider.of<DirectoryCubit>(context)
                                     .onReorderImages(oldIndex, newIndex);
@@ -273,7 +204,6 @@ class _ViewScreenState extends State<ViewScreen> {
     return state.images.map<Widget>((image) {
       return ImageCard(
         image: image,
-        onLongPressed: selectionEnabled ? null : () {},
         onPressed: selectionEnabled
             ? () => BlocProvider.of<DirectoryCubit>(context).selectImage(image)
             : () => Navigator.push(

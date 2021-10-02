@@ -146,7 +146,8 @@ class DatabaseHelper {
   Future getImageData(String tableName) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
-    List<Map<String, dynamic>> data = await db.query(_dirTableName);
+    List<Map<String, dynamic>> data =
+        await db.query(_dirTableName, orderBy: 'idx');
     return data;
   }
 
@@ -163,13 +164,14 @@ class DatabaseHelper {
         whereArgs: [idx]);
   }
 
-  Future<int> updateImageIndex({String imgPath, int idx, String tableName}) async {
+  Future<int> updateImageIndex(
+      {String imgPath, int newIndex, String tableName}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     return await db.update(
         _dirTableName,
         {
-          'idx': idx,
+          'idx': newIndex,
         },
         where: 'img_path == ?',
         whereArgs: [imgPath]);

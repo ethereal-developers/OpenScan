@@ -8,13 +8,13 @@ import 'package:openscan/core/theme/appTheme.dart';
 class ImageCard extends StatelessWidget {
   final ImageOS image;
   final Function onPressed;
-  final Function onLongPressed;
+  // final Function onLongPressed;
   final Function onSelect;
 
   ImageCard({
     this.image,
     this.onPressed,
-    this.onLongPressed,
+    // this.onLongPressed,
     this.onSelect,
   });
 
@@ -25,7 +25,6 @@ class ImageCard extends StatelessWidget {
       children: [
         MaterialButton(
           elevation: 0,
-          onLongPress: onLongPressed,
           color: Theme.of(context).primaryColor,
           onPressed: onPressed,
           child: Container(
@@ -50,9 +49,21 @@ class ImageCard extends StatelessWidget {
                 ),
               )
             : Container(
-              width: 0.0001,
-              height: 0.0001,
+                width: 0.0001,
+                height: 0.0001,
+              ),
+        Positioned(
+          bottom: 10,
+          right: 10,
+          child: CircleAvatar(
+            backgroundColor: AppTheme.accentColor.withOpacity(0.8),
+            radius: 15,
+            child: Text(
+              image.idx.toString(),
+              style: TextStyle(color: AppTheme.primaryColor),
             ),
+          ),
+        ),
         // (enableReorder)
         //     ? Positioned.fill(
         //         child: Container(

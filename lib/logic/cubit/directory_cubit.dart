@@ -80,10 +80,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     var directoryData = await database.getImageData(state.dirName);
     print('From Cubit => $directoryData');
     for (var image in directoryData) {
-      var i = image['idx'];
-
       ImageOS tempImage = ImageOS(
-        idx: i,
+        idx: image['idx'],
         imgPath: image['img_path'],
         selected: false,
       );
@@ -91,40 +89,38 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       state.images.add(
         tempImage,
       );
-
-      // state.imageCount = state.images.length;
-
-      emitState(state);
-
-      // initDirectoryImages.add(
-      //   tempImageOS,
-      // );
-
-      // imageCards.add(
-      //   ImageCard(
-      //     imageOS: tempImageOS,
-      //     directoryOS: widget.directoryOS,
-      //     fileEditCallback: () {
-      //       fileEditCallback(imageOS: tempImageOS);
-      //     },
-      //     selectCallback: () {
-      //       selectionCallback(imageOS: tempImageOS);
-      //     },
-      //     imageViewerCallback: () {
-      //       imageViewerCallback(imageOS: tempImageOS);
-      //     },
-      //   ),
-      // );
-
-      // imageFilesPath.add(image['img_path']);
-      // selectedImageIndex.add(false);
-      // index += 1;
     }
+
+    //TODO: Sort images
+
+
+    state.imageCount = state.images.length;
+
+    emitState(state);
   }
 
   onReorderImages(int oldIndex, int newIndex) {
-    ImageOS image1 = state.images.removeAt(oldIndex);
-    state.images.insert(newIndex, image1);
+    ImageOS image = state.images.removeAt(oldIndex);
+    state.images.insert(newIndex, image);
+
+    int start, end;
+    if (newIndex > oldIndex) {
+      start = oldIndex;
+      end = newIndex;
+    } else {
+      start = newIndex;
+      end = oldIndex;
+    }
+
+    for (int index = start; index <= end; index++) {
+      state.images[index].idx = index + 1;
+      database.updateImageIndex(
+        imgPath: state.images[index].imgPath,
+        newIndex: index + 1,
+        tableName: state.dirName,
+      );
+    }
+
     emitState(state);
   }
 
@@ -253,7 +249,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         print('image[$i] = ${i + 1}');
         database.updateImageIndex(
           imgPath: state.images[i].imgPath,
-          idx: state.images[i].idx,
+          newIndex: state.images[i].idx,
           tableName: state.dirName,
         );
       }
@@ -271,7 +267,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   selectImage(ImageOS imageOS) {
-    state.images[imageOS.idx - 1].selected = !state.images[imageOS.idx - 1].selected;
+    state.images[imageOS.idx - 1].selected =
+        !state.images[imageOS.idx - 1].selected;
     emitState(state);
   }
 
