@@ -25,7 +25,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   DatabaseHelper database = DatabaseHelper();
-  List<Map<String, dynamic>> masterData;
+  late List<Map<String, dynamic>> masterData;
   List<DirectoryOS> masterDirectories = [];
   QuickActions quickActions = QuickActions();
 
@@ -52,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
   //   await _requestPermission();
   // }
 
-  pushView({String scanType, DirectoryOS masterDirectory}) {
+  pushView({String? scanType, DirectoryOS? masterDirectory}) {
     switch (scanType) {
       case 'Normal Scan':
         Navigator.push(
@@ -111,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(
             builder: (context) => BlocProvider<DirectoryCubit>(
               create: (context) => DirectoryCubit(
-                dirName: masterDirectory.dirName,
+                dirName: masterDirectory!.dirName,
                 created: masterDirectory.created,
                 dirPath: masterDirectory.dirPath,
                 firstImgPath: masterDirectory.firstImgPath,
@@ -134,7 +134,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<DirectoryOS>> getMasterData() async {
     masterDirectories = [];
-    masterData = await database.getMasterData();
+    masterData =
+        await database.getMasterData();
     print('Master Table => $masterData');
     for (var directory in masterData) {
       var alreadyExistsFlag = false;
@@ -329,17 +330,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemCount: masterDirectories.length,
                     itemBuilder: (context, index) {
                       return FocusedMenuHolder(
-                        onPressed: null,
+                        onPressed: () {},
                         menuWidth: size.width * 0.44,
                         child: ListTile(
                           leading: Image.file(
-                            File(masterDirectories[index].firstImgPath),
+                            File(masterDirectories[index].firstImgPath!),
                             width: 50,
                             height: 50,
                           ),
                           title: Text(
                             masterDirectories[index].newName ??
-                                masterDirectories[index].dirName,
+                                masterDirectories[index].dirName!,
                             style: TextStyle(fontSize: 14),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -347,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Last Updated: ${masterDirectories[index].lastModified.day}-${masterDirectories[index].lastModified.month}-${masterDirectories[index].lastModified.year}',
+                                'Last Updated: ${masterDirectories[index].lastModified!.day}-${masterDirectories[index].lastModified!.month}-${masterDirectories[index].lastModified!.year}',
                                 style: TextStyle(fontSize: 11),
                               ),
                               Text(
@@ -382,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               showDialog(
                                 context: context,
                                 builder: (context) {
-                                  String fileName;
+                                  String? fileName;
                                   return StatefulBuilder(
                                     builder: (BuildContext context,
                                         void Function(void Function())
@@ -432,10 +433,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                           TextButton(
                                             onPressed: () {
-                                              fileName = fileName.trim();
+                                              fileName = fileName!.trim();
                                               fileName =
-                                                  fileName.replaceAll('/', '');
-                                              if (fileName.isNotEmpty) {
+                                                  fileName!.replaceAll('/', '');
+                                              if (fileName!.isNotEmpty) {
                                                 masterDirectories[index]
                                                     .newName = fileName;
                                                 database.renameDirectory(
@@ -495,11 +496,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       TextButton(
                                         onPressed: () {
                                           Directory(masterDirectories[index]
-                                                  .dirPath)
+                                                  .dirPath!)
                                               .deleteSync(recursive: true);
                                           database.deleteDirectory(
                                               dirPath: masterDirectories[index]
-                                                  .dirPath);
+                                                  .dirPath!);
                                           Navigator.pop(context);
                                           homeRefresh();
                                         },

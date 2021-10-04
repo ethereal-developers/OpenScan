@@ -14,12 +14,11 @@ class DatabaseHelper {
   static final _dbName = "OpenScan.db";
   static final _dbVersion = 1;
   static final _masterTableName = 'DirectoryDetails';
-  static Database _database;
-  String path;
-  String _dirTableName;
+  static late Database _database;
+  late String path;
+  late String _dirTableName;
 
   Future<Database> get database async {
-    if (_database != null) return _database;
     _database = await initDB();
     return _database;
   }
@@ -51,7 +50,7 @@ class DatabaseHelper {
       ''');
   }
 
-  Future createDirectory({DirectoryOS directory}) async {
+  Future createDirectory({required DirectoryOS directory}) async {
     Database db = await instance.database;
     int index = await db.insert(_masterTableName, {
       'dir_name': directory.dirName,
@@ -63,7 +62,7 @@ class DatabaseHelper {
       'new_name': directory.newName
     });
 
-    getDirectoryTableName(directory.dirName);
+    getDirectoryTableName(directory.dirName!);
     print('Directory Index: $index');
     db.execute('''
       CREATE TABLE $_dirTableName(
@@ -72,7 +71,8 @@ class DatabaseHelper {
       ''');
   }
 
-  Future createImage({ImageOS image, String tableName}) async {
+  Future createImage(
+      {required ImageOS image, required String tableName}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     int index = await db.insert(_dirTableName, {
@@ -92,7 +92,7 @@ class DatabaseHelper {
         whereArgs: [tableName]);
   }
 
-  Future deleteDirectory({String dirPath}) async {
+  Future deleteDirectory({required String dirPath}) async {
     Database db = await instance.database;
     await db
         .delete(_masterTableName, where: 'dir_path == ?', whereArgs: [dirPath]);
@@ -101,7 +101,7 @@ class DatabaseHelper {
     await db.execute('DROP TABLE $_dirTableName');
   }
 
-  Future deleteImage({String imgPath, String tableName}) async {
+  Future deleteImage({String? imgPath, required String tableName}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     await db
@@ -118,19 +118,19 @@ class DatabaseHelper {
     return data;
   }
 
-  Future<int> updateFirstImagePath({String imagePath, String dirPath}) async {
+  Future<int> updateFirstImagePath({String? imagePath, String? dirPath}) async {
     Database db = await instance.database;
     return await db.update(_masterTableName, {'first_img_path': imagePath},
         where: 'dir_path == ?', whereArgs: [dirPath]);
   }
 
-  Future<int> renameDirectory({DirectoryOS directory}) async {
+  Future<int> renameDirectory({required DirectoryOS directory}) async {
     Database db = await instance.database;
     return await db.update(_masterTableName, {'new_name': directory.newName},
         where: 'dir_name == ?', whereArgs: [directory.dirName]);
   }
 
-  void updateImageCount({String tableName}) async {
+  void updateImageCount({required String tableName}) async {
     Database db = await instance.database;
     var data = await getImageData(tableName);
     db.update(
@@ -152,7 +152,7 @@ class DatabaseHelper {
   }
 
   Future<int> updateImagePath(
-      {String tableName, String imgPath, int idx}) async {
+      {required String tableName, String? imgPath, int? idx}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     return await db.update(
@@ -165,7 +165,7 @@ class DatabaseHelper {
   }
 
   Future<int> updateImageIndex(
-      {String imgPath, int newIndex, String tableName}) async {
+      {String? imgPath, int? newIndex, required String tableName}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     return await db.update(

@@ -3,14 +3,14 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:simple_animated_icon/simple_animated_icon.dart';
 
 class FAB extends StatefulWidget {
-  final Function normalScanOnPressed;
-  final Function quickScanOnPressed;
-  final Function galleryOnPressed;
-  final Function dialOpen;
-  final Function dialClose;
+  final void Function()? normalScanOnPressed;
+  final void Function()? quickScanOnPressed;
+  final void Function()? galleryOnPressed;
+  final void Function()? dialOpen;
+  final void Function()? dialClose;
 
   const FAB({
-    Key key,
+    Key? key,
     this.normalScanOnPressed,
     this.quickScanOnPressed,
     this.galleryOnPressed,
@@ -23,8 +23,8 @@ class FAB extends StatefulWidget {
 }
 
 class _FABState extends State<FAB> with TickerProviderStateMixin {
-  AnimationController _animationController;
-  Animation<double> _progress;
+  late AnimationController _animationController;
+  late Animation<double> _progress;
 
   @override
   void initState() {
@@ -41,8 +41,8 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return SpeedDial(
-      marginRight: 18,
-      marginBottom: 20,
+      // marginRight: 18,
+      // marginBottom: 20,
       child: SimpleAnimatedIcon(
         startIcon: Icons.add_rounded,
         endIcon: Icons.close_rounded,

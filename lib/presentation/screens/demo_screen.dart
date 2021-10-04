@@ -10,7 +10,7 @@ class DemoScreen extends StatefulWidget {
 
   DemoScreen({this.showSkip});
 
-  final bool showSkip;
+  final bool? showSkip;
 
   @override
   _DemoScreenState createState() => _DemoScreenState();
@@ -43,7 +43,7 @@ class _DemoScreenState extends State<DemoScreen> {
         elevation: 0,
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
-        leading: (!widget.showSkip)
+        leading: (!widget.showSkip!)
             ? IconButton(
                 icon: Icon(Icons.arrow_back_ios),
                 onPressed: () => Navigator.pop(context),
@@ -53,7 +53,7 @@ class _DemoScreenState extends State<DemoScreen> {
           'How to use the app?',
           style: TextStyle().appBarStyle,
         ),
-        actions: (widget.showSkip)
+        actions: widget.showSkip!
             ? <Widget>[
                 GestureDetector(
                   onTap: () {

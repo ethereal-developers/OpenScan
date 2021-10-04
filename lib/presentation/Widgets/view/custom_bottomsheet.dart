@@ -10,12 +10,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_extend/share_extend.dart';
 
 class CustomBottomSheet extends StatelessWidget {
-  final String fileName;
-  final Function saveToDevice;
-  final Function sharePdf;
-  final Function shareImages;
-  final Function qualitySelection;
-  final String dirPath;
+  final String? fileName;
+  final Function? saveToDevice;
+  final Function? sharePdf;
+  final Function? shareImages;
+  final Function? qualitySelection;
+  final String? dirPath;
 
   CustomBottomSheet({
     this.fileName,
@@ -45,7 +45,7 @@ class CustomBottomSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    fileName,
+                    fileName!,
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
                     overflow: TextOverflow.ellipsis,
                   ),

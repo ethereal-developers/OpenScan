@@ -25,15 +25,11 @@ class ViewScreen extends StatefulWidget {
 }
 
 class _ViewScreenState extends State<ViewScreen> {
-  bool enableSelectionIcons = false;
   static bool selectionEnabled = false;
-  static bool reorderEnabled = true;
-  List<String> imageFilesPath = [];
 
   @override
   void initState() {
     super.initState();
-    reorderEnabled = true;
     selectionEnabled = false;
   }
 
@@ -41,13 +37,13 @@ class _ViewScreenState extends State<ViewScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: WillPopScope(
-        onWillPop: () {
+        onWillPop: () async {
           if (selectionEnabled) {
             selectionEnabled = false;
           } else {
             Navigator.pop(context);
           }
-          return;
+          return true;
         },
         child: Stack(
           children: [
@@ -145,14 +141,14 @@ class _ViewScreenState extends State<ViewScreen> {
                               spacing: 10,
                               runSpacing: 10,
                               crossAxisAlignment: WrapCrossAlignment.center,
-                              children: getImageCards(state),
+                              children: getImageCards(state)!,
                             )
                           : ReorderableWrap(
                               spacing: 10,
                               runSpacing: 10,
                               minMainAxisCount: 2,
                               crossAxisAlignment: WrapCrossAlignment.center,
-                              children: getImageCards(state),
+                              children: getImageCards(state)!,
                               onReorder: (int oldIndex, int newIndex) {
                                 BlocProvider.of<DirectoryCubit>(context)
                                     .onReorderImages(oldIndex, newIndex);
@@ -200,7 +196,7 @@ class _ViewScreenState extends State<ViewScreen> {
     );
   }
 
-  List<Widget> getImageCards(state) {
+  List<Widget>? getImageCards(state) {
     return state.images.map<Widget>((image) {
       return ImageCard(
         image: image,

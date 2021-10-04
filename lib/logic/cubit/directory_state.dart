@@ -1,14 +1,14 @@
 part of 'directory_cubit.dart';
 
 class DirectoryState {
-  String dirName;
-  String dirPath;
-  DateTime created;
-  int imageCount;
-  String firstImgPath;
-  DateTime lastModified;
-  String newName;
-  List<ImageOS> images;
+  String? dirName;
+  String? dirPath;
+  DateTime? created;
+  int? imageCount;
+  String? firstImgPath;
+  DateTime? lastModified;
+  String? newName;
+  List<ImageOS>? images;
 
   DirectoryState({
     this.dirName,

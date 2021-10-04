@@ -1,11 +1,11 @@
 class DirectoryOS {
-  String dirName;
-  String dirPath;
-  DateTime created;
-  int imageCount;
-  String firstImgPath;
-  DateTime lastModified;
-  String newName;
+  String? dirName;
+  String? dirPath;
+  DateTime? created;
+  int? imageCount;
+  String? firstImgPath;
+  DateTime? lastModified;
+  String? newName;
 
   DirectoryOS({
     this.dirName,
@@ -19,8 +19,8 @@ class DirectoryOS {
 }
 
 class ImageOS {
-  int idx;
-  String imgPath;
+  int? idx;
+  String? imgPath;
   bool selected;
 
   ImageOS({

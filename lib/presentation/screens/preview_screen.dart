@@ -9,7 +9,7 @@ import 'package:openscan/presentation/Widgets/delete_dialog.dart';
 import 'package:openscan/presentation/extensions.dart';
 
 class PreviewScreen extends StatefulWidget {
-  final int initialIndex;
+  final int? initialIndex;
 
   const PreviewScreen({this.initialIndex});
 
@@ -18,11 +18,14 @@ class PreviewScreen extends StatefulWidget {
 }
 
 class _PreviewScreenState extends State<PreviewScreen> {
-  PageController _pageController;
+  PageController? _pageController;
+  int? pageIndex;
+
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: widget.initialIndex);
+    _pageController = PageController(initialPage: widget.initialIndex!);
+    pageIndex = widget.initialIndex! + 1;
   }
 
   @override
@@ -57,16 +60,43 @@ class _PreviewScreenState extends State<PreviewScreen> {
           child: BlocConsumer<DirectoryCubit, DirectoryState>(
             listener: (context, state) {},
             builder: (context, state) {
-              return PageView.builder(
-                controller: _pageController,
-                itemCount: state.imageCount,
-                itemBuilder: (context, index) {
-                  return Container(
-                    child: Center(
-                      child: Image.file(File(state.images[index].imgPath)),
+              return Stack(
+                children: [
+                  PageView.builder(
+                    controller: _pageController,
+                    itemCount: state.imageCount,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        child: Center(
+                          child: Image.file(File(state.images![index].imgPath!)),
+                        ),
+                      );
+                    },
+                    onPageChanged: (index) {
+                      setState(() {
+                        pageIndex = index + 1;
+                      });
+                    },
+                  ),
+                  Positioned.fill(
+                    bottom: 60,
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '$pageIndex/${state.imageCount}',
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
+                      ),
                     ),
-                  );
-                },
+                  ),
+                ],
               );
             },
           ),
@@ -90,7 +120,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
                       onPressed: () {
                         BlocProvider.of<DirectoryCubit>(context).cropImage(
                           context,
-                          state.images[_pageController.page.toInt()],
+                          state.images![_pageController!.page!.toInt()],
                         );
                       },
                     ),
@@ -106,7 +136,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
                                     .deleteImage(
                                   context,
                                   imageToDelete: state
-                                      .images[_pageController.page.toInt()],
+                                      .images![_pageController!.page!.toInt()],
                                 );
                                 Navigator.pop(context);
                               },

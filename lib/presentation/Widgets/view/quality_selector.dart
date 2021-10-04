@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class QualitySelector extends StatefulWidget {
-  final int imageQuality;
-  final Function qualitySelected;
+  final int? imageQuality;
+  final Function? qualitySelected;
   const QualitySelector({
     this.imageQuality,
     this.qualitySelected,
@@ -13,7 +13,7 @@ class QualitySelector extends StatefulWidget {
 }
 
 class _QualitySelectorState extends State<QualitySelector> {
-  int quality;
+  int? quality;
 
   @override
   void initState() {
@@ -169,7 +169,7 @@ class _QualitySelectorState extends State<QualitySelector> {
               ),
               TextButton(
                 onPressed: () {
-                  widget.qualitySelected(quality);
+                  widget.qualitySelected!(quality);
                 },
                 child: Text(
                   'Done',

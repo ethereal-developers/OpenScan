@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class IconGestureDetector extends StatelessWidget {
-  final Icon icon;
-  final Function onTap;
+  final Icon? icon;
+  final void Function()? onTap;
 
   const IconGestureDetector({this.icon, this.onTap});
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class DeleteDialog extends StatelessWidget {
-  final Function cancelOnPressed;
-  final Function deleteOnPressed;
+  final void Function()? cancelOnPressed;
+  final void Function()? deleteOnPressed;
   DeleteDialog({
     this.cancelOnPressed,
     this.deleteOnPressed,

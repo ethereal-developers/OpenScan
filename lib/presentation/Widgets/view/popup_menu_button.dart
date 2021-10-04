@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class CustomPopupMenuButton extends StatelessWidget {
-  final Function onSelected;
-  final Map<String, dynamic> itemsMap;
+  final void Function(String) onSelected;
+  final Map<String, dynamic>? itemsMap;
   // final Map<>
 
-  CustomPopupMenuButton({@required this.onSelected, this.itemsMap});
+  CustomPopupMenuButton({required this.onSelected, this.itemsMap});
 
   @override
   Widget build(BuildContext context) {
-    List<MapEntry> items = itemsMap.entries.toList();
+    List<MapEntry> items = itemsMap!.entries.toList();
 
     return PopupMenuButton<String>(
       onSelected: onSelected,

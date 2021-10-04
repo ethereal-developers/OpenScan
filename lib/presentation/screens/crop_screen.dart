@@ -9,7 +9,7 @@ import 'package:openscan/presentation/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/presentation/extensions.dart';
 
 imageCropper(BuildContext context, File image) async {
-  File croppedImage;
+  File? croppedImage;
 
   // imageFilePath = await FlutterScannerCropper.openCrop(
   //   src: image.path,
@@ -33,7 +33,7 @@ imageCropper(BuildContext context, File image) async {
 }
 
 class CropImage extends StatefulWidget {
-  final File file;
+  final File? file;
 
   CropImage({this.file});
 
@@ -43,13 +43,13 @@ class CropImage extends StatefulWidget {
 class _CropImageState extends State<CropImage> {
   final GlobalKey key = GlobalKey();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  double width, height;
-  double prevWidth, prevHeight = 0;
+  double? width, height;
+  double? prevWidth, prevHeight = 0;
   Size imageBitmapSize = Size(600.0, 600.0);
   bool hasWidgetLoaded = false;
-  Offset tl, tr, bl, br, t, l, b, r;
+  Offset? tl, tr, bl, br, t, l, b, r;
   bool isLoading = false;
-  File imageFile;
+  File? imageFile;
   int crossoverThreshold = 5;
   int crossoverAdjust = 6;
 
@@ -68,7 +68,7 @@ class _CropImageState extends State<CropImage> {
     ///
     /// The reason this is called recursively is to ensure that the dimensions
     /// are obtained even in cases where the build time of widgets is longer.
-    WidgetsBinding.instance.addPostFrameCallback(
+    WidgetsBinding.instance!.addPostFrameCallback(
       (_) => getImageSize(false),
     );
   }
@@ -78,7 +78,7 @@ class _CropImageState extends State<CropImage> {
       el.markNeedsBuild();
       el.visitChildren(rebuild);
       print('Rebuilding');
-      WidgetsBinding.instance.addPostFrameCallback(
+      WidgetsBinding.instance!.addPostFrameCallback(
         (_) => getImageSize(false),
       );
     }
@@ -90,7 +90,7 @@ class _CropImageState extends State<CropImage> {
     setState(() {
       isLoading = true;
     });
-    RenderBox imageBox = key.currentContext.findRenderObject();
+    RenderBox imageBox = key.currentContext!.findRenderObject() as RenderBox;
     width = imageBox.size.width;
     height = imageBox.size.height;
 
@@ -104,14 +104,14 @@ class _CropImageState extends State<CropImage> {
       prevWidth = width;
     }
 
-    t = Offset(width / 2, 0);
-    b = Offset(width / 2, height);
-    l = Offset(0, height / 2);
-    r = Offset(width, height / 2);
+    t = Offset(width! / 2, 0);
+    b = Offset(width! / 2, height!);
+    l = Offset(0, height! / 2);
+    r = Offset(width!, height! / 2);
     tl = Offset(0, 0);
-    tr = Offset(width, 0);
-    bl = Offset(0, height);
-    br = Offset(width, height);
+    tr = Offset(width!, 0);
+    bl = Offset(0, height!);
+    br = Offset(width!, height!);
 
     setState(() {
       isLoading = false;
@@ -154,216 +154,216 @@ class _CropImageState extends State<CropImage> {
   void updatePolygon(points) {
     double x1 = points.localPosition.dx;
     double y1 = points.localPosition.dy;
-    double x2 = tl.dx;
-    double y2 = tl.dy;
-    double x3 = tr.dx;
-    double y3 = tr.dy;
-    double x4 = bl.dx;
-    double y4 = bl.dy;
-    double x5 = br.dx;
-    double y5 = br.dy;
-    double x6 = t.dx;
-    double y6 = t.dy;
-    double x7 = b.dx;
-    double y7 = b.dy;
-    double x8 = l.dx;
-    double y8 = l.dy;
-    double x9 = r.dx;
-    double y9 = r.dy;
+    double x2 = tl!.dx;
+    double y2 = tl!.dy;
+    double x3 = tr!.dx;
+    double y3 = tr!.dy;
+    double x4 = bl!.dx;
+    double y4 = bl!.dy;
+    double x5 = br!.dx;
+    double y5 = br!.dy;
+    double x6 = t!.dx;
+    double y6 = t!.dy;
+    double x7 = b!.dx;
+    double y7 = b!.dy;
+    double x8 = l!.dx;
+    double y8 = l!.dy;
+    double x9 = r!.dx;
+    double y9 = r!.dy;
 
     if (sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2)) < 15 &&
         y1 >= 0 &&
-        y1 <= height &&
-        x1 < width &&
+        y1 <= height! &&
+        x1 < width! &&
         x1 >= 0) {
       setState(() {
         bool isConvexPolygon = checkPolygon(
-            Offset(tl.dx - crossoverThreshold, tl.dy + crossoverThreshold),
-            br,
-            tr,
-            bl);
-        if (tl.dx < tr.dx - crossoverThreshold) {
+            Offset(tl!.dx - crossoverThreshold, tl!.dy + crossoverThreshold),
+            br!,
+            tr!,
+            bl!);
+        if (tl!.dx < tr!.dx - crossoverThreshold) {
           if (!isConvexPolygon) {
-            tl = Offset(tl.dx - crossoverAdjust, tl.dy - crossoverAdjust);
+            tl = Offset(tl!.dx - crossoverAdjust, tl!.dy - crossoverAdjust);
           } else {
             tl = points.localPosition;
           }
         } else {
-          tl = Offset(tr.dx - crossoverAdjust, tl.dy);
+          tl = Offset(tr!.dx - crossoverAdjust, tl!.dy);
         }
-        if (tl.dy + crossoverThreshold > bl.dy) {
-          tl = Offset(tl.dx, bl.dy - crossoverAdjust);
+        if (tl!.dy + crossoverThreshold > bl!.dy) {
+          tl = Offset(tl!.dx, bl!.dy - crossoverAdjust);
         }
-        t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
-        l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
+        t = Offset((tr!.dx + tl!.dx) / 2, (tr!.dy + tl!.dy) / 2);
+        l = Offset((tl!.dx + bl!.dx) / 2, (tl!.dy + bl!.dy) / 2);
       });
     } else if (sqrt(pow((x3 - x1), 2) + pow((y3 - y1), 2)) < 15 &&
         y1 >= 0 &&
-        y1 <= height &&
-        x1 < width &&
+        y1 <= height! &&
+        x1 < width! &&
         x1 >= 0) {
       setState(() {
-        bool isConvexPolygon = checkPolygon(tl, br,
-            Offset(tr.dx - crossoverThreshold, tr.dy - crossoverThreshold), bl);
-        if (tr.dx > tl.dx + crossoverThreshold) {
+        bool isConvexPolygon = checkPolygon(tl!, br!,
+            Offset(tr!.dx - crossoverThreshold, tr!.dy - crossoverThreshold), bl!);
+        if (tr!.dx > tl!.dx + crossoverThreshold) {
           if (!isConvexPolygon) {
-            tr = Offset(tr.dx + crossoverAdjust, tr.dy - crossoverAdjust);
+            tr = Offset(tr!.dx + crossoverAdjust, tr!.dy - crossoverAdjust);
           } else {
             tr = points.localPosition;
           }
         } else {
-          tr = Offset(tr.dx + crossoverAdjust, tr.dy);
+          tr = Offset(tr!.dx + crossoverAdjust, tr!.dy);
         }
-        if (tr.dy + crossoverThreshold > br.dy) {
-          tr = Offset(tr.dx, br.dy - crossoverAdjust);
+        if (tr!.dy + crossoverThreshold > br!.dy) {
+          tr = Offset(tr!.dx, br!.dy - crossoverAdjust);
         }
-        t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
-        r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
+        t = Offset((tr!.dx + tl!.dx) / 2, (tr!.dy + tl!.dy) / 2);
+        r = Offset((tr!.dx + br!.dx) / 2, (tr!.dy + br!.dy) / 2);
       });
     } else if (sqrt(pow((x4 - x1), 2) + pow((y4 - y1), 2)) < 15 &&
         y1 >= 0 &&
-        y1 <= height &&
-        x1 < width &&
+        y1 <= height! &&
+        x1 < width! &&
         x1 >= 0) {
       setState(() {
-        bool isConvexPolygon = checkPolygon(tl, br, tr,
-            Offset(bl.dx + crossoverThreshold, bl.dy - crossoverThreshold));
-        if (bl.dx < br.dx - crossoverThreshold) {
+        bool isConvexPolygon = checkPolygon(tl!, br!, tr!,
+            Offset(bl!.dx + crossoverThreshold, bl!.dy - crossoverThreshold));
+        if (bl!.dx < br!.dx - crossoverThreshold) {
           if (!isConvexPolygon) {
-            bl = Offset(bl.dx - crossoverAdjust, bl.dy + crossoverAdjust);
+            bl = Offset(bl!.dx - crossoverAdjust, bl!.dy + crossoverAdjust);
           } else {
             bl = points.localPosition;
           }
         } else {
-          bl = Offset(br.dx - crossoverAdjust, bl.dy);
+          bl = Offset(br!.dx - crossoverAdjust, bl!.dy);
         }
-        if (bl.dy - crossoverThreshold < tl.dy) {
-          bl = Offset(bl.dx, tl.dy + crossoverAdjust);
+        if (bl!.dy - crossoverThreshold < tl!.dy) {
+          bl = Offset(bl!.dx, tl!.dy + crossoverAdjust);
         }
-        l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
-        b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
+        l = Offset((tl!.dx + bl!.dx) / 2, (tl!.dy + bl!.dy) / 2);
+        b = Offset((br!.dx + bl!.dx) / 2, (br!.dy + bl!.dy) / 2);
       });
     } else if (sqrt(pow((x5 - x1), 2) + pow((y5 - y1), 2)) < 15 &&
         y1 >= 0 &&
-        y1 <= height &&
-        x1 < width &&
+        y1 <= height! &&
+        x1 < width! &&
         x1 >= 0) {
       setState(() {
         bool isConvexPolygon = checkPolygon(
-            tl,
-            Offset(br.dx - crossoverThreshold, br.dy - crossoverThreshold),
-            tr,
-            bl);
-        if (br.dx > bl.dx + crossoverThreshold) {
+            tl!,
+            Offset(br!.dx - crossoverThreshold, br!.dy - crossoverThreshold),
+            tr!,
+            bl!);
+        if (br!.dx > bl!.dx + crossoverThreshold) {
           if (!isConvexPolygon) {
-            br = Offset(br.dx + crossoverAdjust, br.dy + crossoverAdjust);
+            br = Offset(br!.dx + crossoverAdjust, br!.dy + crossoverAdjust);
           } else {
             br = points.localPosition;
           }
         } else {
-          br = Offset(br.dx + crossoverAdjust, br.dy);
+          br = Offset(br!.dx + crossoverAdjust, br!.dy);
         }
-        if (br.dy - crossoverThreshold < tr.dy) {
-          br = Offset(br.dx, tr.dy + crossoverAdjust);
+        if (br!.dy - crossoverThreshold < tr!.dy) {
+          br = Offset(br!.dx, tr!.dy + crossoverAdjust);
         }
-        b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
-        r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
+        b = Offset((br!.dx + bl!.dx) / 2, (br!.dy + bl!.dy) / 2);
+        r = Offset((tr!.dx + br!.dx) / 2, (tr!.dy + br!.dy) / 2);
       });
     } else if (sqrt(pow((x6 - x1), 2) + pow((y6 - y1), 2)) < 15 &&
         y1 >= 0 &&
-        y1 <= height &&
-        x1 < width &&
+        y1 <= height! &&
+        x1 < width! &&
         x1 >= 0) {
       setState(() {
-        if (t.dy + crossoverThreshold < b.dy) {
-          t = Offset(t.dx, points.localPosition.dy);
+        if (t!.dy + crossoverThreshold < b!.dy) {
+          t = Offset(t!.dx, points.localPosition.dy);
         } else {
-          t = Offset(t.dx, t.dy - crossoverAdjust);
+          t = Offset(t!.dx, t!.dy - crossoverAdjust);
         }
-        double displacement = t.dy - y6;
-        if (tl.dy + displacement > 0) {
-          tl = Offset(tl.dx, tl.dy + displacement);
+        double displacement = t!.dy - y6;
+        if (tl!.dy + displacement > 0) {
+          tl = Offset(tl!.dx, tl!.dy + displacement);
         }
-        if (tr.dy + displacement > 0) {
-          tr = Offset(tr.dx, tr.dy + displacement);
+        if (tr!.dy + displacement > 0) {
+          tr = Offset(tr!.dx, tr!.dy + displacement);
         }
-        l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
-        r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
+        l = Offset((tl!.dx + bl!.dx) / 2, (tl!.dy + bl!.dy) / 2);
+        r = Offset((tr!.dx + br!.dx) / 2, (tr!.dy + br!.dy) / 2);
       });
     } else if (sqrt(pow((x7 - x1), 2) + pow((y7 - y1), 2)) < 15 &&
         y1 >= 0 &&
-        y1 <= height &&
-        x1 < width &&
+        y1 <= height! &&
+        x1 < width! &&
         x1 >= 0) {
       setState(() {
-        if (t.dy < b.dy - crossoverThreshold) {
-          b = Offset(b.dx, points.localPosition.dy);
+        if (t!.dy < b!.dy - crossoverThreshold) {
+          b = Offset(b!.dx, points.localPosition.dy);
         } else {
-          b = Offset(b.dx, b.dy + crossoverAdjust);
+          b = Offset(b!.dx, b!.dy + crossoverAdjust);
         }
-        double displacement = y7 - b.dy;
-        if (bl.dy - displacement < height) {
-          bl = Offset(bl.dx, bl.dy - displacement);
+        double displacement = y7 - b!.dy;
+        if (bl!.dy - displacement < height!) {
+          bl = Offset(bl!.dx, bl!.dy - displacement);
         }
-        if (br.dy - displacement < height) {
-          br = Offset(br.dx, br.dy - displacement);
+        if (br!.dy - displacement < height!) {
+          br = Offset(br!.dx, br!.dy - displacement);
         }
-        l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
-        r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
+        l = Offset((tl!.dx + bl!.dx) / 2, (tl!.dy + bl!.dy) / 2);
+        r = Offset((tr!.dx + br!.dx) / 2, (tr!.dy + br!.dy) / 2);
       });
     } else if (sqrt(pow((x8 - x1), 2) + pow((y8 - y1), 2)) < 15 &&
         y1 >= 0 &&
-        y1 <= height &&
-        x1 < width &&
+        y1 <= height! &&
+        x1 < width! &&
         x1 >= 0) {
       setState(() {
-        if (l.dx < r.dx - crossoverThreshold) {
-          l = Offset(points.localPosition.dx, l.dy);
+        if (l!.dx < r!.dx - crossoverThreshold) {
+          l = Offset(points.localPosition.dx, l!.dy);
         } else {
-          l = Offset(l.dx, l.dy - crossoverAdjust);
+          l = Offset(l!.dx, l!.dy - crossoverAdjust);
         }
-        double displacement = l.dx - x8;
-        if (tl.dx + displacement > 0) {
-          tl = Offset(tl.dx + displacement, tl.dy);
+        double displacement = l!.dx - x8;
+        if (tl!.dx + displacement > 0) {
+          tl = Offset(tl!.dx + displacement, tl!.dy);
         }
-        if (bl.dx + displacement > 0) {
-          bl = Offset(bl.dx + displacement, bl.dy);
+        if (bl!.dx + displacement > 0) {
+          bl = Offset(bl!.dx + displacement, bl!.dy);
         }
-        t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
-        b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
+        t = Offset((tr!.dx + tl!.dx) / 2, (tr!.dy + tl!.dy) / 2);
+        b = Offset((br!.dx + bl!.dx) / 2, (br!.dy + bl!.dy) / 2);
       });
     } else if (sqrt(pow((x9 - x1), 2) + pow((y9 - y1), 2)) < 15 &&
         y1 >= 0 &&
-        y1 <= height &&
-        x1 < width &&
+        y1 <= height! &&
+        x1 < width! &&
         x1 >= 0) {
       setState(() {
-        if (l.dx < r.dx - crossoverThreshold) {
-          r = Offset(points.localPosition.dx, r.dy);
+        if (l!.dx < r!.dx - crossoverThreshold) {
+          r = Offset(points.localPosition.dx, r!.dy);
         } else {
-          r = Offset(r.dx, r.dy + crossoverAdjust);
+          r = Offset(r!.dx, r!.dy + crossoverAdjust);
         }
-        double displacement = x9 - r.dx;
-        if (tr.dx - displacement < width) {
-          tr = Offset(tr.dx - displacement, tr.dy);
+        double displacement = x9 - r!.dx;
+        if (tr!.dx - displacement < width!) {
+          tr = Offset(tr!.dx - displacement, tr!.dy);
         }
-        if (br.dx - displacement < width) {
-          br = Offset(br.dx - displacement, br.dy);
+        if (br!.dx - displacement < width!) {
+          br = Offset(br!.dx - displacement, br!.dy);
         }
-        t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
-        b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
+        t = Offset((tr!.dx + tl!.dx) / 2, (tr!.dy + tl!.dy) / 2);
+        b = Offset((br!.dx + bl!.dx) / 2, (br!.dy + bl!.dy) / 2);
       });
     }
 
     setState(() {
-      if (tl.dx < 0) tl = Offset(0, tl.dy);
-      if (tl.dy < 0) tl = Offset(tl.dx, 0);
-      if (tr.dx > width) tr = Offset(width, tr.dy);
-      if (tr.dy < 0) tr = Offset(tr.dx, 0);
-      if (bl.dx < 0) bl = Offset(0, bl.dy);
-      if (bl.dy > height) bl = Offset(bl.dx, height);
-      if (br.dx > width) br = Offset(width, br.dy);
-      if (br.dy > height) br = Offset(br.dx, height);
+      if (tl!.dx < 0) tl = Offset(0, tl!.dy);
+      if (tl!.dy < 0) tl = Offset(tl!.dx, 0);
+      if (tr!.dx > width!) tr = Offset(width!, tr!.dy);
+      if (tr!.dy < 0) tr = Offset(tr!.dx, 0);
+      if (bl!.dx < 0) bl = Offset(0, bl!.dy);
+      if (bl!.dy > height!) bl = Offset(bl!.dx, height!);
+      if (br!.dx > width!) br = Offset(width!, br!.dy);
+      if (br!.dy > height!) br = Offset(br!.dx, height!);
     });
   }
 
@@ -372,24 +372,24 @@ class _CropImageState extends State<CropImage> {
       isLoading = true;
     });
 
-    List imageSize = await channel.invokeMethod("getImageSize", {
-      "path": imageFile.path,
-    });
+    List imageSize = await (channel.invokeMethod("getImageSize", {
+      "path": imageFile!.path,
+    }) as FutureOr<List<dynamic>>);
 
     imageSize = [imageSize[0].toDouble(), imageSize[1].toDouble()];
     imageBitmapSize = Size(imageSize[0], imageSize[1]);
 
-    double tlX = (imageBitmapSize.width / width) * tl.dx;
-    double trX = (imageBitmapSize.width / width) * tr.dx;
-    double blX = (imageBitmapSize.width / width) * bl.dx;
-    double brX = (imageBitmapSize.width / width) * br.dx;
+    double tlX = (imageBitmapSize.width / width!) * tl!.dx;
+    double trX = (imageBitmapSize.width / width!) * tr!.dx;
+    double blX = (imageBitmapSize.width / width!) * bl!.dx;
+    double brX = (imageBitmapSize.width / width!) * br!.dx;
 
-    double tlY = (imageBitmapSize.height / height) * tl.dy;
-    double trY = (imageBitmapSize.height / height) * tr.dy;
-    double blY = (imageBitmapSize.height / height) * bl.dy;
-    double brY = (imageBitmapSize.height / height) * br.dy;
+    double tlY = (imageBitmapSize.height / height!) * tl!.dy;
+    double trY = (imageBitmapSize.height / height!) * tr!.dy;
+    double blY = (imageBitmapSize.height / height!) * bl!.dy;
+    double brY = (imageBitmapSize.height / height!) * br!.dy;
     await channel.invokeMethod('cropImage', {
-      'path': imageFile.path,
+      'path': imageFile!.path,
       'tl_x': tlX,
       'tl_y': tlY,
       'tr_x': trX,
@@ -400,7 +400,7 @@ class _CropImageState extends State<CropImage> {
       'br_y': brY,
     });
 
-    print('cropper: ${imageFile.path}');
+    print('cropper: ${imageFile!.path}');
     Navigator.pop(context, imageFile);
   }
 
@@ -408,9 +408,9 @@ class _CropImageState extends State<CropImage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: WillPopScope(
-        onWillPop: () {
-          Navigator.pop(context, null);
-          return;
+        onWillPop: () async {
+          // Navigator.pop(context, null);
+          return true;
         },
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
@@ -443,7 +443,7 @@ class _CropImageState extends State<CropImage> {
                           color: Theme.of(context).primaryColor,
                           child: CustomPaint(
                             child: Image.file(
-                              imageFile,
+                              imageFile!,
                               key: key,
                             ),
                           ),
@@ -497,9 +497,9 @@ class _CropImageState extends State<CropImage> {
             child: Text('Rotate left'),
             onPressed: () async {
               File tempImageFile = File(
-                  imageFile.path.substring(0, imageFile.path.lastIndexOf('.')) +
+                  imageFile!.path.substring(0, imageFile!.path.lastIndexOf('.')) +
                       'r.jpg');
-              imageFile.copySync(tempImageFile.path);
+              imageFile!.copySync(tempImageFile.path);
               await channel.invokeMethod("rotateImage", {
                 'path': tempImageFile.path,
                 'degree': -90,
@@ -509,7 +509,7 @@ class _CropImageState extends State<CropImage> {
                 // tempImageFile.copySync(imageFile.path);
                 imageFile = File(tempImageFile.path);
               });
-              WidgetsBinding.instance.addPostFrameCallback(
+              WidgetsBinding.instance!.addPostFrameCallback(
                 (_) => getImageSize(false),
               );
               // tempImageFile.deleteSync();
@@ -521,10 +521,10 @@ class _CropImageState extends State<CropImage> {
               child: Text('Rotate right'),
               color: Theme.of(context).accentColor,
               onPressed: () async {
-                File tempImageFile = File(imageFile.path
-                        .substring(0, imageFile.path.lastIndexOf('.')) +
+                File tempImageFile = File(imageFile!.path
+                        .substring(0, imageFile!.path.lastIndexOf('.')) +
                     'r.jpg');
-                imageFile.copySync(tempImageFile.path);
+                imageFile!.copySync(tempImageFile.path);
                 await channel.invokeMethod("rotateImage", {
                   'path': tempImageFile.path,
                   'degree': 90,
@@ -534,7 +534,7 @@ class _CropImageState extends State<CropImage> {
                   // tempImageFile.copySync(imageFile.path);
                   imageFile = File(tempImageFile.path);
                 });
-                WidgetsBinding.instance.addPostFrameCallback(
+                WidgetsBinding.instance!.addPostFrameCallback(
                   (_) => getImageSize(false),
                 );
                 // rebuildAllChildren(context);

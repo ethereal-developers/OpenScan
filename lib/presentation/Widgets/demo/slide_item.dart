@@ -30,7 +30,7 @@ class Slide {
   final String imageUrl;
 
   Slide({
-    @required this.imageUrl,
+    required this.imageUrl,
   });
 }
 

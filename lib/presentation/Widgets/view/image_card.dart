@@ -6,15 +6,13 @@ import 'package:openscan/core/models.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 
 class ImageCard extends StatelessWidget {
-  final ImageOS image;
-  final Function onPressed;
-  // final Function onLongPressed;
-  final Function onSelect;
+  final ImageOS? image;
+  final void Function()? onPressed;
+  final void Function()? onSelect;
 
   ImageCard({
     this.image,
     this.onPressed,
-    // this.onLongPressed,
     this.onSelect,
   });
 
@@ -28,12 +26,12 @@ class ImageCard extends StatelessWidget {
           color: Theme.of(context).primaryColor,
           onPressed: onPressed,
           child: Container(
-            child: Image.file(File(image.imgPath)),
+            child: Image.file(File(image!.imgPath!)),
             height: size.height * 0.25,
             width: size.width * 0.38,
           ),
         ),
-        (image.selected)
+        (image!.selected)
             ? Positioned.fill(
                 child: GestureDetector(
                   onTap: onPressed,
@@ -57,23 +55,13 @@ class ImageCard extends StatelessWidget {
           right: 10,
           child: CircleAvatar(
             backgroundColor: AppTheme.accentColor.withOpacity(0.8),
-            radius: 15,
+            radius: 13,
             child: Text(
-              image.idx.toString(),
-              style: TextStyle(color: AppTheme.primaryColor),
+              image!.idx.toString(),
+              style: TextStyle(color: AppTheme.primaryColor, fontSize: 14),
             ),
           ),
         ),
-        // (enableReorder)
-        //     ? Positioned.fill(
-        //         child: Container(
-        //           color: Colors.transparent,
-        //         ),
-        //       )
-        //     : Container(
-        //         width: 0.001,
-        //         height: 0.001,
-        //       ),
       ],
     );
   }
