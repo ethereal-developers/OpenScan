@@ -9,19 +9,19 @@ class PolygonPainter extends CustomPainter {
       {this.tl, this.tr, this.bl, this.br, this.t, this.l, this.r, this.b});
 
   Paint linesConnectingDots = Paint()
-    ..color = AppTheme.accentColor.withOpacity(0.4)
+    ..color = AppTheme.secondaryColor.withOpacity(0.4)
     ..strokeWidth = 1
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.fill;
 
   Paint linesConnectingDotsOutline = Paint()
-    ..color = AppTheme.accentColor.withOpacity(0.9)
+    ..color = AppTheme.secondaryColor.withOpacity(0.9)
     ..strokeWidth = 1
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.stroke;
 
   Paint dots = Paint()
-    ..color = AppTheme.accentColor.withOpacity(0.6)
+    ..color = AppTheme.secondaryColor.withOpacity(0.6)
     ..strokeWidth = 3
     ..strokeCap = StrokeCap.round;
 

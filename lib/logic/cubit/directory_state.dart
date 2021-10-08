@@ -4,7 +4,7 @@ class DirectoryState {
   String? dirName;
   String? dirPath;
   DateTime? created;
-  int? imageCount;
+  int imageCount;
   String? firstImgPath;
   DateTime? lastModified;
   String? newName;
@@ -15,7 +15,7 @@ class DirectoryState {
     this.created,
     this.dirPath,
     this.firstImgPath,
-    this.imageCount,
+    this.imageCount = 0,
     this.lastModified,
     this.newName,
     this.images,

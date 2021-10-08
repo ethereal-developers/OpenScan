@@ -79,7 +79,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 children: [
                   TextSpan(
                       text: 'Scan',
-                      style: TextStyle(color: Theme.of(context).accentColor))
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.secondary))
                 ],
               ),
             ),

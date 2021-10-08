@@ -39,10 +39,10 @@ class ImageCard extends StatelessWidget {
                     foregroundDecoration: BoxDecoration(
                       border: Border.all(
                         width: 3,
-                        color: AppTheme.accentColor,
+                        color: AppTheme.secondaryColor,
                       ),
                     ),
-                    color: AppTheme.accentColor.withOpacity(0.3),
+                    color: AppTheme.secondaryColor.withOpacity(0.3),
                   ),
                 ),
               )
@@ -54,7 +54,7 @@ class ImageCard extends StatelessWidget {
           bottom: 10,
           right: 10,
           child: CircleAvatar(
-            backgroundColor: AppTheme.accentColor.withOpacity(0.8),
+            backgroundColor: AppTheme.secondaryColor.withOpacity(0.8),
             radius: 13,
             child: Text(
               image!.idx.toString(),

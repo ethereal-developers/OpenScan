@@ -56,8 +56,8 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
       overlayOpacity: 0.5,
       tooltip: 'Scan Options',
       heroTag: 'speed-dial-hero-tag',
-      backgroundColor: Theme.of(context).accentColor,
-      foregroundColor: Theme.of(context).primaryColor,
+      backgroundColor: Theme.of(context).colorScheme.secondary,
+      foregroundColor: Theme.of(context).colorScheme.primary,
       elevation: 8.0,
       shape: CircleBorder(),
       onOpen: () {
@@ -70,34 +70,34 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
         SpeedDialChild(
           child: Icon(
             Icons.camera_alt_rounded,
-            color: Theme.of(context).primaryColor,
+            color: Theme.of(context).colorScheme.primary,
           ),
           backgroundColor: Colors.white,
           label: 'Normal Scan',
           labelStyle:
-              TextStyle(fontSize: 18.0, color: Theme.of(context).primaryColor),
+              TextStyle(fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
           onTap: widget.normalScanOnPressed,
         ),
         SpeedDialChild(
           child: Icon(
             Icons.timelapse_rounded,
-            color: Theme.of(context).primaryColor,
+            color: Theme.of(context).colorScheme.primary,
           ),
           backgroundColor: Colors.white,
           label: 'Quick Scan',
           labelStyle:
-              TextStyle(fontSize: 18.0, color: Theme.of(context).primaryColor),
+              TextStyle(fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
           onTap: widget.quickScanOnPressed,
         ),
         SpeedDialChild(
           child: Icon(
             Icons.image_rounded,
-            color: Theme.of(context).primaryColor,
+            color: Theme.of(context).colorScheme.primary,
           ),
           backgroundColor: Colors.white,
           label: 'Import from Gallery',
           labelStyle:
-              TextStyle(fontSize: 18.0, color: Theme.of(context).primaryColor),
+              TextStyle(fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
           onTap: widget.galleryOnPressed,
         ),
       ],

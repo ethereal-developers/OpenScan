@@ -62,7 +62,7 @@ class DatabaseHelper {
       'new_name': directory.newName
     });
 
-    getDirectoryTableName(directory.dirName!);
+    getDirectoryTableName(directory.dirName);
     print('Directory Index: $index');
     db.execute('''
       CREATE TABLE $_dirTableName(
@@ -124,10 +124,13 @@ class DatabaseHelper {
         where: 'dir_path == ?', whereArgs: [dirPath]);
   }
 
-  Future<int> renameDirectory({required DirectoryOS directory}) async {
+  Future<int> renameDirectory({
+    required String tableName,
+    required String newName,
+  }) async {
     Database db = await instance.database;
-    return await db.update(_masterTableName, {'new_name': directory.newName},
-        where: 'dir_name == ?', whereArgs: [directory.dirName]);
+    return await db.update(_masterTableName, {'new_name': newName},
+        where: 'dir_name == ?', whereArgs: [tableName]);
   }
 
   void updateImageCount({required String tableName}) async {

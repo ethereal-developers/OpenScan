@@ -58,7 +58,8 @@ class AboutScreen extends StatelessWidget {
                   children: [
                     TextSpan(
                         text: 'Scan',
-                        style: TextStyle(color: Theme.of(context).accentColor)),
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.secondary)),
                     TextSpan(
                       text:
                           ' is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file.',
@@ -156,7 +157,8 @@ class AboutScreen extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: '3.0.0',
-                    style: TextStyle(color: Theme.of(context).accentColor),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.secondary),
                   ),
                 ],
               ),
@@ -199,7 +201,7 @@ class AboutScreen extends StatelessWidget {
 //           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
 //           children: <Widget>[
 //             CircleAvatar(
-//               backgroundColor: Theme.of(context).accentColor,
+//               backgroundColor: Theme.of(context).colorScheme.secondary,
 //               radius: size.width * 0.13,
 //               backgroundImage: image,
 //             ),

@@ -7,11 +7,11 @@ import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/models.dart';
-import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
-import 'package:openscan/presentation/screens/about_screen.dart';
-import 'package:openscan/presentation/screens/demo_screen.dart';
+import 'package:openscan/presentation/Widgets/delete_dialog.dart';
+import 'package:openscan/presentation/Widgets/drawer.dart';
+import 'package:openscan/presentation/Widgets/renameDialog.dart';
 import 'package:openscan/presentation/screens/view_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quick_actions/quick_actions.dart';
@@ -47,10 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
     await Permission.camera.request();
     return false;
   }
-
-  // void askPermission() async {
-  //   await _requestPermission();
-  // }
 
   pushView({String? scanType, DirectoryOS? masterDirectory}) {
     switch (scanType) {
@@ -134,8 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<List<DirectoryOS>> getMasterData() async {
     masterDirectories = [];
-    masterData =
-        await database.getMasterData();
+    masterData = await database.getMasterData();
     print('Master Table => $masterData');
     for (var directory in masterData) {
       var alreadyExistsFlag = false;
@@ -207,111 +202,17 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               TextSpan(
                 text: 'Scan',
-                style: TextStyle(color: AppTheme.accentColor),
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.secondary),
               ),
             ],
           ),
         ),
       ),
-      drawer: Container(
-        width: size.width * 0.55,
-        color: Theme.of(context).primaryColor,
-        child: Column(
-          children: <Widget>[
-            Spacer(),
-            Image.asset(
-              'assets/scan_g.jpeg',
-              scale: 6,
-            ),
-            Spacer(),
-            Divider(
-              thickness: 0.2,
-              indent: 6,
-              endIndent: 6,
-              color: Colors.white24,
-            ),
-            ListTile(
-              title: Center(
-                child: Text(
-                  'Home',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
-              ),
-              onTap: () => Navigator.pop(context),
-            ),
-            Divider(
-              thickness: 0.2,
-              indent: 6,
-              endIndent: 6,
-              color: Colors.white24,
-            ),
-            ListTile(
-              title: Center(
-                child: Text(
-                  'About',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, AboutScreen.route);
-              },
-            ),
-            Divider(
-              thickness: 0.2,
-              indent: 6,
-              endIndent: 6,
-              color: Colors.white24,
-            ),
-            ListTile(
-              title: Center(
-                child: Text(
-                  'Demo',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DemoScreen(
-                      showSkip: false,
-                    ),
-                  ),
-                );
-              },
-            ),
-            Divider(
-              thickness: 0.2,
-              indent: 6,
-              endIndent: 6,
-              color: Colors.white24,
-            ),
-            Spacer(
-              flex: 4,
-            ),
-            IconButton(
-              icon: Icon(Icons.arrow_back_ios),
-              onPressed: () => Navigator.pop(context),
-              color: Theme.of(context).accentColor,
-            ),
-            Spacer(),
-          ],
-        ),
-      ),
+      drawer: CustomDrawer(),
       body: RefreshIndicator(
         backgroundColor: Theme.of(context).primaryColor,
-        color: Theme.of(context).accentColor,
+        color: Theme.of(context).colorScheme.secondary,
         onRefresh: homeRefresh,
         child: Column(
           children: <Widget>[
@@ -340,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           title: Text(
                             masterDirectories[index].newName ??
-                                masterDirectories[index].dirName!,
+                                masterDirectories[index].dirName,
                             style: TextStyle(fontSize: 14),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -360,12 +261,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           trailing: Icon(
                             Icons.arrow_right_rounded,
                             size: 30,
-                            color: Theme.of(context).accentColor,
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                           onTap: () async {
                             pushView(
-                                scanType: 'default',
-                                masterDirectory: masterDirectories[index]);
+                              scanType: 'default',
+                              masterDirectory: masterDirectories[index],
+                            );
                           },
                         ),
                         menuItems: [
@@ -379,88 +281,18 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: Colors.black,
                             ),
                             onPressed: () {
-                              bool isEmptyError = false;
                               showDialog(
                                 context: context,
                                 builder: (context) {
-                                  String? fileName;
-                                  return StatefulBuilder(
-                                    builder: (BuildContext context,
-                                        void Function(void Function())
-                                            setState) {
-                                      return AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(10),
-                                          ),
-                                        ),
-                                        title: Text('Rename File'),
-                                        content: TextField(
-                                          controller: TextEditingController(
-                                            text: fileName ??
-                                                masterDirectories[index]
-                                                    .newName,
-                                          ),
-                                          onChanged: (value) {
-                                            fileName = value;
-                                          },
-                                          cursorColor:
-                                              Theme.of(context).accentColor,
-                                          textCapitalization:
-                                              TextCapitalization.words,
-                                          decoration: InputDecoration(
-                                            prefixStyle:
-                                                TextStyle(color: Colors.white),
-                                            focusedBorder: UnderlineInputBorder(
-                                              borderSide: BorderSide(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
-                                            ),
-                                            errorText: isEmptyError
-                                                ? 'Error! File name cannot be empty'
-                                                : null,
-                                          ),
-                                        ),
-                                        actions: <Widget>[
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: Text(
-                                              'Cancel',
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              fileName = fileName!.trim();
-                                              fileName =
-                                                  fileName!.replaceAll('/', '');
-                                              if (fileName!.isNotEmpty) {
-                                                masterDirectories[index]
-                                                    .newName = fileName;
-                                                database.renameDirectory(
-                                                    directory:
-                                                        masterDirectories[
-                                                            index]);
-                                                Navigator.pop(context);
-                                                homeRefresh();
-                                              } else {
-                                                setState(() {
-                                                  isEmptyError = true;
-                                                });
-                                              }
-                                            },
-                                            child: Text(
-                                              'Save',
-                                              style: TextStyle(
-                                                  color: Theme.of(context)
-                                                      .accentColor),
-                                            ),
-                                          ),
-                                        ],
-                                      );
+                                  return RenameDialog(
+                                    onConfirm: (value) {
+                                      homeRefresh();
                                     },
+                                    docTableName:
+                                        masterDirectories[index].dirName,
+                                    fileName:
+                                        masterDirectories[index].newName ??
+                                            masterDirectories[index].dirName,
                                   );
                                 },
                               ).whenComplete(() {
@@ -475,42 +307,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             onPressed: () {
                               showDialog(
                                 context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(10),
-                                      ),
-                                    ),
-                                    title: Text('Delete'),
-                                    content: Text(
-                                        'Do you really want to delete file?'),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: Text(
-                                          'Cancel',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Directory(masterDirectories[index]
-                                                  .dirPath!)
-                                              .deleteSync(recursive: true);
-                                          database.deleteDirectory(
-                                              dirPath: masterDirectories[index]
-                                                  .dirPath!);
-                                          Navigator.pop(context);
-                                          homeRefresh();
-                                        },
-                                        child: Text(
-                                          'Delete',
-                                          style: TextStyle(
-                                              color: Colors.redAccent),
-                                        ),
-                                      ),
-                                    ],
+                                builder: (_) {
+                                  return DeleteDialog(
+                                    deleteOnPressed: () {
+                                      Directory(
+                                              masterDirectories[index].dirPath)
+                                          .deleteSync(recursive: true);
+                                      database.deleteDirectory(
+                                          dirPath:
+                                              masterDirectories[index].dirPath);
+                                      Navigator.pop(context);
+                                      homeRefresh();
+                                    },
                                   );
                                 },
                               ).whenComplete(() {

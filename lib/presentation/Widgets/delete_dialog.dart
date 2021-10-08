@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
 class DeleteDialog extends StatelessWidget {
-  final void Function()? cancelOnPressed;
   final void Function()? deleteOnPressed;
   DeleteDialog({
-    this.cancelOnPressed,
     this.deleteOnPressed,
   });
 
@@ -20,7 +18,7 @@ class DeleteDialog extends StatelessWidget {
       content: Text('Do you really want to delete this file?'),
       actions: <Widget>[
         TextButton(
-          onPressed: cancelOnPressed,
+          onPressed: () => Navigator.pop(context),
           child: Text(
             'Cancel',
             style: TextStyle(

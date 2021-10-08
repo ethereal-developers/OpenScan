@@ -21,7 +21,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     DateTime? created,
     String? dirPath,
     String? firstImgPath,
-    int? imageCount,
+    int imageCount = 0,
     DateTime? lastModified,
     String? newName,
     List<ImageOS>? images,
@@ -90,10 +90,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         tempImage,
       );
     }
-
-    //TODO: Sort images
-
-
     state.imageCount = state.images!.length;
 
     emitState(state);
@@ -169,7 +165,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         print('Saved ${savedImage.path}');
 
         ImageOS tempImage = ImageOS(
-          idx: state.imageCount! + 1,
+          idx: state.imageCount + 1,
           imgPath: savedImage.path,
         );
         print(tempImage.idx);
@@ -193,16 +189,14 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     );
 
     // Creating new imagePath for cropped image
-    if (image != null) {
-      File temp = File(
-          imageOS.imgPath!.substring(0, imageOS.imgPath!.lastIndexOf("/")) +
-              '/' +
-              DateTime.now().toString() +
-              '.jpg');
-      image.copySync(temp.path);
-      File(imageOS.imgPath!).deleteSync();
-      imageOS.imgPath = temp.path;
-    }
+    File temp = File(
+        imageOS.imgPath!.substring(0, imageOS.imgPath!.lastIndexOf("/")) +
+            '/' +
+            DateTime.now().toString() +
+            '.jpg');
+    image.copySync(temp.path);
+    File(imageOS.imgPath!).deleteSync();
+    imageOS.imgPath = temp.path;
     print('Image Cropped');
 
     database.updateImagePath(
@@ -240,13 +234,13 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       Navigator.pop(context);
       print('Directory deleted');
     } catch (e) {
-      state.images!.removeAt(imageToDelete.idx! - 1);
+      state.images!.remove(imageToDelete);
       state.imageCount = state.images!.length;
+      database.updateImageCount(tableName: state.dirName!);
 
       // Updating index of images
-      for (int i = imageToDelete.idx! - 1; i < state.imageCount!; i++) {
+      for (int i = imageToDelete.idx! - 1; i < state.imageCount; i++) {
         state.images![i].idx = i + 1;
-        print('image[$i] = ${i + 1}');
         database.updateImageIndex(
           imgPath: state.images![i].imgPath,
           newIndex: state.images![i].idx,
@@ -286,11 +280,65 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     emitState(state);
   }
 
-  deleteMultipleImages() {
-    bool isFirstImage = false;
+  renameDocument(String newName) {
+    state.newName = newName;
+    emitState(state);
+  }
+
+  deleteMultipleImages(context) {
+    bool firstImageDeleted = false;
+    for (int i = 0; i < state.imageCount; i++) {
+      if (state.images![i].selected) {
+        /// Deleting image from storage
+        File(state.images![i].imgPath!).deleteSync();
+        database.deleteImage(
+          imgPath: state.images![i].imgPath,
+          tableName: state.dirName!,
+        );
+        firstImageDeleted = state.images![i].idx == 1;
+
+        /// Removing image from cubit
+        bool res = state.images!.remove(state.images![i]);
+        print(res ? 'Image: \@\#\!\$\&' : 'Image: Oh no!!!');
+        // state.images!.removeAt(image.idx! - 1);
+        state.imageCount = state.images!.length;
+      }
+    }
+
+    try {
+      // Delete directory if only 1 image exists
+      Directory(state.dirPath!).deleteSync(recursive: false);
+      database.deleteDirectory(dirPath: state.dirPath!);
+      Navigator.pop(context);
+      print('Directory: \@\#\!\$\&');
+    } catch (e) {
+      print('Directory: What a save!');
+
+      /// Update first image path
+      if (firstImageDeleted) {
+        database.updateFirstImagePath(
+          imagePath: state.images![0].imgPath,
+          dirPath: state.dirPath,
+        );
+      }
+
+      database.updateImageCount(tableName: state.dirName!);
+
+      /// Updating images index
+      for (int i = 0; i < state.imageCount; i++) {
+        state.images![i].idx = i + 1;
+        database.updateImageIndex(
+          imgPath: state.images![i].imgPath,
+          newIndex: state.images![i].idx,
+          tableName: state.dirName!,
+        );
+      }
+    }
+
+    // bool isFirstImage = false;
     // for (var i = 0; i < directoryImages.length; i++) {
     //   if (selectedImageIndex[i]) {
-    //     // print('${directoryImages[i].idx}: ${directoryImages[i].imgPath}');
+    //     print('${directoryImages[i].idx}: ${directoryImages[i].imgPath}');
     //     if (directoryImages[i].imgPath == state.firstImgPath) {
     //       isFirstImage = true;
     //     }
@@ -302,15 +350,15 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     //     );
     //   }
     // }
-    database.updateImageCount(
-      tableName: state.dirName!,
-    );
-    try {
-      Directory(state.dirPath!).deleteSync(recursive: false);
-      database.deleteDirectory(dirPath: state.dirPath!);
-    } catch (e) {
-      print('Directory can\'t be deleted as it contains other files');
-    }
+    // database.updateImageCount(
+    //   tableName: state.dirName!,
+    // );
+    // try {
+    //   Directory(state.dirPath!).deleteSync(recursive: false);
+    //   database.deleteDirectory(dirPath: state.dirPath!);
+    // } catch (e) {
+    //   print('Directory can\'t be deleted as it contains other files');
+    // }
     // removeSelection();
     // Navigator.pop(context);
   }

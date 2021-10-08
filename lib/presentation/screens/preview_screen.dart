@@ -140,7 +140,6 @@ class _PreviewScreenState extends State<PreviewScreen> {
                                 );
                                 Navigator.pop(context);
                               },
-                              cancelOnPressed: () => Navigator.pop(context),
                             );
                           },
                         );

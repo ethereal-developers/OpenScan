@@ -67,9 +67,12 @@ class _QualitySelectorState extends State<QualitySelector> {
                       bottomLeft: Radius.circular(5),
                     ),
                     border: Border.all(
-                        color: Theme.of(context).accentColor.withOpacity(0.5)),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .secondary
+                            .withOpacity(0.5)),
                     color: (quality == 1)
-                        ? Theme.of(context).accentColor
+                        ? Theme.of(context).colorScheme.secondary
                         : Theme.of(context).primaryColor,
                   ),
                   height: 35,
@@ -79,7 +82,7 @@ class _QualitySelectorState extends State<QualitySelector> {
                     style: TextStyle(
                       color: (quality == 1)
                           ? Theme.of(context).primaryColor
-                          : Theme.of(context).accentColor,
+                          : Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                   alignment: Alignment.center,
@@ -98,10 +101,13 @@ class _QualitySelectorState extends State<QualitySelector> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: (quality == 2)
-                        ? Theme.of(context).accentColor
+                        ? Theme.of(context).colorScheme.secondary
                         : Theme.of(context).primaryColor,
                     border: Border.all(
-                      color: Theme.of(context).accentColor.withOpacity(0.5),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .secondary
+                          .withOpacity(0.5),
                     ),
                   ),
                   height: 35,
@@ -111,7 +117,7 @@ class _QualitySelectorState extends State<QualitySelector> {
                     style: TextStyle(
                       color: (quality == 2)
                           ? Theme.of(context).primaryColor
-                          : Theme.of(context).accentColor,
+                          : Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                   alignment: Alignment.center,
@@ -134,10 +140,13 @@ class _QualitySelectorState extends State<QualitySelector> {
                       bottomRight: Radius.circular(5),
                     ),
                     border: Border.all(
-                      color: Theme.of(context).accentColor.withOpacity(0.5),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .secondary
+                          .withOpacity(0.5),
                     ),
                     color: (quality == 3)
-                        ? Theme.of(context).accentColor
+                        ? Theme.of(context).colorScheme.secondary
                         : Theme.of(context).primaryColor,
                   ),
                   height: 35,
@@ -147,7 +156,7 @@ class _QualitySelectorState extends State<QualitySelector> {
                     style: TextStyle(
                       color: (quality == 3)
                           ? Theme.of(context).primaryColor
-                          : Theme.of(context).accentColor,
+                          : Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                   alignment: Alignment.center,
@@ -173,7 +182,8 @@ class _QualitySelectorState extends State<QualitySelector> {
                 },
                 child: Text(
                   'Done',
-                  style: TextStyle(color: Theme.of(context).accentColor),
+                  style:
+                      TextStyle(color: Theme.of(context).colorScheme.secondary),
                 ),
               ),
             ],

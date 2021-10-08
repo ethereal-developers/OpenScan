@@ -69,7 +69,7 @@ class _DemoScreenState extends State<DemoScreen> {
                           child: Text(
                             (isDone) ? 'Done' : 'Skip',
                             style: TextStyle(
-                              color: Theme.of(context).accentColor,
+                              color: Theme.of(context).colorScheme.secondary,
                               fontSize: 17,
                               fontWeight: (isDone)
                                   ? FontWeight.w600
@@ -84,7 +84,7 @@ class _DemoScreenState extends State<DemoScreen> {
                             : Icon(
                                 Icons.arrow_forward_ios,
                                 size: 17,
-                                color: Theme.of(context).accentColor,
+                                color: Theme.of(context).colorScheme.secondary,
                               )
                       ],
                     ),
@@ -104,18 +104,13 @@ class _DemoScreenState extends State<DemoScreen> {
                 child: Stack(
                   alignment: AlignmentDirectional.bottomCenter,
                   children: <Widget>[
-                    Theme(
-                      data: Theme.of(context).copyWith(
-                        accentColor: Theme.of(context).primaryColor,
-                      ),
-                      child: PageView.builder(
-                        scrollDirection: Axis.horizontal,
-                        onPageChanged: _onPageChanged,
-                        itemCount: slideList.length,
-                        itemBuilder: (ctx, i) {
-                          return SlideItem(i);
-                        },
-                      ),
+                    PageView.builder(
+                      scrollDirection: Axis.horizontal,
+                      onPageChanged: _onPageChanged,
+                      itemCount: slideList.length,
+                      itemBuilder: (ctx, i) {
+                        return SlideItem(i);
+                      },
                     ),
                     Stack(
                       alignment: AlignmentDirectional.topStart,
