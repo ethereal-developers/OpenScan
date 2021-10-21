@@ -6,6 +6,7 @@ import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/Widgets/delete_dialog.dart';
 import 'package:openscan/presentation/Widgets/renameDialog.dart';
+import 'package:openscan/presentation/Widgets/view/custom_bottomsheet.dart';
 import 'package:openscan/presentation/Widgets/view/icon_gesture.dart';
 import 'package:openscan/presentation/Widgets/view/image_card.dart';
 import 'package:openscan/presentation/extensions.dart';
@@ -28,6 +29,7 @@ class ViewScreen extends StatefulWidget {
 
 class _ViewScreenState extends State<ViewScreen> {
   static bool selectionEnabled = false;
+  GlobalKey scaffoldKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
   void initState() {
@@ -48,6 +50,7 @@ class _ViewScreenState extends State<ViewScreen> {
           return true;
         },
         child: Scaffold(
+          key: scaffoldKey,
           backgroundColor: AppTheme.backgroundColor,
           // key: scaffoldKey,
           appBar: AppBar(
@@ -169,6 +172,15 @@ class _ViewScreenState extends State<ViewScreen> {
                       icon: Icon(Icons.share_rounded),
                       onTap: () {
                         print('share');
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (_) {
+                            return BlocProvider<DirectoryCubit>.value(
+                              value: BlocProvider.of<DirectoryCubit>(context),
+                              child: CustomBottomSheet(),
+                            );
+                          },
+                        );
                       },
                     ),
                   ],

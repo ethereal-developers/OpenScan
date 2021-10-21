@@ -478,13 +478,13 @@ class _CropImageState extends State<CropImage> {
                     ),
                   ),
           ),
-          bottomNavigationBar: bottomSheet(),
+          bottomNavigationBar: bottomBar(),
         ),
       ),
     );
   }
 
-  Widget bottomSheet() {
+  Widget bottomBar() {
     return Container(
       color: Theme.of(context).primaryColor,
       width: MediaQuery.of(context).size.width,
