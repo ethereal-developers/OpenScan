@@ -203,8 +203,11 @@ class _CropImageState extends State<CropImage> {
         x1 < width! &&
         x1 >= 0) {
       setState(() {
-        bool isConvexPolygon = checkPolygon(tl!, br!,
-            Offset(tr!.dx - crossoverThreshold, tr!.dy - crossoverThreshold), bl!);
+        bool isConvexPolygon = checkPolygon(
+            tl!,
+            br!,
+            Offset(tr!.dx - crossoverThreshold, tr!.dy - crossoverThreshold),
+            bl!);
         if (tr!.dx > tl!.dx + crossoverThreshold) {
           if (!isConvexPolygon) {
             tr = Offset(tr!.dx + crossoverAdjust, tr!.dy - crossoverAdjust);
@@ -372,6 +375,12 @@ class _CropImageState extends State<CropImage> {
       isLoading = true;
     });
 
+    var pointsData = await channel.invokeMethod("detectEdge", {
+      "path": imageFile!.path,
+    });
+
+    print('Points => $pointsData');
+
     List imageSize = await channel.invokeMethod("getImageSize", {
       "path": imageFile!.path,
     });
@@ -496,9 +505,9 @@ class _CropImageState extends State<CropImage> {
             color: Theme.of(context).colorScheme.secondary,
             child: Text('Rotate left'),
             onPressed: () async {
-              File tempImageFile = File(
-                  imageFile!.path.substring(0, imageFile!.path.lastIndexOf('.')) +
-                      'r.jpg');
+              File tempImageFile = File(imageFile!.path
+                      .substring(0, imageFile!.path.lastIndexOf('.')) +
+                  'r.jpg');
               imageFile!.copySync(tempImageFile.path);
               await channel.invokeMethod("rotateImage", {
                 'path': tempImageFile.path,
@@ -552,7 +561,8 @@ class _CropImageState extends State<CropImage> {
                 color: hasWidgetLoaded || !isLoading
                     ? Theme.of(context).colorScheme.secondary
                     : Theme.of(context).colorScheme.secondary.withOpacity(0.6),
-                disabledColor: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+                disabledColor:
+                    Theme.of(context).colorScheme.secondary.withOpacity(0.5),
                 disabledTextColor: Colors.white.withOpacity(0.5),
                 child: Text(
                   "Continue",
