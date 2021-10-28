@@ -375,7 +375,7 @@ class _CropImageState extends State<CropImage> {
       isLoading = true;
     });
 
-    var pointsData = await channel.invokeMethod("detectEdge", {
+    var pointsData = await channel.invokeMethod("detectDocument", {
       "path": imageFile!.path,
     });
 

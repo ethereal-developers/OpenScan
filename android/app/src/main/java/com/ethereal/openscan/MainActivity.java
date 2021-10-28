@@ -146,25 +146,20 @@ public class MainActivity extends FlutterActivity {
                                     result.success(true);
                                     break;
                                 }
-                                // TODO: case, bitmap -> matrix, opencv lib methods
-                                case "detectEdge": {
-
+                                case "detectDocument": {
                                     if (OpenCVLoader.initDebug()) {
                                         Mat mat = new Mat();
-
                                         Utils.bitmapToMat(original, mat);
 
-                                        Log.d("Matrix", mat.toString());
-
-                                        Log.d("DetectedDocument", detectPreviewDocument(mat) + "");
+                                        // Log.d("Matrix", mat.height + mat.width + "");
+                                        // Log.d("DetectedDocument", detectPreviewDocument(mat) + "");
 
                                         ScannedDocument doc = detectDocument(mat);
 
-                                        Log.d("OnScanComplete", Arrays.toString(doc.previewPoints) + "");
+                                        Log.d("OnScanComplete", doc.hasPoints + "");
 
-                                        result.success(doc.getArray());
+                                        result.success({'points': doc.getArray(), 'hasPoints': doc.hasPoints});
                                     }
-
                                 }
                             }
                         }
@@ -176,7 +171,6 @@ public class MainActivity extends FlutterActivity {
     private static final String TAG = "ImageProcessor";
 
     private boolean detectPreviewDocument(Mat inputRgba) {
-
         ArrayList<MatOfPoint> contours = findContours(inputRgba);
 
         Quadrilateral quad = getQuadrilateral(contours, inputRgba.size());
@@ -214,7 +208,6 @@ public class MainActivity extends FlutterActivity {
 //        mMainActivity.invalidateHUD();
 
         return false;
-
     }
 
     private ScannedDocument detectDocument(Mat inputRgba) {
@@ -233,12 +226,14 @@ public class MainActivity extends FlutterActivity {
             sd.quadrilateral = quad;
             sd.previewPoints = mPreviewPoints;
             sd.previewSize = mPreviewSize;
+            sd.hasPoints = true
 
             doc = fourPointTransform(inputRgba, quad.points);
 
         } else {
             doc = new Mat(inputRgba.size(), CvType.CV_8UC4);
             inputRgba.copyTo(doc);
+            sd.hasPoints = false
         }
 
 //        enhanceDocument(doc);
@@ -437,6 +432,7 @@ public class MainActivity extends FlutterActivity {
         private Quadrilateral quadrilateral;
         private Point[] previewPoints;
         private Size previewSize;
+        private boolean hasPoints;
 
         public double[] getArray() {
             double[] array2D = {10, 0, 10, 0,10, 0,10, 0};

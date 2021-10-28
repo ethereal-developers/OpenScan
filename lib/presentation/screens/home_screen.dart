@@ -12,6 +12,8 @@ import 'package:openscan/presentation/Widgets/FAB.dart';
 import 'package:openscan/presentation/Widgets/delete_dialog.dart';
 import 'package:openscan/presentation/Widgets/drawer.dart';
 import 'package:openscan/presentation/Widgets/renameDialog.dart';
+import 'package:openscan/presentation/Widgets/view/icon_gesture.dart';
+import 'package:openscan/presentation/screens/camera_screen.dart';
 import 'package:openscan/presentation/screens/view_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quick_actions/quick_actions.dart';
@@ -208,6 +210,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+        actions: [
+          IconGestureDetector(
+            icon: Icon(Icons.camera),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CameraScreen())
+              );
+            },
+          ),
+        ],
       ),
       drawer: CustomDrawer(),
       body: RefreshIndicator(

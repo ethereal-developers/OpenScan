@@ -29,3 +29,18 @@ class ImageOS {
     this.selected = false,
   });
 }
+
+class DocumentPoints {
+  bool hasData;
+  List<double>? points;
+
+  DocumentPoints({required this.hasData, this.points});
+
+  factory DocumentPoints.toDocumentPoints(data) {
+    return DocumentPoints(
+      hasData: data['hasPoints'],
+      //TODO: Fill canvas if no points detected
+      points:  data['hasPoints'] ? data['points']: data['points'],
+    );
+  }
+}

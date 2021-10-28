@@ -1,11 +1,22 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/appRouter.dart';
 
 import 'core/theme/appTheme.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  Globals.cameras = await availableCameras();
+  print('Cameras => ');
+  Globals.cameras.every((cameraDescription) {
+    print(
+        '${cameraDescription.name} : ${cameraDescription.lensDirection}: ${cameraDescription.sensorOrientation}');
+    return true;
+  });
+
   runApp(OpenScan());
 }
 

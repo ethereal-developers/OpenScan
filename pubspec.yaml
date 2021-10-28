@@ -12,6 +12,7 @@ environment:
 
 dependencies:
   bloc: ^7.2.1
+  camera: ^0.9.4+3
   cupertino_icons: ^1.0.3
   flutter:
     sdk: flutter
