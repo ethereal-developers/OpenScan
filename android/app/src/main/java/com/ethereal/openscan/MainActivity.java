@@ -158,7 +158,7 @@ public class MainActivity extends FlutterActivity {
 
                                         Log.d("OnScanComplete", doc.hasPoints + "");
 
-                                        result.success({'points': doc.getArray(), 'hasPoints': doc.hasPoints});
+                                        // result.success({'points': doc.getArray(), 'hasPoints': doc.hasPoints});
                                     }
                                 }
                             }
@@ -226,14 +226,14 @@ public class MainActivity extends FlutterActivity {
             sd.quadrilateral = quad;
             sd.previewPoints = mPreviewPoints;
             sd.previewSize = mPreviewSize;
-            sd.hasPoints = true
+            sd.hasPoints = true;
 
             doc = fourPointTransform(inputRgba, quad.points);
 
         } else {
             doc = new Mat(inputRgba.size(), CvType.CV_8UC4);
             inputRgba.copyTo(doc);
-            sd.hasPoints = false
+            sd.hasPoints = false;
         }
 
 //        enhanceDocument(doc);

@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/presentation/Widgets/view/icon_gesture.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({Key? key}) : super(key: key);
@@ -20,7 +23,12 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   void initState() {
     super.initState();
-    controller = CameraController(Globals.cameras[0], ResolutionPreset.max);
+
+    controller = CameraController(
+      Globals.cameras[0],
+      ResolutionPreset.max,
+      enableAudio: false,
+    );
     controller.initialize().then((_) {
       if (!mounted) {
         return;
@@ -37,6 +45,9 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // final gyroscope =
+    //     _gyroscopeValues?.map((double v) => v.toStringAsFixed(1)).toList();
+
     if (!controller.value.isInitialized) {
       //TODO: Optimize this error
       return Container();
@@ -46,12 +57,12 @@ class _CameraScreenState extends State<CameraScreen> {
       print(
           'Planes => ${cameraImage.planes.length} => ${cameraImage.height} : ${cameraImage.width}');
 
-      var data = await channel.invokeMethod("detectDocument", {
-        //TODO: Fix this
-        'path': ' T T ',
-        // 'matrix': ,
-      });
-      documentPoints = DocumentPoints.toDocumentPoints(data);
+      // var data = await channel.invokeMethod("detectDocument", {
+      //   //TODO: Fix this
+      //   'path': ' T T ',
+      //   // 'matrix': ,
+      // });
+      // documentPoints = DocumentPoints.toDocumentPoints(data);
     });
 
     return SafeArea(
@@ -87,6 +98,7 @@ class _CameraScreenState extends State<CameraScreen> {
           alignment: Alignment.center,
           child: CameraPreview(
             controller,
+            child: SpiritLevel(),
             // child: Icon(Icons.ac_unit),
           ),
         ),
@@ -111,6 +123,50 @@ class _CameraScreenState extends State<CameraScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class SpiritLevel extends StatefulWidget {
+  const SpiritLevel({Key? key}) : super(key: key);
+
+  @override
+  _SpiritLevelState createState() => _SpiritLevelState();
+}
+
+class _SpiritLevelState extends State<SpiritLevel> {
+  List<double>? _gyroscopeValues;
+  final _streamSubscriptions = <StreamSubscription<dynamic>>[];
+
+  @override
+  void initState() {
+    super.initState();
+    gyroscopeEvents.listen(
+      (GyroscopeEvent event) {
+        setState(() {
+          _gyroscopeValues = <double>[event.x, event.y, event.z];
+          print(_gyroscopeValues);
+        });
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _streamSubscriptions[0].cancel();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: <Widget>[
+          Text('Gyroscope: '),
+        ],
       ),
     );
   }
