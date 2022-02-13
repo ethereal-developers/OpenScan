@@ -22,6 +22,7 @@ import java.util.List;
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugins.GeneratedPluginRegistrant;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
@@ -43,18 +44,17 @@ public class MainActivity extends FlutterActivity {
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
-        super.configureFlutterEngine(flutterEngine);
+        GeneratedPluginRegistrant.registerWith(flutterEngine);
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
                 .setMethodCallHandler(
                         (call, result) -> {
                             String methodCalled = call.method;
-                            String path = call.argument("path").toString();
-                            Log.d("MatrixData", call.argument("matrix") + "");
-                            Bitmap original = BitmapFactory.decodeFile(path);
-                            int height = original.getHeight();
-                            int width = original.getWidth();
                             switch (methodCalled) {
                                 case "cropImage": {
+                                    String path = call.argument("path").toString();
+                                    Bitmap original = BitmapFactory.decodeFile(path);
+                                    int height = original.getHeight();
+                                    int width = original.getWidth();
                                     Log.d("onCropImageCalled", "Crop started");
                                     double tl_x = call.argument("tl_x");
                                     double tl_y = call.argument("tl_y");
@@ -119,6 +119,10 @@ public class MainActivity extends FlutterActivity {
                                     break;
                                 }
                                 case "getImageSize": {
+                                    String path = call.argument("path").toString();
+                                    Bitmap original = BitmapFactory.decodeFile(path);
+                                    int height = original.getHeight();
+                                    int width = original.getWidth();
                                     Log.d("onGetImageSizeCalled", "Get image size called");
                                     ArrayList<Integer> imageSize = new ArrayList<>();
                                     imageSize.add(width);
@@ -127,6 +131,10 @@ public class MainActivity extends FlutterActivity {
                                     break;
                                 }
                                 case "rotateImage": {
+                                    String path = call.argument("path").toString();
+                                    Bitmap original = BitmapFactory.decodeFile(path);
+                                    int height = original.getHeight();
+                                    int width = original.getWidth();
                                     Log.d("onRotateImageCalled", "Rotate image called");
                                     int degree = call.argument("degree");
                                     Matrix matrix = new Matrix();
@@ -148,20 +156,34 @@ public class MainActivity extends FlutterActivity {
                                     break;
                                 }
                                 case "detectDocument": {
-                                    if (OpenCVLoader.initDebug()) {
-                                        Mat mat = new Mat();
-                                        Utils.bitmapToMat(original, mat);
-
-                                        Log.d("Matrix", mat.rows() + mat.cols() + "");
-                                        Log.d("DetectedDocument", detectPreviewDocument(mat) + "");
-
-                                        ScannedDocument doc = detectDocument(mat);
-
-                                        Log.d("OnScanComplete", doc.hasPoints + "");
-
-                                        result.success(doc.getArray());
-                                        // result.success({'points': doc.getArray(), 'hasPoints': doc.hasPoints});
+//                                    Mat mat = new Mat();
+//                                    Utils.bitmapToMat(original, mat);
+                                    Bitmap bmapFromByte = BitmapFactory.decodeByteArray(call.argument("byteArr"), call.argument("offset"), call.argument("length"));
+                                    FileOutputStream stream = null;
+                                    try {
+                                        stream = new FileOutputStream(new File("/storage/emulated/0/Documents/temp.jpg"));
+                                    } catch (FileNotFoundException e) {
+                                        e.printStackTrace();
                                     }
+                                    bmapFromByte.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                                    try {
+                                        stream.close();
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    result.success(true);
+                                    break;
+
+
+                                    // Log.d("Matrix", mat.height + mat.width + "");
+                                    // Log.d("DetectedDocument", detectPreviewDocument(mat) + "");
+
+//                                        ScannedDocument doc = detectDocument(mat);
+
+//                                        Log.d("OnScanComplete", doc.hasPoints + "");
+
+                                    // result.success({'points': doc.getArray(), 'hasPoints': doc.hasPoints});
+
                                 }
                             }
                         }
@@ -437,10 +459,10 @@ public class MainActivity extends FlutterActivity {
         private boolean hasPoints;
 
         public double[] getArray() {
-            double[] array2D = {10, 0, 10, 0,10, 0,10, 0};
-            for (int i=0; i<7; i+=2){
-                array2D[i] = previewPoints[i/2].x;
-                array2D[i+1] = previewPoints[i/2].y;
+            double[] array2D = {10, 0, 10, 0, 10, 0, 10, 0};
+            for (int i = 0; i < 7; i += 2) {
+                array2D[i] = previewPoints[i / 2].x;
+                array2D[i + 1] = previewPoints[i / 2].y;
             }
             return array2D;
         }
