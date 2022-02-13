@@ -1,11 +1,9 @@
-import 'dart:async';
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/models.dart';
-import 'package:openscan/presentation/Widgets/view/icon_gesture.dart';
+import 'package:openscan/view/Widgets/view/icon_gesture.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 class CameraScreen extends StatefulWidget {
@@ -23,7 +21,6 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   void initState() {
     super.initState();
-
     controller = CameraController(
       Globals.cameras[0],
       ResolutionPreset.max,
@@ -45,23 +42,24 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // final gyroscope =
-    //     _gyroscopeValues?.map((double v) => v.toStringAsFixed(1)).toList();
-
     if (!controller.value.isInitialized) {
       //TODO: Optimize this error
       return Container();
     }
 
     controller.startImageStream((CameraImage cameraImage) async {
-      print(
-          'Planes => ${cameraImage.planes.length} => ${cameraImage.height} : ${cameraImage.width}');
+      // print(
+      //     'Planes => ${cameraImage.planes.length} => ${cameraImage.height} : ${cameraImage.width}');
+
+      // print(cameraImage.planes[0].bytes);
+      // print(cameraImage.planes[0].bytes.length);
 
       // var data = await channel.invokeMethod("detectDocument", {
-      //   //TODO: Fix this
-      //   'path': ' T T ',
-      //   // 'matrix': ,
+      //   'matrix': cameraImage.planes[0].bytes,
       // });
+
+      // print('DATA');
+      // print(data);
       // documentPoints = DocumentPoints.toDocumentPoints(data);
     });
 
@@ -136,8 +134,8 @@ class SpiritLevel extends StatefulWidget {
 }
 
 class _SpiritLevelState extends State<SpiritLevel> {
-  List<double>? _gyroscopeValues;
-  final _streamSubscriptions = <StreamSubscription<dynamic>>[];
+  List<double>? _gyroscopeValues = [0, 0, 0];
+  // final _streamSubscriptions = <StreamSubscription<dynamic>>[];
 
   @override
   void initState() {
@@ -154,19 +152,43 @@ class _SpiritLevelState extends State<SpiritLevel> {
 
   @override
   void dispose() {
-    _streamSubscriptions[0].cancel();
+    // _streamSubscriptions[0].cancel();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
+    final gyroscope =
+        _gyroscopeValues?.map((double v) => v).toList();
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Text('Gyroscope: '),
-        ],
+      child: Container(
+        height: 50,
+        width: 50,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Colors.white,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: gyroscope![0],
+              left:gyroscope[1],
+              child: Container(
+                height: 5,
+                width: 5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/presentation/extensions.dart';
+import 'package:openscan/view/extensions.dart';
 
 class LoadingWidget extends StatelessWidget {
   const LoadingWidget({

@@ -1,16 +1,15 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
-import 'package:openscan/presentation/Widgets/FAB.dart';
-import 'package:openscan/presentation/Widgets/delete_dialog.dart';
-import 'package:openscan/presentation/Widgets/renameDialog.dart';
-import 'package:openscan/presentation/Widgets/view/custom_bottomsheet.dart';
-import 'package:openscan/presentation/Widgets/view/icon_gesture.dart';
-import 'package:openscan/presentation/Widgets/view/image_card.dart';
-import 'package:openscan/presentation/extensions.dart';
-import 'package:openscan/presentation/screens/preview_screen.dart';
+import 'package:openscan/view/Widgets/FAB.dart';
+import 'package:openscan/view/Widgets/delete_dialog.dart';
+import 'package:openscan/view/Widgets/renameDialog.dart';
+import 'package:openscan/view/Widgets/view/custom_bottomsheet.dart';
+import 'package:openscan/view/Widgets/view/icon_gesture.dart';
+import 'package:openscan/view/Widgets/view/image_card.dart';
+import 'package:openscan/view/extensions.dart';
+import 'package:openscan/view/screens/preview_screen.dart';
 import 'package:reorderables/reorderables.dart';
 
 class ViewScreen extends StatefulWidget {

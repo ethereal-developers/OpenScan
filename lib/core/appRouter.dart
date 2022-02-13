@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/presentation/screens/about_screen.dart';
-import 'package:openscan/presentation/screens/crop_screen.dart';
-import 'package:openscan/presentation/screens/demo_screen.dart';
-import 'package:openscan/presentation/screens/home_screen.dart';
-import 'package:openscan/presentation/screens/preview_screen.dart';
-import 'package:openscan/presentation/screens/splash_screen.dart';
-import 'package:openscan/presentation/screens/view_screen.dart';
+import 'package:openscan/view/screens/about_screen.dart';
+import 'package:openscan/view/screens/crop_screen.dart';
+import 'package:openscan/view/screens/demo_screen.dart';
+import 'package:openscan/view/screens/home_screen.dart';
+import 'package:openscan/view/screens/preview_screen.dart';
+import 'package:openscan/view/screens/splash_screen.dart';
+import 'package:openscan/view/screens/view_screen.dart';
 
 class AppRouter {
   static const String ABOUT_SCREEN = 'AboutScreen';

@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:openscan/presentation/Widgets/cropper/polygon_painter.dart';
-import 'package:openscan/presentation/extensions.dart';
+import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
+import 'package:openscan/view/extensions.dart';
 
 imageCropper(BuildContext context, File image) async {
   File? croppedImage;

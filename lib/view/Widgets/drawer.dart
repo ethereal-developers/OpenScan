@@ -1,7 +1,6 @@
-
 import 'package:flutter/material.dart';
-import 'package:openscan/presentation/screens/about_screen.dart';
-import 'package:openscan/presentation/screens/demo_screen.dart';
+import 'package:openscan/view/screens/about_screen.dart';
+import 'package:openscan/view/screens/demo_screen.dart';
 
 class CustomDrawer extends StatelessWidget {
   @override
