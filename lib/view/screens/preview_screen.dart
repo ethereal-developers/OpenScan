@@ -5,8 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
-import 'package:openscan/presentation/Widgets/delete_dialog.dart';
-import 'package:openscan/presentation/extensions.dart';
+import 'package:openscan/view/Widgets/delete_dialog.dart';
+import 'package:openscan/view/extensions.dart';
 
 class PreviewScreen extends StatefulWidget {
   final int? initialIndex;

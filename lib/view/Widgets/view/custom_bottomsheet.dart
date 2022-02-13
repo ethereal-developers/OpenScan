@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
-import 'package:openscan/presentation/Widgets/renameDialog.dart';
-import 'package:openscan/presentation/Widgets/view/quality_selector.dart';
-import 'package:openscan/presentation/extensions.dart';
+import 'package:openscan/view/Widgets/renameDialog.dart';
+import 'package:openscan/view/Widgets/view/quality_selector.dart';
+import 'package:openscan/view/extensions.dart';
 
 class CustomBottomSheet extends StatefulWidget {
   // final String? fileName;

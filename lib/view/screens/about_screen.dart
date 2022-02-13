@@ -1,9 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:openscan/core/theme/appTheme.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:openscan/view/extensions.dart';
 // import 'package:flutter_neumorphic/flutter_neumorphic.dart' as neumorphic;
-import 'package:openscan/presentation/extensions.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void launchWebsite(String urlString) async {
   if (await canLaunch(urlString)) {

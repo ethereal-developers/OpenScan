@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/models.dart';
-import 'package:openscan/presentation/Widgets/view/icon_gesture.dart';
+import 'package:openscan/view/Widgets/view/icon_gesture.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
 class CameraScreen extends StatefulWidget {
