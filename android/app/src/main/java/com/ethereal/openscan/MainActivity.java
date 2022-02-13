@@ -49,6 +49,7 @@ public class MainActivity extends FlutterActivity {
                         (call, result) -> {
                             String methodCalled = call.method;
                             String path = call.argument("path").toString();
+                            Log.d("MatrixData", call.argument("matrix") + "");
                             Bitmap original = BitmapFactory.decodeFile(path);
                             int height = original.getHeight();
                             int width = original.getWidth();
@@ -151,13 +152,14 @@ public class MainActivity extends FlutterActivity {
                                         Mat mat = new Mat();
                                         Utils.bitmapToMat(original, mat);
 
-                                        // Log.d("Matrix", mat.height + mat.width + "");
-                                        // Log.d("DetectedDocument", detectPreviewDocument(mat) + "");
+                                        Log.d("Matrix", mat.rows() + mat.cols() + "");
+                                        Log.d("DetectedDocument", detectPreviewDocument(mat) + "");
 
                                         ScannedDocument doc = detectDocument(mat);
 
                                         Log.d("OnScanComplete", doc.hasPoints + "");
 
+                                        result.success(doc.getArray());
                                         // result.success({'points': doc.getArray(), 'hasPoints': doc.hasPoints});
                                     }
                                 }
