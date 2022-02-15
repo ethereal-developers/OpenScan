@@ -1,0 +1,31 @@
+Nasza aplikacja open source do skanowania dokumentów pozwoli Ci zeskanować wszystko (oficjalne dokumenty, notatki, zdjęcia, wizytówki itp.), przekonwertować je na pliki PDF i udostępnić za pośrednictwem dowolnej aplikacji do przesyłania wiadomości, która na to pozwala.
+
+Dlaczego warto korzystać z tej aplikacji? Czasami trzeba zeskanować kilka dokumentów i udostępnić je w tym zabieganym świecie zawodowym. Być może chcesz zeskanować i przechowywać swoje rachunki i informacje rozliczeniowe w celu rozliczania podatków. W dzisiejszych czasach, w technologii szukamy nie tylko łatwości obsługi, ale także aplikacji, które szanują naszą prywatność danych, i które nie wymuszają wyświetlania reklam na ekranie co każdą jedną sekundę.
+
+Przedstawiamy OpenScan - aplikację, która szanuje Twoją prywatność w połączeniu z wszechstronnym i pięknym interfejsem użytkownika oraz nieskazitelną obsługą.
+
+Odróżniamy się od pozostałych aplikacji na rynku przez:
+
+- Otwarcie kodu źródłowego naszej aplikacji
+- Poszanowanie prywatności danych (poprzez niegromadzenie świadomie danych dokumentów)
+
+KLUCZOWE CECHY
+
+* Skanuj dokumenty, notatki, wizytówki.
+* Proste i wydajne funkcje przycinania.
+* Udostępniaj jako PDF/JPG.
+
+PRODUKTYWNOŚĆ W PRACY:
+
+- Zwiększ wydajność biura/pracy, skanując i zapisując dokumenty lub notatki szybko i udostępniając je każdemu.
+- Uchwyć swoje pomysły lub schematy, które zapisujesz w pośpiechu, i natychmiast prześlij je do wybranej pamięci w chmurze.
+- Już nigdy nie zapomnij niczyich informacji kontaktowych dzięki skanowaniu wizytówek i ich przechowywaniu.
+- Skanuj wydrukowane dokumenty i zapisuj je do późniejszego przejrzenia lub wyślij do swoich kontaktów w celu przejrzenia.
+- Nie martw się już o rachunki: po prostu je skanuj, zapisuj na swoim urządzeniu i udostępniaj w razie potrzeby.
+
+PRODUKTYWNOŚĆ W EDUKACJI
+
+- Skanuj wszystkie swoje odręczne notatki i natychmiast udostępniaj je znajomym w stresujących czasach egzaminów.
+- Nigdy nie przegap żadnej notatki z wykładu. Wszystkie dokumenty są oznaczone znacznikiem czasu, więc po prostu sprawdź datę lub godzinę wykładu, aby je szybko wyświetlić.
+- Zrób zdjęcia tablic do wykorzystania w przyszłości i zapisz je w formacie PDF.
+- Natychmiastowe przesyłanie notatek z zajęć do wybranej pamięci w chmurze.
