@@ -32,6 +32,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     compileSdkVersion 31
+    buildToolsVersion "30.0.3"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -60,6 +61,7 @@ android {
    buildTypes {
        release {
            signingConfig signingConfigs.release
+           minifyEnabled true
        }
    }
 }

@@ -12,16 +12,20 @@ environment:
 
 dependencies:
   bloc: ^8.0.2
-  camera: ^0.9.4+3
+  camera: ^0.9.4+11
   cupertino_icons: ^1.0.3
   flutter:
     sdk: flutter
   flutter_bloc: ^8.0.1
   # flutter_neumorphic: ^3.1.0
+  flutter_localizations: 
+    sdk: flutter
+    version: ^0.0.0
   flutter_speed_dial: ^5.0.0+1
   fluttertoast: ^8.0.8
   focused_menu: ^1.0.5
   image_picker: ^0.8.4+2
+  intl: ^0.17.0
   multi_image_picker: ^4.8.01
   open_file: ^3.2.1
   path_provider: ^2.0.5
@@ -41,6 +45,7 @@ dev_dependencies:
     sdk: flutter
 
 flutter:
+  generate: true
   uses-material-design: true
 
   assets:

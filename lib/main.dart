@@ -1,9 +1,11 @@
 import 'package:camera/camera.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/appRouter.dart';
+import 'package:openscan/l10n/l10n.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/theme/appTheme.dart';
 
@@ -47,13 +49,13 @@ class OpenScan extends StatelessWidget {
       themeMode: ThemeMode.dark,
       initialRoute: AppRouter.SPLASH_SCREEN,
       onGenerateRoute: AppRouter.onGenerateRoute,
-      // routes: {
-      //   SplashScreen.route: (context) => SplashScreen(),
-      //   DemoScreen.route: (context) => DemoScreen(),
-      //   HomeScreen.route: (context) => HomeScreen(),
-      //   ViewScreen.route: (context) => ViewScreen(),
-      //   AboutScreen.route: (context) => AboutScreen(),
-      // },
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: L10n.all,
     );
   }
 }

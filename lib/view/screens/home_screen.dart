@@ -1,6 +1,8 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:openscan/core/data/database_helper.dart';
@@ -197,11 +199,11 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         title: RichText(
           text: TextSpan(
-            text: 'Open',
+            text: AppLocalizations.of(context)!.app_first_name,
             style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
             children: [
               TextSpan(
-                text: 'Scan',
+                text: AppLocalizations.of(context)!.app_last_name,
                 style:
                     TextStyle(color: Theme.of(context).colorScheme.secondary),
               ),

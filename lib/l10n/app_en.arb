@@ -1,0 +1,10 @@
+{
+    "app_first_name": "Open",
+    "@app_first_name":{
+        "description": "First Name of the application" 
+    },
+    "app_last_name": "Scan",
+    "@app_last_name":{
+        "description": "Last Name of the application" 
+    }
+}
