@@ -144,7 +144,7 @@ class _SpiritLevelState extends State<SpiritLevel> {
       (GyroscopeEvent event) {
         setState(() {
           _gyroscopeValues = <double>[event.x, event.y, event.z];
-          print(_gyroscopeValues);
+          // print(_gyroscopeValues);
         });
       },
     );

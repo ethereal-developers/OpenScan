@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:openscan/view/screens/about_screen.dart';
 import 'package:openscan/view/screens/demo_screen.dart';
 
@@ -26,7 +27,7 @@ class CustomDrawer extends StatelessWidget {
           ListTile(
             title: Center(
               child: Text(
-                'Home',
+                AppLocalizations.of(context)!.home,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.normal,
@@ -44,7 +45,7 @@ class CustomDrawer extends StatelessWidget {
           ListTile(
             title: Center(
               child: Text(
-                'About',
+                AppLocalizations.of(context)!.about,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.normal,
@@ -65,7 +66,7 @@ class CustomDrawer extends StatelessWidget {
           ListTile(
             title: Center(
               child: Text(
-                'Demo',
+                AppLocalizations.of(context)!.demo,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.normal,

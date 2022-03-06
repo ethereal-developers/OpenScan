@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
 import 'package:openscan/view/Widgets/view/quality_selector.dart';
@@ -133,7 +134,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
                         );
                       },
                       child: Container(
-                        child: Text('Quality'),
+                        child: Text(AppLocalizations.of(context)!.quality),
                         padding:
                             EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                         decoration: BoxDecoration(
@@ -152,7 +153,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
               ),
               ListTile(
                 leading: Icon(Icons.picture_as_pdf_rounded),
-                title: Text('Share PDF'),
+                title: Text(AppLocalizations.of(context)!.save_pdf),
                 onTap: () async {
                   // if (ViewScreen.selectionEnabled) {
                   // updateSelectedFileName();
@@ -180,7 +181,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
               ),
               ListTile(
                 leading: Icon(Icons.phone_android_rounded),
-                title: Text('Save to device'),
+                title: Text(AppLocalizations.of(context)!.save_to_device),
                 onTap: () async {
                   // if (ViewScreen.selectionEnabled) {
                   // updateSelectedFileName();
@@ -211,7 +212,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
               ),
               ListTile(
                 leading: Icon(Icons.image_rounded),
-                title: Text('Share images'),
+                title: Text(AppLocalizations.of(context)!.share_images),
                 onTap: () {
                   List<String> selectedImagesPath = [];
                   // for (var image in state.images) {

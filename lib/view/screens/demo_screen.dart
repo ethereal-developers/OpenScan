@@ -3,6 +3,7 @@ import 'package:openscan/view/Widgets/demo/slide_dots.dart';
 import 'package:openscan/view/Widgets/demo/slide_item.dart';
 import 'package:openscan/view/extensions.dart';
 import 'package:openscan/view/screens/home_screen.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DemoScreen extends StatefulWidget {
   static String route = 'GettingStarted';
@@ -49,7 +50,7 @@ class _DemoScreenState extends State<DemoScreen> {
               )
             : null,
         title: Text(
-          'How to use the app?',
+          AppLocalizations.of(context)!.tutorial_title,
           style: TextStyle().appBarStyle,
         ),
         actions: widget.showSkip!
@@ -66,7 +67,7 @@ class _DemoScreenState extends State<DemoScreen> {
                       children: <Widget>[
                         Center(
                           child: Text(
-                            (isDone) ? 'Done' : 'Skip',
+                            (isDone) ? AppLocalizations.of(context)!.done : AppLocalizations.of(context)!.skip,
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.secondary,
                               fontSize: 17,

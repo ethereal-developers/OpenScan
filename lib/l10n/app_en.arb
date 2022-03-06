@@ -15,8 +15,6 @@
     "@import_from_gallery": {
         "description": "Scan-type 3" 
     },
-    "delete": "Delete",
-    "rename": "Rename",
     "refresh": "Drag down to refresh",
     "@refresh": {
         "description": "Refresh tool tip" 
@@ -25,12 +23,10 @@
     "@last_updated": {
         "description": "File last updated" 
     },
-    "image": "image",
     "images": "images",
     "@images": {
         "description": "Multiple Images" 
     },
-    "about":"About",
     "app_description": "is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file.",
     "@app_description": {
         "description": "Short app description on About-Screen" 
@@ -39,8 +35,6 @@
     "@app_description_2": {
         "description": "Moto on About-Screen" 
     },
-    "developers": "Developers",
-    "version": "Version",
     "crop_image": "Crop Image",
     "@crop_image": {
         "description": "Crop-Screen header" 
@@ -53,5 +47,21 @@
     "@rotate_left": {
         "description": "Rotate image left" 
     },
-    "next": "Continue"
+    "about":"About",
+    "rename": "Rename",
+    "delete": "Delete",
+    "image": "image",
+    "developers": "Developers",
+    "version": "Version",
+    "next": "Continue",
+    "tutorial_title": "How to use the app?",
+    "done": "Done",
+    "skip": "Skip",
+    "loading": "Loading",
+    "home": "Home",
+    "demo": "Demo",
+    "quality": "Quality",
+    "save_to_device": "Save to device",
+    "save_pdf": "Share PDF",
+    "share_images": "Share images"
 }
