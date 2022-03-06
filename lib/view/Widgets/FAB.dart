@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:simple_animated_icon/simple_animated_icon.dart';
 
@@ -54,7 +55,7 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
       curve: Curves.bounceIn,
       overlayColor: Colors.black,
       overlayOpacity: 0.5,
-      tooltip: 'Scan Options',
+      tooltip: AppLocalizations.of(context)!.scan_options,
       heroTag: 'speed-dial-hero-tag',
       backgroundColor: Theme.of(context).colorScheme.secondary,
       foregroundColor: Theme.of(context).colorScheme.primary,
@@ -73,7 +74,7 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
             color: Theme.of(context).colorScheme.primary,
           ),
           backgroundColor: Colors.white,
-          label: 'Normal Scan',
+          label: AppLocalizations.of(context)!.normal_scan,
           labelStyle:
               TextStyle(fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
           onTap: widget.normalScanOnPressed,
@@ -84,7 +85,7 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
             color: Theme.of(context).colorScheme.primary,
           ),
           backgroundColor: Colors.white,
-          label: 'Quick Scan',
+          label: AppLocalizations.of(context)!.quick_scan,
           labelStyle:
               TextStyle(fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
           onTap: widget.quickScanOnPressed,
@@ -95,7 +96,7 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
             color: Theme.of(context).colorScheme.primary,
           ),
           backgroundColor: Colors.white,
-          label: 'Import from Gallery',
+          label: AppLocalizations.of(context)!.import_from_gallery,
           labelStyle:
               TextStyle(fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
           onTap: widget.galleryOnPressed,

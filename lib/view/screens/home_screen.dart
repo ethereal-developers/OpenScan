@@ -199,11 +199,11 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         title: RichText(
           text: TextSpan(
-            text: AppLocalizations.of(context)!.app_first_name,
+            text: 'Open',
             style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
             children: [
               TextSpan(
-                text: AppLocalizations.of(context)!.app_last_name,
+                text: 'Scan',
                 style:
                     TextStyle(color: Theme.of(context).colorScheme.secondary),
               ),
@@ -232,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.only(bottom: 5.0),
               child: Text(
-                'Drag down to refresh',
+                AppLocalizations.of(context)!.refresh,
                 style: TextStyle(color: Colors.grey[700], fontSize: 11),
               ),
             ),
@@ -262,11 +262,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Last Updated: ${masterDirectories[index].lastModified!.day}-${masterDirectories[index].lastModified!.month}-${masterDirectories[index].lastModified!.year}',
+                                AppLocalizations.of(context)!.last_updated + ': ${masterDirectories[index].lastModified!.day}-${masterDirectories[index].lastModified!.month}-${masterDirectories[index].lastModified!.year}',
                                 style: TextStyle(fontSize: 11),
                               ),
                               Text(
-                                '${masterDirectories[index].imageCount} ${(masterDirectories[index].imageCount == 1) ? 'image' : 'images'}',
+                                '${masterDirectories[index].imageCount} ${(masterDirectories[index].imageCount == 1) ? AppLocalizations.of(context)!.image : AppLocalizations.of(context)!.images}',
                                 style: TextStyle(fontSize: 11),
                               ),
                             ],
@@ -286,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         menuItems: [
                           FocusedMenuItem(
                             title: Text(
-                              'Rename',
+                              AppLocalizations.of(context)!.rename,
                               style: TextStyle(color: Colors.black),
                             ),
                             trailingIcon: Icon(
@@ -314,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                           ),
                           FocusedMenuItem(
-                            title: Text('Delete'),
+                            title: Text(AppLocalizations.of(context)!.delete),
                             trailingIcon: Icon(Icons.delete_rounded),
                             backgroundColor: Colors.redAccent,
                             onPressed: () {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:openscan/view/extensions.dart';
 // import 'package:flutter_neumorphic/flutter_neumorphic.dart' as neumorphic;
 import 'package:url_launcher/url_launcher.dart';
@@ -28,7 +29,7 @@ class AboutScreen extends StatelessWidget {
           backgroundColor: Theme.of(context).primaryColor,
           title: RichText(
             text: TextSpan(
-              text: 'About',
+              text: AppLocalizations.of(context)!.about,
               style: TextStyle().appBarStyle,
             ),
           ),
@@ -60,7 +61,7 @@ class AboutScreen extends StatelessWidget {
                             color: Theme.of(context).colorScheme.secondary)),
                     TextSpan(
                       text:
-                          ' is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file.',
+                          AppLocalizations.of(context)!.app_description,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.normal,
@@ -75,7 +76,7 @@ class AboutScreen extends StatelessWidget {
             ),
             Center(
               child: Text(
-                "Developers",
+                AppLocalizations.of(context)!.developers,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
@@ -102,7 +103,7 @@ class AboutScreen extends StatelessWidget {
             ),
             Center(
               child: Text(
-                "No ads. We don't collect any data.\n We respect your privacy.",
+                AppLocalizations.of(context)!.app_description_2,
                 style: TextStyle(fontSize: 14),
                 textAlign: TextAlign.center,
               ),
@@ -150,11 +151,11 @@ class AboutScreen extends StatelessWidget {
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
-                text: 'Version ',
+                text: AppLocalizations.of(context)!.version,
                 style: TextStyle(fontSize: 14),
                 children: [
                   TextSpan(
-                    text: '3.0.0',
+                    text: ' 3.0.0',
                     style: TextStyle(
                         color: Theme.of(context).colorScheme.secondary),
                   ),

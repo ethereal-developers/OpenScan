@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';

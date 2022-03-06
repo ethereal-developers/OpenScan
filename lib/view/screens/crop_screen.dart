@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/extensions.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 
 imageCropper(BuildContext context, File image) async {
   File? croppedImage;
@@ -425,7 +427,7 @@ class _CropImageState extends State<CropImage> {
           key: _scaffoldKey,
           appBar: AppBar(
             title: Text(
-              'Crop Image',
+              AppLocalizations.of(context)!.crop_image,
               style: TextStyle().appBarStyle,
             ),
             centerTitle: true,
@@ -502,7 +504,7 @@ class _CropImageState extends State<CropImage> {
         children: <Widget>[
           MaterialButton(
             color: Theme.of(context).colorScheme.secondary,
-            child: Text('Rotate left'),
+            child: Text(AppLocalizations.of(context)!.rotate_left),
             onPressed: () async {
               File tempImageFile = File(imageFile!.path
                       .substring(0, imageFile!.path.lastIndexOf('.')) +
@@ -526,7 +528,7 @@ class _CropImageState extends State<CropImage> {
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 4.0),
             child: MaterialButton(
-              child: Text('Rotate right'),
+              child: Text(AppLocalizations.of(context)!.rotate_right),
               color: Theme.of(context).colorScheme.secondary,
               onPressed: () async {
                 File tempImageFile = File(imageFile!.path
@@ -564,7 +566,7 @@ class _CropImageState extends State<CropImage> {
                     Theme.of(context).colorScheme.secondary.withOpacity(0.5),
                 disabledTextColor: Colors.white.withOpacity(0.5),
                 child: Text(
-                  "Continue",
+                  AppLocalizations.of(context)!.next,
                   style: TextStyle(
                     color: hasWidgetLoaded || !isLoading
                         ? Colors.white
