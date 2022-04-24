@@ -79,6 +79,8 @@ public class ImageUtil {
     public static Map<String, Integer> getImageSize(String path) {
         Log.d(TAG, "Get image size called");
         Map<String, Integer> imageSizeMap = new HashMap<>();
+        imageSizeMap.put("height", 1280);
+        imageSizeMap.put("width", 720);
         try {
             Bitmap original = BitmapFactory.decodeFile(path);
             int height = original.getHeight();
@@ -88,6 +90,7 @@ public class ImageUtil {
             imageSizeMap.put("width",width);
         } catch (Exception e) {
             Log.e(TAG, "Exception while getting image size --> ", e);
+            return imageSizeMap;
         }
         return imageSizeMap;
     }

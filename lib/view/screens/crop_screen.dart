@@ -382,12 +382,11 @@ class _CropImageState extends State<CropImage> {
 
     print('Points => $pointsData');
 
-    List imageSize = await channel.invokeMethod("getImageSize", {
+    Map imageSize = await channel.invokeMethod("getImageSize", {
       "path": imageFile!.path,
     });
 
-    imageSize = [imageSize[0].toDouble(), imageSize[1].toDouble()];
-    imageBitmapSize = Size(imageSize[0], imageSize[1]);
+    imageBitmapSize = Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
 
     double tlX = (imageBitmapSize.width / width!) * tl!.dx;
     double trX = (imageBitmapSize.width / width!) * tr!.dx;
