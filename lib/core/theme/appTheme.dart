@@ -9,9 +9,7 @@ class AppTheme {
     primaryColor: primaryColor,
     colorScheme: ColorScheme(
       primary: primaryColor,
-      primaryVariant: primaryColor,
       secondary: secondaryColor,
-      secondaryVariant: secondaryColor,
       surface: primaryColor,
       background: primaryColor,
       error: Colors.red,

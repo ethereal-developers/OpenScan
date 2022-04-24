@@ -62,6 +62,6 @@
     "demo": "Demo",
     "quality": "Quality",
     "save_to_device": "Save to device",
-    "save_pdf": "Share PDF",
+    "share_pdf": "Share PDF",
     "share_images": "Share images"
 }

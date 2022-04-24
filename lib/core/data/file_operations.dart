@@ -206,10 +206,6 @@ class FileOperations {
     }
     images = tempImages;
 
-    fileName = fileName.replaceAll('-', '');
-    fileName = fileName.replaceAll('.', '');
-    fileName = fileName.replaceAll(':', '');
-
     pdfStatus = await createPdf(
       selectedDirectory: selectedDirectory,
       fileName: fileName,

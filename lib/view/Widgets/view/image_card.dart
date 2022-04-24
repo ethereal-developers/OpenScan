@@ -1,9 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:openscan/core/models.dart';
-import 'package:openscan/core/theme/appTheme.dart';
 
 class ImageCard extends StatelessWidget {
   final ImageOS? image;
@@ -39,10 +37,10 @@ class ImageCard extends StatelessWidget {
                     foregroundDecoration: BoxDecoration(
                       border: Border.all(
                         width: 3,
-                        color: AppTheme.secondaryColor,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
-                    color: AppTheme.secondaryColor.withOpacity(0.3),
+                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
                   ),
                 ),
               )
@@ -54,11 +52,11 @@ class ImageCard extends StatelessWidget {
           bottom: 10,
           right: 10,
           child: CircleAvatar(
-            backgroundColor: AppTheme.secondaryColor.withOpacity(0.8),
+            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
             radius: 13,
             child: Text(
               image!.idx.toString(),
-              style: TextStyle(color: AppTheme.primaryColor, fontSize: 14),
+              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 14),
             ),
           ),
         ),

@@ -85,7 +85,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
                         padding:
                             EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.7),
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -101,7 +101,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
           ),
         ),
         bottomNavigationBar: BottomAppBar(
-          color: AppTheme.primaryColor.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
           elevation: 0,
           child: BlocConsumer<DirectoryCubit, DirectoryState>(
             listener: (context, state) {},

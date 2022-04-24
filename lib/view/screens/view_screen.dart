@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/FAB.dart';
 import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
-import 'package:openscan/view/Widgets/view/custom_bottomsheet.dart';
+import 'package:openscan/view/Widgets/view/main_bottomsheet.dart';
 import 'package:openscan/view/Widgets/view/icon_gesture.dart';
 import 'package:openscan/view/Widgets/view/image_card.dart';
 import 'package:openscan/view/extensions.dart';
@@ -38,6 +37,7 @@ class _ViewScreenState extends State<ViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: WillPopScope(
         onWillPop: () async {
@@ -50,7 +50,7 @@ class _ViewScreenState extends State<ViewScreen> {
         },
         child: Scaffold(
           key: scaffoldKey,
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: Theme.of(context).colorScheme.background,
           // key: scaffoldKey,
           appBar: AppBar(
             elevation: 0,
@@ -95,19 +95,28 @@ class _ViewScreenState extends State<ViewScreen> {
                       },
                     );
                   },
-                  child: Text(
-                    state.newName ?? state.dirName ?? '',
-                    style: TextStyle().appBarStyle.copyWith(
-                      shadows: [
-                        Shadow(color: Colors.white, offset: Offset(0, -4)),
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: size.width * .6),
+                    height: 20,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        Text(
+                          state.newName ?? state.dirName ?? '',
+                          style: TextStyle().appBarStyle.copyWith(
+                            shadows: [
+                              Shadow(
+                                  color: Colors.white, offset: Offset(0, -4)),
+                            ],
+                            color: Colors.transparent,
+                            decoration: TextDecoration.underline,
+                            decorationStyle: TextDecorationStyle.dashed,
+                            decorationThickness: 1,
+                            decorationColor: Colors.white,
+                          ),
+                        ),
                       ],
-                      color: Colors.transparent,
-                      decoration: TextDecoration.underline,
-                      decorationStyle: TextDecorationStyle.dashed,
-                      decorationThickness: 1,
-                      decorationColor: Colors.white,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 );
               },
@@ -168,15 +177,14 @@ class _ViewScreenState extends State<ViewScreen> {
                       },
                     ),
                     IconGestureDetector(
-                      icon: Icon(Icons.share_rounded),
+                      icon: Icon(Icons.more_vert_rounded),
                       onTap: () {
-                        print('share');
                         showModalBottomSheet(
                           context: context,
                           builder: (_) {
                             return BlocProvider<DirectoryCubit>.value(
                               value: BlocProvider.of<DirectoryCubit>(context),
-                              child: CustomBottomSheet(),
+                              child: MainBottomSheet(),
                             );
                           },
                         );

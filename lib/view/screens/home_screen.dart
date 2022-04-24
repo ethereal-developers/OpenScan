@@ -210,17 +210,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        actions: [
-          IconGestureDetector(
-            icon: Icon(Icons.camera),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => CameraScreen())
-              );
-            },
-          ),
-        ],
+        // actions: [
+        //   IconGestureDetector(
+        //     icon: Icon(Icons.camera),
+        //     onTap: () {
+        //       Navigator.push(context,
+        //           MaterialPageRoute(builder: (context) => CameraScreen()));
+        //     },
+        //   ),
+        // ],
       ),
       drawer: CustomDrawer(),
       body: RefreshIndicator(
@@ -247,10 +245,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPressed: () {},
                         menuWidth: size.width * 0.44,
                         child: ListTile(
-                          leading: Image.file(
-                            File(masterDirectories[index].firstImgPath!),
-                            width: 50,
-                            height: 50,
+                          leading: CircleAvatar(
+                            radius: 28,
+                            backgroundImage: Image.file(
+                              File(masterDirectories[index].firstImgPath!),
+                            ).image,
                           ),
                           title: Text(
                             masterDirectories[index].newName ??
@@ -262,7 +261,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                AppLocalizations.of(context)!.last_updated + ': ${masterDirectories[index].lastModified!.day}-${masterDirectories[index].lastModified!.month}-${masterDirectories[index].lastModified!.year}',
+                                AppLocalizations.of(context)!.last_updated +
+                                    ': ${masterDirectories[index].lastModified!.day}-${masterDirectories[index].lastModified!.month}-${masterDirectories[index].lastModified!.year}',
                                 style: TextStyle(fontSize: 11),
                               ),
                               Text(
