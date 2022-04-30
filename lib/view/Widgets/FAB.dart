@@ -31,7 +31,7 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _animationController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 200))
+        AnimationController(vsync: this, duration: Duration(milliseconds: 300))
           ..addListener(() {
             setState(() {});
           });

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 class DeleteDialog extends StatelessWidget {
   final void Function()? deleteOnPressed;
+  final bool multipleFiles;
   DeleteDialog({
-    this.deleteOnPressed,
+    this.deleteOnPressed, this.multipleFiles=false,
   });
 
   @override
@@ -15,7 +16,7 @@ class DeleteDialog extends StatelessWidget {
         ),
       ),
       title: Text('Delete'),
-      content: Text('Do you really want to delete this file?'),
+      content: multipleFiles ? Text('Do you really want to delete these files?') : Text('Do you really want to delete this file?'),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.pop(context),

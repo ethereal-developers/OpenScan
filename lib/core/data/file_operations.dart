@@ -215,11 +215,13 @@ class FileOperations {
   }
 
   Future<bool?> saveToAppDirectory(
-      {BuildContext? context, String? fileName, required List<ImageOS> images}) async {
+      {BuildContext? context, String? fileName, required List<ImageOS> images, required bool imagesSelected}) async {
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
     List<File> imageFiles = [];
     for (ImageOS image in images) {
-      imageFiles.add(File(image.imgPath!));
+      if(image.selected || !imagesSelected) {
+        imageFiles.add(File(image.imgPath!));
+      }
     }
 
     pdfStatus = await createPdf(
@@ -230,8 +232,8 @@ class FileOperations {
     return pdfStatus;
   }
 
+  /// Delete the temporary files created by the image_picker package
   Future<void> deleteTemporaryFiles() async {
-    // Delete the temporary files created by the image_picker package
     Directory? appDocDir = await getExternalStorageDirectory() ;
     Directory cacheDir = await getTemporaryDirectory();
     String appDocPath = "${appDocDir!.path}/Pictures/";

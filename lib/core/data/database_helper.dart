@@ -144,8 +144,9 @@ class DatabaseHelper {
     );
   }
 
-  /// <---- Directory Table Operations ---->
+  // <---- Directory Table Operations ---->
 
+  /// Retrieves image data from db
   Future getImageData(String tableName) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
@@ -154,6 +155,7 @@ class DatabaseHelper {
     return data;
   }
 
+  /// Updates image path in db
   Future<int> updateImagePath(
       {required String tableName, String? imgPath, int? idx}) async {
     Database db = await instance.database;
@@ -167,6 +169,7 @@ class DatabaseHelper {
         whereArgs: [idx]);
   }
 
+  /// Updates image index in db
   Future<int> updateImageIndex(
       {String? imgPath, int? newIndex, required String tableName}) async {
     Database db = await instance.database;

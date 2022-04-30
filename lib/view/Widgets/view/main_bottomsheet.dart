@@ -1,15 +1,18 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
+import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
 import 'package:openscan/view/Widgets/view/export_bottomsheet.dart';
 import 'package:openscan/view/extensions.dart';
 
 class MainBottomSheet extends StatefulWidget {
+  final bool imagesSelected;
+
+  const MainBottomSheet({Key? key, this.imagesSelected = false}) : super(key: key);
   // final String? fileName;
   // final Function? saveToDevice;
   // final Function? sharePdf;
@@ -39,6 +42,7 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
     Size size = MediaQuery.of(context).size;
 
     return BottomSheet(
+      enableDrag: false,
       onClosing: () {},
       builder: (context) {
         return Container(
@@ -85,7 +89,8 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                               child: Row(
                                 children: [
                                   Container(
-                                    constraints: BoxConstraints(maxWidth: size.width * .65),
+                                    constraints: BoxConstraints(
+                                        maxWidth: size.width * .65),
                                     height: 20,
                                     child: ListView(
                                       scrollDirection: Axis.horizontal,
@@ -187,20 +192,22 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                       color: Theme.of(context).colorScheme.secondary,
                     ),
                     onPressed: () {
-                      Navigator.pop(context);
                       showModalBottomSheet(
                         context: context,
                         builder: (_) {
                           return BlocProvider<DirectoryCubit>.value(
                             value: BlocProvider.of<DirectoryCubit>(context),
-                            child: ExportBottomSheet(),
+                            child: ExportBottomSheet(
+                              imagesSelected: true,
+                              share: true,
+                            ),
                           );
                         },
                       );
                     },
                   ),
                   BottomSheetActivityButton(
-                    subtitle: 'Save to Gallery',
+                    subtitle: 'Save to Device',
                     icon: Icon(
                       Icons.folder_rounded,
                       color: Colors.blueAccent,
@@ -213,7 +220,31 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                       Icons.delete_rounded,
                       color: Colors.red,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      //TODO: 0 images selected: Bug, Snackbar
+                        showDialog(
+                          context: context,
+                          builder: (_) {
+                            return DeleteDialog(
+                              multipleFiles: true,
+                              deleteOnPressed: () {
+                                // showDialog(
+                                //   context: context,
+                                //   builder: (context) {
+                                //     return LoadingWidget();
+                                //   },
+                                // );
+                                BlocProvider.of<DirectoryCubit>(context)
+                                    .deleteSelectedImages(context, deleteAll: !widget.imagesSelected);
+                                Navigator.pop(context);
+                                setState(() {
+                                  // selectionEnabled = false;
+                                });
+                              },
+                            );
+                          },
+                        );
+                    },
                   ),
                 ],
               ),

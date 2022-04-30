@@ -132,37 +132,17 @@ class _ViewScreenState extends State<ViewScreen> {
                       },
                     ),
                     IconGestureDetector(
-                      icon: Icon(Icons.share_rounded),
+                      icon: Icon(Icons.more_vert_rounded),
                       onTap: () {
-                        print('selective share');
-                      },
-                    ),
-                    IconGestureDetector(
-                      icon: Icon(Icons.delete_rounded),
-                      onTap: () {
-                        //TODO: 0 images selected: Bug, Snackbar
-                        showDialog(
+                        showModalBottomSheet(
                           context: context,
                           builder: (_) {
-                            return DeleteDialog(
-                              deleteOnPressed: () {
-                                // showDialog(
-                                //   context: context,
-                                //   builder: (context) {
-                                //     return LoadingWidget();
-                                //   },
-                                // );
-                                BlocProvider.of<DirectoryCubit>(context)
-                                    .deleteMultipleImages(context);
-                                Navigator.pop(context);
-                                setState(() {
-                                  selectionEnabled = false;
-                                });
-                              },
+                            return BlocProvider<DirectoryCubit>.value(
+                              value: BlocProvider.of<DirectoryCubit>(context),
+                              child: MainBottomSheet(imagesSelected: true,),
                             );
                           },
                         );
-                        // Navigator.pop(context);
                       },
                     ),
                   ]
@@ -213,7 +193,7 @@ class _ViewScreenState extends State<ViewScreen> {
                           children: getImageCards(state)!,
                           onReorder: (int oldIndex, int newIndex) {
                             BlocProvider.of<DirectoryCubit>(context)
-                                .onReorderImages(oldIndex, newIndex);
+                                .updateImageIndex(oldIndex, newIndex);
                           },
                           onNoReorder: (int index) {
                             debugPrint(
