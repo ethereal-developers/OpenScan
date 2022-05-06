@@ -7,7 +7,7 @@
     "@normal_scan": {
         "description": "Τύπος σάρωσης 1" 
     },
-    "quick_scan": "Quick Scan",
+    "quick_scan": "Γρήγορη σάρωση",
     "@quick_scan": {
         "description": "Τύπος σάρωσης 2" 
     },
