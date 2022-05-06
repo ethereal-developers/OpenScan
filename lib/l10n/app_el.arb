@@ -1,0 +1,67 @@
+{
+    "scan_options":"Επιλογές σάρωσης",
+    "@scan_options": {
+        "description": "Εργαλείο κουμπιού σάρωσης" 
+    },
+    "normal_scan": "Κανονική σάρωση",
+    "@normal_scan": {
+        "description": "Τύπος σάρωσης 1" 
+    },
+    "quick_scan": "Quick Scan",
+    "@quick_scan": {
+        "description": "Τύπος σάρωσης 2" 
+    },
+    "import_from_gallery": "Εισαγωγή από έκθεση",
+    "@import_from_gallery": {
+        "description": "Τύπος σάρωσης 3" 
+    },
+    "refresh": "Σύρετε κάτω για ανανέωση",
+    "@refresh": {
+        "description": "Εργαλείο ανανέωσης" 
+    },
+    "last_updated": "Τελευταία ενημέρωση",
+    "@last_updated": {
+        "description": "Τελευταία ενημέρωση του αρχείου" 
+    },
+    "images": "εικόνες",
+    "@images": {
+        "description": "Πολλαπλές εικόνες" 
+    },
+    "app_description": "είναι μια εφαρμογή ανοικτού κώδικα για τη σάρωση εγγράφων και τη μετατροπή τους σε PDF.",
+    "@app_description": {
+        "description": "Σύντομη περιγραφή της εφαρμογής στην οθόνη Σχετικά" 
+    },
+    "app_description_2": "Χωρίς διαφημίσεις. Δεν συλλέγουμε δεδομένα.\n Σεβόμαστε την ιδιωτικότητα σας.",
+    "@app_description_2": {
+        "description": "Μήνυμα στην οθόνη Σχετικά" 
+    },
+    "crop_image": "Περικοπή εικόνας",
+    "@crop_image": {
+        "description": "Κεφαλίδα περικοπής οθόνης" 
+    },
+    "rotate_right": "Περιστροφή δεξιά",
+    "@rotate_right": {
+        "description": "Περιστροφή της εικόνας δεξιά" 
+    },
+    "rotate_left": "Περιστροφή αριστερά",
+    "@rotate_left": {
+        "description": "Περιστροφή της εικόνας αριστερά" 
+    },
+    "about":"Σχετικά",
+    "rename": "Μετονομασία",
+    "delete": "Διαγραφή",
+    "image": "εικόνα",
+    "developers": "Προγραμματιστές",
+    "version": "Έκδοση",
+    "next": "Συνέχεια",
+    "tutorial_title": "Πώς χρησιμοποιείται η εφαρμογή;",
+    "done": "Ολοκληρώθηκε",
+    "skip": "Παράληψη",
+    "loading": "Φόρτωση",
+    "home": "Αρχική",
+    "demo": "Επίδειξη",
+    "quality": "Ποιότητα",
+    "save_to_device": "Αποθήκευση στη συσκευή",
+    "share_pdf": "Κοινοποίηση PDF",
+    "share_images": "Κοινοποίηση εικόνων"
+}
