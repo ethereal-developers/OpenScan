@@ -98,3 +98,11 @@ Set up your editor of choice. [Official Flutter Docs for setting up editor](http
   - Run `flutter build apk`
   - Once the build finshes successfully, in the project folder, go to build > app > outputs > apk > release > app-release.apk
   - This will be your generated apk file which you can install on your phone.
+
+# SCREENSHOTS
+
+<p align="center">
+<img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/home.jpg" height=400>
+  <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/view_doc_01.jpg" height=400>
+    <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/view_doc_04.jpg" height=400>
+</p>
