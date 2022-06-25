@@ -8,6 +8,7 @@ import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/extensions.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+
 imageCropper(BuildContext context, File image) async {
   File? croppedImage;
 
@@ -43,10 +44,7 @@ class CropImage extends StatefulWidget {
 class _CropImageState extends State<CropImage> {
   final GlobalKey key = GlobalKey();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  /// Canvas width
-  double? width;
-  /// Canvas height
-  double? height;
+  double? width, height;
   double? prevWidth, prevHeight = 0;
   Size imageBitmapSize = Size(600.0, 600.0);
   bool hasWidgetLoaded = false;
@@ -379,21 +377,18 @@ class _CropImageState extends State<CropImage> {
     });
 
     // TODO: Detect document, points not found
-
+    
     // var pointsData = await channel.invokeMethod("detectDocument", {
     //   "path": imageFile!.path,
     // });
 
     // print('Points => $pointsData');
 
-    
-
     Map imageSize = await channel.invokeMethod("getImageSize", {
       "path": imageFile!.path,
     });
 
-    imageBitmapSize =
-        Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
+    imageBitmapSize = Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
 
     double tlX = (imageBitmapSize.width / width!) * tl!.dx;
     double trX = (imageBitmapSize.width / width!) * tr!.dx;
@@ -404,7 +399,6 @@ class _CropImageState extends State<CropImage> {
     double trY = (imageBitmapSize.height / height!) * tr!.dy;
     double blY = (imageBitmapSize.height / height!) * bl!.dy;
     double brY = (imageBitmapSize.height / height!) * br!.dy;
-
     await channel.invokeMethod('cropImage', {
       'path': imageFile!.path,
       'tl_x': tlX,
