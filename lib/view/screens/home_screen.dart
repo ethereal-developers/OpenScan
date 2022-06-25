@@ -228,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.only(bottom: 5.0),
+              padding: const EdgeInsets.only(bottom: 10.0),
               child: Text(
                 AppLocalizations.of(context)!.refresh,
                 style: TextStyle(color: Colors.grey[700], fontSize: 11),
@@ -245,11 +245,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPressed: () {},
                         menuWidth: size.width * 0.44,
                         child: ListTile(
-                          leading: CircleAvatar(
-                            radius: 28,
-                            backgroundImage: Image.file(
-                              File(masterDirectories[index].firstImgPath!),
-                            ).image,
+                          leading: Image.file(
+                            File(masterDirectories[index].firstImgPath!),
+                            width: 50,
+                            height: 50,
                           ),
                           title: Text(
                             masterDirectories[index].newName ??
@@ -276,6 +275,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             size: 30,
                             color: Theme.of(context).colorScheme.secondary,
                           ),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
                           onTap: () async {
                             pushView(
                               scanType: 'default',

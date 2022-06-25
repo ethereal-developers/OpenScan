@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/extensions.dart';
@@ -111,9 +110,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Icon(
-                      Icons.edit_rounded,
-                    ),
+                    IconButton(onPressed: (){}, icon: Icon(Icons.)),
                     IconButton(
                       icon: Icon(Icons.crop_rounded),
                       onPressed: () {

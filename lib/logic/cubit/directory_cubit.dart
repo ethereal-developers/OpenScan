@@ -155,7 +155,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     } else {
       File? image = await fileOperations.openCamera();
       if (image != null) {
-        imageList = [await imageCropper(context, image)];
+        imageList = [await imageCropper(context, image)]; 
       }
     }
 
@@ -265,9 +265,11 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Deletes selected images, if [deleteAll]=false
-  /// 
+  ///
   /// Deletes all images in directory, if [deleteAll]=true
-  deleteSelectedImages(context, {deleteAll = false}) {
+  /// 
+  /// Returns [true] if directory is deleted, else [false]
+  bool deleteSelectedImages(context, {deleteAll = false}) {
     bool firstImageDeleted = false;
     for (int i = 0; i < state.imageCount; i++) {
       if (state.images![i].selected || deleteAll) {
@@ -293,8 +295,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       // Delete directory if 1 image exists
       Directory(state.dirPath!).deleteSync(recursive: false);
       database.deleteDirectory(dirPath: state.dirPath!);
-      Navigator.pop(context);
       print('Directory: \@\#\!\$\&');
+      return true;
     } catch (e) {
       print('Directory: What a save!');
 
@@ -319,8 +321,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       }
       emitState(state);
     }
-    // removeSelection();
-    // Navigator.pop(context);
+    return false;
   }
 
   /// Selects image in directory

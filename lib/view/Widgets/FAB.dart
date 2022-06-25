@@ -42,8 +42,6 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return SpeedDial(
-      // marginRight: 18,
-      // marginBottom: 20,
       child: SimpleAnimatedIcon(
         startIcon: Icons.add_rounded,
         endIcon: Icons.close_rounded,
@@ -52,14 +50,13 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
       ),
       visible: true,
       closeManually: false,
-      curve: Curves.bounceIn,
-      overlayColor: Colors.black,
+      curve: Curves.easeIn,
       overlayOpacity: 0.5,
       tooltip: AppLocalizations.of(context)!.scan_options,
       heroTag: 'speed-dial-hero-tag',
       backgroundColor: Theme.of(context).colorScheme.secondary,
       foregroundColor: Theme.of(context).colorScheme.primary,
-      elevation: 8.0,
+      elevation: 0,
       shape: CircleBorder(),
       onOpen: () {
         _animationController.forward();
@@ -75,8 +72,11 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
           ),
           backgroundColor: Colors.white,
           label: AppLocalizations.of(context)!.normal_scan,
-          labelStyle:
-              TextStyle(fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
+          labelBackgroundColor: Colors.white,
+          labelStyle: TextStyle(
+            fontSize: 18.0,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onTap: widget.normalScanOnPressed,
         ),
         SpeedDialChild(
@@ -86,8 +86,9 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
           ),
           backgroundColor: Colors.white,
           label: AppLocalizations.of(context)!.quick_scan,
-          labelStyle:
-              TextStyle(fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
+          labelBackgroundColor: Colors.white,
+          labelStyle: TextStyle(
+              fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
           onTap: widget.quickScanOnPressed,
         ),
         SpeedDialChild(
@@ -97,8 +98,9 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
           ),
           backgroundColor: Colors.white,
           label: AppLocalizations.of(context)!.import_from_gallery,
-          labelStyle:
-              TextStyle(fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
+          labelBackgroundColor: Colors.white,
+          labelStyle: TextStyle(
+              fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
           onTap: widget.galleryOnPressed,
         ),
       ],

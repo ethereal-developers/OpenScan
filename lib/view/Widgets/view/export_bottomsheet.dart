@@ -7,6 +7,7 @@ import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/view/OSSwitch.dart';
 import 'package:openscan/view/extensions.dart';
+import 'package:openscan/view/screens/view_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_extend/share_extend.dart';
 
@@ -26,18 +27,23 @@ class ExportBottomSheet extends StatefulWidget {
 }
 
 class _ExportBottomSheetState extends State<ExportBottomSheet> {
-  double quality = 80;
+  double quality = 70;
   FileOperations fileOperations = FileOperations();
+  String exportType = 'PDF';
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return BottomSheet(
       enableDrag: false,
-      onClosing: () {},
+      onClosing: () {
+        Navigator.popUntil(context, ModalRoute.withName(ViewScreen.route));
+      },
       builder: (context) {
         return Container(
           color: Theme.of(context).primaryColor,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 15, 20, 10),
@@ -48,63 +54,10 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
                       'Export Document as: ',
                       style: TextStyle().appBarStyle,
                     ),
-                    BlocBuilder<DirectoryCubit, DirectoryState>(
-                      builder: (context, state) {
-                        return OSSwitch(
-                          onPressed: (String value) async {
-                            // TODO: File naming convention
-                            String fileName = 'OpenScan';
-
-                            if (value == 'PDF') {
-                              if (widget.share) {
-                                await fileOperations.saveToAppDirectory(
-                                  context: context,
-                                  imagesSelected: widget.imagesSelected,
-                                  fileName: fileName,
-                                  images: state.images!,
-                                );
-                                Directory storedDirectory =
-                                    await getApplicationDocumentsDirectory();
-                                ShareExtend.share(
-                                  '${storedDirectory.path}/$fileName.pdf',
-                                  'file',
-                                  sharePanelTitle: 'Share',
-                                );
-                                Navigator.pop(context);
-                                Navigator.pop(context);
-                              }
-                              if (widget.save) {
-                                String? savedDirectory;
-                                savedDirectory =
-                                    await fileOperations.saveToDevice(
-                                  context: context,
-                                  fileName: fileName,
-                                  images: state.images!,
-                                  // TODO: Change quality
-                                  quality: 2,
-                                );
-                                Navigator.pop(context);
-                                Navigator.pop(context);
-                                String displayText;
-                                (savedDirectory != null)
-                                    ? displayText =
-                                        "PDF Saved at\n$savedDirectory"
-                                    : displayText =
-                                        "Failed to generate pdf. Try Again.";
-                                Fluttertoast.showToast(msg: displayText);
-                              }
-                            } else if (value == 'Image') {
-                              if (widget.share) {
-                                // TODO: Get images path list
-                                // ShareExtend.shareMultiple(,'file',);
-                                Navigator.pop(context);
-                                Navigator.pop(context);
-                              }
-                              if (widget.save) {}
-                            }
-                          },
-                          options: ['PDF', 'Image'],
-                        );
+                    OSSwitch(
+                      options: ['PDF', 'Image'],
+                      onPressed: (String value) {
+                        exportType = value;
                       },
                     ),
                   ],
@@ -116,26 +69,98 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
                 endIndent: 8,
                 color: Colors.white,
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 20),
               Text(
                 'Quality',
                 style: TextStyle().appBarStyle,
               ),
               Slider(
-                min: 0,
+                min: 30,
                 max: 100,
                 value: quality,
-                divisions: 10,
+                divisions: 7,
                 label: '${quality.toInt()}%',
                 thumbColor: Theme.of(context).colorScheme.secondary,
                 activeColor: Theme.of(context).colorScheme.secondary,
                 inactiveColor: Colors.grey,
                 onChanged: (value) {
                   setState(() {
-                    if (quality >= 30) quality = value;
+                    quality = value;
                   });
                 },
               ),
+              SizedBox(height: 30),
+              BlocBuilder<DirectoryCubit, DirectoryState>(
+                builder: (context, state) {
+                  return MaterialButton(
+                    height: 50,
+                    minWidth: size.width * 0.7,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    color: Theme.of(context).colorScheme.secondary,
+                    child: Text(
+                      widget.share ? 'Share' : 'Save',
+                      style: TextStyle().appBarStyle.copyWith(
+                          color: Theme.of(context).colorScheme.primary),
+                    ),
+                    splashColor: Colors.transparent,
+                    onPressed: () async {
+                      // TODO: Change file naming convention - spl chars
+                      String fileName = 'OpenScan';
+
+                      if (exportType == 'PDF') {
+                        if (widget.share) {
+                          await fileOperations.saveToAppDirectory(
+                            context: context,
+                            imagesSelected: widget.imagesSelected,
+                            fileName: fileName,
+                            images: state.images!,
+                          );
+                          Directory storedDirectory =
+                              await getApplicationDocumentsDirectory();
+                          ShareExtend.share(
+                            '${storedDirectory.path}/.pdf',
+                            'file',
+                            sharePanelTitle: 'Share',
+                          );
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                        }
+                        if (widget.save) {
+                          String? savedDirectory;
+                          savedDirectory = await fileOperations.saveToDevice(
+                            context: context,
+                            fileName: fileName,
+                            images: state.images!,
+                            // TODO: Change quality
+                            quality: 2,
+                          );
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                          String displayText;
+                          (savedDirectory != null)
+                              ? displayText = "PDF Saved at\n"
+                              : displayText =
+                                  "Failed to generate pdf. Try Again.";
+                          Fluttertoast.showToast(msg: displayText);
+                        }
+                      } else if (exportType == 'Image') {
+                        if (widget.share) {
+                          // TODO: Get images path list
+                          // ShareExtend.shareMultiple(,'file',);
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                        }
+                        if (widget.save) {
+                          // TODO: Save images to device
+                        }
+                      }
+                    },
+                  );
+                },
+              ),
+              SizedBox(height: 30),
             ],
           ),
         );

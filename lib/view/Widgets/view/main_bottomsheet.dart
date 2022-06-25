@@ -8,11 +8,13 @@ import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
 import 'package:openscan/view/Widgets/view/export_bottomsheet.dart';
 import 'package:openscan/view/extensions.dart';
+import 'package:openscan/view/screens/home_screen.dart';
 
 class MainBottomSheet extends StatefulWidget {
   final bool imagesSelected;
 
-  const MainBottomSheet({Key? key, this.imagesSelected = false}) : super(key: key);
+  const MainBottomSheet({Key? key, this.imagesSelected = false})
+      : super(key: key);
   // final String? fileName;
   // final Function? saveToDevice;
   // final Function? sharePdf;
@@ -55,7 +57,7 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                 padding: EdgeInsets.fromLTRB(15, 10, 10, 5),
                 child: BlocConsumer<DirectoryCubit, DirectoryState>(
                   listener: (context, state) {
-                    // print('DirName updated: ${state.dirName}');
+                    // print('DirName updated: ${state.dirName}');q
                   },
                   builder: (context, state) {
                     return Row(
@@ -98,28 +100,30 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                                       children: [
                                         Text(
                                           state.newName ?? state.dirName ?? '',
-                                          style:
-                                              TextStyle().appBarStyle.copyWith(
-                                            shadows: [
-                                              Shadow(
-                                                  color: Colors.white,
-                                                  offset: Offset(0, -4)),
-                                            ],
-                                            color: Colors.transparent,
-                                            decoration:
-                                                TextDecoration.underline,
-                                            decorationStyle:
-                                                TextDecorationStyle.dashed,
-                                            decorationThickness: 1,
-                                            decorationColor: Colors.white,
-                                          ),
+                                          style: TextStyle()
+                                              .appBarStyle
+                                              .copyWith(
+                                                fontWeight: FontWeight.normal,
+                                                shadows: [
+                                                  Shadow(
+                                                      color: Colors.white,
+                                                      offset: Offset(0, -5)),
+                                                ],
+                                                color: Colors.transparent,
+                                                decoration:
+                                                    TextDecoration.underline,
+                                                decorationStyle:
+                                                    TextDecorationStyle.dashed,
+                                                decorationThickness: 2,
+                                                decorationColor: Colors.white,
+                                              ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
                                     ),
                                   ),
                                   SizedBox(
-                                    width: 7,
+                                    width: 10,
                                   ),
                                   Icon(
                                     Icons.edit,
@@ -212,7 +216,20 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                       Icons.folder_rounded,
                       color: Colors.blueAccent,
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (_) {
+                          return BlocProvider<DirectoryCubit>.value(
+                            value: BlocProvider.of<DirectoryCubit>(context),
+                            child: ExportBottomSheet(
+                              imagesSelected: true,
+                              save: true,
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                   BottomSheetActivityButton(
                     subtitle: 'Delete',
@@ -222,28 +239,29 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                     ),
                     onPressed: () {
                       //TODO: 0 images selected: Bug, Snackbar
-                        showDialog(
-                          context: context,
-                          builder: (_) {
-                            return DeleteDialog(
-                              multipleFiles: true,
-                              deleteOnPressed: () {
-                                // showDialog(
-                                //   context: context,
-                                //   builder: (context) {
-                                //     return LoadingWidget();
-                                //   },
-                                // );
-                                BlocProvider.of<DirectoryCubit>(context)
-                                    .deleteSelectedImages(context, deleteAll: !widget.imagesSelected);
+                      showDialog(
+                        context: context,
+                        builder: (_) {
+                          return DeleteDialog(
+                            multipleFiles: true,
+                            deleteOnPressed: () {
+                              bool returnToHome =
+                                  BlocProvider.of<DirectoryCubit>(context)
+                                      .deleteSelectedImages(
+                                context,
+                                deleteAll: !widget.imagesSelected,
+                              );
+                              if (returnToHome)
+                                Navigator.popUntil(context,
+                                    ModalRoute.withName(HomeScreen.route));
+                              else {
                                 Navigator.pop(context);
-                                setState(() {
-                                  // selectionEnabled = false;
-                                });
-                              },
-                            );
-                          },
-                        );
+                                setState(() {});
+                              }
+                            },
+                          );
+                        },
+                      );
                     },
                   ),
                 ],

@@ -61,6 +61,7 @@ class _ViewScreenState extends State<ViewScreen> {
                       Icons.close_rounded,
                       size: 30,
                     ),
+                    padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
                     onPressed: () {
                       BlocProvider.of<DirectoryCubit>(context).resetSelection();
                       setState(() {
@@ -70,6 +71,7 @@ class _ViewScreenState extends State<ViewScreen> {
                   )
                 : IconButton(
                     icon: Icon(Icons.arrow_back_ios),
+                    padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
                     onPressed: () {
                       Navigator.pop(context, true);
                     },
@@ -104,16 +106,18 @@ class _ViewScreenState extends State<ViewScreen> {
                         Text(
                           state.newName ?? state.dirName ?? '',
                           style: TextStyle().appBarStyle.copyWith(
-                            shadows: [
-                              Shadow(
-                                  color: Colors.white, offset: Offset(0, -4)),
-                            ],
-                            color: Colors.transparent,
-                            decoration: TextDecoration.underline,
-                            decorationStyle: TextDecorationStyle.dashed,
-                            decorationThickness: 1,
-                            decorationColor: Colors.white,
-                          ),
+                                fontWeight: FontWeight.normal,
+                                shadows: [
+                                  Shadow(
+                                      color: Colors.white,
+                                      offset: Offset(0, -5)),
+                                ],
+                                color: Colors.transparent,
+                                decoration: TextDecoration.underline,
+                                decorationStyle: TextDecorationStyle.dashed,
+                                decorationThickness: 2,
+                                decorationColor: Colors.white,
+                              ),
                         ),
                       ],
                     ),
@@ -139,7 +143,9 @@ class _ViewScreenState extends State<ViewScreen> {
                           builder: (_) {
                             return BlocProvider<DirectoryCubit>.value(
                               value: BlocProvider.of<DirectoryCubit>(context),
-                              child: MainBottomSheet(imagesSelected: true,),
+                              child: MainBottomSheet(
+                                imagesSelected: true,
+                              ),
                             );
                           },
                         );
