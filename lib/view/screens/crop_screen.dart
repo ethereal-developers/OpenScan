@@ -8,8 +8,7 @@ import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/extensions.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-
-imageCropper(BuildContext context, File image) async {
+Future<File> imageCropper(BuildContext context, File image) async {
   File? croppedImage;
 
   // imageFilePath = await FlutterScannerCropper.openCrop(
@@ -122,7 +121,7 @@ class _CropImageState extends State<CropImage> {
     if (isRenderBoxValuesCorrect) return;
   }
 
-  checkPolygon(Offset p1, Offset q1, Offset p2, Offset q2) {
+  bool checkPolygon(Offset p1, Offset q1, Offset p2, Offset q2) {
     bool onSegment(Offset p, Offset q, Offset r) {
       if (q.dx <= max(p.dx, r.dx) &&
           q.dx >= min(p.dx, r.dx) &&
@@ -376,19 +375,12 @@ class _CropImageState extends State<CropImage> {
       isLoading = true;
     });
 
-    // TODO: Detect document, points not found
-    
-    // var pointsData = await channel.invokeMethod("detectDocument", {
-    //   "path": imageFile!.path,
-    // });
-
-    // print('Points => $pointsData');
-
     Map imageSize = await channel.invokeMethod("getImageSize", {
       "path": imageFile!.path,
     });
 
-    imageBitmapSize = Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
+    imageBitmapSize =
+        Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
 
     double tlX = (imageBitmapSize.width / width!) * tl!.dx;
     double trX = (imageBitmapSize.width / width!) * tr!.dx;
@@ -399,6 +391,7 @@ class _CropImageState extends State<CropImage> {
     double trY = (imageBitmapSize.height / height!) * tr!.dy;
     double blY = (imageBitmapSize.height / height!) * bl!.dy;
     double brY = (imageBitmapSize.height / height!) * br!.dy;
+
     await channel.invokeMethod('cropImage', {
       'path': imageFile!.path,
       'tl_x': tlX,
@@ -507,23 +500,69 @@ class _CropImageState extends State<CropImage> {
             color: Theme.of(context).colorScheme.secondary,
             child: Text(AppLocalizations.of(context)!.rotate_left),
             onPressed: () async {
-              File tempImageFile = File(imageFile!.path
-                      .substring(0, imageFile!.path.lastIndexOf('.')) +
-                  'r.jpg');
-              imageFile!.copySync(tempImageFile.path);
-              await channel.invokeMethod("rotateImage", {
-                'path': tempImageFile.path,
-                'degree': -90,
+              // TODO run detection in separate thread and update UI accordingly
+              List pointsData = await channel.invokeMethod("detectDocument", {
+                "path": imageFile!.path,
               });
-              print('Rotated left');
-              setState(() {
-                // tempImageFile.copySync(imageFile.path);
-                imageFile = File(tempImageFile.path);
+
+              print('Points => $pointsData');
+
+              tl = Offset(pointsData[0][1], pointsData[0][0]);
+              bl = Offset(pointsData[1][1], pointsData[1][0]);
+              br = Offset(pointsData[2][1], pointsData[2][0]);
+              tr = Offset(pointsData[3][1], pointsData[3][0]);
+
+              Map imageSize = await channel.invokeMethod("getImageSize", {
+                "path": imageFile!.path,
               });
-              WidgetsBinding.instance!.addPostFrameCallback(
-                (_) => getImageSize(false),
-              );
-              // tempImageFile.deleteSync();
+
+              imageBitmapSize = Size(imageSize['width']!.toDouble(),
+                  imageSize['height']!.toDouble());
+
+              double tlX = (tl!.dx / imageBitmapSize.width) * height!;
+              double trX = (tr!.dx / imageBitmapSize.width) * height!;
+              double blX = (bl!.dx / imageBitmapSize.width) * height!;
+              double brX = (br!.dx / imageBitmapSize.width) * height!;
+
+              double tlY = (tl!.dy / imageBitmapSize.height) * width!;
+              double trY = (tr!.dy / imageBitmapSize.height) * width!;
+              double blY = (bl!.dy / imageBitmapSize.height) * width!;
+              double brY = (br!.dy / imageBitmapSize.height) * width!;
+
+              tl = Offset(tlX, tlY);
+              bl = Offset(blX, blY);
+              br = Offset(brX, brY);
+              tr = Offset(trX, trY);
+
+              print('2');
+              print('$tl, $bl, $br, $tr');
+              print('$width, $height');
+
+              updatePolygon(DragUpdateDetails(
+                globalPosition: Offset(0, 0),
+                localPosition: Offset(0, 0),
+              ));
+
+              // print('${(pointsData[0][0] / width)}');
+              // print('imageSize => width $width h $height');
+
+              // File tempImageFile = File(imageFile!.path
+              //         .substring(0, imageFile!.path.lastIndexOf('.')) +
+              //     'r.jpg');
+              // imageFile!.copySync(tempImageFile.path);
+              // await channel.invokeMethod("rotateImage", {
+              //   'path': tempImageFile.path,
+              //   'degree': -90,
+              // });
+              // print('Rotated left');
+              // setState(() {
+              //   // tempImageFile.copySync(imageFile.path);
+              //   imageFile = File(tempImageFile.path);
+              // });
+              // WidgetsBinding.instance!.addPostFrameCallback(
+              //   (_) => getImageSize(false),
+              // );
+              // // tempImageFile.deleteSync();
             },
           ),
           Padding(

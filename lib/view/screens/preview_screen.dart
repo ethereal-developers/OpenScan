@@ -110,7 +110,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    IconButton(onPressed: (){}, icon: Icon(Icons.)),
+                    // IconButton(onPressed: (){}, icon: Icon(Icons.)),
                     IconButton(
                       icon: Icon(Icons.crop_rounded),
                       onPressed: () {
