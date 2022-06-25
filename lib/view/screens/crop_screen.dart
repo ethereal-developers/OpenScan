@@ -8,8 +8,7 @@ import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/extensions.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-
-imageCropper(BuildContext context, File image) async {
+Future<File> imageCropper(BuildContext context, File image) async {
   File? croppedImage;
 
   // imageFilePath = await FlutterScannerCropper.openCrop(
@@ -122,7 +121,7 @@ class _CropImageState extends State<CropImage> {
     if (isRenderBoxValuesCorrect) return;
   }
 
-  checkPolygon(Offset p1, Offset q1, Offset p2, Offset q2) {
+  bool checkPolygon(Offset p1, Offset q1, Offset p2, Offset q2) {
     bool onSegment(Offset p, Offset q, Offset r) {
       if (q.dx <= max(p.dx, r.dx) &&
           q.dx >= min(p.dx, r.dx) &&
@@ -376,17 +375,12 @@ class _CropImageState extends State<CropImage> {
       isLoading = true;
     });
 
-    var pointsData = await channel.invokeMethod("detectDocument", {
-      "path": imageFile!.path,
-    });
-
-    print('Points => $pointsData');
-
     Map imageSize = await channel.invokeMethod("getImageSize", {
       "path": imageFile!.path,
     });
 
-    imageBitmapSize = Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
+    imageBitmapSize =
+        Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
 
     double tlX = (imageBitmapSize.width / width!) * tl!.dx;
     double trX = (imageBitmapSize.width / width!) * tr!.dx;
@@ -505,23 +499,32 @@ class _CropImageState extends State<CropImage> {
             color: Theme.of(context).colorScheme.secondary,
             child: Text(AppLocalizations.of(context)!.rotate_left),
             onPressed: () async {
-              File tempImageFile = File(imageFile!.path
-                      .substring(0, imageFile!.path.lastIndexOf('.')) +
-                  'r.jpg');
-              imageFile!.copySync(tempImageFile.path);
-              await channel.invokeMethod("rotateImage", {
-                'path': tempImageFile.path,
-                'degree': -90,
+              // TODO run detection in separate thread and update UI accordingly
+              List pointsData = await channel.invokeMethod("detectDocument", {
+                "path": imageFile!.path,
               });
-              print('Rotated left');
-              setState(() {
-                // tempImageFile.copySync(imageFile.path);
-                imageFile = File(tempImageFile.path);
-              });
-              WidgetsBinding.instance!.addPostFrameCallback(
-                (_) => getImageSize(false),
-              );
-              // tempImageFile.deleteSync();
+
+              print('Points => $pointsData');
+              // print('${(pointsData[0][0] / width)}');
+              // print('imageSize => width $width h $height');
+
+              // File tempImageFile = File(imageFile!.path
+              //         .substring(0, imageFile!.path.lastIndexOf('.')) +
+              //     'r.jpg');
+              // imageFile!.copySync(tempImageFile.path);
+              // await channel.invokeMethod("rotateImage", {
+              //   'path': tempImageFile.path,
+              //   'degree': -90,
+              // });
+              // print('Rotated left');
+              // setState(() {
+              //   // tempImageFile.copySync(imageFile.path);
+              //   imageFile = File(tempImageFile.path);
+              // });
+              // WidgetsBinding.instance!.addPostFrameCallback(
+              //   (_) => getImageSize(false),
+              // );
+              // // tempImageFile.deleteSync();
             },
           ),
           Padding(
