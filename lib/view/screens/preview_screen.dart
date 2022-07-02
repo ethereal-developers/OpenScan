@@ -18,6 +18,10 @@ class PreviewScreen extends StatefulWidget {
 class _PreviewScreenState extends State<PreviewScreen> {
   PageController? _pageController;
   int? pageIndex;
+  int? currentPageIndex;
+  late TapDownDetails _doubleTapDetails;
+  TransformationController _controller = TransformationController();
+  bool enablePageScroll = true;
 
   @override
   void initState() {
@@ -28,6 +32,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
         extendBody: true,
@@ -35,21 +40,35 @@ class _PreviewScreenState extends State<PreviewScreen> {
         appBar: AppBar(
           elevation: 0,
           centerTitle: true,
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.3),
+          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.5),
           title: BlocConsumer<DirectoryCubit, DirectoryState>(
             listener: (context, state) {},
             builder: (context, state) {
-              return RichText(
-                text: TextSpan(
-                  text: state.dirName,
-                  style: TextStyle().appBarStyle,
+              return Container(
+                height: 20,
+                constraints: BoxConstraints(maxWidth: size.width * .7),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    Text(
+                      state.dirName!,
+                      style: TextStyle().appBarStyle,
+                    ),
+                  ],
                 ),
-                overflow: TextOverflow.ellipsis,
               );
+              // return RichText(
+              //   text: TextSpan(
+              //     text: state.dirName,
+              //     style: TextStyle().appBarStyle,
+              //   ),
+              //   overflow: TextOverflow.ellipsis,
+              // );
             },
           ),
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios),
+            padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -61,16 +80,60 @@ class _PreviewScreenState extends State<PreviewScreen> {
               return Stack(
                 children: [
                   PageView.builder(
+                    physics: enablePageScroll
+                        ? ClampingScrollPhysics()
+                        : NeverScrollableScrollPhysics(),
                     controller: _pageController,
                     itemCount: state.imageCount,
                     itemBuilder: (context, index) {
-                      return Container(
-                        child: Center(
-                          child: Image.file(File(state.images![index].imgPath!)),
+                      currentPageIndex = index;
+                      return GestureDetector(
+                        onDoubleTapDown: (details) {
+                          _doubleTapDetails = details;
+                        },
+                        onDoubleTap: () {
+                          if (_controller.value != Matrix4.identity()) {
+                            _controller.value = Matrix4.identity();
+                            setState(() {
+                              enablePageScroll = true;
+                            });
+                          } else {
+                            final position = _doubleTapDetails.localPosition;
+                            _controller.value = Matrix4.identity()
+                              ..translate(-position.dx, -position.dy)
+                              ..scale(2.0);
+                            setState(() {
+                              enablePageScroll = false;
+                            });
+                          }
+                        },
+                        child: InteractiveViewer(
+                          transformationController: _controller,
+                          onInteractionEnd: (scaleEndDetails) {
+                            print(_controller.value.getColumn(0));
+                            if (_controller.value.getColumn(0) ==
+                                Matrix4.identity().getColumn(0)) {
+                              setState(() {
+                                enablePageScroll = true;
+                              });
+                            }
+                          },
+                          maxScale: 3,
+                          child: Container(
+                            child: Center(
+                              child: Hero(
+                                tag: 'hero-image-${index + 1}',
+                                child: Image.file(
+                                  File(state.images![index].imgPath!),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       );
                     },
                     onPageChanged: (index) {
+                      _controller.value = Matrix4.identity();
                       setState(() {
                         pageIndex = index + 1;
                       });
@@ -84,9 +147,13 @@ class _PreviewScreenState extends State<PreviewScreen> {
                         padding:
                             EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.7),
                           borderRadius: BorderRadius.circular(20),
                         ),
+                        // TODO: Fix Page Index- wrong when image is deleted
                         child: Text(
                           '$pageIndex/${state.imageCount}',
                           style: TextStyle(color: Colors.white, fontSize: 14),
@@ -100,7 +167,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
           ),
         ),
         bottomNavigationBar: BottomAppBar(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
           elevation: 0,
           child: BlocConsumer<DirectoryCubit, DirectoryState>(
             listener: (context, state) {},
@@ -135,6 +202,10 @@ class _PreviewScreenState extends State<PreviewScreen> {
                                       .images![_pageController!.page!.toInt()],
                                 );
                                 Navigator.pop(context);
+                                setState(() {
+                                  pageIndex = currentPageIndex;
+                                });
+                                // pageIndex = _pageController!.page!.toInt() + 1;
                               },
                             );
                           },

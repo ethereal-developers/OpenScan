@@ -21,10 +21,14 @@ class ImageCard extends StatelessWidget {
       children: [
         MaterialButton(
           elevation: 0,
-          color: Theme.of(context).primaryColor,
+          color: Colors.black.withOpacity(0.2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           onPressed: onPressed,
           child: Container(
-            child: Image.file(File(image!.imgPath!)),
+            child: Hero(
+              tag: 'hero-image-${image!.idx}',
+              child: Image.file(File(image!.imgPath!)),
+            ),
             height: size.height * 0.25,
             width: size.width * 0.38,
           ),
@@ -40,7 +44,10 @@ class ImageCard extends StatelessWidget {
                         color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
-                    color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .secondary
+                        .withOpacity(0.3),
                   ),
                 ),
               )
@@ -52,11 +59,13 @@ class ImageCard extends StatelessWidget {
           bottom: 10,
           right: 10,
           child: CircleAvatar(
-            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+            backgroundColor:
+                Theme.of(context).colorScheme.secondary.withOpacity(0.8),
             radius: 13,
             child: Text(
               image!.idx.toString(),
-              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 14),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary, fontSize: 14),
             ),
           ),
         ),

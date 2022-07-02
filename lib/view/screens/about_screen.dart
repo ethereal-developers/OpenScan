@@ -35,6 +35,7 @@ class AboutScreen extends StatelessWidget {
           ),
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios),
+                    padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
             onPressed: () => Navigator.pop(context),
           ),
         ),

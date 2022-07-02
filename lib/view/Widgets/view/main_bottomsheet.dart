@@ -123,7 +123,7 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                                     ),
                                   ),
                                   SizedBox(
-                                    width: 10,
+                                    width: 10
                                   ),
                                   Icon(
                                     Icons.edit,
@@ -134,7 +134,7 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                               ),
                             ),
                             SizedBox(
-                              height: 5,
+                              height: 5
                             ),
                             Text(
                               '${state.imageCount} ${(state.imageCount == 1) ? AppLocalizations.of(context)!.image : AppLocalizations.of(context)!.images}',

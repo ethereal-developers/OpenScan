@@ -429,6 +429,7 @@ class _CropImageState extends State<CropImage> {
             backgroundColor: Theme.of(context).primaryColor,
             leading: IconButton(
               icon: Icon(Icons.arrow_back_ios),
+                    padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
               onPressed: () {
                 Navigator.pop(context, null);
               },

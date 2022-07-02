@@ -46,6 +46,7 @@ class _DemoScreenState extends State<DemoScreen> {
         leading: (!widget.showSkip!)
             ? IconButton(
                 icon: Icon(Icons.arrow_back_ios),
+                padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
@@ -67,7 +68,9 @@ class _DemoScreenState extends State<DemoScreen> {
                       children: <Widget>[
                         Center(
                           child: Text(
-                            (isDone) ? AppLocalizations.of(context)!.done : AppLocalizations.of(context)!.skip,
+                            (isDone)
+                                ? AppLocalizations.of(context)!.done
+                                : AppLocalizations.of(context)!.skip,
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.secondary,
                               fontSize: 17,
