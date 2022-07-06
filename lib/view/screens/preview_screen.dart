@@ -15,19 +15,83 @@ class PreviewScreen extends StatefulWidget {
   _PreviewScreenState createState() => _PreviewScreenState();
 }
 
-class _PreviewScreenState extends State<PreviewScreen> {
+class _PreviewScreenState extends State<PreviewScreen>
+    with SingleTickerProviderStateMixin {
   PageController? _pageController;
   int? pageIndex;
   int? currentPageIndex;
   late TapDownDetails _doubleTapDetails;
-  TransformationController _controller = TransformationController();
+  TransformationController _transformationController =
+      TransformationController();
   bool enablePageScroll = true;
+  late AnimationController animationController;
+  Animation<Matrix4> _matrixAnimation =
+      AlwaysStoppedAnimation(Matrix4.identity());
+
+  void doubleTapZoom(Size size) async {
+    // print(_transformationController.value);
+    // print('details: ${_doubleTapDetails.localPosition}');
+    // print(Matrix4.translationValues(-size.width, -size.height, 0));
+
+    print(_transformationController.value == Matrix4.identity());
+
+    final position = _doubleTapDetails.localPosition;
+
+    if (_transformationController.value == Matrix4.identity()) {
+      _matrixAnimation = Matrix4Tween(
+              begin: Matrix4.identity(),
+              end: Matrix4.translationValues(-position.dx, -position.dy, 0)
+                ..scale(2.0))
+          .chain(CurveTween(curve: Curves.decelerate))
+          .animate(animationController);
+
+      await animationController.forward();
+
+      setState(() {
+        enablePageScroll = false;
+      });
+
+    } else {
+
+      if (animationController.isDismissed) {
+        _matrixAnimation = Matrix4Tween(
+          begin: _transformationController.value,
+          end: Matrix4.identity(),
+        )
+            .chain(CurveTween(curve: Curves.decelerate))
+            .animate(animationController);
+
+        await animationController.forward();
+      }
+
+      _matrixAnimation = Matrix4Tween(
+        begin: Matrix4.identity(),
+        end: _transformationController.value,
+      )
+          .chain(CurveTween(curve: Curves.decelerate))
+          .animate(animationController);
+
+      await animationController.reverse();
+
+      setState(() {
+        enablePageScroll = true;
+      });
+    }
+    print(animationController.status);
+  }
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: widget.initialIndex!);
     pageIndex = widget.initialIndex! + 1;
+    animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 200),
+    )..addListener(() {
+        // print(MatrixUtils.transformPoint(_matrixAnimation.value, Offset.zero));
+        _transformationController.value = _matrixAnimation.value;
+      });
   }
 
   @override
@@ -92,29 +156,18 @@ class _PreviewScreenState extends State<PreviewScreen> {
                           _doubleTapDetails = details;
                         },
                         onDoubleTap: () {
-                          if (_controller.value != Matrix4.identity()) {
-                            _controller.value = Matrix4.identity();
-                            setState(() {
-                              enablePageScroll = true;
-                            });
-                          } else {
-                            final position = _doubleTapDetails.localPosition;
-                            _controller.value = Matrix4.identity()
-                              ..translate(-position.dx, -position.dy)
-                              ..scale(2.0);
-                            setState(() {
-                              enablePageScroll = false;
-                            });
-                          }
+                          doubleTapZoom(size);
                         },
                         child: InteractiveViewer(
-                          transformationController: _controller,
+                          transformationController: _transformationController,
                           onInteractionEnd: (scaleEndDetails) {
-                            print(_controller.value.getColumn(0));
-                            if (_controller.value.getColumn(0) ==
+                            // print(_transformationController.value);
+                            // print(animationController.status);
+                            // animationController.value = _transformationController.value;
+                            if (_transformationController.value.getColumn(0) !=
                                 Matrix4.identity().getColumn(0)) {
                               setState(() {
-                                enablePageScroll = true;
+                                enablePageScroll = false;
                               });
                             }
                           },
@@ -133,7 +186,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
                       );
                     },
                     onPageChanged: (index) {
-                      _controller.value = Matrix4.identity();
+                      _transformationController.value = Matrix4.identity();
                       setState(() {
                         pageIndex = index + 1;
                       });
