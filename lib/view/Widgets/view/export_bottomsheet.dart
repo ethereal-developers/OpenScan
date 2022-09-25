@@ -111,25 +111,31 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
 
                       if (exportType == 'PDF') {
                         if (widget.share) {
-                          await fileOperations.saveToAppDirectory(
-                            context: context,
-                            imagesSelected: widget.imagesSelected,
-                            fileName: fileName,
-                            images: state.images!,
-                          );
-                          Directory storedDirectory =
-                              await getApplicationDocumentsDirectory();
-                          ShareExtend.share(
-                            '${storedDirectory.path}/.pdf',
-                            'file',
-                            sharePanelTitle: 'Share',
-                          );
-                          Navigator.pop(context);
-                          Navigator.pop(context);
+                          String? fileNameWithPath = await fileOperations
+                              .saveToAppDirectory(
+                                context: context,
+                                imagesSelected: widget.imagesSelected,
+                                fileName: fileName,
+                                images: state.images!,
+                              );
+                          print('Filename => $fileNameWithPath');
+
+                          if (fileNameWithPath != null) {
+                            ShareExtend.share(
+                              fileNameWithPath,
+                              'file',
+                              sharePanelTitle: 'Share',
+                            );
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          } else {
+                            Fluttertoast.showToast(
+                                msg: "Failed to generate pdf. Try Again.");
+                          }
                         }
                         if (widget.save) {
-                          String? savedDirectory;
-                          savedDirectory = await fileOperations.saveToDevice(
+                          String? fileNameWithPath;
+                          fileNameWithPath = await fileOperations.saveToDevice(
                             context: context,
                             fileName: fileName,
                             images: state.images!,
@@ -138,8 +144,9 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
                           );
                           Navigator.pop(context);
                           Navigator.pop(context);
+
                           String displayText;
-                          (savedDirectory != null)
+                          (fileNameWithPath != null)
                               ? displayText = "PDF Saved at\n"
                               : displayText =
                                   "Failed to generate pdf. Try Again.";
