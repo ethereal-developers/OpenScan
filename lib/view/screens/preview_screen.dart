@@ -29,9 +29,6 @@ class _PreviewScreenState extends State<PreviewScreen>
       AlwaysStoppedAnimation(Matrix4.identity());
 
   void doubleTapZoom(Size size) async {
-    // print(_transformationController.value);
-    // print('details: ${_doubleTapDetails.localPosition}');
-    // print(Matrix4.translationValues(-size.width, -size.height, 0));
 
     print(_transformationController.value == Matrix4.identity());
 
@@ -89,7 +86,6 @@ class _PreviewScreenState extends State<PreviewScreen>
       vsync: this,
       duration: Duration(milliseconds: 200),
     )..addListener(() {
-        // print(MatrixUtils.transformPoint(_matrixAnimation.value, Offset.zero));
         _transformationController.value = _matrixAnimation.value;
       });
   }
@@ -161,9 +157,6 @@ class _PreviewScreenState extends State<PreviewScreen>
                         child: InteractiveViewer(
                           transformationController: _transformationController,
                           onInteractionEnd: (scaleEndDetails) {
-                            // print(_transformationController.value);
-                            // print(animationController.status);
-                            // animationController.value = _transformationController.value;
                             if (_transformationController.value.getColumn(0) !=
                                 Matrix4.identity().getColumn(0)) {
                               setState(() {

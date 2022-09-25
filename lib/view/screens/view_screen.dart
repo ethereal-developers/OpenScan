@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/FAB.dart';
-import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
 import 'package:openscan/view/Widgets/view/main_bottomsheet.dart';
 import 'package:openscan/view/Widgets/view/icon_gesture.dart';
