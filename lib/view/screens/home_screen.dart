@@ -36,9 +36,9 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {});
   }
 
-  void getData() {
-    homeRefresh();
-  }
+  // void getData() {
+  //   homeRefresh();
+  // }
 
   Future<bool> _requestPermission() async {
     if (await Permission.storage.request().isGranted &&

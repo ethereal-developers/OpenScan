@@ -20,12 +20,12 @@ class DirectoryOS {
 
 class ImageOS {
   int? idx;
-  String? imgPath;
+  String imgPath;
   bool selected;
 
   ImageOS({
     this.idx,
-    this.imgPath,
+    required this.imgPath,
     this.selected = false,
   });
 }

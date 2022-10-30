@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/FAB.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
@@ -50,7 +51,6 @@ class _ViewScreenState extends State<ViewScreen> {
         child: Scaffold(
           key: scaffoldKey,
           backgroundColor: Theme.of(context).colorScheme.background,
-          // key: scaffoldKey,
           appBar: AppBar(
             elevation: 0,
             backgroundColor: Theme.of(context).primaryColor,

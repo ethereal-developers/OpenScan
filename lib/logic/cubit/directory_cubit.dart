@@ -48,7 +48,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Updates the data to reflect in the UI - ad hoc
-  emitState(state) {
+  void emitState(state) {
     emit(DirectoryState(
       dirName: state.dirName,
       created: state.created,
@@ -62,7 +62,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Creates directory while importing images
-  createDirectory() async {
+  void createDirectory() async {
     Directory? appDir = await getExternalStorageDirectory();
     var now = DateTime.now();
 
@@ -78,7 +78,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Extracts image data from db and stores it in [images] object list
-  getImageData() async {
+  void getImageData() async {
     state.images = [];
     var directoryData = await database.getImageData(state.dirName!);
     print('From Cubit => $directoryData');
@@ -98,7 +98,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Updates image index after reordering
-  updateImageIndex(int oldIndex, int newIndex) {
+  void updateImageIndex(int oldIndex, int newIndex) {
     ImageOS image = state.images!.removeAt(oldIndex);
     state.images!.insert(newIndex, image);
 
@@ -123,7 +123,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Reorders images in database
-  reorderImages() {
+  void reorderImages() {
     for (var i = 1; i <= state.images!.length; i++) {
       state.images![i - 1].idx = i;
       if (i == 1) {
@@ -143,7 +143,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Imports image from gallery and camera and stores it in db
-  createImage(
+  void createImage(
     context, {
     bool quickScan = false,
     bool fromGallery = false,
@@ -182,7 +182,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
         emitState(state);
 
-        await fileOperations.deleteTemporaryFiles();
+        await fileOperations.deleteTemporaryImages();
         if (quickScan) {
           return createImage(context, quickScan: quickScan);
         }
@@ -191,20 +191,20 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Calls image cropper
-  cropImage(context, ImageOS imageOS) async {
+  void cropImage(context, ImageOS imageOS) async {
     File image = await imageCropper(
       context,
-      File(imageOS.imgPath!),
+      File(imageOS.imgPath),
     );
 
     // Creating new imagePath for cropped image
     File temp = File(
-        imageOS.imgPath!.substring(0, imageOS.imgPath!.lastIndexOf("/")) +
+        imageOS.imgPath.substring(0, imageOS.imgPath.lastIndexOf("/")) +
             '/' +
             DateTime.now().toString() +
             '.jpg');
     image.copySync(temp.path);
-    File(imageOS.imgPath!).deleteSync();
+    File(imageOS.imgPath).deleteSync();
     imageOS.imgPath = temp.path;
     print('Image Cropped');
 
@@ -228,9 +228,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Deletes image and updates db
-  deleteImage(context, {required ImageOS imageToDelete}) async {
+  void deleteImage(context, {required ImageOS imageToDelete}) async {
     // Deleting image from database
-    File(imageToDelete.imgPath!).deleteSync();
+    File(imageToDelete.imgPath).deleteSync();
     database.deleteImage(
       imgPath: imageToDelete.imgPath,
       tableName: state.dirName!,
@@ -279,7 +279,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     for (int i = 0; i < state.imageCount; i++) {
       if (state.images![i].selected || deleteAll) {
         // Deleting image from storage
-        File(state.images![i].imgPath!).deleteSync();
+        File(state.images![i].imgPath).deleteSync();
 
         // Deleting image from db
         database.deleteImage(
@@ -330,14 +330,14 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Selects image in directory
-  selectImage(ImageOS imageOS) {
+  void selectImage(ImageOS imageOS) {
     state.images![imageOS.idx! - 1].selected =
         !state.images![imageOS.idx! - 1].selected;
     emitState(state);
   }
 
   /// Selects all images in directory
-  selectAllImages() {
+  void selectAllImages() {
     for (ImageOS image in state.images!) {
       image.selected = true;
     }
@@ -345,7 +345,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Deselects images in directory
-  resetSelection() {
+  void resetSelection() {
     for (ImageOS image in state.images!) {
       image.selected = false;
     }
@@ -353,7 +353,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Rename the directory name
-  renameDocument(String newName) {
+  void renameDocument(String newName) {
     state.newName = newName;
     emitState(state);
   }

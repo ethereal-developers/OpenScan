@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:openscan/core/data/database_helper.dart';
@@ -31,11 +32,138 @@ class FileOperations {
     }
   }
 
+  /// Selects directory wrt OS
+  ///
+  /// Returns: selected directory [Directory]
+  Future<Directory> pickDirectory(
+      BuildContext? context, selectedDirectory) async {
+    Directory? directory = selectedDirectory;
+    try {
+      if (Platform.isAndroid) {
+        directory = Directory("/storage/emulated/0/");
+      } else {
+        directory = await getExternalStorageDirectory();
+      }
+    } catch (e) {
+      print(e);
+      directory = await getExternalStorageDirectory();
+    }
+
+    // TODO: Pick custom directory
+    // Directory newDirectory = await DirectoryPicker.pick(
+    //     allowFolderCreation: true,
+    //     context: context,
+    //     rootDirectory: directory,
+    //     shape: RoundedRectangleBorder(
+    //         borderRadius: BorderRadius.all(Radius.circular(10))));
+
+    return directory!;
+  }
+
+  // <=========================== Image Operations ============================>
+
+  /// Image picker opens camera
+  ///
+  /// Returns: Picked image [File]
+  Future<File?> openCamera() async {
+    File? image;
+    var picture = await ImagePicker().pickImage(source: ImageSource.camera);
+    if (picture != null) {
+      image = File(picture.path);
+    }
+    return image;
+  }
+
+  /// Image picker opens gallery
+  ///
+  /// Returns: Picked images [List]
+  Future<List<File>> openGallery() async {
+    List<XFile>? pic;
+    try {
+      pic = await ImagePicker().pickMultiImage();
+    } catch (e) {
+      print(e);
+    }
+
+    List<File> imageFiles = [];
+
+    if (pic != null) {
+      for (XFile image in pic) {
+        imageFiles.add(File(image.path));
+      }
+    }
+    print(imageFiles);
+    return imageFiles;
+  }
+
+  /// Saves image in directory and database
+  ///
+  /// Returns: Saved image [File]
+  Future<File> saveImage(
+      {required File image, int? index, required String dirPath}) async {
+    if (!await Directory(dirPath).exists()) {
+      new Directory(dirPath).create();
+      await database.createDirectory(
+        directory: DirectoryOS(
+          dirName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
+          dirPath: dirPath,
+          imageCount: 0,
+          created: DateTime.parse(dirPath
+              .substring(dirPath.lastIndexOf('/') + 1)
+              .substring(
+                  dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
+                      1)),
+          newName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
+          lastModified: DateTime.parse(dirPath
+              .substring(dirPath.lastIndexOf('/') + 1)
+              .substring(
+                  dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
+                      1)),
+          firstImgPath: null,
+        ),
+      );
+    }
+
+    File tempPic = File("$dirPath/${DateTime.now()}.jpg");
+    image.copy(tempPic.path);
+    database.createImage(
+      image: ImageOS(
+        imgPath: tempPic.path,
+        idx: index,
+      ),
+      tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
+    );
+    if (index == 1) {
+      database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
+    }
+    return tempPic;
+  }
+
+  /// Delete the temporary files created by the image_picker package
+  Future<void> deleteTemporaryImages() async {
+    Directory? appDocDir = await getExternalStorageDirectory();
+    Directory cacheDir = await getTemporaryDirectory();
+    String appDocPath = "${appDocDir!.path}/Pictures/";
+    Directory del = Directory(appDocPath);
+    if (del.existsSync()) {
+      del.deleteSync(recursive: true);
+    }
+    if (cacheDir.existsSync()) {
+      cacheDir.deleteSync(recursive: true);
+    }
+    new Directory(appDocPath).create();
+  }
+
+  // <============================ PDF Operations =============================>
+
   /// Generates PDF and saves it in directory
   ///
   /// Returns: Status of PDF saved [bool]
-  Future<String?> createPdf(
-      {required selectedDirectory, fileName, required List<ImageOS> images}) async {
+  Future<String?> createPdf(Map<String, dynamic> params) async {
+    Directory selectedDirectory = params['selectedDirectory'];
+    List<ImageOS> images = params['images'];
+    String fileName = params['fileName'];
+
     try {
       String fileNameWithPath = "${selectedDirectory.path}/$fileName.pdf";
       final output = File(fileNameWithPath);
@@ -72,104 +200,7 @@ class FileOperations {
     }
   }
 
-  // ADD IMAGES
-  Future<File?> openCamera() async {
-    File? image;
-    var picture = await ImagePicker().pickImage(source: ImageSource.camera);
-    if (picture != null) {
-      image = File(picture.path);
-    }
-    return image;
-  }
-
-  Future<List<File>> openGallery() async {
-    List<XFile>? pic;
-    try {
-      pic = await ImagePicker().pickMultiImage();
-    } catch (e) {
-      print(e);
-    }
-
-    List<File> imageFiles = [];
-
-    if (pic != null) {
-      for (XFile image in pic) {
-        imageFiles.add(File(image.path));
-      }
-    }
-    print(imageFiles);
-    return imageFiles;
-  }
-
-  Future<File> saveImage(
-      {required File image, int? index, required String dirPath}) async {
-    if (!await Directory(dirPath).exists()) {
-      new Directory(dirPath).create();
-      await database.createDirectory(
-        directory: DirectoryOS(
-          dirName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
-          dirPath: dirPath,
-          imageCount: 0,
-          created: DateTime.parse(dirPath
-              .substring(dirPath.lastIndexOf('/') + 1)
-              .substring(
-                  dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
-                      1)),
-          newName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
-          lastModified: DateTime.parse(dirPath
-              .substring(dirPath.lastIndexOf('/') + 1)
-              .substring(
-                  dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
-                      1)),
-          firstImgPath: null,
-        ),
-      );
-    }
-
-    // TODO: Refactor index in image path
-
-    /// Removed Index in image path
-    File tempPic = File("$dirPath/${DateTime.now()}.jpg");
-    image.copy(tempPic.path);
-    database.createImage(
-      image: ImageOS(
-        imgPath: tempPic.path,
-        idx: index,
-      ),
-      tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
-    );
-    if (index == 1) {
-      database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
-    }
-    return tempPic;
-  }
-
-  // SAVE TO DEVICE
-  Future<Directory> pickDirectory(
-      BuildContext? context, selectedDirectory) async {
-    Directory? directory = selectedDirectory;
-    try {
-      if (Platform.isAndroid) {
-        directory = Directory("/storage/emulated/0/");
-      } else {
-        directory = await getExternalStorageDirectory();
-      }
-    } catch (e) {
-      print(e);
-      directory = await getExternalStorageDirectory();
-    }
-
-    // Directory newDirectory = await DirectoryPicker.pick(
-    //     allowFolderCreation: true,
-    //     context: context,
-    //     rootDirectory: directory,
-    //     shape: RoundedRectangleBorder(
-    //         borderRadius: BorderRadius.all(Radius.circular(10))));
-
-    return directory!;
-  }
-
-  /// Saves PDF to Device Internal
+  /// Saves PDF to Internal storage
   ///
   /// Returns: FileName with Path [String]
   Future<String?> saveToDevice(
@@ -182,6 +213,8 @@ class FileOperations {
     Directory openscanDir = Directory("/storage/emulated/0/OpenScan");
     Directory openscanPdfDir = Directory("/storage/emulated/0/OpenScan/PDF");
     int desiredQuality = 100;
+    List<ImageOS> tempImages = [];
+    String path;
 
     try {
       if (!openscanDir.existsSync()) {
@@ -194,9 +227,6 @@ class FileOperations {
       selectedDirectory = await pickDirectory(context, selectedDirectory);
     }
 
-    List<ImageOS> tempImages = [];
-    String path;
-
     if (quality == 1) {
       desiredQuality = 60;
     } else if (quality == 2) {
@@ -207,23 +237,24 @@ class FileOperations {
 
     print(desiredQuality);
 
-    Directory cacheDir = await getTemporaryDirectory();
-    for (ImageOS image in images) {
-      // path = await FlutterScannerCropper.compressImage(
-      //   src: image.imgPath,
-      //   dest: cacheDir.path,
-      //   desiredQuality: desiredQuality,
-      // );
-      // tempImages.add(File(path));
-      tempImages.add(image);
-    }
-    images = tempImages;
+    // TODO: Add compression
+    // Directory cacheDir = await getTemporaryDirectory();
+    // for (ImageOS image in images) {
+    // path = await FlutterScannerCropper.compressImage(
+    //   src: image.imgPath,
+    //   dest: cacheDir.path,
+    //   desiredQuality: desiredQuality,
+    // );
+    // tempImages.add(File(path));
+    // }
+    // images = tempImages;
 
-    fileNameWithPath = await createPdf(
-      selectedDirectory: selectedDirectory,
-      fileName: fileName,
-      images: images,
-    ).toString();
+    fileNameWithPath = await compute(createPdf, {
+      'selectedDirectory': selectedDirectory,
+      'fileName': fileName,
+      'images': images,
+    });
+
     return fileNameWithPath;
   }
 
@@ -239,32 +270,19 @@ class FileOperations {
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
     List<File> imageFiles = [];
 
-    for (ImageOS image in images) {
-      if (image.selected || !imagesSelected) {
-        imageFiles.add(File(image.imgPath!));
-      }
-    }
+    // TODO: Export selected images
+    // for (ImageOS image in images) {
+    //   if (image.selected || !imagesSelected) {
+    //     imageFiles.add(File(image.imgPath));
+    //   }
+    // }
 
-    fileNameWithPath = await createPdf(
-      selectedDirectory: selectedDirectory,
-      fileName: fileName,
-      images: images,
-    );
+    fileNameWithPath = await compute(createPdf, {
+      'selectedDirectory': selectedDirectory,
+      'fileName': fileName,
+      'images': images,
+    });
+
     return fileNameWithPath;
-  }
-
-  /// Delete the temporary files created by the image_picker package
-  Future<void> deleteTemporaryFiles() async {
-    Directory? appDocDir = await getExternalStorageDirectory();
-    Directory cacheDir = await getTemporaryDirectory();
-    String appDocPath = "${appDocDir!.path}/Pictures/";
-    Directory del = Directory(appDocPath);
-    if (del.existsSync()) {
-      del.deleteSync(recursive: true);
-    }
-    if (cacheDir.existsSync()) {
-      cacheDir.deleteSync(recursive: true);
-    }
-    new Directory(appDocPath).create();
   }
 }

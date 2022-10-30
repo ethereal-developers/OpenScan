@@ -14,6 +14,7 @@ dependencies:
   bloc: ^8.1.0
   camera: ^0.10.0+1
   cupertino_icons: ^1.0.3
+  exif: ^3.1.2
   flutter:
     sdk: flutter
   flutter_bloc: ^8.1.1
@@ -24,10 +25,12 @@ dependencies:
   flutter_speed_dial: ^5.0.0+1
   fluttertoast: ^8.0.8
   focused_menu: ^1.0.5
+  image: ^3.2.0
   image_picker: ^0.8.4+2
   intl: ^0.17.0
   multi_image_picker: ^4.8.01
   open_file: ^3.2.1
+  path: ^1.8.2
   path_provider: ^2.0.5
   pdf: ^3.6.0
   permission_handler: ^8.1.6

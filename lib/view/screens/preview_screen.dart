@@ -2,12 +2,18 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image/image.dart' as imageLib;
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/extensions.dart';
+import 'package:openscan/view/screens/filter_screen.dart';
+
+import '../Widgets/preview/preview_bottom_bar.dart';
+import '../models/preview_model.dart';
 
 class PreviewScreen extends StatefulWidget {
   final int? initialIndex;
+  static PreviewModel previewModel = PreviewModel();
 
   const PreviewScreen({this.initialIndex});
 
@@ -17,9 +23,8 @@ class PreviewScreen extends StatefulWidget {
 
 class _PreviewScreenState extends State<PreviewScreen>
     with SingleTickerProviderStateMixin {
-  PageController? _pageController;
-  int? pageIndex;
-  int? currentPageIndex;
+  int? _pageNumber;
+  late int _currentPageIndex;
   late TapDownDetails _doubleTapDetails;
   TransformationController _transformationController =
       TransformationController();
@@ -27,9 +32,13 @@ class _PreviewScreenState extends State<PreviewScreen>
   late AnimationController animationController;
   Animation<Matrix4> _matrixAnimation =
       AlwaysStoppedAnimation(Matrix4.identity());
+  bool isAppBarVisible = true;
+  imageLib.Image? imageBytes;
+  Widget loader = Center(child: CircularProgressIndicator());
+  late PageController pageController;
 
-  void doubleTapZoom(Size size) async {
-
+  void doubleTapImageZoom() async {
+    //TODO: Generalize method
     print(_transformationController.value == Matrix4.identity());
 
     final position = _doubleTapDetails.localPosition;
@@ -47,9 +56,7 @@ class _PreviewScreenState extends State<PreviewScreen>
       setState(() {
         enablePageScroll = false;
       });
-
     } else {
-
       if (animationController.isDismissed) {
         _matrixAnimation = Matrix4Tween(
           begin: _transformationController.value,
@@ -80,8 +87,9 @@ class _PreviewScreenState extends State<PreviewScreen>
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: widget.initialIndex!);
-    pageIndex = widget.initialIndex! + 1;
+    _currentPageIndex = widget.initialIndex!;
+    pageController = PageController(initialPage: _currentPageIndex);
+    _pageNumber = widget.initialIndex! + 1;
     animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 200),
@@ -97,96 +105,126 @@ class _PreviewScreenState extends State<PreviewScreen>
       child: Scaffold(
         extendBody: true,
         extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          elevation: 0,
-          centerTitle: true,
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.5),
-          title: BlocConsumer<DirectoryCubit, DirectoryState>(
-            listener: (context, state) {},
-            builder: (context, state) {
-              return Container(
-                height: 20,
-                constraints: BoxConstraints(maxWidth: size.width * .7),
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    Text(
-                      state.dirName!,
-                      style: TextStyle().appBarStyle,
-                    ),
-                  ],
-                ),
-              );
-              // return RichText(
-              //   text: TextSpan(
-              //     text: state.dirName,
-              //     style: TextStyle().appBarStyle,
-              //   ),
-              //   overflow: TextOverflow.ellipsis,
-              // );
-            },
-          ),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios),
-            padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
         backgroundColor: Theme.of(context).primaryColor,
-        body: Container(
-          child: BlocConsumer<DirectoryCubit, DirectoryState>(
-            listener: (context, state) {},
-            builder: (context, state) {
-              return Stack(
-                children: [
-                  PageView.builder(
-                    physics: enablePageScroll
-                        ? ClampingScrollPhysics()
-                        : NeverScrollableScrollPhysics(),
-                    controller: _pageController,
-                    itemCount: state.imageCount,
-                    itemBuilder: (context, index) {
-                      currentPageIndex = index;
-                      return GestureDetector(
-                        onDoubleTapDown: (details) {
-                          _doubleTapDetails = details;
+        body: BlocConsumer<DirectoryCubit, DirectoryState>(
+          listener: (context, state) {},
+          builder: (context, state) {
+            return Stack(
+              children: [
+                PageView.builder(
+                  physics: enablePageScroll
+                      ? ClampingScrollPhysics()
+                      : NeverScrollableScrollPhysics(),
+                  controller: pageController,
+                  itemCount: state.imageCount,
+                  itemBuilder: (context, index) {
+                    _currentPageIndex = index;
+
+                    // TODO: Apply Future builder
+                    // imageBytes = PreviewScreen.previewModel
+                    //     .getImageBytes(state.images![index].imgPath);
+
+                    // imageBytes!.getBytes();
+
+                    // imageLib.decodeImage(imageBytes!.getBytes());
+
+                    // imageBytes = imageLib.decodeImage(imageBytes!.getBytes());
+
+                    return GestureDetector(
+                      onDoubleTapDown: (details) {
+                        _doubleTapDetails = details;
+                      },
+                      onDoubleTap: () {
+                        doubleTapImageZoom();
+                      },
+                      onTap: () {
+                        setState(() {
+                          isAppBarVisible = !isAppBarVisible;
+                        });
+                        // showModalBottomSheet(
+                        //   context: context,
+                        //   barrierColor: Colors.transparent,
+                        //   backgroundColor:
+                        //       Theme.of(context).primaryColor.withOpacity(0.5),
+                        //   builder: (_) {
+                        //     return BlocProvider<DirectoryCubit>.value(
+                        //       value: BlocProvider.of<DirectoryCubit>(context),
+                        //       child: PreviewBottomBar(
+                        //         pageIndex: pageIndex!,
+                        //       ),
+                        //     );
+                        //   },
+                        // );
+                      },
+                      child: InteractiveViewer(
+                        transformationController: _transformationController,
+                        onInteractionEnd: (scaleEndDetails) {
+                          if (_transformationController.value.getColumn(0) !=
+                              Matrix4.identity().getColumn(0)) {
+                            setState(() {
+                              enablePageScroll = false;
+                            });
+                          }
                         },
-                        onDoubleTap: () {
-                          doubleTapZoom(size);
-                        },
-                        child: InteractiveViewer(
-                          transformationController: _transformationController,
-                          onInteractionEnd: (scaleEndDetails) {
-                            if (_transformationController.value.getColumn(0) !=
-                                Matrix4.identity().getColumn(0)) {
-                              setState(() {
-                                enablePageScroll = false;
-                              });
-                            }
-                          },
-                          maxScale: 3,
-                          child: Container(
-                            child: Center(
-                              child: Hero(
-                                tag: 'hero-image-${index + 1}',
-                                child: Image.file(
-                                  File(state.images![index].imgPath!),
-                                ),
+                        maxScale: 5,
+                        child: Container(
+                          child: Center(
+                            child: Hero(
+                              tag: 'hero-image-${index + 1}',
+                              child: Image.file(
+                                File(state.images![index].imgPath),
                               ),
                             ),
                           ),
                         ),
-                      );
-                    },
-                    onPageChanged: (index) {
-                      _transformationController.value = Matrix4.identity();
-                      setState(() {
-                        pageIndex = index + 1;
-                      });
-                    },
+                      ),
+                    );
+                  },
+                  onPageChanged: (index) {
+                    _transformationController.value = Matrix4.identity();
+                    setState(() {
+                      _pageNumber = index + 1;
+                    });
+                  },
+                ),
+                AnimatedContainer(
+                  duration: Duration(milliseconds: 200),
+                  height: isAppBarVisible ? 60.0 : 0.0,
+                  child: AppBar(
+                    elevation: 0,
+                    centerTitle: true,
+                    backgroundColor:
+                        Theme.of(context).primaryColor.withOpacity(0.5),
+                    title: BlocConsumer<DirectoryCubit, DirectoryState>(
+                      listener: (context, state) {},
+                      builder: (context, state) {
+                        return Container(
+                          height: 20,
+                          constraints:
+                              BoxConstraints(maxWidth: size.width * .7),
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              Text(
+                                state.dirName!,
+                                style: TextStyle().appBarStyle,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    leading: IconButton(
+                      icon: Icon(Icons.arrow_back_ios),
+                      padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                   ),
-                  Positioned.fill(
-                    bottom: 60,
+                ),
+                Visibility(
+                  visible: isAppBarVisible,
+                  child: Positioned.fill(
+                    bottom: 65,
                     child: Align(
                       alignment: Alignment.bottomCenter,
                       child: Container(
@@ -196,76 +234,90 @@ class _PreviewScreenState extends State<PreviewScreen>
                           color: Theme.of(context)
                               .colorScheme
                               .primary
-                              .withOpacity(0.7),
+                              .withOpacity(0.5),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        // TODO: Fix Page Index- wrong when image is deleted
+                        // TODO: [Bug] Fix Page Index- wrong when image is deleted
                         child: Text(
-                          '$pageIndex/${state.imageCount}',
+                          '$_pageNumber/${state.imageCount}',
                           style: TextStyle(color: Colors.white, fontSize: 14),
                         ),
                       ),
                     ),
                   ),
-                ],
-              );
-            },
-          ),
-        ),
-        bottomNavigationBar: BottomAppBar(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-          elevation: 0,
-          child: BlocConsumer<DirectoryCubit, DirectoryState>(
-            listener: (context, state) {},
-            builder: (context, state) {
-              return Container(
-                height: 56.0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    // IconButton(onPressed: (){}, icon: Icon(Icons.)),
-                    IconButton(
-                      icon: Icon(Icons.crop_rounded),
-                      onPressed: () {
-                        BlocProvider.of<DirectoryCubit>(context).cropImage(
-                          context,
-                          state.images![_pageController!.page!.toInt()],
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.delete_rounded),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) {
-                            return DeleteDialog(
-                              deleteOnPressed: () {
-                                BlocProvider.of<DirectoryCubit>(context)
-                                    .deleteImage(
-                                  context,
-                                  imageToDelete: state
-                                      .images![_pageController!.page!.toInt()],
-                                );
-                                Navigator.pop(context);
-                                setState(() {
-                                  pageIndex = currentPageIndex;
-                                });
-                                // pageIndex = _pageController!.page!.toInt() + 1;
-                              },
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    Icon(
-                      Icons.more_vert_rounded,
-                    ),
-                  ],
                 ),
-              );
-            },
-          ),
+              ],
+            );
+          },
+        ),
+        bottomNavigationBar: BlocConsumer<DirectoryCubit, DirectoryState>(
+          listener: (context, state) {},
+          builder: (context, state) {
+            return PreviewScreenBottomBar(
+              isAppBarVisible: isAppBarVisible,
+              cropOnPressed: () {
+                BlocProvider.of<DirectoryCubit>(context).cropImage(
+                  context,
+                  state.images![pageController.page!.toInt()],
+                );
+              },
+              deleteOnPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) {
+                    return DeleteDialog(
+                      deleteOnPressed: () {
+                        BlocProvider.of<DirectoryCubit>(context).deleteImage(
+                          context,
+                          imageToDelete:
+                              state.images![pageController.page!.toInt()],
+                        );
+                        Navigator.pop(context);
+                        setState(() {
+                          _pageNumber = _currentPageIndex + 1;
+                        });
+                        // pageIndex = _pageController!.page!.toInt() + 1;
+                      },
+                    );
+                  },
+                );
+              },
+              filterOnPressed: () async {
+                if (!isAppBarVisible) {
+                  setState(() {
+                    isAppBarVisible = true;
+                  });
+                }
+
+                print(_pageNumber!);
+                print(state.images![_pageNumber! - 1]);
+                var image = imageLib.decodeImage(
+                    await File(state.images![_pageNumber! - 1].imgPath)
+                        .readAsBytes());
+                // image = imageLib.copyResize(image!, width: 600);
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BlocProvider<DirectoryCubit>.value(
+                      value: BlocProvider.of<DirectoryCubit>(context),
+                      child: FilterScreen(
+                        pageIndex: _currentPageIndex,
+                        // imageIndex: pageIndex!,
+                        // title: Text("Photo Filter Example"),
+                        // image: image!,
+                        // filters: presetFiltersList,
+                        // filename:
+                        //     basename(state.images![pageIndex! - 1].imgPath),
+                        // loader: Center(child: CircularProgressIndicator()),
+                        // fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         ),
       ),
     );

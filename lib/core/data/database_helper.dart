@@ -39,6 +39,8 @@ class DatabaseHelper {
     _dirTableName = '"' + dirName + '"';
   }
 
+  // <======================= Master Table Operations =========================>
+
   /// Create Master Table
   FutureOr<void> _onCreate(Database db, int version) {
     db.execute('''
@@ -53,80 +55,13 @@ class DatabaseHelper {
       ''');
   }
 
-  /// Creates Directory table
-  Future createDirectory({required DirectoryOS directory}) async {
-    Database db = await instance.database;
-    int index = await db.insert(_masterTableName, {
-      'dir_name': directory.dirName,
-      'dir_path': directory.dirPath,
-      'created': directory.created.toString(),
-      'image_count': directory.imageCount,
-      'first_img_path': directory.firstImgPath,     
-      'last_modified': directory.lastModified.toString(),
-      'new_name': directory.newName
-    });
-
-    getDirectoryTableName(directory.dirName);
-    print('Directory Index: $index');
-    db.execute('''
-      CREATE TABLE $_dirTableName(
-      idx INTEGER,
-      img_path TEXT)
-      ''');
-  }
-
-  /// Adds image to database. 
-  /// Inserts Directory table and updates Master Table
-  Future createImage(
-      {required ImageOS image, required String tableName}) async {
-    Database db = await instance.database;
-    getDirectoryTableName(tableName);
-    int index = await db.insert(_dirTableName, {
-      'idx': image.idx,
-      'img_path': image.imgPath,
-      // 'shouldCompress': image.shouldCompress,
-    });
-    print('Image Index: $index');
-
-    await db.update(
-        _masterTableName,
-        {
-          'image_count': index,
-          'last_modified': DateTime.now().toString(),
-        },
-        where: 'dir_name == ?',
-        whereArgs: [tableName]);
-  }
-
-  /// Deletes Directory table
-  Future deleteDirectory({required String dirPath}) async {
-    Database db = await instance.database;
-    await db
-        .delete(_masterTableName, where: 'dir_path == ?', whereArgs: [dirPath]);
-    String dirName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
-    getDirectoryTableName(dirName);
-    await db.execute('DROP TABLE $_dirTableName');
-  }
-
-  /// Deletes image from database
-  Future deleteImage({String? imgPath, required String tableName}) async {
-    Database db = await instance.database;
-    getDirectoryTableName(tableName);
-    await db
-        .delete(_dirTableName, where: 'img_path == ?', whereArgs: [imgPath]);
-
-    updateImageCount(tableName: tableName);
-  }
-
-  /// <====================== Master Table Operations =========================>
-
   /// Read master table data
   Future getMasterData() async {
     Database db = await instance.database;
     List<Map<String, dynamic>> data = await db.query(_masterTableName);
     return data;
   }
-  
+
   /// Updates first image path in Master table
   Future<int> updateFirstImagePath({String? imagePath, String? dirPath}) async {
     Database db = await instance.database;
@@ -158,16 +93,46 @@ class DatabaseHelper {
 
   // <===================== Directory Table Operations ========================>
 
-  /// Gets image data from Directory table
+  /// Creates Directory table
+  Future createDirectory({required DirectoryOS directory}) async {
+    Database db = await instance.database;
+    int index = await db.insert(_masterTableName, {
+      'dir_name': directory.dirName,
+      'dir_path': directory.dirPath,
+      'created': directory.created.toString(),
+      'image_count': directory.imageCount,
+      'first_img_path': directory.firstImgPath,
+      'last_modified': directory.lastModified.toString(),
+      'new_name': directory.newName
+    });
+
+    getDirectoryTableName(directory.dirName);
+    print('Directory Index: $index');
+    db.execute('''
+      CREATE TABLE $_dirTableName(
+      idx INTEGER,
+      img_path TEXT,
+      filtered_image_path TEXT)
+      ''');
+  }
+
+  /// Reads image records from Directory table
+  ///
+  /// Returns: Image records [List]
   Future getImageData(String tableName) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     List<Map<String, dynamic>> data =
         await db.query(_dirTableName, orderBy: 'idx');
+
+    addFilteredImageColumn(tableName);
+
     return data;
   }
 
   /// Updates image path in Directory table
+  ///
+  /// Returns: Records updated [int]
   Future<int> updateImagePath(
       {required String tableName, String? imgPath, int? idx}) async {
     Database db = await instance.database;
@@ -182,6 +147,8 @@ class DatabaseHelper {
   }
 
   /// Updates image index in Directory table
+  ///
+  /// Returns: Records updated [int]
   Future<int> updateImageIndex(
       {String? imgPath, int? newIndex, required String tableName}) async {
     Database db = await instance.database;
@@ -195,15 +162,69 @@ class DatabaseHelper {
         whereArgs: [imgPath]);
   }
 
-  // Future<int> updateShouldCompress({ImageOS image, String tableName}) async {
-  //   Database db = await instance.database;
-  //   getDirectoryData(tableName);
-  //   return await db.update(
-  //       _dirTableName,
-  //       {
-  //         'shouldCompress': false,
-  //       },
-  //       where: 'img_path == ?',
-  //       whereArgs: [image.imgPath]);
-  // }
+  /// Add filtered image path column to old directory
+  Future addFilteredImageColumn(String tableName) async {
+    Database db = await instance.database;
+    getDirectoryTableName(tableName);
+
+    List tableData = await db.rawQuery('PRAGMA table_info($_dirTableName);');
+    bool filterColumnAvailable = false;
+    for (Map<String, dynamic> column in tableData.reversed) {
+      if (column['name'] == 'filtered_image_path') filterColumnAvailable = true;
+      break;
+    }
+    if (!filterColumnAvailable) {
+      await db.rawQuery(
+          'ALTER TABLE $_dirTableName ADD COLUMN filtered_image_path TEXT;');
+    }
+  }
+
+  // <=========================== Cache Operations ============================>
+
+  // <=========================== CRUD Operations =============================>
+
+  /// Adds image to database.
+  /// Inserts Directory table and updates Master Table
+  ///
+  /// Returns: Records updated [int]
+  Future createImage(
+      {required ImageOS image, required String tableName}) async {
+    Database db = await instance.database;
+    getDirectoryTableName(tableName);
+    int index = await db.insert(_dirTableName, {
+      'idx': image.idx,
+      'img_path': image.imgPath,
+      // 'shouldCompress': image.shouldCompress,
+    });
+    print('Image Index: $index');
+
+    return await db.update(
+        _masterTableName,
+        {
+          'image_count': index,
+          'last_modified': DateTime.now().toString(),
+        },
+        where: 'dir_name == ?',
+        whereArgs: [tableName]);
+  }
+
+  /// Deletes Image Directory from database
+  Future deleteDirectory({required String dirPath}) async {
+    Database db = await instance.database;
+    await db
+        .delete(_masterTableName, where: 'dir_path == ?', whereArgs: [dirPath]);
+    String dirName = basename(dirPath);
+    getDirectoryTableName(dirName);
+    await db.execute('DROP TABLE $_dirTableName');
+  }
+
+  /// Deletes image from database
+  Future deleteImage({String? imgPath, required String tableName}) async {
+    Database db = await instance.database;
+    getDirectoryTableName(tableName);
+    await db
+        .delete(_dirTableName, where: 'img_path == ?', whereArgs: [imgPath]);
+
+    updateImageCount(tableName: tableName);
+  }
 }
