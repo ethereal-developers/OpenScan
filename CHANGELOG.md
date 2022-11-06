@@ -1,3 +1,19 @@
+# v2.2.0
+
+### Changed
+
+- Reduce margins during PDF export
+- Export location by default is Documents/OpenScan/PDF
+- Multi image picker UI
+- Change default export quality
+
+### Fixed
+
+- Image quality increased with lower file sizes
+- Improved edge detection
+- BW filter upgraded
+- Quick action icons show actual icons instead of generic icons
+
 # v2.1.0
 
 ### Changed

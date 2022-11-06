@@ -44,3 +44,4 @@ app.*.map.json
 
 key.properties
 android/app/key.jks
+local.properties
