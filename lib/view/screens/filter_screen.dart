@@ -12,6 +12,7 @@ import 'package:path/path.dart';
 import '../../core/image_filter/filters/filters.dart';
 import '../../core/image_filter/filters/preset_filters.dart';
 import '../../logic/cubit/directory_cubit.dart';
+import '../../logic/cubit/filter_cubit.dart';
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({
@@ -32,13 +33,13 @@ class _FilterScreenState extends State<FilterScreen> {
   List<Filter> filters = presetFiltersList;
   late PageController _pageController;
 
-  Future<Uint8List?> getBytes(File image) async {
-    String cacheName = 'Original' + basename(image.path);
-    if (PreviewScreen.previewModel.cachedFilters.containsKey(cacheName)) {
-      return null;
-    }
-    return await image.readAsBytes();
-  }
+  // Future<Uint8List?> getBytes(File image) async {
+  //   String cacheName = 'Original' + basename(image.path);
+  //   if (PreviewScreen.previewModel.cachedFilters.containsKey(cacheName)) {
+  //     return null;
+  //   }
+  //   return await image.readAsBytes();
+  // }
 
   @override
   void initState() {
@@ -57,7 +58,6 @@ class _FilterScreenState extends State<FilterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(PreviewScreen.previewModel.cachedFilters.keys);
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -73,7 +73,7 @@ class _FilterScreenState extends State<FilterScreen> {
         backgroundColor: Theme.of(context).primaryColor,
         body: BlocConsumer<DirectoryCubit, DirectoryState>(
           listener: (context, state) {},
-          builder: (context, state) {
+          builder: (context, directoryState) {
             return PageView.builder(
               physics:
                   // enablePageScroll //TODO: Add double tap zoom - maybe
@@ -81,27 +81,41 @@ class _FilterScreenState extends State<FilterScreen> {
                   ClampingScrollPhysics(),
               // : NeverScrollableScrollPhysics(),
               controller: _pageController,
-              itemCount: state.imageCount,
+              itemCount: directoryState.imageCount,
               itemBuilder: (context, index) {
-                return Column(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: EdgeInsets.all(12.0),
-                        child: _buildFilteredImage(
-                          _filter,
-                          File(state.images![index].imgPath),
-                          basename(state.images![index].imgPath),
+                return BlocConsumer<FilterCubit, FilterState>(
+                  listener: (context, state) {},
+                  builder: (context, filterState) {
+                    print('Filter Cubit: ${filterState.cachedFilters.keys}');
+                    return Column(
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: EdgeInsets.all(12.0),
+                            child: _buildFilteredImage(
+                              context,
+                              filterState: filterState,
+                              filter: _filter,
+                              image:
+                                  File(directoryState.images![index].imgPath),
+                              filename: basename(
+                                  directoryState.images![index].imgPath),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    Container(
-                      height: 100,
-                      child:
-                          _buildBottomBar(File(state.images![index].imgPath)),
-                    ),
-                  ],
+                        Container(
+                          height: 100,
+                          child: _buildBottomBar(
+                            context,
+                            filterState: filterState,
+                            imageFile:
+                                File(directoryState.images![index].imgPath),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             );
@@ -111,8 +125,14 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 
-  Widget _buildFilteredImage(Filter? filter, File image, String? filename) {
-    if (PreviewScreen.previewModel.cachedFilters[filter?.name == null
+  Widget _buildFilteredImage(
+    BuildContext context, {
+    required FilterState filterState,
+    Filter? filter,
+    required File image,
+    String? filename,
+  }) {
+    if (filterState.cachedFilters[filter?.name == null
             ? '_' + filename!
             : filter!.name + filename!] ==
         null) {
@@ -136,9 +156,12 @@ class _FilterScreenState extends State<FilterScreen> {
             case ConnectionState.done:
               if (snapshot.hasError)
                 return Center(child: Text('Error: ${snapshot.error}'));
-              // PreviewScreen.previewModel.cachedFilters[filter?.name == null
-              //     ? '_' + filename
-              // : filter!.name + filename] = snapshot.data;
+
+              BlocProvider.of<FilterCubit>(context).cacheImage(
+                  filter?.name == null
+                      ? '_' + filename
+                      : filter!.name + filename,
+                  snapshot.data!);
 
               return Image.memory(
                 snapshot.data as dynamic,
@@ -149,10 +172,10 @@ class _FilterScreenState extends State<FilterScreen> {
         },
       );
     } else {
-      print(
-          'Showing image: ${filter?.name == null ? '_' + filename : filter!.name + filename}');
+      // print(
+      //     'Showing image: ${filter?.name == null ? '_' + filename : filter!.name + filename}');
       return Image.memory(
-        PreviewScreen.previewModel.cachedFilters[filter?.name == null
+        filterState.cachedFilters[filter?.name == null
             ? '_' + filename
             : filter!.name + filename] as dynamic,
         fit: BoxFit.contain,
@@ -160,7 +183,11 @@ class _FilterScreenState extends State<FilterScreen> {
     }
   }
 
-  Widget _buildBottomBar(File imageFile) {
+  Widget _buildBottomBar(
+    BuildContext context, {
+    required FilterState filterState,
+    required File imageFile,
+  }) {
     return ListView.builder(
       scrollDirection: Axis.horizontal,
       itemCount: filters.length,
@@ -172,9 +199,11 @@ class _FilterScreenState extends State<FilterScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 _buildFilterThumbnail(
-                  filters[index],
-                  imageFile,
-                  basename(imageFile.path),
+                  context,
+                  filterState: filterState,
+                  filter: filters[index],
+                  image: imageFile,
+                  filename: basename(imageFile.path),
                 ),
                 SizedBox(
                   height: 5.0,
@@ -197,10 +226,15 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 
-  _buildFilterThumbnail(Filter filter, File image, String? filename) {
+  _buildFilterThumbnail(
+    BuildContext context, {
+    required FilterState filterState,
+    required Filter filter,
+    required File image,
+    String? filename,
+  }) {
     print('Filename: $filename');
-    if (PreviewScreen.previewModel.cachedFilters[filter.name + filename!] ==
-        null) {
+    if (filterState.cachedFilters[filter.name + filename!] == null) {
       print('Image not cached: ${filter.name + filename}');
       return FutureBuilder<List<int>>(
         future: compute(applyFilter, <String, dynamic>{
@@ -210,6 +244,7 @@ class _FilterScreenState extends State<FilterScreen> {
         }),
         builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
           print('Thumbnail => ${snapshot.connectionState}');
+
           switch (snapshot.connectionState) {
             case ConnectionState.none:
             case ConnectionState.active:
@@ -224,10 +259,12 @@ class _FilterScreenState extends State<FilterScreen> {
                 ),
               );
             case ConnectionState.done:
-              if (snapshot.hasError)
+              if (snapshot.hasError && !snapshot.hasData)
                 return Center(child: Text('Error: ${snapshot.error}'));
-              // PreviewScreen.previewModel.cachedFilters[filter.name + filename] =
-              //     snapshot.data;
+
+              BlocProvider.of<FilterCubit>(context)
+                  .cacheImage(filter.name + filename, snapshot.data!);
+
               return FilterThumbnail(
                 image: Image.memory(
                   snapshot.data as dynamic,
@@ -241,8 +278,7 @@ class _FilterScreenState extends State<FilterScreen> {
       print('Cached image: ${filter.name + filename}');
       return FilterThumbnail(
         image: Image.memory(
-          PreviewScreen.previewModel.cachedFilters[filter.name + filename]
-              as dynamic,
+          filterState.cachedFilters[filter.name + filename] as dynamic,
         ),
       );
     }
@@ -299,11 +335,11 @@ Future<List<int>> applyFilter(Map<String, dynamic> params) async {
   //     imageLib.Image.fromBytes(imageBytes.width, imageBytes.height, _bytes);
   _bytes = imageLib.encodeNamedImage(byteImage, filename)!;
 
-  PreviewScreen.previewModel.cachedFilters[
-      filter?.name == null ? '_' + filename : filter!.name + filename] = _bytes;
+  // PreviewScreen.previewModel.cachedFilters[
+  //     filter?.name == null ? '_' + filename : filter!.name + filename] = _bytes;
 
   print(
-      'Storing image: ${filter?.name == null ? '_' + filename : filter!.name + filename}');
+      'Caching image: ${filter?.name == null ? '_' + filename : filter!.name + filename}');
 
   return _bytes;
 }

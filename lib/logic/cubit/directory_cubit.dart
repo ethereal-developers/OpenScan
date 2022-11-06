@@ -47,7 +47,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     print('Change Notifier => ${state.imageCount}');
   }
 
-  /// Updates the data to reflect in the UI - ad hoc
+  /// Updates the data to reflect in the UI - adhoc
   void emitState(state) {
     emit(DirectoryState(
       dirName: state.dirName,
