@@ -45,20 +45,27 @@ class _CropImageState extends State<CropImage> {
   final GlobalKey imageKey = GlobalKey();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   // double? width, height;
-  Size imageBitmapSize = Size(600.0, 600.0);
+  Size imageSizeNative = Size(600.0, 600.0);
   bool hasWidgetLoaded = false;
   bool isLoading = false;
   File? imageFile;
   double aspectRatio = 1;
   bool scaleImage = false;
   double rotationAngle = 0;
-  Size imageSize = Size(0, 0);
+  Size? imageSize;
   // Size originalCanvasSize = Size(0, 0);
   late RenderBox imageBox;
-  Size canvasSize = Size(0, 0);
+  Size? canvasSize;
   double verticalScaleFactor = 1;
   double horizontalScaleFactor = 1;
   late Size screenSize;
+  ValueNotifier<dynamic> updatedPoints = ValueNotifier(DragUpdateDetails(
+    globalPosition: Offset(0, 0),
+    localPosition: Offset(0, 0),
+  ));
+  ValueNotifier<Offset> tl = ValueNotifier(Offset(0, 0));
+  Offset? tr, bl, br = Offset(0, 0);
+  bool? cornersDetected;
 
   MethodChannel channel = new MethodChannel('com.ethereal.openscan/cropper');
 
@@ -66,7 +73,8 @@ class _CropImageState extends State<CropImage> {
   initState() {
     super.initState();
     imageFile = widget.file;
-    getSize();
+    // getSize();
+    detectDocument();
 
     /// Waiting for the widget to finish rendering so that we can get
     /// the size of the canvas. This is supposed to return the correct size
@@ -84,10 +92,10 @@ class _CropImageState extends State<CropImage> {
     var decodedImage = await decodeImageFromList(imageFile!.readAsBytesSync());
     imageSize =
         Size(decodedImage.width.toDouble(), decodedImage.height.toDouble());
-    aspectRatio = decodedImage.width / decodedImage.height;
+    aspectRatio = imageSize!.width / imageSize!.height;
     getRenderedBoxSize();
     print(
-        'Orginal Image=> ${decodedImage.width} / ${decodedImage.height} = $aspectRatio');
+        'Orginal Image=> ${imageSize!.width} / ${imageSize!.height} = $aspectRatio');
   }
 
   // void rebuildAllChildren(BuildContext context) {
@@ -106,12 +114,13 @@ class _CropImageState extends State<CropImage> {
   getRenderedBoxSize() {
     imageBox = imageKey.currentContext!.findRenderObject() as RenderBox;
     canvasSize = imageBox.size;
-    print('Renderbox=> $canvasSize=> ${canvasSize.width / canvasSize.height}');
+    print(
+        'Renderbox=> $canvasSize=> ${canvasSize!.width / canvasSize!.height}');
 
     verticalScaleFactor = screenSize.height / imageBox.size.width;
     print('VerticalScaleFactor=> $verticalScaleFactor');
-    
-    horizontalScaleFactor  = screenSize.width / imageBox.size.height;
+
+    horizontalScaleFactor = screenSize.width / imageBox.size.height;
     print('HorizontalScaleFactor=> $horizontalScaleFactor');
 
     setState(() {
@@ -129,8 +138,11 @@ class _CropImageState extends State<CropImage> {
       "path": imageFile!.path,
     });
 
-    imageBitmapSize =
+    imageSizeNative =
         Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
+
+    print(
+        'Android Image size => ${imageSizeNative.width}/${imageSizeNative.height}');
 
     // double tlX = (imageBitmapSize.width / width!) * tl!.dx;
     // double trX = (imageBitmapSize.width / width!) * tr!.dx;
@@ -156,6 +168,95 @@ class _CropImageState extends State<CropImage> {
 
     print('cropper: ${imageFile!.path}');
     Navigator.pop(context, imageFile);
+  }
+
+  void detectDocument() async {
+    await getSize();
+    print('0 => ${tl.value}');
+
+    // TODO run detection in separate thread and update UI accordingly
+    List pointsData = await channel.invokeMethod("detectDocument", {
+      "path": imageFile!.path,
+    });
+
+    print('Points => $pointsData');
+
+    if (pointsData.isEmpty) {
+      setState(() {
+        cornersDetected = false;
+      });
+    } else {
+      cornersDetected = true;
+
+      /// PointsData: [br,tr,tl,bl]: width, height
+      tl.value = Offset(
+          (pointsData[0][0] / imageSize!.width) * canvasSize!.width,
+          (pointsData[0][1] / imageSize!.height) * canvasSize!.height);
+      bl = Offset((pointsData[1][0] / imageSize!.width) * canvasSize!.width,
+          (pointsData[1][1] / imageSize!.height) * canvasSize!.height);
+      br = Offset((pointsData[2][0] / imageSize!.width) * canvasSize!.width,
+          (pointsData[2][1] / imageSize!.height) * canvasSize!.height);
+      tr = Offset((pointsData[3][0] / imageSize!.width) * canvasSize!.width,
+          (pointsData[3][1] / imageSize!.height) * canvasSize!.height);
+
+      updatedPoints.value = DragUpdateDetails(
+        globalPosition: Offset(0, 0),
+        localPosition: Offset(0, 0),
+      );
+
+      setState(() {});
+
+      print(pointsData[0][0]);
+      print(imageSize!.width);
+      print(canvasSize!.width);
+
+      print('1 => ${tl.value}');
+
+      // points.clear();
+
+      // for (List<dynamic> xy in pointsData) {
+      //   points.add(Offset((xy[0] / imageSize.width) * canvasSize.width,
+      //       (xy[1] / imageSize.height) * canvasSize.height));
+      // }
+
+      // print('Translated Points: $points');
+
+      // updatePolygon(DragUpdateDetails(
+      //   globalPosition: Offset(0, 0),
+      //   localPosition: Offset(0, 0),
+      // ));
+    }
+
+    print('2 => ${tl.value}');
+
+    // Map imageSizeMap = await channel.invokeMethod("getImageSize", {
+    //   "path": imageFile!.path,
+    // });
+
+    // imageSizeNative =
+    //     Size(imageSizeMap['width']!.toDouble(), imageSizeMap['height']!.toDouble());
+
+    // double tlX = (tl!.dx / imageBitmapSize.width) * height!;
+    // double trX = (tr!.dx / imageBitmapSize.width) * height!;
+    // double blX = (bl!.dx / imageBitmapSize.width) * height!;
+    // double brX = (br!.dx / imageBitmapSize.width) * height!;
+
+    // double tlY = (tl!.dy / imageBitmapSize.height) * width!;
+    // double trY = (tr!.dy / imageBitmapSize.height) * width!;
+    // double blY = (bl!.dy / imageBitmapSize.height) * width!;
+    // double brY = (br!.dy / imageBitmapSize.height) * width!;
+
+    // tl = Offset(tlX, tlY);
+    // bl = Offset(blX, blY);
+    // br = Offset(brX, brY);
+    // tr = Offset(trX, trY);
+
+    // print('2');
+    // print('$tl, $bl, $br, $tr');
+    // print('$width, $height');
+
+    // print('${(pointsData[0][0] / width)}');
+    // print('imageSize => width $width h $height');
   }
 
   @override
@@ -186,85 +287,87 @@ class _CropImageState extends State<CropImage> {
                 Navigator.pop(context, null);
               },
             ),
-            actions: [
-              IconButton(
-                onPressed: () async {
-                  // TODO run detection in separate thread and update UI accordingly
-                  List pointsData =
-                      await channel.invokeMethod("detectDocument", {
-                    "path": imageFile!.path,
-                  });
-
-                  print('Points => $pointsData');
-
-                  // tl = Offset(pointsData[0][1], pointsData[0][0]);
-                  // bl = Offset(pointsData[1][1], pointsData[1][0]);
-                  // br = Offset(pointsData[2][1], pointsData[2][0]);
-                  // tr = Offset(pointsData[3][1], pointsData[3][0]);
-
-                  Map imageSize = await channel.invokeMethod("getImageSize", {
-                    "path": imageFile!.path,
-                  });
-
-                  imageBitmapSize = Size(imageSize['width']!.toDouble(),
-                      imageSize['height']!.toDouble());
-
-                  // double tlX = (tl!.dx / imageBitmapSize.width) * height!;
-                  // double trX = (tr!.dx / imageBitmapSize.width) * height!;
-                  // double blX = (bl!.dx / imageBitmapSize.width) * height!;
-                  // double brX = (br!.dx / imageBitmapSize.width) * height!;
-
-                  // double tlY = (tl!.dy / imageBitmapSize.height) * width!;
-                  // double trY = (tr!.dy / imageBitmapSize.height) * width!;
-                  // double blY = (bl!.dy / imageBitmapSize.height) * width!;
-                  // double brY = (br!.dy / imageBitmapSize.height) * width!;
-
-                  // tl = Offset(tlX, tlY);
-                  // bl = Offset(blX, blY);
-                  // br = Offset(brX, brY);
-                  // tr = Offset(trX, trY);
-
-                  // print('2');
-                  // print('$tl, $bl, $br, $tr');
-                  // print('$width, $height');
-
-                  // updatePolygon(DragUpdateDetails(
-                  //   globalPosition: Offset(0, 0),
-                  //   localPosition: Offset(0, 0),
-                  // ));
-
-                  // print('${(pointsData[0][0] / width)}');
-                  // print('imageSize => width $width h $height');
-                },
-                icon: Icon(Icons.document_scanner_rounded),
-              ),
-            ],
+            // actions: [
+            //   IconButton(
+            //     onPressed: detectDocument,
+            //     icon: Icon(Icons.document_scanner_rounded),
+            //   ),
+            // ],
           ),
           body: Container(
             padding: EdgeInsets.all(20),
             alignment: Alignment.center,
             child: !isLoading
                 ? GestureDetector(
-                    // onPanDown: (points) => updatePolygon(points),
-                    // onPanUpdate: (points) => updatePolygon(points),
+                    onPanDown: (points) => updatedPoints.value = points,
+                    onPanUpdate: (points) => updatedPoints.value = points,
                     child: Stack(
-                      alignment: Alignment.center,
+                      alignment: Alignment.topLeft,
                       children: <Widget>[
                         Transform.rotate(
                           angle: rotationAngle,
                           child: Transform.scale(
                             scale: scaleImage ? aspectRatio : 1,
-                            child: Image.file(
-                              imageFile!,
+                            child: Image(
                               key: imageKey,
+                              image: FileImage(imageFile!),
+                              loadingBuilder:
+                                  ((context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                );
+                              }),
+                              errorBuilder: (context, error, stackTrace) {
+                                return Center(
+                                  child: Icon(
+                                    Icons.error_rounded,
+                                    color: Colors.red,
+                                    size: 30,
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ),
-                        hasWidgetLoaded
-                            ? PolygonBuilder(
-                                canvasSize: canvasSize,
+                        cornersDetected == null
+                            ? Positioned.fill(
+                                child: Container(
+                                  color: Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.7),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white),
+                                  ),
+                                ),
                               )
-                            : Container()
+                            : hasWidgetLoaded
+                                ? ValueListenableBuilder<Offset>(
+                                    valueListenable: tl,
+                                    builder: (BuildContext context, Offset tl,
+                                        Widget? child) {
+                                      print('3 => $tl');
+                                      return ValueListenableBuilder<dynamic>(
+                                          valueListenable: updatedPoints,
+                                          builder: (BuildContext context,
+                                              dynamic updatedPoints,
+                                              Widget? child) {
+                                            return PolygonBuilder(
+                                              canvasSize: canvasSize!,
+                                              updatedPoints: updatedPoints,
+                                              documentDetected:
+                                                  cornersDetected!,
+                                              tl: tl,
+                                              tr: tr,
+                                              bl: bl,
+                                              br: br,
+                                            );
+                                          });
+                                    })
+                                : Container(),
                       ],
                     ),
                   )
@@ -304,8 +407,8 @@ class _CropImageState extends State<CropImage> {
 
                 /// Updates canvas size that is passed to PolygonBuilder
                 canvasSize = scaleImage
-                    ? Size(canvasSize.height * aspectRatio,
-                        canvasSize.width * aspectRatio)
+                    ? Size(canvasSize!.height * aspectRatio,
+                        canvasSize!.width * aspectRatio)
                     : imageBox.size;
                 print(canvasSize);
               });
@@ -326,7 +429,7 @@ class _CropImageState extends State<CropImage> {
               // WidgetsBinding.instance!.addPostFrameCallback(
               //   (_) => getImageSize(false),
               // );
-              // // tempImageFile.deleteSync();
+              // tempImageFile.deleteSync();
             },
           ),
           Padding(
@@ -346,8 +449,8 @@ class _CropImageState extends State<CropImage> {
 
                   /// Updates canvas size to be passed to PolygonBuilder
                   canvasSize = scaleImage
-                      ? Size(canvasSize.height * aspectRatio,
-                          canvasSize.width * aspectRatio)
+                      ? Size(canvasSize!.height * aspectRatio,
+                          canvasSize!.width * aspectRatio)
                       : imageBox.size;
                   print(canvasSize);
                 });

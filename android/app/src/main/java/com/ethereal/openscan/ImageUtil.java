@@ -6,32 +6,27 @@ import android.graphics.Matrix;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-
-import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
-import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ImageUtil {
-    public static final String TAG = ImageUtil.class.getName();
+    public static final String TAG = ImageUtil.class.getSimpleName();
 
     public static boolean cropImage(String path, double tl_x, double tl_y, double tr_x, double tr_y, double bl_x, double bl_y, double br_x, double br_y) {
         Bitmap original = BitmapFactory.decodeFile(path);
@@ -99,6 +94,7 @@ public class ImageUtil {
 
             imageSizeMap.put("height", height);
             imageSizeMap.put("width", width);
+            Log.d(TAG, width + "/" + height);
         } catch (Exception e) {
             Log.e(TAG, "Exception while getting image size --> ", e);
             return imageSizeMap;
@@ -136,13 +132,16 @@ public class ImageUtil {
         Mat mat = new Mat();
         Bitmap bitmap = BitmapFactory.decodeFile(path);
         Utils.bitmapToMat(bitmap, mat);
-        ArrayList<MatOfPoint> contours = DetectDocumentHelper.findContours(mat);
+
+        Mat src = Imgcodecs.imread(path);
+
+        ArrayList<MatOfPoint> contours = DetectDocumentHelper.findContours(src);
         return DetectDocumentHelper.getCorners(contours, mat.size());
     }
 
     private static class DetectDocumentHelper {
         private static final String TAG = "ImageProcessor";
-
+        
         public static ArrayList<MatOfPoint> findContours(Mat src) {
             Mat grayImage;
             Mat cannedImage;
@@ -155,10 +154,12 @@ public class ImageUtil {
 
             Imgproc.cvtColor(src, grayImage, Imgproc.COLOR_BGR2GRAY);
             Imgproc.GaussianBlur(grayImage, grayImage, new Size(3.0, 3.0), 0.0);
-            Imgproc.threshold(grayImage, grayImage, 20.0, 255.0, Imgproc.THRESH_TRIANGLE);
 
             Imgproc.Canny(grayImage, cannedImage, 75.0, 200.0);
             Imgproc.dilate(cannedImage, dilate, kernel);
+            Imgproc.threshold(dilate, dilate, 20.0, 255.0, Imgproc.THRESH_TRIANGLE);
+
+//            Imgcodecs.imwrite("/storage/emulated/0/Android/data/com.ethereal.openscan/files/OpenScan 2022-11-13 17:20:52.972799/2022-11-20 19:52:14.545796.jpg",dilate);
 
             ArrayList<MatOfPoint> contours = new ArrayList<>();
             Mat hierarchy = new Mat();
@@ -194,6 +195,8 @@ public class ImageUtil {
                     List<Point> points = approx.toList();
                     MatOfPoint convex = new MatOfPoint();
                     approx.convertTo(convex, CvType.CV_32S);
+                    Log.d(TAG, "Detected  Points: " + points);
+
                     // select biggest 4 angles polygon
                     if (points.size() == 4 && Imgproc.isContourConvex(convex)) {
                         List<Point> foundPoints = sortPoints(points);

@@ -11,11 +11,9 @@ import 'package:openscan/view/extensions.dart';
 import 'package:openscan/view/screens/filter_screen.dart';
 
 import '../Widgets/preview/preview_bottom_bar.dart';
-import '../models/preview_model.dart';
 
 class PreviewScreen extends StatefulWidget {
   final int? initialIndex;
-  static PreviewModel previewModel = PreviewModel();
 
   const PreviewScreen({this.initialIndex});
 

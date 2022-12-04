@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
@@ -41,14 +42,14 @@ public class MainActivity extends FlutterActivity {
                             switch (methodCalled) {
                                 case "cropImage": {
                                     String path = call.argument("path");
-                                    double tl_x = call.argument("tl_x");
-                                    double tl_y = call.argument("tl_y");
-                                    double tr_x = call.argument("tr_x");
-                                    double tr_y = call.argument("tr_y");
-                                    double bl_x = call.argument("bl_x");
-                                    double bl_y = call.argument("bl_y");
-                                    double br_x = call.argument("br_x");
-                                    double br_y = call.argument("br_y");
+                                    double tl_x = Double.parseDouble(Objects.requireNonNull(call.argument("tl_x")));
+                                    double tl_y = Double.parseDouble(Objects.requireNonNull(call.argument("tl_y")));
+                                    double tr_x = Double.parseDouble(Objects.requireNonNull(call.argument("tr_x")));
+                                    double tr_y = Double.parseDouble(Objects.requireNonNull(call.argument("tr_y")));
+                                    double bl_x = Double.parseDouble(Objects.requireNonNull(call.argument("bl_x")));
+                                    double bl_y = Double.parseDouble(Objects.requireNonNull(call.argument("bl_y")));
+                                    double br_x = Double.parseDouble(Objects.requireNonNull(call.argument("br_x")));
+                                    double br_y = Double.parseDouble(Objects.requireNonNull(call.argument("br_y")));
                                     boolean isCropped = ImageUtil.cropImage(path, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y);
                                     result.success(isCropped);
                                 }
@@ -60,14 +61,14 @@ public class MainActivity extends FlutterActivity {
                                 }
                                 case "rotateImage": {
                                     String path = call.argument("path");
-                                    int degree = call.argument("degree");
+                                    int degree = Integer.parseInt(Objects.requireNonNull(call.argument("degree")));
                                     boolean isRotated = ImageUtil.rotateImage(path, degree);
                                     result.success(isRotated);
                                     break;
                                 }
                                 case "detectDocument": {
                                     Corners corners = ImageUtil.detectDocument(call.argument("path"));
-                                     Log.d(TAG_NAME, "The corners are: " + corners);
+                                    Log.d(TAG_NAME, "The corners are: " + corners);
                                     List<List<Double>> resultList = new ArrayList<>();
                                     if (corners != null) {
                                         for (Point p : corners.getCorners()) {

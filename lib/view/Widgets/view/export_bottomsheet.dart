@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+// import 'package:fluttertoast/fluttertoast.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/view/OSSwitch.dart';
@@ -129,8 +129,8 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
                             Navigator.pop(context);
                             Navigator.pop(context);
                           } else {
-                            Fluttertoast.showToast(
-                                msg: "Failed to generate pdf. Try Again.");
+                            // Fluttertoast.showToast(
+                            //     msg: "Failed to generate pdf. Try Again.");
                           }
                         }
                         if (widget.save) {
@@ -150,7 +150,7 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
                               ? displayText = "PDF Saved at\n"
                               : displayText =
                                   "Failed to generate pdf. Try Again.";
-                          Fluttertoast.showToast(msg: displayText);
+                          // Fluttertoast.showToast(msg: displayText);
                         }
                       } else if (exportType == 'Image') {
                         if (widget.share) {

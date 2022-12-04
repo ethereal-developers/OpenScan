@@ -31,7 +31,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 33
     buildToolsVersion "30.0.3"
 
     compileOptions {
@@ -39,13 +39,10 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    lintOptions {
-        disable 'InvalidPackage'
-    }
     defaultConfig {
         applicationId "com.ethereal.openscan"
         minSdkVersion 21
-        targetSdkVersion 31
+        targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -64,6 +61,10 @@ android {
            minifyEnabled true
        }
    }
+    lint {
+        disable 'InvalidPackage'
+    }
+    namespace 'com.ethereal.openscan'
 }
 
 flutter {

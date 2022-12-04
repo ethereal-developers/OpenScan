@@ -5,9 +5,19 @@ import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 
 class PolygonBuilder extends StatefulWidget {
   final Size canvasSize;
+  final dynamic updatedPoints;
+  final bool documentDetected;
+  final Offset? tl, tr, bl, br;
+
   const PolygonBuilder({
     Key? key,
     required this.canvasSize,
+    required this.updatedPoints,
+    required this.documentDetected,
+    this.tl,
+    this.tr,
+    this.bl,
+    this.br,
   }) : super(key: key);
 
   @override
@@ -19,10 +29,19 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
   int crossoverAdjust = 6;
   Offset? tl, tr, bl, br, t, l, b, r;
   double? prevWidth, prevHeight = 0;
+
+  /// Canvas dimensions
   late double width, height;
 
-  /// Sets the points to corners of the image
-  void setPolygonPoints() async {
+  /// Sets the points to the document if detected
+  /// else to corners of the image
+  void setPolygonPoints(
+    bool documentDetected, {
+    Offset? topLeft,
+    Offset? topRight,
+    Offset? bottomLeft,
+    Offset? bottomRight,
+  }) async {
     // setState(() {
     //   isLoading = true;
     // });
@@ -37,19 +56,29 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
     //   prevWidth = width;
     // }
 
-    t = Offset(width / 2, 0);
-    b = Offset(width / 2, height);
-    l = Offset(0, height / 2);
-    r = Offset(width, height / 2);
-    tl = Offset(0, 0);
-    tr = Offset(width, 0);
-    bl = Offset(0, height);
-    br = Offset(width, height);
+    print('Document detected: $documentDetected');
+    print('4=> $topLeft');
+    if (documentDetected && topLeft != null) {
+      tl = topLeft;
+      tr = topRight;
+      bl = bottomLeft;
+      br = bottomRight;
+    } else {
+      tl = Offset(0, 0);
+      tr = Offset(width, 0);
+      bl = Offset(0, height);
+      br = Offset(width, height);
+    }
 
-    setState(() {
-      // isLoading = false;
-      // hasWidgetLoaded = true;
-    });
+    t = Offset((tl!.dx + tr!.dx) / 2, (tl!.dy + tr!.dy) / 2);
+    b = Offset((bl!.dx + br!.dx) / 2, (bl!.dy + br!.dy) / 2);
+    l = Offset((tl!.dx + bl!.dx) / 2, (tl!.dy + bl!.dy) / 2);
+    r = Offset((tr!.dx + br!.dx) / 2, (tr!.dy + br!.dy) / 2);
+
+    // setState(() {
+    // isLoading = false;
+    // hasWidgetLoaded = true;
+    // });
 
     // scaleFactor = width / height;
 
@@ -57,6 +86,8 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
   }
 
   /// Checks if the points form a closed convex polygon
+  ///
+  /// Returns: [True] if convex polygon, else [False]
   bool checkPolygon(Offset p1, Offset q1, Offset p2, Offset q2) {
     bool onSegment(Offset p, Offset q, Offset r) {
       if (q.dx <= max(p.dx, r.dx) &&
@@ -87,10 +118,17 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
     return false;
   }
 
-  /// Updates the points in the polygon
-  void updatePolygon(points) {
-    double x1 = points.localPosition.dx;
-    double y1 = points.localPosition.dy;
+  /// Calculates the distance between two points
+  ///
+  /// Returns: Distance [double]
+  double getDistance(double x1, double y1, double x2, double y2) {
+    return sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
+  }
+
+  /// Updates the points in the polygon when changed manually
+  void updatePolygon() {
+    double x1 = widget.updatedPoints.localPosition.dx;
+    double y1 = widget.updatedPoints.localPosition.dy;
     double x2 = tl!.dx;
     double y2 = tl!.dy;
     double x3 = tr!.dx;
@@ -108,7 +146,7 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
     double x9 = r!.dx;
     double y9 = r!.dy;
 
-    if (sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2)) < 15 &&
+    if (getDistance(x1, y1, x2, y2) < 15 &&
         y1 >= 0 &&
         y1 <= height &&
         x1 < width &&
@@ -123,7 +161,7 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
           if (!isConvexPolygon) {
             tl = Offset(tl!.dx - crossoverAdjust, tl!.dy - crossoverAdjust);
           } else {
-            tl = points.localPosition;
+            tl = widget.updatedPoints.localPosition;
           }
         } else {
           tl = Offset(tr!.dx - crossoverAdjust, tl!.dy);
@@ -134,7 +172,7 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
         t = Offset((tr!.dx + tl!.dx) / 2, (tr!.dy + tl!.dy) / 2);
         l = Offset((tl!.dx + bl!.dx) / 2, (tl!.dy + bl!.dy) / 2);
       });
-    } else if (sqrt(pow((x3 - x1), 2) + pow((y3 - y1), 2)) < 15 &&
+    } else if (getDistance(x1, y1, x3, y3) < 15 &&
         y1 >= 0 &&
         y1 <= height &&
         x1 < width &&
@@ -149,7 +187,7 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
           if (!isConvexPolygon) {
             tr = Offset(tr!.dx + crossoverAdjust, tr!.dy - crossoverAdjust);
           } else {
-            tr = points.localPosition;
+            tr = widget.updatedPoints.localPosition;
           }
         } else {
           tr = Offset(tr!.dx + crossoverAdjust, tr!.dy);
@@ -160,7 +198,7 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
         t = Offset((tr!.dx + tl!.dx) / 2, (tr!.dy + tl!.dy) / 2);
         r = Offset((tr!.dx + br!.dx) / 2, (tr!.dy + br!.dy) / 2);
       });
-    } else if (sqrt(pow((x4 - x1), 2) + pow((y4 - y1), 2)) < 15 &&
+    } else if (getDistance(x1, y1, x4, y4) < 15 &&
         y1 >= 0 &&
         y1 <= height &&
         x1 < width &&
@@ -172,7 +210,7 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
           if (!isConvexPolygon) {
             bl = Offset(bl!.dx - crossoverAdjust, bl!.dy + crossoverAdjust);
           } else {
-            bl = points.localPosition;
+            bl = widget.updatedPoints.localPosition;
           }
         } else {
           bl = Offset(br!.dx - crossoverAdjust, bl!.dy);
@@ -183,7 +221,7 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
         l = Offset((tl!.dx + bl!.dx) / 2, (tl!.dy + bl!.dy) / 2);
         b = Offset((br!.dx + bl!.dx) / 2, (br!.dy + bl!.dy) / 2);
       });
-    } else if (sqrt(pow((x5 - x1), 2) + pow((y5 - y1), 2)) < 15 &&
+    } else if (getDistance(x1, y1, x5, y5) < 15 &&
         y1 >= 0 &&
         y1 <= height &&
         x1 < width &&
@@ -198,7 +236,7 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
           if (!isConvexPolygon) {
             br = Offset(br!.dx + crossoverAdjust, br!.dy + crossoverAdjust);
           } else {
-            br = points.localPosition;
+            br = widget.updatedPoints.localPosition;
           }
         } else {
           br = Offset(br!.dx + crossoverAdjust, br!.dy);
@@ -209,14 +247,14 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
         b = Offset((br!.dx + bl!.dx) / 2, (br!.dy + bl!.dy) / 2);
         r = Offset((tr!.dx + br!.dx) / 2, (tr!.dy + br!.dy) / 2);
       });
-    } else if (sqrt(pow((x6 - x1), 2) + pow((y6 - y1), 2)) < 15 &&
+    } else if (getDistance(x1, y1, x6, y6) < 15 &&
         y1 >= 0 &&
         y1 <= height &&
         x1 < width &&
         x1 >= 0) {
       setState(() {
         if (t!.dy + crossoverThreshold < b!.dy) {
-          t = Offset(t!.dx, points.localPosition.dy);
+          t = Offset(t!.dx, widget.updatedPoints.localPosition.dy);
         } else {
           t = Offset(t!.dx, t!.dy - crossoverAdjust);
         }
@@ -230,14 +268,14 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
         l = Offset((tl!.dx + bl!.dx) / 2, (tl!.dy + bl!.dy) / 2);
         r = Offset((tr!.dx + br!.dx) / 2, (tr!.dy + br!.dy) / 2);
       });
-    } else if (sqrt(pow((x7 - x1), 2) + pow((y7 - y1), 2)) < 15 &&
+    } else if (getDistance(x1, y1, x7, y7) < 15 &&
         y1 >= 0 &&
         y1 <= height &&
         x1 < width &&
         x1 >= 0) {
       setState(() {
         if (t!.dy < b!.dy - crossoverThreshold) {
-          b = Offset(b!.dx, points.localPosition.dy);
+          b = Offset(b!.dx, widget.updatedPoints.localPosition.dy);
         } else {
           b = Offset(b!.dx, b!.dy + crossoverAdjust);
         }
@@ -251,14 +289,14 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
         l = Offset((tl!.dx + bl!.dx) / 2, (tl!.dy + bl!.dy) / 2);
         r = Offset((tr!.dx + br!.dx) / 2, (tr!.dy + br!.dy) / 2);
       });
-    } else if (sqrt(pow((x8 - x1), 2) + pow((y8 - y1), 2)) < 15 &&
+    } else if (getDistance(x1, y1, x8, y8) < 15 &&
         y1 >= 0 &&
         y1 <= height &&
         x1 < width &&
         x1 >= 0) {
       setState(() {
         if (l!.dx < r!.dx - crossoverThreshold) {
-          l = Offset(points.localPosition.dx, l!.dy);
+          l = Offset(widget.updatedPoints.localPosition.dx, l!.dy);
         } else {
           l = Offset(l!.dx, l!.dy - crossoverAdjust);
         }
@@ -272,14 +310,14 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
         t = Offset((tr!.dx + tl!.dx) / 2, (tr!.dy + tl!.dy) / 2);
         b = Offset((br!.dx + bl!.dx) / 2, (br!.dy + bl!.dy) / 2);
       });
-    } else if (sqrt(pow((x9 - x1), 2) + pow((y9 - y1), 2)) < 15 &&
+    } else if (getDistance(x1, y1, x9, y9) < 15 &&
         y1 >= 0 &&
         y1 <= height &&
         x1 < width &&
         x1 >= 0) {
       setState(() {
         if (l!.dx < r!.dx - crossoverThreshold) {
-          r = Offset(points.localPosition.dx, r!.dy);
+          r = Offset(widget.updatedPoints.localPosition.dx, r!.dy);
         } else {
           r = Offset(r!.dx, r!.dy + crossoverAdjust);
         }
@@ -310,14 +348,23 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
   @override
   void initState() {
     super.initState();
+    width = widget.canvasSize.width;
+    height = widget.canvasSize.height;
   }
 
   @override
   Widget build(BuildContext context) {
-    print('building polygon=> ${widget.canvasSize}');
-    width = widget.canvasSize.width;
-    height = widget.canvasSize.height;
-    setPolygonPoints();
+    setPolygonPoints(
+      widget.documentDetected,
+      topLeft: widget.tl,
+      topRight: widget.tr,
+      bottomLeft: widget.bl,
+      bottomRight: widget.br,
+    );
+    updatePolygon();
+    print('Corners => $tl $tr $bl $br');
+    print('Centers => $t $b $l $r');
+
     return Container(
       // constraints: BoxConstraints(
       //   maxWidth: MediaQuery.of(context).size.width - 20,
@@ -332,6 +379,7 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
           l: l,
           b: b,
           r: r,
+          // points: widget.points,
         ),
       ),
     );

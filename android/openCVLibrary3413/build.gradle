@@ -17,4 +17,5 @@ android {
         profile {
         }
     }
+    namespace 'org.opencv'
 }
