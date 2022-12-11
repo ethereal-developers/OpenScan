@@ -205,7 +205,8 @@ class ContactCard extends StatelessWidget {
               ),
               Text(
                 'Tap for more',
-                style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                style: TextStyle(color: Colors.grey[700], fontSize: 12)           
+                ,
               ),
             ],
           ),
