@@ -14,9 +14,11 @@ import 'package:openscan/view/Widgets/drawer.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
 import 'package:openscan/view/Widgets/view/icon_gesture.dart';
 import 'package:openscan/view/screens/camera_screen.dart';
+import 'package:openscan/view/screens/demo_screen.dart';
 import 'package:openscan/view/screens/view_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quick_actions/quick_actions.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   static String route = "HomeScreen";
@@ -159,10 +161,24 @@ class _HomeScreenState extends State<HomeScreen> {
     return masterDirectories;
   }
 
+  void showDemo() async {
+    bool visitingFlag = false;
+
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    if (preferences.getBool("alreadyVisited") != null) {
+      visitingFlag = true;
+    }
+    await preferences.setBool('alreadyVisited', true);
+
+    if (!visitingFlag)
+      Navigator.of(context).pushNamed(DemoScreen.route);
+  }
+
   @override
   void initState() {
     super.initState();
     _requestPermission();
+    showDemo();
     getMasterData();
 
     // Quick Action related
@@ -238,6 +254,12 @@ class _HomeScreenState extends State<HomeScreen> {
               child: FutureBuilder(
                 future: getMasterData(),
                 builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  }
+
                   return ListView.builder(
                     itemCount: masterDirectories.length,
                     itemBuilder: (context, index) {

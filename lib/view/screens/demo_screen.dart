@@ -58,8 +58,7 @@ class _DemoScreenState extends State<DemoScreen> {
             ? <Widget>[
                 GestureDetector(
                   onTap: () {
-                    Navigator.of(context)
-                        .pushReplacementNamed(HomeScreen.route);
+                    Navigator.pop(context);
                   },
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(0, 4, 10, 0),
