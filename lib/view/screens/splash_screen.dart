@@ -34,13 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
       () {
         (visitingFlag)
             ? Navigator.of(context).pushReplacementNamed(HomeScreen.route)
-            : Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => DemoScreen(
-                    showSkip: true,
-                  ),
-                ),
-              );
+            : Navigator.of(context).pushReplacementNamed(DemoScreen.route);
       },
     );
   }
