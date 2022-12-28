@@ -32,8 +32,8 @@ dependencies:
   open_file: ^3.2.1
   path: ^1.8.2
   path_provider: ^2.0.5
-  pdf: ^3.6.0
-  permission_handler: ^8.1.6
+  pdf: ^3.8.4
+  permission_handler: ^10.2.0
   quick_actions: ^0.6.0+7
   reorderables: ^0.4.1
   sensors_plus: ^1.2.1

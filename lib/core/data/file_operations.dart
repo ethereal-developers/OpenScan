@@ -167,25 +167,18 @@ class FileOperations {
     try {
       String fileNameWithPath = "${selectedDirectory.path}/$fileName.pdf";
       final output = File(fileNameWithPath);
-
-      int i = 0;
-
       final doc = pw.Document();
-      // TODO: Fix pdfImage
-
-      for (i = 0; i < images.length; i++) {
-        // final image = PdfImage.file(
-        //   doc.document,
-        //   bytes: images[i].readAsBytesSync(),
-        // );
+      for (int i = 0; i < images.length; i++) {
+        final image = pw.MemoryImage(
+          File(images[i].imgPath).readAsBytesSync(),
+        );
 
         doc.addPage(
           pw.Page(
             build: (pw.Context context) {
               return pw.Center(
-                  // child: pw.Image.provider(image),
-                  // child: pw.Image(image),
-                  );
+                child: pw.Image(image),
+              );
             },
             margin: pw.EdgeInsets.all(5.0),
           ),
@@ -210,8 +203,7 @@ class FileOperations {
       int? quality}) async {
     String? fileNameWithPath;
     Directory? selectedDirectory;
-    Directory openscanDir = Directory("/storage/emulated/0/OpenScan");
-    Directory openscanPdfDir = Directory("/storage/emulated/0/OpenScan/PDF");
+    Directory openscanDir = Directory("/storage/emulated/0/Documents/OpenScan");
     int desiredQuality = 100;
     List<ImageOS> tempImages = [];
     String path;
@@ -219,9 +211,9 @@ class FileOperations {
     try {
       if (!openscanDir.existsSync()) {
         openscanDir.createSync();
-        openscanPdfDir.createSync();
+        openscanDir.createSync();
       }
-      selectedDirectory = openscanPdfDir;
+      selectedDirectory = openscanDir;
     } catch (e) {
       print(e);
       selectedDirectory = await pickDirectory(context, selectedDirectory);
@@ -249,6 +241,7 @@ class FileOperations {
     // }
     // images = tempImages;
 
+    // TODO: remove await and display toast
     fileNameWithPath = await compute(createPdf, {
       'selectedDirectory': selectedDirectory,
       'fileName': fileName,
@@ -271,11 +264,11 @@ class FileOperations {
     List<File> imageFiles = [];
 
     // TODO: Export selected images
-    // for (ImageOS image in images) {
-    //   if (image.selected || !imagesSelected) {
-    //     imageFiles.add(File(image.imgPath));
-    //   }
-    // }
+    for (ImageOS image in images) {
+      if (image.selected || !imagesSelected) {
+        imageFiles.add(File(image.imgPath));
+      }
+    }
 
     fileNameWithPath = await compute(createPdf, {
       'selectedDirectory': selectedDirectory,
