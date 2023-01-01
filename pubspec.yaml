@@ -29,7 +29,7 @@ dependencies:
   image_picker: ^0.8.4+2
   intl: ^0.17.0
   multi_image_picker: ^4.8.01
-  open_file: ^3.2.1
+  open_filex: ^4.3.2
   path: ^1.8.2
   path_provider: ^2.0.5
   pdf: ^3.8.4
