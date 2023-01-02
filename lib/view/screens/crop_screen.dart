@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_builder.dart';
 import 'package:openscan/view/extensions.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -66,8 +67,6 @@ class _CropImageState extends State<CropImage> {
   ValueNotifier<Offset> tl = ValueNotifier(Offset(0, 0));
   Offset? tr, bl, br = Offset(0, 0);
   bool? cornersDetected;
-
-  MethodChannel channel = new MethodChannel('com.ethereal.openscan/cropper');
 
   @override
   initState() {
@@ -134,9 +133,7 @@ class _CropImageState extends State<CropImage> {
       isLoading = true;
     });
 
-    Map imageSize = await channel.invokeMethod("getImageSize", {
-      "path": imageFile!.path,
-    });
+    Map imageSize = await NativeAndroidUtil.getImageSize(imageFile!.path);
 
     imageSizeNative =
         Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
@@ -175,9 +172,7 @@ class _CropImageState extends State<CropImage> {
     print('0 => ${tl.value}');
 
     // TODO run detection in separate thread and update UI accordingly
-    List pointsData = await channel.invokeMethod("detectDocument", {
-      "path": imageFile!.path,
-    });
+    List pointsData = await NativeAndroidUtil.detectDocument(imageFile!.path);
 
     print('Points => $pointsData');
 
