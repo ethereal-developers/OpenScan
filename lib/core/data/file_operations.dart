@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:openscan/core/data/database_helper.dart';
+import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/core/models.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -227,17 +228,18 @@ class FileOperations {
 
     print(desiredQuality);
 
-    // TODO: Add compression
-    // Directory cacheDir = await getTemporaryDirectory();
-    // for (ImageOS image in images) {
-    // path = await FlutterScannerCropper.compressImage(
-    //   src: image.imgPath,
-    //   dest: cacheDir.path,
-    //   desiredQuality: desiredQuality,
-    // );
-    // tempImages.add(File(path));
-    // }
-    // images = tempImages;
+    Directory cacheDir = await getTemporaryDirectory();
+
+    try {
+      for (ImageOS image in images) {
+        path = await NativeAndroidUtil.compress(
+            image.imgPath, cacheDir.path, desiredQuality);
+        tempImages.add(ImageOS(imgPath: path));
+      }
+      images = tempImages;
+    } catch (e) {
+      print(e);
+    }
 
     // TODO: remove await and display toast
     fileNameWithPath = await compute(createPdf, {
