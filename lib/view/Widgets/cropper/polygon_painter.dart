@@ -3,7 +3,6 @@ import 'package:openscan/core/theme/appTheme.dart';
 
 class PolygonPainter extends CustomPainter {
   final Offset? tl, tr, bl, br, t, l, r, b;
-  // final List<Offset> points;
   final double dotRadius = 15.0;
 
   PolygonPainter({
@@ -15,7 +14,6 @@ class PolygonPainter extends CustomPainter {
     this.l,
     this.r,
     this.b,
-    // required this.points,
   });
 
   Paint linesConnectingDots = Paint()

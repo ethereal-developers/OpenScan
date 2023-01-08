@@ -10,10 +10,10 @@ class NativeAndroidUtil {
     }) as Future<Map>;
   }
 
-  static Future<List> detectDocument(String path) {
+  static Future detectDocument(String path) {
     return _channel.invokeMethod("detectDocument", {
       "path": path,
-    }) as Future<List>;
+    });
   }
 
   static Future<String> compress(String src, String dest, int desiredQuality) {

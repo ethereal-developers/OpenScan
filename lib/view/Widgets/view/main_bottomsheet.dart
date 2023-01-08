@@ -108,7 +108,7 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                                                 shadows: [
                                                   Shadow(
                                                       color: Colors.white,
-                                                      offset: Offset(0, -5)),
+                                                      offset: Offset(0, -4)),
                                                 ],
                                                 color: Colors.transparent,
                                                 decoration:

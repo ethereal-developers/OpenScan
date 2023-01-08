@@ -27,7 +27,7 @@ class ImageCard extends StatelessWidget {
           child: Container(
             child: Hero(
               tag: 'hero-image-${image!.idx}',
-              child: Image.file(File(image!.imgPath!)),
+              child: Image.file(File(image!.imgPath)),
             ),
             height: size.height * 0.25,
             width: size.width * 0.38,
