@@ -42,11 +42,16 @@ class _ViewScreenState extends State<ViewScreen> {
       child: WillPopScope(
         onWillPop: () async {
           if (selectionEnabled) {
-            selectionEnabled = false;
+            setState(() {
+              selectionEnabled = false;
+              BlocProvider.of<DirectoryCubit>(context).resetSelection();
+              selectionEnabled = false;
+            });
           } else {
             Navigator.pop(context);
+            return true;
           }
-          return true;
+          return false;
         },
         child: Scaffold(
           key: scaffoldKey,
