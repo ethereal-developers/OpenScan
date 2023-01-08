@@ -114,12 +114,12 @@ class _ViewScreenState extends State<ViewScreen> {
                                 shadows: [
                                   Shadow(
                                       color: Colors.white,
-                                      offset: Offset(0, -5)),
+                                      offset: Offset(0, -4)),
                                 ],
                                 color: Colors.transparent,
                                 decoration: TextDecoration.underline,
                                 decorationStyle: TextDecorationStyle.dashed,
-                                decorationThickness: 2,
+                                decorationThickness: 1,
                                 decorationColor: Colors.white,
                               ),
                         ),

@@ -2,18 +2,23 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
+import 'package:vector_math/vector_math.dart' as vector;
 
 class PolygonBuilder extends StatefulWidget {
   final Size canvasSize;
+  final Size originalCanvasSize;
   final dynamic updatedPoints;
   final bool documentDetected;
   final Offset? tl, tr, bl, br;
+  final double rotationAngle;
 
   const PolygonBuilder({
     Key? key,
     required this.canvasSize,
+    required this.rotationAngle,
     required this.updatedPoints,
     required this.documentDetected,
+    required this.originalCanvasSize,
     this.tl,
     this.tr,
     this.bl,
@@ -29,40 +34,37 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
   int crossoverAdjust = 6;
   Offset? tl, tr, bl, br, t, l, b, r;
   double? prevWidth, prevHeight = 0;
+  GlobalKey canvasKey = GlobalKey();
 
   /// Canvas dimensions
   late double width, height;
 
   /// Sets the points to the document if detected
   /// else to corners of the image
-  void setPolygonPoints(
+  setPolygonPoints(
     bool documentDetected, {
     Offset? topLeft,
     Offset? topRight,
     Offset? bottomLeft,
     Offset? bottomRight,
   }) async {
-    // setState(() {
-    //   isLoading = true;
-    // });
+    double? polygonArea;
+    double? canvasArea;
 
-    // TODO: Change Logic- Doesn't work for square images
-    // if ((width == 0 && height == 0) ||
-    //     (width == prevWidth && height == prevHeight)) {
-    //   Timer(Duration(milliseconds: 100), () => setPolygonPoints());
-    // } else {
-    //   isRenderBoxValuesCorrect = true;
-    //   prevHeight = height;
-    //   prevWidth = width;
-    // }
+    if (topLeft != null &&
+        topRight != null &&
+        bottomLeft != null &&
+        bottomRight != null) {
+      polygonArea =
+          areaOfQuadrilateral(topLeft, topRight, bottomLeft, bottomRight);
+      canvasArea = widget.canvasSize.width * widget.canvasSize.height;
+    }
 
     print('Document detected: $documentDetected');
-    print('4=> $topLeft');
-    if (documentDetected && topLeft != null) {
-      tl = topLeft;
-      tr = topRight;
-      bl = bottomLeft;
-      br = bottomRight;
+    if (documentDetected &&
+        topLeft != null &&
+        polygonArea! / canvasArea! > 0.2) {
+      getPointsAfterRotation(topLeft, topRight!, bottomLeft!, bottomRight!);
     } else {
       tl = Offset(0, 0);
       tr = Offset(width, 0);
@@ -79,10 +81,84 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
     // isLoading = false;
     // hasWidgetLoaded = true;
     // });
-
     // scaleFactor = width / height;
-
     // if (isRenderBoxValuesCorrect) return;
+  }
+
+  /// Detected points are rotated to 90*, 180* and 270* angles
+  getPointsAfterRotation(
+    Offset topLeft,
+    Offset topRight,
+    Offset bottomLeft,
+    Offset bottomRight,
+  ) {
+    // Canvas scaling
+    double w_h = widget.canvasSize.width / widget.originalCanvasSize.height;
+    double h_w = widget.canvasSize.height / widget.originalCanvasSize.width;
+    double w_w = widget.canvasSize.width / widget.originalCanvasSize.width;
+    double h_h = widget.canvasSize.height / widget.originalCanvasSize.height;
+
+    if (vector.degrees(widget.rotationAngle) == 90) {
+      //     (height - y)
+      // x = ------------ * width_new
+      //         height
+      //
+      //        x
+      // y = -------- * width_new
+      //      height
+
+      // Focal point --> bl
+      tl = Offset((widget.canvasSize.height - bottomLeft.dy) * w_h,
+          bottomLeft.dx * h_w);
+      tr = Offset(
+          (widget.canvasSize.height - topLeft.dy) * w_h, topLeft.dx * h_w);
+      bl = Offset((widget.canvasSize.height - bottomRight.dy) * w_h,
+          bottomRight.dx * h_w);
+      br = Offset(
+          (widget.canvasSize.height - topRight.dy) * w_h, topRight.dx * h_w);
+    } else if (vector.degrees(widget.rotationAngle) == 180) {
+      //     (width - x)
+      // x = ------------ * width_new
+      //         width
+      //
+      //     (height - y)
+      // y = ------------ * height_new
+      //         height
+
+      // Focal point --> br
+      tl = Offset((widget.canvasSize.width - bottomRight.dx) * w_w,
+          (widget.canvasSize.height - bottomRight.dy) * h_h);
+      tr = Offset((widget.canvasSize.width - bottomLeft.dx) * w_w,
+          (widget.canvasSize.height - bottomLeft.dy) * h_h);
+      bl = Offset((widget.canvasSize.width - topRight.dx) * w_w,
+          (widget.canvasSize.height - topRight.dy) * h_h);
+      br = Offset((widget.canvasSize.width - topLeft.dx) * w_w,
+          (widget.canvasSize.height - topLeft.dy) * h_h);
+    } else if (vector.degrees(widget.rotationAngle) == 270) {
+      //        y
+      // x = -------- * width_new
+      //      height
+      //
+      //     (width - x)
+      // y = ------------ * height_new
+      //         width
+
+      // Focal point --> tr
+      tl = Offset(
+          topRight.dy * w_h, (widget.canvasSize.width - topRight.dx) * h_w);
+      tr = Offset(bottomRight.dy * w_h,
+          (widget.canvasSize.width - bottomRight.dx) * h_w);
+      bl = Offset(
+          topLeft.dy * w_h, (widget.canvasSize.width - topLeft.dx) * h_w);
+      br = Offset(
+          bottomLeft.dy * w_h, (widget.canvasSize.width - bottomLeft.dx) * h_w);
+    } else {
+      // rotationAngle = 0*
+      tl = topLeft;
+      tr = topRight;
+      bl = bottomLeft;
+      br = bottomRight;
+    }
   }
 
   /// Checks if the points form a closed convex polygon
@@ -97,6 +173,9 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
       return false;
     }
 
+    /// Finds the orientation of triangle
+    ///
+    /// Return: 0 if
     int orientation(Offset p, Offset q, Offset r) {
       double val =
           (q.dy - p.dy) * (r.dx - q.dx) - (q.dx - p.dx) * (r.dy - q.dy);
@@ -118,15 +197,8 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
     return false;
   }
 
-  /// Calculates the distance between two points
-  ///
-  /// Returns: Distance [double]
-  double getDistance(double x1, double y1, double x2, double y2) {
-    return sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
-  }
-
   /// Updates the points in the polygon when changed manually
-  void updatePolygon() {
+  updatePolygon() {
     double x1 = widget.updatedPoints.localPosition.dx;
     double y1 = widget.updatedPoints.localPosition.dy;
     double x2 = tl!.dx;
@@ -346,14 +418,12 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
   }
 
   @override
-  void initState() {
-    super.initState();
+  Widget build(BuildContext context) {
     width = widget.canvasSize.width;
     height = widget.canvasSize.height;
-  }
+    print('polygon => ${widget.canvasSize}');
+    print(widget.br);
 
-  @override
-  Widget build(BuildContext context) {
     setPolygonPoints(
       widget.documentDetected,
       topLeft: widget.tl,
@@ -365,10 +435,8 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
     print('Corners => $tl $tr $bl $br');
     print('Centers => $t $b $l $r');
 
-    return Container(
-      // constraints: BoxConstraints(
-      //   maxWidth: MediaQuery.of(context).size.width - 20,
-      // ),
+    return Positioned.fill(
+      // key: canvasKey,
       child: CustomPaint(
         painter: PolygonPainter(
           tl: tl,
@@ -383,5 +451,37 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
         ),
       ),
     );
+  }
+
+  /// Calculates the area of quadrilateral by
+  /// adding the areas of 2 triangles
+  ///
+  /// Returns: Area of quadrilateral [double]
+  double areaOfQuadrilateral(Offset tl, Offset tr, Offset bl, Offset br) {
+    double top = getDistance(tl.dx, tl.dy, tr.dx, tr.dy);
+    double right = getDistance(tr.dx, tr.dy, br.dx, br.dy);
+    double bottom = getDistance(bl.dx, bl.dy, br.dx, br.dy);
+    double left = getDistance(tl.dx, tl.dy, bl.dx, bl.dy);
+    double middle = getDistance(tr.dx, tr.dy, bl.dx, bl.dy);
+
+    double triangle1 = areaOfTriangle(top, left, middle);
+    double triangle2 = areaOfTriangle(right, bottom, middle);
+
+    return triangle1 + triangle2;
+  }
+
+  /// Calculates the area of a traingle from its sided (SSS)
+  ///
+  /// Returns: Area of triangle [double]
+  double areaOfTriangle(double a, double b, double c) {
+    double s = (a + b + c) / 2;
+    return sqrt(s * (s - a) * (s - b) * (s - c));
+  }
+
+  /// Calculates the distance between two points
+  ///
+  /// Returns: Distance [double]
+  double getDistance(double x1, double y1, double x2, double y2) {
+    return sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
   }
 }

@@ -118,6 +118,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                   controller: pageController,
                   itemCount: state.imageCount,
                   itemBuilder: (context, index) {
+                    GlobalKey imageKey = GlobalKey();
                     _currentPageIndex = index;
 
                     // TODO: Apply Future builder
@@ -173,6 +174,21 @@ class _PreviewScreenState extends State<PreviewScreen>
                               tag: 'hero-image-${index + 1}',
                               child: Image.file(
                                 File(state.images![index].imgPath),
+                                key: imageKey,
+                                frameBuilder: (BuildContext context,
+                                    Widget child,
+                                    int? frame,
+                                    bool wasSynchronouslyLoaded) {
+                                  if (wasSynchronouslyLoaded) {
+                                    return child;
+                                  }
+                                  return AnimatedOpacity(
+                                    opacity: frame == null ? 0 : 1,
+                                    duration: const Duration(milliseconds: 200),
+                                    curve: Curves.easeOut,
+                                    child: child,
+                                  );
+                                },
                               ),
                             ),
                           ),

@@ -4,24 +4,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_builder.dart';
-import 'package:openscan/view/extensions.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:vector_math/vector_math.dart' as vector;
 
 Future<File> imageCropper(BuildContext context, File image) async {
   File? croppedImage;
-
-  // imageFilePath = await FlutterScannerCropper.openCrop(
-  //   src: image.path,
-  //   dest: cacheDir.path,
-  // );
-  // File imageFileTemp;
-  // imageFileTemp = File(
-  //   "${cacheDir.path}/Pictures/${DateTime.now()}.jpg",
-  // );
-  // image.copySync(imageFileTemp.path);
 
   await Navigator.push(
     context,
@@ -45,25 +34,30 @@ class CropImage extends StatefulWidget {
 class _CropImageState extends State<CropImage> {
   final GlobalKey imageKey = GlobalKey();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  // double? width, height;
   Size imageSizeNative = Size(600.0, 600.0);
   bool hasWidgetLoaded = false;
   bool isLoading = false;
   File? imageFile;
   double aspectRatio = 1;
   bool scaleImage = false;
-  double rotationAngle = 0;
   Size? imageSize;
-  // Size originalCanvasSize = Size(0, 0);
   late RenderBox imageBox;
-  Size? canvasSize;
   double verticalScaleFactor = 1;
   double horizontalScaleFactor = 1;
   late Size screenSize;
+  Size canvasSize = Size(0, 0);
+  Size originalCanvasSize = Size(0, 0);
+
+  /// Notifies polygon builder when image is rotated
+  ValueNotifier<double> rotationAngle = ValueNotifier(0);
+
+  /// Notifies polygon builder when points are moved manually
   ValueNotifier<dynamic> updatedPoints = ValueNotifier(DragUpdateDetails(
     globalPosition: Offset(0, 0),
     localPosition: Offset(0, 0),
   ));
+
+  /// Notifies polygon builder when document is detected
   ValueNotifier<Offset> tl = ValueNotifier(Offset(0, 0));
   Offset? tr, bl, br = Offset(0, 0);
   bool? cornersDetected;
@@ -72,21 +66,10 @@ class _CropImageState extends State<CropImage> {
   initState() {
     super.initState();
     imageFile = widget.file;
-    // getSize();
     detectDocument();
-
-    /// Waiting for the widget to finish rendering so that we can get
-    /// the size of the canvas. This is supposed to return the correct size
-    /// of the desired widget. But it doesn't. Which is why the setPolygonPoints()
-    /// is called recursively (every 200 milliseconds until the height and
-    /// width are not equal to zero).
-    /// The reason this is called recursively is to ensure that the dimensions
-    /// are obtained even in cases where the build time of widgets is longer.
-    // WidgetsBinding.instance!.addPostFrameCallback(
-    //   (_) => setPolygonPoints(),
-    // );
   }
 
+  /// Reads image size
   getSize() async {
     var decodedImage = await decodeImageFromList(imageFile!.readAsBytesSync());
     imageSize =
@@ -97,24 +80,12 @@ class _CropImageState extends State<CropImage> {
         'Orginal Image=> ${imageSize!.width} / ${imageSize!.height} = $aspectRatio');
   }
 
-  // void rebuildAllChildren(BuildContext context) {
-  //   void rebuild(Element el) {
-  //     el.markNeedsBuild();
-  //     el.visitChildren(rebuild);
-  //     print('Rebuilding');
-  //     WidgetsBinding.instance!.addPostFrameCallback(
-  //       (_) => getRenderedBoxSize(),
-  //     );
-  //   }
-  //   (context as Element).visitChildren(rebuild);
-  // }
-
-  /// Gets the size of the canvas
+  /// Gets the size of image canvas
   getRenderedBoxSize() {
     imageBox = imageKey.currentContext!.findRenderObject() as RenderBox;
-    canvasSize = imageBox.size;
-    print(
-        'Renderbox=> $canvasSize=> ${canvasSize!.width / canvasSize!.height}');
+    originalCanvasSize = imageBox.size;
+    canvasSize = originalCanvasSize;
+    print('Renderbox=> $canvasSize=> ${canvasSize.width / canvasSize.height}');
 
     verticalScaleFactor = screenSize.height / imageBox.size.width;
     print('VerticalScaleFactor=> $verticalScaleFactor');
@@ -128,7 +99,7 @@ class _CropImageState extends State<CropImage> {
   }
 
   /// Crops the image and returns the image
-  void crop() async {
+  crop() async {
     setState(() {
       isLoading = true;
     });
@@ -140,6 +111,8 @@ class _CropImageState extends State<CropImage> {
 
     print(
         'Android Image size => ${imageSizeNative.width}/${imageSizeNative.height}');
+
+    // TODO: Rotate [rotationAngle] and crop image
 
     // double tlX = (imageBitmapSize.width / width!) * tl!.dx;
     // double trX = (imageBitmapSize.width / width!) * tr!.dx;
@@ -167,13 +140,11 @@ class _CropImageState extends State<CropImage> {
     Navigator.pop(context, imageFile);
   }
 
-  void detectDocument() async {
+  /// Document points are detected
+  detectDocument() async {
     await getSize();
-    print('0 => ${tl.value}');
 
-    // TODO run detection in separate thread and update UI accordingly
     List pointsData = await NativeAndroidUtil.detectDocument(imageFile!.path);
-
     print('Points => $pointsData');
 
     if (pointsData.isEmpty) {
@@ -181,77 +152,26 @@ class _CropImageState extends State<CropImage> {
         cornersDetected = false;
       });
     } else {
-      cornersDetected = true;
+      setState(() {
+        cornersDetected = true;
 
-      /// PointsData: [br,tr,tl,bl]: width, height
-      tl.value = Offset(
-          (pointsData[0][0] / imageSize!.width) * canvasSize!.width,
-          (pointsData[0][1] / imageSize!.height) * canvasSize!.height);
-      bl = Offset((pointsData[1][0] / imageSize!.width) * canvasSize!.width,
-          (pointsData[1][1] / imageSize!.height) * canvasSize!.height);
-      br = Offset((pointsData[2][0] / imageSize!.width) * canvasSize!.width,
-          (pointsData[2][1] / imageSize!.height) * canvasSize!.height);
-      tr = Offset((pointsData[3][0] / imageSize!.width) * canvasSize!.width,
-          (pointsData[3][1] / imageSize!.height) * canvasSize!.height);
+        /// PointsData: [br,tr,tl,bl]: (width, height)
+        tl.value = Offset(
+            (pointsData[0][0] / imageSize!.width) * canvasSize.width,
+            (pointsData[0][1] / imageSize!.height) * canvasSize.height);
+        tr = Offset((pointsData[1][0] / imageSize!.width) * canvasSize.width,
+            (pointsData[1][1] / imageSize!.height) * canvasSize.height);
+        br = Offset((pointsData[2][0] / imageSize!.width) * canvasSize.width,
+            (pointsData[2][1] / imageSize!.height) * canvasSize.height);
+        bl = Offset((pointsData[3][0] / imageSize!.width) * canvasSize.width,
+            (pointsData[3][1] / imageSize!.height) * canvasSize.height);
 
-      updatedPoints.value = DragUpdateDetails(
-        globalPosition: Offset(0, 0),
-        localPosition: Offset(0, 0),
-      );
-
-      setState(() {});
-
-      print(pointsData[0][0]);
-      print(imageSize!.width);
-      print(canvasSize!.width);
-
-      print('1 => ${tl.value}');
-
-      // points.clear();
-
-      // for (List<dynamic> xy in pointsData) {
-      //   points.add(Offset((xy[0] / imageSize.width) * canvasSize.width,
-      //       (xy[1] / imageSize.height) * canvasSize.height));
-      // }
-
-      // print('Translated Points: $points');
-
-      // updatePolygon(DragUpdateDetails(
-      //   globalPosition: Offset(0, 0),
-      //   localPosition: Offset(0, 0),
-      // ));
+        updatedPoints.value = DragUpdateDetails(
+          globalPosition: Offset(0, 0),
+          localPosition: Offset(0, 0),
+        );
+      });
     }
-
-    print('2 => ${tl.value}');
-
-    // Map imageSizeMap = await channel.invokeMethod("getImageSize", {
-    //   "path": imageFile!.path,
-    // });
-
-    // imageSizeNative =
-    //     Size(imageSizeMap['width']!.toDouble(), imageSizeMap['height']!.toDouble());
-
-    // double tlX = (tl!.dx / imageBitmapSize.width) * height!;
-    // double trX = (tr!.dx / imageBitmapSize.width) * height!;
-    // double blX = (bl!.dx / imageBitmapSize.width) * height!;
-    // double brX = (br!.dx / imageBitmapSize.width) * height!;
-
-    // double tlY = (tl!.dy / imageBitmapSize.height) * width!;
-    // double trY = (tr!.dy / imageBitmapSize.height) * width!;
-    // double blY = (bl!.dy / imageBitmapSize.height) * width!;
-    // double brY = (br!.dy / imageBitmapSize.height) * width!;
-
-    // tl = Offset(tlX, tlY);
-    // bl = Offset(blX, blY);
-    // br = Offset(brX, brY);
-    // tr = Offset(trX, trY);
-
-    // print('2');
-    // print('$tl, $bl, $br, $tr');
-    // print('$width, $height');
-
-    // print('${(pointsData[0][0] / width)}');
-    // print('imageSize => width $width h $height');
   }
 
   @override
@@ -268,10 +188,10 @@ class _CropImageState extends State<CropImage> {
           backgroundColor: Theme.of(context).primaryColor,
           key: _scaffoldKey,
           appBar: AppBar(
-            title: Text(
-              AppLocalizations.of(context)!.crop_image,
-              style: TextStyle().appBarStyle,
-            ),
+            // title: Text(
+            //   AppLocalizations.of(context)!.crop_image,
+            //   style: TextStyle().appBarStyle,
+            // ),
             centerTitle: true,
             elevation: 0.0,
             backgroundColor: Theme.of(context).primaryColor,
@@ -282,12 +202,6 @@ class _CropImageState extends State<CropImage> {
                 Navigator.pop(context, null);
               },
             ),
-            // actions: [
-            //   IconButton(
-            //     onPressed: detectDocument,
-            //     icon: Icon(Icons.document_scanner_rounded),
-            //   ),
-            // ],
           ),
           body: Container(
             padding: EdgeInsets.all(20),
@@ -300,7 +214,7 @@ class _CropImageState extends State<CropImage> {
                       alignment: Alignment.topLeft,
                       children: <Widget>[
                         Transform.rotate(
-                          angle: rotationAngle,
+                          angle: rotationAngle.value,
                           child: Transform.scale(
                             scale: scaleImage ? aspectRatio : 1,
                             child: Image(
@@ -342,24 +256,35 @@ class _CropImageState extends State<CropImage> {
                             : hasWidgetLoaded
                                 ? ValueListenableBuilder<Offset>(
                                     valueListenable: tl,
-                                    builder: (BuildContext context, Offset tl,
+                                    builder: (BuildContext context, Offset _tl,
                                         Widget? child) {
-                                      print('3 => $tl');
                                       return ValueListenableBuilder<dynamic>(
                                           valueListenable: updatedPoints,
                                           builder: (BuildContext context,
-                                              dynamic updatedPoints,
+                                              dynamic _updatedPoints,
                                               Widget? child) {
-                                            return PolygonBuilder(
-                                              canvasSize: canvasSize!,
-                                              updatedPoints: updatedPoints,
-                                              documentDetected:
-                                                  cornersDetected!,
-                                              tl: tl,
-                                              tr: tr,
-                                              bl: bl,
-                                              br: br,
-                                            );
+                                            return ValueListenableBuilder<
+                                                    double>(
+                                                valueListenable: rotationAngle,
+                                                builder: (BuildContext context,
+                                                    double _rotationAngle,
+                                                    Widget? child) {
+                                                  return PolygonBuilder(
+                                                    canvasSize: canvasSize,
+                                                    originalCanvasSize:
+                                                        originalCanvasSize,
+                                                    updatedPoints:
+                                                        _updatedPoints,
+                                                    rotationAngle:
+                                                        _rotationAngle,
+                                                    documentDetected:
+                                                        cornersDetected!,
+                                                    tl: _tl,
+                                                    tr: tr,
+                                                    bl: bl,
+                                                    br: br,
+                                                  );
+                                                });
                                           });
                                     })
                                 : Container(),
@@ -393,38 +318,21 @@ class _CropImageState extends State<CropImage> {
             onPressed: () async {
               setState(() {
                 /// Subtracting 90* from image rotation
-                rotationAngle = (rotationAngle - pi / 2) % (2 * pi);
-                print('rotationAngle=> ${vector.degrees(rotationAngle)}');
+                rotationAngle.value = (rotationAngle.value - pi / 2) % (2 * pi);
+                print(
+                    'rotationAngle => ${vector.degrees(rotationAngle.value)}');
 
                 /// Scaling image before rotation- solves Transform.rotate issue
-                scaleImage = rotationAngle % pi == pi / 2;
+                scaleImage = rotationAngle.value % pi == pi / 2;
                 print(scaleImage);
 
                 /// Updates canvas size that is passed to PolygonBuilder
                 canvasSize = scaleImage
-                    ? Size(canvasSize!.height * aspectRatio,
-                        canvasSize!.width * aspectRatio)
+                    ? Size(canvasSize.height * aspectRatio,
+                        canvasSize.width * aspectRatio)
                     : imageBox.size;
                 print(canvasSize);
               });
-
-              // File tempImageFile = File(imageFile!.path
-              //         .substring(0, imageFile!.path.lastIndexOf('.')) +
-              //     'r.jpg');
-              // imageFile!.copySync(tempImageFile.path);
-              // await channel.invokeMethod("rotateImage", {
-              //   'path': tempImageFile.path,
-              //   'degree': -90,
-              // });
-              // print('Rotated left');
-              // setState(() {
-              //   // tempImageFile.copySync(imageFile.path);
-              //   imageFile = File(tempImageFile.path);
-              // });
-              // WidgetsBinding.instance!.addPostFrameCallback(
-              //   (_) => getImageSize(false),
-              // );
-              // tempImageFile.deleteSync();
             },
           ),
           Padding(
@@ -435,39 +343,22 @@ class _CropImageState extends State<CropImage> {
               onPressed: () async {
                 setState(() {
                   /// Adding 90* to image rotation
-                  rotationAngle = (rotationAngle + pi / 2) % (2 * pi);
-                  print('rotationAngle=> ${vector.degrees(rotationAngle)}');
+                  rotationAngle.value =
+                      (rotationAngle.value + pi / 2) % (2 * pi);
+                  print(
+                      'rotationAngle => ${vector.degrees(rotationAngle.value)}');
 
                   /// Scaling image before rotation- solves Transform.rotate issue
-                  scaleImage = rotationAngle % pi == pi / 2;
+                  scaleImage = rotationAngle.value % pi == pi / 2;
                   print(scaleImage);
 
                   /// Updates canvas size to be passed to PolygonBuilder
                   canvasSize = scaleImage
-                      ? Size(canvasSize!.height * aspectRatio,
-                          canvasSize!.width * aspectRatio)
+                      ? Size(canvasSize.height * aspectRatio,
+                          canvasSize.width * aspectRatio)
                       : imageBox.size;
                   print(canvasSize);
                 });
-
-                // File tempImageFile = File(imageFile!.path
-                //         .substring(0, imageFile!.path.lastIndexOf('.')) +
-                //     'r.jpg');
-                // imageFile!.copySync(tempImageFile.path);
-                // await channel.invokeMethod("rotateImage", {
-                //   'path': tempImageFile.path,
-                //   'degree': 90,
-                // });
-                // print('Rotated right');
-                // setState(() {
-                //   // tempImageFile.copySync(imageFile.path);
-                //   imageFile = File(tempImageFile.path);
-                // });
-                // WidgetsBinding.instance!.addPostFrameCallback(
-                //   (_) => setPolygonPoints(),
-                // );
-                // rebuildAllChildren(context);
-                // tempImageFile.deleteSync();
               },
             ),
           ),
