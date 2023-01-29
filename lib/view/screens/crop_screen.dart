@@ -31,7 +31,8 @@ class CropImage extends StatefulWidget {
   _CropImageState createState() => _CropImageState();
 }
 
-class _CropImageState extends State<CropImage> {
+class _CropImageState extends State<CropImage>
+    with SingleTickerProviderStateMixin {
   final GlobalKey imageKey = GlobalKey();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   Size imageSizeNative = Size(600.0, 600.0);
@@ -61,13 +62,6 @@ class _CropImageState extends State<CropImage> {
   ValueNotifier<Offset> tl = ValueNotifier(Offset(0, 0));
   Offset? tr, bl, br = Offset(0, 0);
   bool? cornersDetected;
-
-  @override
-  initState() {
-    super.initState();
-    imageFile = widget.file;
-    detectDocument();
-  }
 
   /// Reads image size
   getSize() async {
@@ -174,6 +168,20 @@ class _CropImageState extends State<CropImage> {
     }
   }
 
+  bool change_height = true;
+  late AnimationController _imageAnimation;
+
+  @override
+  initState() {
+    super.initState();
+    imageFile = widget.file;
+    detectDocument();
+    _imageAnimation = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 100),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     screenSize = MediaQuery.of(context).size;
@@ -204,92 +212,62 @@ class _CropImageState extends State<CropImage> {
             ),
           ),
           body: Container(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.all(10),
             alignment: Alignment.center,
             child: !isLoading
-                ? GestureDetector(
-                    onPanDown: (points) => updatedPoints.value = points,
-                    onPanUpdate: (points) => updatedPoints.value = points,
-                    child: Stack(
-                      alignment: Alignment.topLeft,
-                      children: <Widget>[
-                        Transform.rotate(
-                          angle: rotationAngle.value,
-                          child: Transform.scale(
-                            scale: scaleImage ? aspectRatio : 1,
-                            child: Image(
-                              key: imageKey,
-                              image: FileImage(imageFile!),
-                              loadingBuilder:
-                                  ((context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                                );
-                              }),
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Icon(
-                                    Icons.error_rounded,
-                                    color: Colors.red,
-                                    size: 30,
-                                  ),
-                                );
-                              },
-                            ),
+                ? TweenAnimationBuilder(
+                    tween:
+                        Tween(begin: 1.0, end: scaleImage ? aspectRatio : 1.0),
+                    duration: Duration(milliseconds: 100),
+                    builder: ((_, double scale, __) {
+                      return Transform.rotate(
+                        angle: rotationAngle.value,
+                        child: Transform.scale(
+                          scale: scale,
+                          child: PreviewImage(
+                            imageKey: imageKey,
+                            imageFile: imageFile,
+                            cornersDetected: cornersDetected,
+                            hasWidgetLoaded: hasWidgetLoaded,
+                            tl: tl,
+                            updatedPoints: updatedPoints,
+                            rotationAngle: rotationAngle,
+                            canvasSize: canvasSize,
+                            originalCanvasSize: originalCanvasSize,
+                            tr: tr,
+                            bl: bl,
+                            br: br,
                           ),
                         ),
-                        cornersDetected == null
-                            ? Positioned.fill(
-                                child: Container(
-                                  color: Theme.of(context)
-                                      .primaryColor
-                                      .withOpacity(0.7),
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                        color: Colors.white),
-                                  ),
-                                ),
-                              )
-                            : hasWidgetLoaded
-                                ? ValueListenableBuilder<Offset>(
-                                    valueListenable: tl,
-                                    builder: (BuildContext context, Offset _tl,
-                                        Widget? child) {
-                                      return ValueListenableBuilder<dynamic>(
-                                          valueListenable: updatedPoints,
-                                          builder: (BuildContext context,
-                                              dynamic _updatedPoints,
-                                              Widget? child) {
-                                            return ValueListenableBuilder<
-                                                    double>(
-                                                valueListenable: rotationAngle,
-                                                builder: (BuildContext context,
-                                                    double _rotationAngle,
-                                                    Widget? child) {
-                                                  return PolygonBuilder(
-                                                    canvasSize: canvasSize,
-                                                    originalCanvasSize:
-                                                        originalCanvasSize,
-                                                    updatedPoints:
-                                                        _updatedPoints,
-                                                    rotationAngle:
-                                                        _rotationAngle,
-                                                    documentDetected:
-                                                        cornersDetected!,
-                                                    tl: _tl,
-                                                    tr: tr,
-                                                    bl: bl,
-                                                    br: br,
-                                                  );
-                                                });
-                                          });
-                                    })
-                                : Container(),
-                      ],
-                    ),
+                      );
+                    }
+                        // child: Transform.rotate(
+                        //   angle: rotationAngle.value,
+                        //   child: Transform.scale(
+                        //     scale: scaleImage ? aspectRatio : 1,
+                        //     child: Image(
+                        //       key: imageKey,
+                        //       image: FileImage(imageFile!),
+                        //       loadingBuilder: ((context, child, loadingProgress) {
+                        //         if (loadingProgress == null) return child;
+                        //         return Center(
+                        //           child: CircularProgressIndicator(
+                        //             color: Colors.white,
+                        //           ),
+                        //         );
+                        //       }),
+                        //       errorBuilder: (context, error, stackTrace) {
+                        //         return Center(
+                        //           child: Icon(
+                        //             Icons.error_rounded,
+                        //             color: Colors.red,
+                        //             size: 30,
+                        //           ),
+                        //         );
+                        //       },
+                        //     ),
+                        //   ),
+                        ),
                   )
                 : CircularProgressIndicator(
                     strokeWidth: 4,
@@ -302,6 +280,12 @@ class _CropImageState extends State<CropImage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _imageAnimation.dispose();
+    super.dispose();
   }
 
   Widget bottomBar() {
@@ -319,8 +303,7 @@ class _CropImageState extends State<CropImage> {
               setState(() {
                 /// Subtracting 90* from image rotation
                 rotationAngle.value = (rotationAngle.value - pi / 2) % (2 * pi);
-                print(
-                    'rotationAngle => ${vector.degrees(rotationAngle.value)}');
+                print('rotationAngle => ${rotationAngle.value}');
 
                 /// Scaling image before rotation- solves Transform.rotate issue
                 scaleImage = rotationAngle.value % pi == pi / 2;
@@ -388,6 +371,102 @@ class _CropImageState extends State<CropImage> {
             ),
           )
         ],
+      ),
+    );
+  }
+}
+
+class PreviewImage extends StatelessWidget {
+  const PreviewImage({
+    Key? key,
+    required this.imageKey,
+    required this.imageFile,
+    required this.cornersDetected,
+    required this.hasWidgetLoaded,
+    required this.tl,
+    required this.updatedPoints,
+    required this.rotationAngle,
+    required this.canvasSize,
+    required this.originalCanvasSize,
+    required this.tr,
+    required this.bl,
+    required this.br,
+  }) : super(key: key);
+
+  final GlobalKey<State<StatefulWidget>> imageKey;
+  final File? imageFile;
+  final bool? cornersDetected;
+  final bool hasWidgetLoaded;
+  final ValueNotifier<Offset> tl;
+  final ValueNotifier updatedPoints;
+  final ValueNotifier<double> rotationAngle;
+  final Size canvasSize;
+  final Size originalCanvasSize;
+  final Offset? tr;
+  final Offset? bl;
+  final Offset? br;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onPanDown: (points) => updatedPoints.value = points,
+      onPanUpdate: (points) => updatedPoints.value = points,
+      child: Container(
+        color: Colors.amber,
+        padding: EdgeInsets.all(15),
+        child: Stack(
+          children: [
+            Image(
+              key: imageKey,
+              image: FileImage(imageFile!),
+              loadingBuilder: ((context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                );
+              }),
+              errorBuilder: (context, error, stackTrace) {
+                return Center(
+                  child: Icon(
+                    Icons.error_rounded,
+                    color: Colors.red,
+                    size: 30,
+                  ),
+                );
+              },
+            ),
+            cornersDetected != null
+                ? hasWidgetLoaded
+                    ? Positioned.fill(
+                        child: ValueListenableBuilder(
+                            valueListenable: updatedPoints,
+                            builder: (context, _updatedPoints, child) {
+                              return PolygonBuilder(
+                                canvasSize: canvasSize,
+                                originalCanvasSize: originalCanvasSize,
+                                updatedPoints: _updatedPoints,
+                                rotationAngle: 0,
+                                documentDetected: cornersDetected!,
+                                tl: tl.value,
+                                tr: tr,
+                                bl: bl,
+                                br: br,
+                              );
+                            }),
+                      )
+                    : Container()
+                : Positioned.fill(
+                    child: Container(
+                      color: Theme.of(context).primaryColor.withOpacity(0.7),
+                      child: Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+                  ),
+          ],
+        ),
       ),
     );
   }

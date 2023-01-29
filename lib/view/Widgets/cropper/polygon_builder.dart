@@ -64,7 +64,12 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
     if (documentDetected &&
         topLeft != null &&
         polygonArea! / canvasArea! > 0.2) {
-      getPointsAfterRotation(topLeft, topRight!, bottomLeft!, bottomRight!);
+      // getPointsAfterRotation(topLeft, topRight!, bottomLeft!, bottomRight!);
+
+      tl = topLeft;
+      tr = topRight;
+      bl = bottomLeft;
+      br = bottomRight;
     } else {
       tl = Offset(0, 0);
       tr = Offset(width, 0);
@@ -86,85 +91,85 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
   }
 
   /// Detected points are rotated to 90*, 180* and 270* angles
-  getPointsAfterRotation(
-    Offset topLeft,
-    Offset topRight,
-    Offset bottomLeft,
-    Offset bottomRight,
-  ) {
-    // Canvas scaling
-    double w_h = widget.canvasSize.width / widget.originalCanvasSize.height;
-    double h_w = widget.canvasSize.height / widget.originalCanvasSize.width;
-    double w_w = widget.canvasSize.width / widget.originalCanvasSize.width;
-    double h_h = widget.canvasSize.height / widget.originalCanvasSize.height;
-
-    if (vector.degrees(widget.rotationAngle) == 90) {
-      //     (height - y)
-      // x = ------------ * width_new
-      //         height
-      //
-      //        x
-      // y = -------- * width_new
-      //      height
-
-      // Focal point --> bl
-      tl = Offset((widget.canvasSize.height - bottomLeft.dy) * w_h,
-          bottomLeft.dx * h_w);
-      tr = Offset(
-          (widget.canvasSize.height - topLeft.dy) * w_h, topLeft.dx * h_w);
-      bl = Offset((widget.canvasSize.height - bottomRight.dy) * w_h,
-          bottomRight.dx * h_w);
-      br = Offset(
-          (widget.canvasSize.height - topRight.dy) * w_h, topRight.dx * h_w);
-    } else if (vector.degrees(widget.rotationAngle) == 180) {
-      //     (width - x)
-      // x = ------------ * width_new
-      //         width
-      //
-      //     (height - y)
-      // y = ------------ * height_new
-      //         height
-
-      // Focal point --> br
-      tl = Offset((widget.canvasSize.width - bottomRight.dx) * w_w,
-          (widget.canvasSize.height - bottomRight.dy) * h_h);
-      tr = Offset((widget.canvasSize.width - bottomLeft.dx) * w_w,
-          (widget.canvasSize.height - bottomLeft.dy) * h_h);
-      bl = Offset((widget.canvasSize.width - topRight.dx) * w_w,
-          (widget.canvasSize.height - topRight.dy) * h_h);
-      br = Offset((widget.canvasSize.width - topLeft.dx) * w_w,
-          (widget.canvasSize.height - topLeft.dy) * h_h);
-    } else if (vector.degrees(widget.rotationAngle) == 270) {
-      //        y
-      // x = -------- * width_new
-      //      height
-      //
-      //     (width - x)
-      // y = ------------ * height_new
-      //         width
-
-      // Focal point --> tr
-      tl = Offset(
-          topRight.dy * w_h, (widget.canvasSize.width - topRight.dx) * h_w);
-      tr = Offset(bottomRight.dy * w_h,
-          (widget.canvasSize.width - bottomRight.dx) * h_w);
-      bl = Offset(
-          topLeft.dy * w_h, (widget.canvasSize.width - topLeft.dx) * h_w);
-      br = Offset(
-          bottomLeft.dy * w_h, (widget.canvasSize.width - bottomLeft.dx) * h_w);
-    } else {
-      // rotationAngle = 0*
-      tl = topLeft;
-      tr = topRight;
-      bl = bottomLeft;
-      br = bottomRight;
-    }
-  }
+  // getPointsAfterRotation(
+  //   Offset topLeft,
+  //   Offset topRight,
+  //   Offset bottomLeft,
+  //   Offset bottomRight,
+  // ) {
+  //   // Canvas scaling
+  //   double w_h = widget.canvasSize.width / widget.originalCanvasSize.height;
+  //   double h_w = widget.canvasSize.height / widget.originalCanvasSize.width;
+  //   double w_w = widget.canvasSize.width / widget.originalCanvasSize.width;
+  //   double h_h = widget.canvasSize.height / widget.originalCanvasSize.height;
+  //   if (vector.degrees(widget.rotationAngle) == 90) {
+  //     //     (height - y)
+  //     // x = ------------ * width_new
+  //     //         height
+  //     //
+  //     //        x
+  //     // y = -------- * width_new
+  //     //      height
+  //     // Focal point --> bl
+  //     tl = Offset((widget.canvasSize.height - bottomLeft.dy) * w_h,
+  //         bottomLeft.dx * h_w);
+  //     tr = Offset(
+  //         (widget.canvasSize.height - topLeft.dy) * w_h, topLeft.dx * h_w);
+  //     bl = Offset((widget.canvasSize.height - bottomRight.dy) * w_h,
+  //         bottomRight.dx * h_w);
+  //     br = Offset(
+  //         (widget.canvasSize.height - topRight.dy) * w_h, topRight.dx * h_w);
+  //   } else if (vector.degrees(widget.rotationAngle) == 180) {
+  //     //     (width - x)
+  //     // x = ------------ * width_new
+  //     //         width
+  //     //
+  //     //     (height - y)
+  //     // y = ------------ * height_new
+  //     //         height
+  //     // Focal point --> br
+  //     tl = Offset((widget.canvasSize.width - bottomRight.dx) * w_w,
+  //         (widget.canvasSize.height - bottomRight.dy) * h_h);
+  //     tr = Offset((widget.canvasSize.width - bottomLeft.dx) * w_w,
+  //         (widget.canvasSize.height - bottomLeft.dy) * h_h);
+  //     bl = Offset((widget.canvasSize.width - topRight.dx) * w_w,
+  //         (widget.canvasSize.height - topRight.dy) * h_h);
+  //     br = Offset((widget.canvasSize.width - topLeft.dx) * w_w,
+  //         (widget.canvasSize.height - topLeft.dy) * h_h);
+  //   } else if (vector.degrees(widget.rotationAngle) == 270) {
+  //     //        y
+  //     // x = -------- * width_new
+  //     //      height
+  //     //
+  //     //     (width - x)
+  //     // y = ------------ * height_new
+  //     //         width
+  //     // Focal point --> tr
+  //     tl = Offset(
+  //         topRight.dy * w_h, (widget.canvasSize.width - topRight.dx) * h_w);
+  //     tr = Offset(bottomRight.dy * w_h,
+  //         (widget.canvasSize.width - bottomRight.dx) * h_w);
+  //     bl = Offset(
+  //         topLeft.dy * w_h, (widget.canvasSize.width - topLeft.dx) * h_w);
+  //     br = Offset(
+  //         bottomLeft.dy * w_h, (widget.canvasSize.width - bottomLeft.dx) * h_w);
+  //   } else {
+  //     // rotationAngle = 0*
+  //     tl = topLeft;
+  //     tr = topRight;
+  //     bl = bottomLeft;
+  //     br = bottomRight;
+  //   }
+  // }
 
   /// Checks if the points form a closed convex polygon
   ///
   /// Returns: [True] if convex polygon, else [False]
   bool checkPolygon(Offset p1, Offset q1, Offset p2, Offset q2) {
+    
+    /// Checks if point q is between points p and r
+    /// 
+    /// Returns: True if all lie on same line, else False
     bool onSegment(Offset p, Offset q, Offset r) {
       if (q.dx <= max(p.dx, r.dx) &&
           q.dx >= min(p.dx, r.dx) &&
@@ -418,12 +423,11 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
     width = widget.canvasSize.width;
     height = widget.canvasSize.height;
     print('polygon => ${widget.canvasSize}');
-    print(widget.br);
-
     setPolygonPoints(
       widget.documentDetected,
       topLeft: widget.tl,
@@ -431,24 +435,25 @@ class _PolygonBuilderState extends State<PolygonBuilder> {
       bottomLeft: widget.bl,
       bottomRight: widget.br,
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     updatePolygon();
     print('Corners => $tl $tr $bl $br');
     print('Centers => $t $b $l $r');
 
-    return Positioned.fill(
-      // key: canvasKey,
-      child: CustomPaint(
-        painter: PolygonPainter(
-          tl: tl,
-          tr: tr,
-          bl: bl,
-          br: br,
-          t: t,
-          l: l,
-          b: b,
-          r: r,
-          // points: widget.points,
-        ),
+    return CustomPaint(
+      painter: PolygonPainter(
+        tl: tl,
+        tr: tr,
+        bl: bl,
+        br: br,
+        t: t,
+        l: l,
+        b: b,
+        r: r,
+        // points: widget.points,
       ),
     );
   }
