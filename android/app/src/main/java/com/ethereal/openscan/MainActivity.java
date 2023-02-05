@@ -46,8 +46,7 @@ public class MainActivity extends FlutterActivity {
                             String methodCalled = call.method;
                             switch (methodCalled) {
                                 case "compress": {
-                                    String qualString = call.argument("desiredQuality");
-                                    int desiredQuality = Integer.parseInt(qualString);
+                                    int desiredQuality = call.argument("desiredQuality");
                                     String path = call.argument("src");
                                     String savePath = call.argument("dest");
                                     String fileName = String.format("%s/%d.jpg", savePath, System.currentTimeMillis());
