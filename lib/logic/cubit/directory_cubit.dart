@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
-import 'package:openscan/view/screens/crop_screen.dart';
+import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
 
 part 'directory_state.dart';

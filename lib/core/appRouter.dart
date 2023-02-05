@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:openscan/view/screens/about_screen.dart';
-import 'package:openscan/view/screens/crop_screen.dart';
+import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:openscan/view/screens/demo_screen.dart';
 import 'package:openscan/view/screens/home_screen.dart';
 import 'package:openscan/view/screens/preview_screen.dart';
