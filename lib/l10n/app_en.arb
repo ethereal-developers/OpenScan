@@ -35,8 +35,8 @@
     "@app_description_2": {
         "description": "Moto on About-Screen" 
     },
-    "crop_image": "Crop Image",
-    "@crop_image": {
+    "crop": "Crop",
+    "@crop": {
         "description": "Crop-Screen header" 
     },
     "rotate_right": "Rotate right",
@@ -53,7 +53,7 @@
     "image": "image",
     "developers": "Developers",
     "version": "Version",
-    "next": "Continue",
+    "next": "Next",
     "tutorial_title": "How to use the app?",
     "done": "Done",
     "skip": "Skip",

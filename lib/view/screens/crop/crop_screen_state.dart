@@ -4,10 +4,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:openscan/core/data/native_android_util.dart';
 
-class CropScreenModel {
+class CropScreenState {
   GlobalKey imageKey = GlobalKey();
   File? imageFile;
   Size? imageSize;
+  List detectedPointsData = [];
   late Size canvasSize;
   late Size screenSize;
   bool isLoading = false;
@@ -51,10 +52,17 @@ class CropScreenModel {
   detectDocument() async {
     await getSize();
 
-    List pointsData = await NativeAndroidUtil.detectDocument(imageFile!.path);
-    print('Points => $pointsData');
+    detectedPointsData =
+        await NativeAndroidUtil.detectDocument(imageFile!.path);
+    print('Points => $detectedPointsData');
 
-    if (pointsData.isEmpty) {
+    setPoints();
+    detectionCompleted.value = true;
+  }
+
+  /// Sets detected points on canvas
+  setPoints() {
+    if (detectedPointsData.isEmpty) {
       /// Setting corner points to boundary
       tl = Offset(0, 0);
       tr = Offset(canvasSize.width, 0);
@@ -63,14 +71,18 @@ class CropScreenModel {
     } else {
       /// Setting corner points to detected location
       /// PointsData: [br,tr,tl,bl]: (width, height)
-      tl = Offset((pointsData[0][0] / imageSize!.width) * canvasSize.width,
-          (pointsData[0][1] / imageSize!.height) * canvasSize.height);
-      tr = Offset((pointsData[1][0] / imageSize!.width) * canvasSize.width,
-          (pointsData[1][1] / imageSize!.height) * canvasSize.height);
-      br = Offset((pointsData[2][0] / imageSize!.width) * canvasSize.width,
-          (pointsData[2][1] / imageSize!.height) * canvasSize.height);
-      bl = Offset((pointsData[3][0] / imageSize!.width) * canvasSize.width,
-          (pointsData[3][1] / imageSize!.height) * canvasSize.height);
+      tl = Offset(
+          (detectedPointsData[0][0] / imageSize!.width) * canvasSize.width,
+          (detectedPointsData[0][1] / imageSize!.height) * canvasSize.height);
+      tr = Offset(
+          (detectedPointsData[1][0] / imageSize!.width) * canvasSize.width,
+          (detectedPointsData[1][1] / imageSize!.height) * canvasSize.height);
+      br = Offset(
+          (detectedPointsData[2][0] / imageSize!.width) * canvasSize.width,
+          (detectedPointsData[2][1] / imageSize!.height) * canvasSize.height);
+      bl = Offset(
+          (detectedPointsData[3][0] / imageSize!.width) * canvasSize.width,
+          (detectedPointsData[3][1] / imageSize!.height) * canvasSize.height);
     }
 
     /// Computing center points
@@ -78,8 +90,6 @@ class CropScreenModel {
     b = Offset((bl.dx + br.dx) / 2, (bl.dy + br.dy) / 2);
     l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
     r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
-
-    detectionCompleted.value = true;
   }
 
   /// Updates the points in the polygon when changed manually
@@ -222,82 +232,19 @@ class CropScreenModel {
 
   /// Crops and returns the image
   crop() async {
-    Map imageSize = await NativeAndroidUtil.getImageSize(imageFile!.path);
-
-    imageSizeNative =
-        Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
-
-    print(
-        'Android Image size => ${imageSizeNative.width}/${imageSizeNative.height}');
-
-    // TODO: Rotate [rotationAngle] and crop image
-
-    // double tlX = (imageBitmapSize.width / width!) * tl!.dx;
-    // double trX = (imageBitmapSize.width / width!) * tr!.dx;
-    // double blX = (imageBitmapSize.width / width!) * bl!.dx;
-    // double brX = (imageBitmapSize.width / width!) * br!.dx;
-
-    // double tlY = (imageBitmapSize.height / height!) * tl!.dy;
-    // double trY = (imageBitmapSize.height / height!) * tr!.dy;
-    // double blY = (imageBitmapSize.height / height!) * bl!.dy;
-    // double brY = (imageBitmapSize.height / height!) * br!.dy;
-
-    // await channel.invokeMethod('cropImage', {
-    //   'path': imageFile!.path,
-    //   'tl_x': tlX,
-    //   'tl_y': tlY,
-    //   'tr_x': trX,
-    //   'tr_y': trY,
-    //   'bl_x': blX,
-    //   'bl_y': blY,
-    //   'br_x': brX,
-    //   'br_y': brY,
-    // });
+    NativeAndroidUtil.cropImage(
+      path: imageFile!.path,
+      tlX: (imageSize!.width / canvasSize.width) * tl.dx,
+      tlY: (imageSize!.height / canvasSize.height) * tl.dy,
+      trX: (imageSize!.width / canvasSize.width) * tr.dx,
+      trY: (imageSize!.height / canvasSize.height) * tr.dy,
+      blX: (imageSize!.width / canvasSize.width) * bl.dx,
+      blY: (imageSize!.height / canvasSize.height) * bl.dy,
+      brX: (imageSize!.width / canvasSize.width) * br.dx,
+      brY: (imageSize!.height / canvasSize.height) * br.dy,
+    );
 
     print('cropper: ${imageFile!.path}');
-  }
-
-  /// Sets the points to the document if detected else to corners of the image
-  setPolygonPoints(
-    bool documentDetected, {
-    Offset? topLeft,
-    Offset? topRight,
-    Offset? bottomLeft,
-    Offset? bottomRight,
-  }) async {
-    double? polygonArea;
-    double? canvasArea;
-
-    if (topLeft != null &&
-        topRight != null &&
-        bottomLeft != null &&
-        bottomRight != null) {
-      polygonArea =
-          areaOfQuadrilateral(topLeft, topRight, bottomLeft, bottomRight);
-      canvasArea = canvasSize.width * canvasSize.height;
-    }
-
-    print('Document detected: $documentDetected');
-    if (documentDetected &&
-        topLeft != null &&
-        polygonArea! / canvasArea! > 0.2) {
-      // getPointsAfterRotation(topLeft, topRight!, bottomLeft!, bottomRight!);
-
-      tl = topLeft;
-      tr = topRight!;
-      bl = bottomLeft!;
-      br = bottomRight!;
-    } else {
-      tl = Offset(0, 0);
-      tr = Offset(canvasSize.width, 0);
-      bl = Offset(0, canvasSize.height);
-      br = Offset(canvasSize.width, canvasSize.height);
-    }
-
-    t = Offset((tl.dx + tr.dx) / 2, (tl.dy + tr.dy) / 2);
-    b = Offset((bl.dx + br.dx) / 2, (bl.dy + br.dy) / 2);
-    l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
-    r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
   }
 
   /// Gets the current moving point
@@ -352,26 +299,14 @@ class CropScreenModel {
     String updateAxis,
     double slope,
   ) {
-    double topBoundary = 0;
-    double bottomBoundary = canvasSize.height;
-    double leftBoundary = 0;
-    double rightBoundary = canvasSize.width;
-
     if (updateAxis == 'x') {
       double x1 = p2.dx - ((p2.dy - p1.dy + displacement) / slope);
-
-      if (x1 < leftBoundary) x1 = leftBoundary;
-      if (x1 > rightBoundary) x1 = rightBoundary;
-
       p1 = Offset(x1, p1.dy + displacement);
     } else if (updateAxis == 'y') {
       double y1 = p2.dy - ((p2.dx - p1.dx + displacement) * slope);
-
-      if (y1 < topBoundary) y1 = topBoundary;
-      if (y1 > bottomBoundary) y1 = bottomBoundary;
-
       p1 = Offset(p1.dx + displacement, y1);
     }
+    p1 = constraintPointToBoundary(p1);
     return p1;
   }
 
@@ -410,30 +345,6 @@ class CropScreenModel {
     if (o3 == 0 && onSegment(p2, p1, q2)) return true;
     if (o4 == 0 && onSegment(p2, q1, q2)) return true;
     return false;
-  }
-
-  /// Check if all tlbr points are inside the boundary of image
-  ///
-  /// Returns: [True] if points are inside the boundary, else [False]
-  bool checkAllInsideBoundary(Offset tl, Offset tr, Offset bl, Offset br) {
-    double topBoundary = 0;
-    double bottomBoundary = canvasSize.height;
-    double leftBoundary = 0;
-    double rightBoundary = canvasSize.width;
-
-    if (tl.dx < leftBoundary || tl.dx > rightBoundary) return false;
-    if (tl.dy < topBoundary || tl.dy > bottomBoundary) return false;
-
-    if (tr.dx < leftBoundary || tr.dx > rightBoundary) return false;
-    if (tr.dy < topBoundary || tr.dy > bottomBoundary) return false;
-
-    if (bl.dx < leftBoundary || bl.dx > rightBoundary) return false;
-    if (bl.dy < topBoundary || bl.dy > bottomBoundary) return false;
-
-    if (br.dx < leftBoundary || br.dx > rightBoundary) return false;
-    if (br.dy < topBoundary || br.dy > bottomBoundary) return false;
-
-    return true;
   }
 
   /// Checks if point is inside the boundary of image,

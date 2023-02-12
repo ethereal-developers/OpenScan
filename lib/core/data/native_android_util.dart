@@ -24,8 +24,18 @@ class NativeAndroidUtil {
     });
   }
 
-  static Future cropImage(String path, double tlX, double tlY, double trX,
-      double trY, double blX, double blY, double brX, double brY) async {
+  // TODO: Rotate Image
+
+  static Future cropImage(
+      {required String path,
+      required double tlX,
+      required double tlY,
+      required double trX,
+      required double trY,
+      required double blX,
+      required double blY,
+      required double brX,
+      required double brY}) async {
     return _channel.invokeMethod('cropImage', {
       "path": path,
       "tl_x": "$tlX",
