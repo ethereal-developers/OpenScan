@@ -5,8 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image/image.dart' as imageLib;
-import 'package:openscan/core/theme/appTheme.dart';
-import 'package:openscan/view/screens/preview_screen.dart';
 import 'package:path/path.dart';
 
 import '../../core/image_filter/filters/filters.dart';

@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,7 +7,6 @@ import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/view/OSSwitch.dart';
 import 'package:openscan/view/extensions.dart';
 import 'package:openscan/view/screens/view_screen.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_extend/share_extend.dart';
 
 class ExportBottomSheet extends StatefulWidget {

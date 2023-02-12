@@ -190,37 +190,41 @@ class _CropImageState extends State<CropImage> {
             ),
             child: Container(
               child: ValueListenableBuilder(
-                                valueListenable: _cropScreen.imageRendered,
-                                builder: (context, bool _imageRendered, _) {
-                  return MaterialButton(
-                    onPressed: () {
-                      setState(() {
-                        cropLoading = true;
-                      });
-                      _cropScreen.crop();
-                      setState(() {
-                        cropLoading = false;
-                      });
-                      Navigator.pop(context, _cropScreen.imageFile);
-                    },
-                    color: _imageRendered || !cropLoading
-                        ? Theme.of(context).colorScheme.secondary
-                        : Theme.of(context).colorScheme.secondary.withOpacity(0.6),
-                    disabledColor:
-                        Theme.of(context).colorScheme.secondary.withOpacity(0.5),
-                    disabledTextColor: Colors.white.withOpacity(0.5),
-                    child: Text(
-                      AppLocalizations.of(context)!.next,
-                      style: TextStyle(
-                        color: _imageRendered || !cropLoading
-                            ? Colors.white
-                            : Colors.white.withOpacity(0.5),
-                        fontSize: 18,
+                  valueListenable: _cropScreen.imageRendered,
+                  builder: (context, bool _imageRendered, _) {
+                    return MaterialButton(
+                      onPressed: () {
+                        setState(() {
+                          cropLoading = true;
+                        });
+                        _cropScreen.crop();
+                        setState(() {
+                          cropLoading = false;
+                        });
+                        Navigator.pop(context, _cropScreen.imageFile);
+                      },
+                      color: _imageRendered || !cropLoading
+                          ? Theme.of(context).colorScheme.secondary
+                          : Theme.of(context)
+                              .colorScheme
+                              .secondary
+                              .withOpacity(0.6),
+                      disabledColor: Theme.of(context)
+                          .colorScheme
+                          .secondary
+                          .withOpacity(0.5),
+                      disabledTextColor: Colors.white.withOpacity(0.5),
+                      child: Text(
+                        AppLocalizations.of(context)!.next,
+                        style: TextStyle(
+                          color: _imageRendered || !cropLoading
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.5),
+                          fontSize: 18,
+                        ),
                       ),
-                    ),
-                  );
-                }
-              ),
+                    );
+                  }),
             ),
           )
         ],
@@ -243,16 +247,18 @@ class CanvasImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       // onPanDown: (points) => updatedPoint.value = points,
-      onPanUpdate: (points) {
-        cropScreenModel.updatedPoint.value = points;
+      onPanUpdate: (updateDetails) {
+        cropScreenModel.updatedPoint.value = updateDetails;
         cropScreenModel.updatePolygon();
       },
-      onPanStart: (points) {
-        cropScreenModel.startPoint = points;
+      onPanStart: (startDetails) {
+        print('Start Point: $startDetails');
+        cropScreenModel.calculateAllSlopes();
+        cropScreenModel.getMovingPoint(startDetails);
       },
-      // onDoubleTap: () {
-      //   print('double tap');
-      // },
+      onPanEnd: (endDetails) {
+        // cropScreenModel.calculateAllSlopes();
+      },
       child: Container(
         color: Colors.amber,
         // padding: EdgeInsets.all(15),

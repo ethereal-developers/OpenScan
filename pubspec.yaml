@@ -26,7 +26,7 @@ dependencies:
   # fluttertoast: ^8.0.8
   focused_menu: ^1.0.5
   image: ^3.2.0
-  image_picker: ^0.8.4+2
+  image_picker: 0.8.4+8
   intl: ^0.17.0
   multi_image_picker: ^4.8.01
   open_filex: ^4.3.2
@@ -42,7 +42,7 @@ dependencies:
   simple_animated_icon: ^1.1.0
   sqflite: ^2.0.0+4
   url_launcher: ^6.0.12
-  vector_math: ^2.1.1
+  vector_math: 
 
 dev_dependencies:
   flutter_test:

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:openscan/view/Widgets/demo/slide_dots.dart';
 import 'package:openscan/view/Widgets/demo/slide_item.dart';
 import 'package:openscan/view/extensions.dart';
-import 'package:openscan/view/screens/home_screen.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DemoScreen extends StatefulWidget {

@@ -14,12 +14,13 @@ class CropScreenModel {
   double aspectRatio = 1;
   late RenderBox imageBox;
   late double rotationAngle;
+  String movingPoint = 'none';
   late Size originalCanvasSize;
   double verticalScaleFactor = 1;
   double horizontalScaleFactor = 1;
   late Offset tl, tr, bl, br, t, l, b, r;
   Size imageSizeNative = Size(600.0, 600.0);
-  late DragStartDetails startPoint = DragStartDetails();
+  late double tSlope, bSlope, rSlope, lSlope;
 
   /// Scales image up or down while rotating
   bool scaleImage = false;
@@ -45,43 +46,6 @@ class CropScreenModel {
   /// Notifies polygon when points are moved
   ValueNotifier<DragUpdateDetails> updatedPoint =
       ValueNotifier(DragUpdateDetails(globalPosition: Offset.zero));
-
-  /// Crops the image and returns the image
-  crop() async {
-    Map imageSize = await NativeAndroidUtil.getImageSize(imageFile!.path);
-
-    imageSizeNative =
-        Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
-
-    print(
-        'Android Image size => ${imageSizeNative.width}/${imageSizeNative.height}');
-
-    // TODO: Rotate [rotationAngle] and crop image
-
-    // double tlX = (imageBitmapSize.width / width!) * tl!.dx;
-    // double trX = (imageBitmapSize.width / width!) * tr!.dx;
-    // double blX = (imageBitmapSize.width / width!) * bl!.dx;
-    // double brX = (imageBitmapSize.width / width!) * br!.dx;
-
-    // double tlY = (imageBitmapSize.height / height!) * tl!.dy;
-    // double trY = (imageBitmapSize.height / height!) * tr!.dy;
-    // double blY = (imageBitmapSize.height / height!) * bl!.dy;
-    // double brY = (imageBitmapSize.height / height!) * br!.dy;
-
-    // await channel.invokeMethod('cropImage', {
-    //   'path': imageFile!.path,
-    //   'tl_x': tlX,
-    //   'tl_y': tlY,
-    //   'tr_x': trX,
-    //   'tr_y': trY,
-    //   'bl_x': blX,
-    //   'bl_y': blY,
-    //   'br_x': brX,
-    //   'br_y': brY,
-    // });
-
-    print('cropper: ${imageFile!.path}');
-  }
 
   /// Edges of document is detected and plotted on canvas
   detectDocument() async {
@@ -116,6 +80,181 @@ class CropScreenModel {
     r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
 
     detectionCompleted.value = true;
+  }
+
+  /// Updates the points in the polygon when changed manually
+  updatePolygon() {
+    if (movingPoint == 'tl') {
+      Offset tlTemp =
+          constraintPointToBoundary(updatedPoint.value.localPosition);
+      if (checkPolygon(tlTemp, br, tr, bl)) {
+        if (!checkCrossover(tlTemp, tr, bl, br, t, b, l, r)) {
+          tl = tlTemp;
+          t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
+          l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
+        }
+      }
+    } else if (movingPoint == 'tr') {
+      Offset trTemp =
+          constraintPointToBoundary(updatedPoint.value.localPosition);
+      if (checkPolygon(tl, br, trTemp, bl)) {
+        if (!checkCrossover(tl, trTemp, bl, br, t, b, l, r)) {
+          tr = trTemp;
+          t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
+          r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
+        }
+      }
+    } else if (movingPoint == 'bl') {
+      Offset blTemp =
+          constraintPointToBoundary(updatedPoint.value.localPosition);
+      if (checkPolygon(tl, br, tr, blTemp)) {
+        if (!checkCrossover(tl, tr, blTemp, br, t, b, l, r)) {
+          bl = blTemp;
+          l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
+          b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
+        }
+      }
+    } else if (movingPoint == 'br') {
+      Offset brTemp =
+          constraintPointToBoundary(updatedPoint.value.localPosition);
+      if (checkPolygon(tl, brTemp, tr, bl)) {
+        if (!checkCrossover(tl, tr, bl, brTemp, t, b, l, r)) {
+          br = brTemp;
+          b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
+          r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
+        }
+      }
+    } else if (movingPoint == 't') {
+      double yDisplacement =
+          constraintPointToBoundary(updatedPoint.value.localPosition).dy - t.dy;
+
+      Offset tlTemp = updatePoint(tl, bl, yDisplacement, 'x', lSlope);
+      Offset trTemp = updatePoint(tr, br, yDisplacement, 'x', rSlope);
+
+      tlTemp = constraintPointToBoundary(tlTemp);
+      trTemp = constraintPointToBoundary(trTemp);
+
+      if (checkPolygon(tlTemp, br, trTemp, bl)) {
+        if (!checkCrossover(tlTemp, trTemp, bl, br, t, b, l, r)) {
+          tl = tlTemp;
+          tr = trTemp;
+          t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
+          l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
+          r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
+        }
+      }
+    } else if (movingPoint == 'b') {
+      double yDisplacement =
+          constraintPointToBoundary(updatedPoint.value.localPosition).dy - b.dy;
+
+      Offset blTemp = updatePoint(bl, tl, yDisplacement, 'x', lSlope);
+      Offset brTemp = updatePoint(br, tr, yDisplacement, 'x', rSlope);
+
+      blTemp = constraintPointToBoundary(blTemp);
+      brTemp = constraintPointToBoundary(brTemp);
+
+      if (checkPolygon(tl, brTemp, tr, blTemp)) {
+        if (!checkCrossover(tl, tr, blTemp, brTemp, t, b, l, r)) {
+          bl = blTemp;
+          br = brTemp;
+          b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
+          l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
+          r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
+        }
+      }
+    } else if (movingPoint == 'l') {
+      double xDisplacement =
+          constraintPointToBoundary(updatedPoint.value.localPosition).dx - l.dx;
+
+      Offset tlTemp = updatePoint(tl, tr, xDisplacement, 'y', tSlope);
+      Offset blTemp = updatePoint(bl, br, xDisplacement, 'y', bSlope);
+
+      tlTemp = constraintPointToBoundary(tlTemp);
+      blTemp = constraintPointToBoundary(blTemp);
+
+      if (checkPolygon(tlTemp, br, tr, blTemp)) {
+        if (!checkCrossover(tlTemp, tr, blTemp, br, t, b, l, r)) {
+          tl = tlTemp;
+          bl = blTemp;
+          l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
+          t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
+          b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
+        }
+      }
+    } else if (movingPoint == 'r') {
+      double xDisplacement =
+          constraintPointToBoundary(updatedPoint.value.localPosition).dx - r.dx;
+
+      Offset trTemp = updatePoint(tr, tl, xDisplacement, 'y', tSlope);
+      Offset brTemp = updatePoint(br, bl, xDisplacement, 'y', bSlope);
+
+      trTemp = constraintPointToBoundary(trTemp);
+      brTemp = constraintPointToBoundary(brTemp);
+
+      if (checkPolygon(tl, brTemp, trTemp, bl)) {
+        if (!checkCrossover(tl, trTemp, bl, br, t, b, l, r)) {
+          tr = trTemp;
+          br = brTemp;
+          r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
+          t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
+          b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
+        }
+      }
+    }
+
+    polygonUpdated.value = tl.dx +
+        tl.dy +
+        tr.dx +
+        tr.dy +
+        bl.dx +
+        bl.dy +
+        br.dx +
+        br.dy +
+        t.dx +
+        t.dy +
+        l.dx +
+        l.dy +
+        r.dx +
+        r.dy +
+        l.dx +
+        l.dy;
+  }
+
+  /// Crops and returns the image
+  crop() async {
+    Map imageSize = await NativeAndroidUtil.getImageSize(imageFile!.path);
+
+    imageSizeNative =
+        Size(imageSize['width']!.toDouble(), imageSize['height']!.toDouble());
+
+    print(
+        'Android Image size => ${imageSizeNative.width}/${imageSizeNative.height}');
+
+    // TODO: Rotate [rotationAngle] and crop image
+
+    // double tlX = (imageBitmapSize.width / width!) * tl!.dx;
+    // double trX = (imageBitmapSize.width / width!) * tr!.dx;
+    // double blX = (imageBitmapSize.width / width!) * bl!.dx;
+    // double brX = (imageBitmapSize.width / width!) * br!.dx;
+
+    // double tlY = (imageBitmapSize.height / height!) * tl!.dy;
+    // double trY = (imageBitmapSize.height / height!) * tr!.dy;
+    // double blY = (imageBitmapSize.height / height!) * bl!.dy;
+    // double brY = (imageBitmapSize.height / height!) * br!.dy;
+
+    // await channel.invokeMethod('cropImage', {
+    //   'path': imageFile!.path,
+    //   'tl_x': tlX,
+    //   'tl_y': tlY,
+    //   'tr_x': trX,
+    //   'tr_y': trY,
+    //   'bl_x': blX,
+    //   'bl_y': blY,
+    //   'br_x': brX,
+    //   'br_y': brY,
+    // });
+
+    print('cropper: ${imageFile!.path}');
   }
 
   /// Sets the points to the document if detected else to corners of the image
@@ -161,6 +300,81 @@ class CropScreenModel {
     r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
   }
 
+  /// Gets the current moving point
+  getMovingPoint(DragStartDetails startDetails) {
+    if (getDistance(startDetails.localPosition.dx,
+            startDetails.localPosition.dy, tl.dx, tl.dy) <
+        pickupDistance)
+      movingPoint = 'tl';
+    else if (getDistance(startDetails.localPosition.dx,
+            startDetails.localPosition.dy, tr.dx, tr.dy) <
+        pickupDistance)
+      movingPoint = 'tr';
+    else if (getDistance(startDetails.localPosition.dx,
+            startDetails.localPosition.dy, bl.dx, bl.dy) <
+        pickupDistance)
+      movingPoint = 'bl';
+    else if (getDistance(startDetails.localPosition.dx,
+            startDetails.localPosition.dy, br.dx, br.dy) <
+        pickupDistance)
+      movingPoint = 'br';
+    else if (getDistance(startDetails.localPosition.dx,
+            startDetails.localPosition.dy, t.dx, t.dy) <
+        pickupDistance)
+      movingPoint = 't';
+    else if (getDistance(startDetails.localPosition.dx,
+            startDetails.localPosition.dy, b.dx, b.dy) <
+        pickupDistance)
+      movingPoint = 'b';
+    else if (getDistance(startDetails.localPosition.dx,
+            startDetails.localPosition.dy, l.dx, l.dy) <
+        pickupDistance)
+      movingPoint = 'l';
+    else if (getDistance(startDetails.localPosition.dx,
+            startDetails.localPosition.dy, r.dx, r.dy) <
+        pickupDistance)
+      movingPoint = 'r';
+    else
+      movingPoint = 'none';
+  }
+
+  /// Calculates displacement of point wrt to slope
+  ///
+  /// The [updateAxis] in [p1] will be calculated with [slope] and [p2].
+  ///
+  /// The [displacement] is added to the other axis of [p1].
+  ///
+  /// Returns: Updated point [p1]
+  Offset updatePoint(
+    Offset p1,
+    Offset p2,
+    double displacement,
+    String updateAxis,
+    double slope,
+  ) {
+    double topBoundary = 0;
+    double bottomBoundary = canvasSize.height;
+    double leftBoundary = 0;
+    double rightBoundary = canvasSize.width;
+
+    if (updateAxis == 'x') {
+      double x1 = p2.dx - ((p2.dy - p1.dy + displacement) / slope);
+
+      if (x1 < leftBoundary) x1 = leftBoundary;
+      if (x1 > rightBoundary) x1 = rightBoundary;
+
+      p1 = Offset(x1, p1.dy + displacement);
+    } else if (updateAxis == 'y') {
+      double y1 = p2.dy - ((p2.dx - p1.dx + displacement) * slope);
+
+      if (y1 < topBoundary) y1 = topBoundary;
+      if (y1 > bottomBoundary) y1 = bottomBoundary;
+
+      p1 = Offset(p1.dx + displacement, y1);
+    }
+    return p1;
+  }
+
   /// Checks if the points form a closed convex polygon
   ///
   /// Returns: [True] if convex polygon, else [False]
@@ -177,8 +391,6 @@ class CropScreenModel {
     }
 
     /// Finds the orientation of triangle
-    ///
-    /// Return: 0 if
     int orientation(Offset p, Offset q, Offset r) {
       double val =
           (q.dy - p.dy) * (r.dx - q.dx) - (q.dx - p.dx) * (r.dy - q.dy);
@@ -200,30 +412,56 @@ class CropScreenModel {
     return false;
   }
 
-  /// Check if points cross the boundary of image
-  bool checkBoundary(Offset tl, Offset tr, Offset bl, Offset br) {
+  /// Check if all tlbr points are inside the boundary of image
+  ///
+  /// Returns: [True] if points are inside the boundary, else [False]
+  bool checkAllInsideBoundary(Offset tl, Offset tr, Offset bl, Offset br) {
     double topBoundary = 0;
     double bottomBoundary = canvasSize.height;
     double leftBoundary = 0;
     double rightBoundary = canvasSize.width;
 
-    if (tl.dx < leftBoundary || tl.dx > rightBoundary) return true;
-    if (tl.dx < topBoundary || tl.dx > bottomBoundary) return true;
+    if (tl.dx < leftBoundary || tl.dx > rightBoundary) return false;
+    if (tl.dy < topBoundary || tl.dy > bottomBoundary) return false;
 
-    if (tr.dx < leftBoundary || tr.dx > rightBoundary) return true;
-    if (tr.dx < topBoundary || tr.dx > bottomBoundary) return true;
+    if (tr.dx < leftBoundary || tr.dx > rightBoundary) return false;
+    if (tr.dy < topBoundary || tr.dy > bottomBoundary) return false;
 
-    if (bl.dx < leftBoundary || bl.dx > rightBoundary) return true;
-    if (bl.dx < topBoundary || bl.dx > bottomBoundary) return true;
+    if (bl.dx < leftBoundary || bl.dx > rightBoundary) return false;
+    if (bl.dy < topBoundary || bl.dy > bottomBoundary) return false;
 
-    if (br.dx < leftBoundary || br.dx > rightBoundary) return true;
-    if (br.dx < topBoundary || br.dx > bottomBoundary) return true;
+    if (br.dx < leftBoundary || br.dx > rightBoundary) return false;
+    if (br.dy < topBoundary || br.dy > bottomBoundary) return false;
 
-    return false;
+    return true;
+  }
+
+  /// Checks if point is inside the boundary of image,
+  /// else contraints the point to the boundary
+  ///
+  /// Returns: Corrected Point [Offset]
+  Offset constraintPointToBoundary(Offset point) {
+    double topBoundary = 0;
+    double bottomBoundary = canvasSize.height;
+    double leftBoundary = 0;
+    double rightBoundary = canvasSize.width;
+
+    point =
+        Offset((point.dx < leftBoundary) ? leftBoundary : point.dx, point.dy);
+    point =
+        Offset((point.dx > rightBoundary) ? rightBoundary : point.dx, point.dy);
+    point = Offset(point.dx, (point.dy < topBoundary) ? topBoundary : point.dy);
+    point = Offset(
+        point.dx, (point.dy > bottomBoundary) ? bottomBoundary : point.dy);
+
+    return point;
   }
 
   /// Check if points cross-over eachother
-  bool checkCrossover(Offset tl, Offset tr, Offset bl, Offset br) {
+  ///
+  /// Returns: [True] if points cross-over eachother, else [False]
+  bool checkCrossover(Offset tl, Offset tr, Offset bl, Offset br, Offset t,
+      Offset b, Offset l, Offset r) {
     if (tl.dx > tr.dx - crossoverThreshold) return true;
     if (bl.dx > br.dx - crossoverThreshold) return true;
     if (tl.dy > bl.dy - crossoverThreshold) return true;
@@ -235,260 +473,15 @@ class CropScreenModel {
     return false;
   }
 
-  /// Updates the points in the polygon when changed manually
-  updatePolygon() {
-    print('Start Point => ${startPoint.localPosition}');
-    print('Update Point => ${updatedPoint.value.localPosition}');
-
-    double x1 = startPoint.localPosition.dx;
-    double y1 = startPoint.localPosition.dy;
-    double x2 = tl.dx;
-    double y2 = tl.dy;
-    double x3 = tr.dx;
-    double y3 = tr.dy;
-    double x4 = bl.dx;
-    double y4 = bl.dy;
-    double x5 = br.dx;
-    double y5 = br.dy;
-    double x6 = t.dx;
-    double y6 = t.dy;
-    double x7 = b.dx;
-    double y7 = b.dy;
-    double x8 = l.dx;
-    double y8 = l.dy;
-    double x9 = r.dx;
-    double y9 = r.dy;
-
-    if (getDistance(x1, y1, x2, y2) < pickupDistance) {
-      // bool isConvexPolygon = checkPolygon(
-      //     Offset(tl.dx - crossoverThreshold, tl.dy + crossoverThreshold),
-      //     br,
-      //     tr,
-      //     bl);
-
-      // if (checkPolygon(updatedPoint.localPosition, br, tr, bl)) {
-      // if (!checkBoundary(updatedPoint.localPosition, tr, bl, br)) {
-      //   if (!checkCrossover(
-      //       updatedPoint.localPosition, tr, bl, br)) {
-      tl = updatedPoint.value.localPosition;
-      //   }
-      // }
-      // }
-
-      /// Check if TL has not crossed over TR
-      /// then update TL with new position
-
-      // if (tl.dx < tr.dx - crossoverThreshold) {
-      //   if (!isConvexPolygon) {
-      //     tl = Offset(tl.dx - crossoverAdjust, tl.dy - crossoverAdjust);
-      //   } else {
-      //     tl = updatedPoint.value.localPosition;
-      //   }
-      // } else {
-      //   tl = Offset(tr.dx - crossoverAdjust, tl.dy);
-      // }
-
-      // if (tl.dy + crossoverThreshold > bl.dy) {
-      //   tl = Offset(tl.dx, bl.dy - crossoverAdjust);
-      // }
-
-      t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
-      l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
-    } else if (getDistance(x1, y1, x3, y3) < 15 &&
-        y1 >= 0 &&
-        y1 <= canvasSize.height &&
-        x1 < canvasSize.width &&
-        x1 >= 0) {
-      bool isConvexPolygon = checkPolygon(tl, br,
-          Offset(tr.dx - crossoverThreshold, tr.dy - crossoverThreshold), bl);
-      if (tr.dx > tl.dx + crossoverThreshold) {
-        if (!isConvexPolygon) {
-          tr = Offset(tr.dx + crossoverAdjust, tr.dy - crossoverAdjust);
-        } else {
-          tr = updatedPoint.value.localPosition;
-        }
-      } else {
-        tr = Offset(tr.dx + crossoverAdjust, tr.dy);
-      }
-      if (tr.dy + crossoverThreshold > br.dy) {
-        tr = Offset(tr.dx, br.dy - crossoverAdjust);
-      }
-      t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
-      r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
-    } else if (getDistance(x1, y1, x4, y4) < 15 &&
-        y1 >= 0 &&
-        y1 <= canvasSize.height &&
-        x1 < canvasSize.width &&
-        x1 >= 0) {
-      bool isConvexPolygon = checkPolygon(
-        tl,
-        br,
-        tr,
-        Offset(bl.dx + crossoverThreshold, bl.dy - crossoverThreshold),
-      );
-      if (bl.dx < br.dx - crossoverThreshold) {
-        if (!isConvexPolygon) {
-          bl = Offset(bl.dx - crossoverAdjust, bl.dy + crossoverAdjust);
-        } else {
-          bl = updatedPoint.value.localPosition;
-        }
-      } else {
-        bl = Offset(br.dx - crossoverAdjust, bl.dy);
-      }
-      if (bl.dy - crossoverThreshold < tl.dy) {
-        bl = Offset(bl.dx, tl.dy + crossoverAdjust);
-      }
-      l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
-      b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
-    } else if (getDistance(x1, y1, x5, y5) < 15 &&
-        y1 >= 0 &&
-        y1 <= canvasSize.height &&
-        x1 < canvasSize.width &&
-        x1 >= 0) {
-      bool isConvexPolygon = checkPolygon(
-          tl,
-          Offset(br.dx - crossoverThreshold, br.dy - crossoverThreshold),
-          tr,
-          bl);
-
-      if (br.dx > bl.dx + crossoverThreshold) {
-        if (!isConvexPolygon) {
-          br = Offset(br.dx + crossoverAdjust, br.dy + crossoverAdjust);
-        } else {
-          br = updatedPoint.value.localPosition;
-        }
-      } else {
-        br = Offset(br.dx + crossoverAdjust, br.dy);
-      }
-
-      if (br.dy - crossoverThreshold < tr.dy) {
-        br = Offset(br.dx, tr.dy + crossoverAdjust);
-      }
-
-      b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
-      r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
-    } else if (getDistance(x1, y1, x6, y6) < 15 &&
-        y1 >= 0 &&
-        y1 <= canvasSize.height &&
-        x1 < canvasSize.width &&
-        x1 >= 0) {
-      double displacement = updatedPoint.value.localPosition.dy - y6;
-
-      // bool isConvexPolygon = checkPolygon(
-      //     Offset(tl!.dx, tl!.dy + displacement),
-      //     br!,
-      //     Offset(tr!.dx, tr!.dy + displacement),
-      //     bl!);
-
-      // bool outOfBounds =
-      //     (tl!.dy + displacement > 0 && tr!.dy + displacement > 0);
-
-      if (t.dy + crossoverThreshold < b.dy) {
-        // if (!isConvexPolygon) {
-        //   t = Offset(br!.dx, br!.dy + crossoverAdjust);
-        // } else {
-        t = Offset(t.dx, updatedPoint.value.localPosition.dy);
-        // }
-      } else {
-        t = Offset(t.dx, t.dy - crossoverAdjust);
-      }
-
-      if (tl.dy + displacement > 0) {
-        tl = Offset(tl.dx, tl.dy + displacement);
-      }
-      if (tr.dy + displacement > 0) {
-        tr = Offset(tr.dx, tr.dy + displacement);
-      }
-
-      l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
-      r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
-    } else if (getDistance(x1, y1, x7, y7) < 15 &&
-        y1 >= 0 &&
-        y1 <= canvasSize.height &&
-        x1 < canvasSize.width &&
-        x1 >= 0) {
-      if (t.dy < b.dy - crossoverThreshold) {
-        b = Offset(b.dx, updatedPoint.value.localPosition.dy);
-      } else {
-        b = Offset(b.dx, b.dy + crossoverAdjust);
-      }
-      double displacement = y7 - b.dy;
-      if (bl.dy - displacement < canvasSize.height) {
-        bl = Offset(bl.dx, bl.dy - displacement);
-      }
-      if (br.dy - displacement < canvasSize.height) {
-        br = Offset(br.dx, br.dy - displacement);
-      }
-      l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
-      r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
-    } else if (getDistance(x1, y1, x8, y8) < 15 &&
-        y1 >= 0 &&
-        y1 <= canvasSize.height &&
-        x1 < canvasSize.width &&
-        x1 >= 0) {
-      if (l.dx < r.dx - crossoverThreshold) {
-        l = Offset(updatedPoint.value.localPosition.dx, l.dy);
-      } else {
-        l = Offset(l.dx, l.dy - crossoverAdjust);
-      }
-      double displacement = l.dx - x8;
-      if (tl.dx + displacement > 0) {
-        tl = Offset(tl.dx + displacement, tl.dy);
-      }
-      if (bl.dx + displacement > 0) {
-        bl = Offset(bl.dx + displacement, bl.dy);
-      }
-      t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
-      b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
-    } else if (getDistance(x1, y1, x9, y9) < 15 &&
-        y1 >= 0 &&
-        y1 <= canvasSize.height &&
-        x1 < canvasSize.width &&
-        x1 >= 0) {
-      if (l.dx < r.dx - crossoverThreshold) {
-        r = Offset(updatedPoint.value.localPosition.dx, r.dy);
-      } else {
-        r = Offset(r.dx, r.dy + crossoverAdjust);
-      }
-      double displacement = x9 - r.dx;
-      if (tr.dx - displacement < canvasSize.width) {
-        tr = Offset(tr.dx - displacement, tr.dy);
-      }
-      if (br.dx - displacement < canvasSize.width) {
-        br = Offset(br.dx - displacement, br.dy);
-      }
-      t = Offset((tr.dx + tl.dx) / 2, (tr.dy + tl.dy) / 2);
-      b = Offset((br.dx + bl.dx) / 2, (br.dy + bl.dy) / 2);
-    }
-
-    if (tl.dx < 0) tl = Offset(0, tl.dy);
-    if (tl.dy < 0) tl = Offset(tl.dx, 0);
-    if (tr.dx > canvasSize.width) tr = Offset(canvasSize.width, tr.dy);
-    if (tr.dy < 0) tr = Offset(tr.dx, 0);
-    if (bl.dx < 0) bl = Offset(0, bl.dy);
-    if (bl.dy > canvasSize.height) bl = Offset(bl.dx, canvasSize.height);
-    if (br.dx > canvasSize.width) br = Offset(canvasSize.width, br.dy);
-    if (br.dy > canvasSize.height) br = Offset(br.dx, canvasSize.height);
-
-    polygonUpdated.value = tl.dx +
-        tl.dy +
-        tr.dx +
-        tr.dy +
-        bl.dx +
-        bl.dy +
-        br.dx +
-        br.dy +
-        t.dx +
-        t.dy +
-        l.dx +
-        l.dy +
-        r.dx +
-        r.dy +
-        l.dx +
-        l.dy;
+  /// Calculates the slope of all the edges of polygon
+  calculateAllSlopes() {
+    tSlope = getSlope(tl, tr);
+    bSlope = getSlope(bl, br);
+    lSlope = getSlope(tl, bl);
+    rSlope = getSlope(tr, br);
   }
 
-  /// Reads image size
+  /// Reads image size from file
   getSize() async {
     var decodedImage = await decodeImageFromList(imageFile!.readAsBytesSync());
     imageSize =
@@ -513,6 +506,13 @@ class CropScreenModel {
     print('HorizontalScaleFactor=> $horizontalScaleFactor');
 
     imageRendered.value = true;
+  }
+
+  /// Calculates slope from two points
+  ///
+  /// Return: Slope [double]
+  double getSlope(Offset p1, Offset p2) {
+    return (p2.dy - p1.dy) / (p2.dx - p1.dx);
   }
 
   /// Calculates the area of quadrilateral by

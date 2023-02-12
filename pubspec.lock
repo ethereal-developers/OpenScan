@@ -35,7 +35,7 @@ packages:
       name: bloc
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "8.1.0"
+    version: "8.1.1"
   boolean_selector:
     dependency: transitive
     description:
@@ -251,7 +251,7 @@ packages:
       name: image_picker_platform_interface
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.4.3"
+    version: "2.6.2"
   intl:
     dependency: "direct main"
     description:
