@@ -24,7 +24,12 @@ class NativeAndroidUtil {
     });
   }
 
-  // TODO: Rotate Image
+  static Future rotate(String imgPath, int degree) async {
+    return _channel.invokeMethod('rotateImage', {
+      'path': imgPath,
+      'degree': degree,
+    });
+  }
 
   static Future cropImage(
       {required String path,
