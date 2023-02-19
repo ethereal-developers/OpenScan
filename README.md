@@ -1,16 +1,19 @@
-# OpenScan
+<p align="center">
+<img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/scan_g.jpeg" height=300>
+</p>
 
-An open source app that enables users to scan hardcopies of documents or notes and convert it to a PDF file. No ads. No data collection. We respect your privacy.
+<H2 align='center'> OpenScan </H1>
+<H3 align='center'>Reclaim your Privacy</H2>
+<br>
 
-[<img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/gplay%20badge.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=com.ethereal.openscan)
+An privacy friendly app that enables users to scan hardcopies of documents or notes and convert it to a PDF file. No ads. No data collection. We respect your privacy.
 
-[<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height="80">](https://apt.izzysoft.de/fdroid/index/apk/com.ethereal.openscan)
+<p align='center'>
+<a href="https://play.google.com/store/apps/details?id=com.ethereal.openscan" alt="Get it on Google Play"><img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/dev_v3/assets/Playstore.png" width=200></a>
+<a href="https://apt.izzysoft.de/fdroid/index/apk/com.ethereal.openscan" alt="Get it on IzzyOnDroid"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" width=200></a>
+</p>
 
 (Build instructions present at the bottom of the file)
-
-<p align="center">
-<img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/scan_g.jpeg" height=400>
-</p>
 
 # About this app
 
