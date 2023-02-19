@@ -11,9 +11,9 @@ An privacy friendly app that enables users to scan hardcopies of documents or no
 <p align='center'>
 <a href="https://play.google.com/store/apps/details?id=com.ethereal.openscan" alt="Get it on Google Play"><img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/dev_v3/assets/Playstore.png" width=200></a>
 <a href="https://apt.izzysoft.de/fdroid/index/apk/com.ethereal.openscan" alt="Get it on IzzyOnDroid"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" width=200></a>
-</p>
-
+<br><br>
 (Build instructions present at the bottom of the file)
+</p>
 
 # About this app
 
