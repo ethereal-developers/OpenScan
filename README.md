@@ -2,8 +2,8 @@
 <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/scan_g.jpeg" height=300>
 </p>
 
-<H2 align='center'> OpenScan </H1>
-<H3 align='center'>Reclaim your Privacy</H2>
+<H2 align='center'> OpenScan </H2>
+<H3 align='center'>Reclaim your Privacy</H3>
 <br>
 
 An privacy friendly app that enables users to scan hardcopies of documents or notes and convert it to a PDF file. No ads. No data collection. We respect your privacy.
