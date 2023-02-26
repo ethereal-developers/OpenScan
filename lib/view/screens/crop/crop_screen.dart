@@ -219,7 +219,7 @@ class _CropImageState extends State<CropImage> {
             valueListenable: _cropScreen.imageRendered,
             builder: (context, bool _imageRendered, _) {
               return MaterialButton(
-                onPressed: () {
+                onPressed: _imageRendered ? () {
                   setState(() {
                     cropLoading = true;
                   });
@@ -228,7 +228,7 @@ class _CropImageState extends State<CropImage> {
                     cropLoading = false;
                   });
                   Navigator.pop(context, _cropScreen.imageFile);
-                },
+                } : () {},
                 color: _imageRendered || !cropLoading
                     ? Theme.of(context).colorScheme.secondary
                     : Theme.of(context).colorScheme.secondary.withOpacity(0.6),

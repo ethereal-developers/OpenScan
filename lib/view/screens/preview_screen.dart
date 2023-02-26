@@ -322,7 +322,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                         ),
                         BlocProvider(
                           create: (context) => FilterCubit(
-                            currentFilter: presetFiltersList[0],
+                            selectedFilter: presetFiltersList[0],
                             cachedFilters: {},
                           ),
                         ),

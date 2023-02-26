@@ -47,4 +47,3 @@ key.properties
 android/app/key.jks
 local.properties
 .vscode
-pubspec.lock

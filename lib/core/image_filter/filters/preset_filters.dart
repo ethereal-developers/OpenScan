@@ -4,7 +4,7 @@ import 'color_filters.dart';
 import 'filters.dart';
 import 'subfilters.dart';
 
-// NoFilter: No filter
+// Original: No filter
 class Original extends ColorFilter {
   Original() : super(name: "Original");
 

@@ -12,7 +12,12 @@ environment:
 
 dependencies:
   bloc: ^8.1.0
-  camera: ^0.10.0+1
+  # camera: ^0.10.0+1
+  camera:
+   git:
+     url: https://github.com/camsim99/plugins.git
+     path: packages/camera/camera
+     ref: master
   cupertino_icons: ^1.0.3
   exif: ^3.1.2
   flutter:
@@ -35,7 +40,7 @@ dependencies:
   pdf: ^3.8.4
   permission_handler: ^10.2.0
   quick_actions: ^0.6.0+7
-  reorderables: ^0.4.1
+  reorderables: ^0.6.0
   sensors_plus: ^1.2.1
   share_extend: ^2.0.0
   shared_preferences: ^2.0.8

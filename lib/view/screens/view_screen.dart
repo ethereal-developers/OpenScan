@@ -185,7 +185,7 @@ class _ViewScreenState extends State<ViewScreen> {
             padding: EdgeInsets.all(10),
             child: BlocConsumer<DirectoryCubit, DirectoryState>(
               listener: (context, state) {},
-              builder: (context, state) {
+              builder: (context_, state) {
                 if (state.images != null) {
                   return selectionEnabled
                       ? Wrap(
@@ -201,7 +201,7 @@ class _ViewScreenState extends State<ViewScreen> {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: getImageCards(state)!,
                           onReorder: (int oldIndex, int newIndex) {
-                            BlocProvider.of<DirectoryCubit>(context)
+                            BlocProvider.of<DirectoryCubit>(context_)
                                 .updateImageIndex(oldIndex, newIndex);
                           },
                           onNoReorder: (int index) {

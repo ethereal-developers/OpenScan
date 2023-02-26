@@ -25,11 +25,13 @@ class FilterScreen extends StatefulWidget {
 }
 
 class _FilterScreenState extends State<FilterScreen> {
-  Filter? _filter;
   // late bool loading;
   // late int _currentPageIndex;
   List<Filter> filters = presetFiltersList;
+  Filter _filter = presetFiltersList[0];
   late PageController _pageController;
+  late String currentImagePath;
+  late String filterImageName;
 
   // Future<Uint8List?> getBytes(File image) async {
   //   String cacheName = 'Original' + basename(image.path);
@@ -44,14 +46,8 @@ class _FilterScreenState extends State<FilterScreen> {
     super.initState();
     _pageController = PageController(initialPage: widget.pageIndex);
     // loading = false;
-    _filter = filters[0];
     // _currentPageIndex =
     //     PreviewScreen.previewModel.pageController!.page!.toInt();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   @override
@@ -74,46 +70,99 @@ class _FilterScreenState extends State<FilterScreen> {
           builder: (context, directoryState) {
             return PageView.builder(
               physics:
-                  // enablePageScroll //TODO: Add double tap zoom - maybe
+                  // enablePageScroll
                   //       ?
                   ClampingScrollPhysics(),
               // : NeverScrollableScrollPhysics(),
               controller: _pageController,
               itemCount: directoryState.imageCount,
-              itemBuilder: (context, index) {
-                return BlocConsumer<FilterCubit, FilterState>(
-                  listener: (context, state) {},
-                  builder: (context, filterState) {
-                    print('Filter Cubit: ${filterState.cachedFilters.keys}');
-                    return Column(
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.all(12.0),
-                            child: _buildFilteredImage(
-                              context,
-                              filterState: filterState,
-                              filter: _filter,
-                              image:
-                                  File(directoryState.images![index].imgPath),
-                              filename: basename(
-                                  directoryState.images![index].imgPath),
+              onPageChanged: (value) {
+                _imageBytes = null;
+              },
+              itemBuilder: (context, imageIndex) {
+                currentImagePath = directoryState.images![imageIndex].imgPath;
+                filterImageName = _filter.name + basename(currentImagePath);
+                return Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.all(12.0),
+                        child: BlocConsumer<FilterCubit, FilterState>(
+                          listener: (context, state) {
+                            print('Filter Cubit: ${state.cachedFilters.keys}');
+                          },
+                          buildWhen: (previous, current) {
+                            print('==== $filterImageName ====');
+                            print(previous.cachedFilters[filterImageName]);
+                            print(current.cachedFilters[filterImageName]);
+
+                            return current.cachedFilters[filterImageName] !=
+                                    null ||
+                                previous.selectedFilter !=
+                                    current.selectedFilter;
+                          },
+                          builder: (context, filterState) {
+                            List<int>? filteredImage =
+                                filterState.cachedFilters[filterImageName];
+
+                            if (filteredImage != null) {
+                              return Image.memory(
+                                Uint8List.fromList(filteredImage),
+                                fit: BoxFit.contain,
+                              );
+                            } else {
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    Container(
+                      height: 100,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: filters.length,
+                        itemBuilder: (BuildContext context, int filterIndex) {
+                          String imagePath =
+                              directoryState.images![imageIndex].imgPath;
+                          return InkWell(
+                            child: Container(
+                              padding: EdgeInsets.all(5.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: <Widget>[
+                                  FilterThumbnail(
+                                    imagePath: imagePath,
+                                    filter: filters[filterIndex],
+                                  ),
+                                  SizedBox(
+                                    height: 5.0,
+                                  ),
+                                  Text(
+                                    filters[filterIndex].name,
+                                  )
+                                ],
+                              ),
                             ),
-                          ),
-                        ),
-                        Container(
-                          height: 100,
-                          child: _buildBottomBar(
-                            context,
-                            filterState: filterState,
-                            imageFile:
-                                File(directoryState.images![index].imgPath),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                            onTap: () {
+                              if (_filter != filters[filterIndex]) {
+                                _filter = filters[filterIndex];
+                                filterImageName =
+                                    _filter.name + basename(currentImagePath);
+                                BlocProvider.of<FilterCubit>(context)
+                                    .changeFilter(_filter);
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             );
@@ -123,176 +172,126 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 
-  Widget _buildFilteredImage(
-    BuildContext context, {
-    required FilterState filterState,
-    Filter? filter,
-    required File image,
-    String? filename,
-  }) {
-    if (filterState.cachedFilters[filter?.name == null
-            ? '_' + filename!
-            : filter!.name + filename!] ==
-        null) {
-      return FutureBuilder<List<int>>(
-        future: compute(applyFilter, <String, dynamic>{
-          "filter": filter,
-          "image": image,
-          "filename": filename,
-        }),
-        builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
-          print('Image => ${snapshot.connectionState}');
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-            case ConnectionState.active:
-            case ConnectionState.waiting:
-              return Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                ),
-              );
-            case ConnectionState.done:
-              if (snapshot.hasError)
-                return Center(child: Text('Error: ${snapshot.error}'));
+  // Widget _buildFilteredImage(
+  //   BuildContext context, {
+  //   required FilterState filterState,
+  //   Filter? filter,
+  //   required File image,
+  //   String? filename,
+  // }) {
+  //   // if (filterState.cachedFilters[filter?.name == null
+  //   //         ? '_' + filename!
+  //   //         : filter!.name + filename!] ==
+  //   //     null) {
+  //   //   print('Main Image caching...');
+  //   //   return FutureBuilder<List<int>>(
+  //   //     future: compute(applyFilter, <String, dynamic>{
+  //   //       "filter": filter,
+  //   //       "image": image,
+  //   //       "filename": filename,
+  //   //     }),
+  //   //     builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
+  //   //       print('Image => ${snapshot.connectionState}');
+  //   //       switch (snapshot.connectionState) {
+  //   //         case ConnectionState.none:
+  //   //         case ConnectionState.active:
+  //   //         case ConnectionState.waiting:
+  //   //           return Center(
+  //   //             child: CircularProgressIndicator(
+  //   //               color: Colors.white,
+  //   //             ),
+  //   //           );
+  //   //         case ConnectionState.done:
+  //   //           if (snapshot.hasError)
+  //   //             return Center(child: Text('Error: ${snapshot.error}'));
+  //   //           BlocProvider.of<FilterCubit>(context).cacheImage(
+  //   //               filter?.name == null
+  //   //                   ? '_' + filename
+  //   //                   : filter!.name + filename,
+  //   //               snapshot.data!);
+  //   //           return Image.memory(
+  //   //             snapshot.data as dynamic,
+  //   //             fit: BoxFit.contain,
+  //   //           );
+  //   //       }
+  //   //       // unreachable
+  //   //     },
+  //   //   );
+  //   // } else {
+  //   // print(
+  //   //     'Showing image: ${filter?.name == null ? '_' + filename : filter!.name + filename}');
+  //   return Image.memory(
+  //     Uint8List.fromList(filterState.cachedFilters[
+  //         filter?.name == null ? '_' + filename! : filter!.name + filename!]!),
+  //     fit: BoxFit.contain,
+  //   );
+  //   // }
+  // }
 
-              BlocProvider.of<FilterCubit>(context).cacheImage(
-                  filter?.name == null
-                      ? '_' + filename
-                      : filter!.name + filename,
-                  snapshot.data!);
-
-              return Image.memory(
-                snapshot.data as dynamic,
-                fit: BoxFit.contain,
-              );
-          }
-          // unreachable
-        },
-      );
-    } else {
-      // print(
-      //     'Showing image: ${filter?.name == null ? '_' + filename : filter!.name + filename}');
-      return Image.memory(
-        filterState.cachedFilters[filter?.name == null
-            ? '_' + filename
-            : filter!.name + filename] as dynamic,
-        fit: BoxFit.contain,
-      );
-    }
-  }
-
-  Widget _buildBottomBar(
-    BuildContext context, {
-    required FilterState filterState,
-    required File imageFile,
-  }) {
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: filters.length,
-      itemBuilder: (BuildContext context, int index) {
-        return InkWell(
-          child: Container(
-            padding: EdgeInsets.all(5.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: <Widget>[
-                _buildFilterThumbnail(
-                  context,
-                  filterState: filterState,
-                  filter: filters[index],
-                  image: imageFile,
-                  filename: basename(imageFile.path),
-                ),
-                SizedBox(
-                  height: 5.0,
-                ),
-                Text(
-                  filters[index].name,
-                )
-              ],
-            ),
-          ),
-          onTap: () {
-            if (_filter != filters[index]) {
-              setState(() {
-                _filter = filters[index];
-              });
-            }
-          },
-        );
-      },
-    );
-  }
-
-  _buildFilterThumbnail(
-    BuildContext context, {
-    required FilterState filterState,
-    required Filter filter,
-    required File image,
-    String? filename,
-  }) {
-    print('Filename: $filename');
-    if (filterState.cachedFilters[filter.name + filename!] == null) {
-      print('Image not cached: ${filter.name + filename}');
-      return FutureBuilder<List<int>>(
-        future: compute(applyFilter, <String, dynamic>{
-          "filter": filter,
-          "image": image,
-          "filename": filename,
-        }),
-        builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
-          print('Thumbnail => ${snapshot.connectionState}');
-
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-            case ConnectionState.active:
-            case ConnectionState.waiting:
-              return CircleAvatar(
-                radius: 30,
-                backgroundColor: Theme.of(context).primaryColor,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                ),
-              );
-            case ConnectionState.done:
-              if (snapshot.hasError && !snapshot.hasData)
-                return Center(child: Text('Error: ${snapshot.error}'));
-
-              BlocProvider.of<FilterCubit>(context)
-                  .cacheImage(filter.name + filename, snapshot.data!);
-
-              return FilterThumbnail(
-                image: Image.memory(
-                  snapshot.data as dynamic,
-                ),
-              );
-          }
-          // unreachable
-        },
-      );
-    } else {
-      print('Cached image: ${filter.name + filename}');
-      return FilterThumbnail(
-        image: Image.memory(
-          filterState.cachedFilters[filter.name + filename] as dynamic,
-        ),
-      );
-    }
-  }
+  // Widget _buildFilterThumbnail(
+  //   BuildContext context, {
+  //   required FilterState filterState,
+  //   required Filter filter,
+  //   required File image,
+  //   String? filename,
+  // }) {
+  //   print('Filename: $filename');
+  //   if (filterState.cachedFilters[filter.name + filename!] == null) {
+  //     print('Thumbnail caching: ${filter.name + filename}');
+  //     return FutureBuilder<List<int>>(
+  //       future: compute(applyFilter, <String, dynamic>{
+  //         "filter": filter,
+  //         "image": image,
+  //         "filename": filename,
+  //       }),
+  //       builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
+  //         print('Thumbnail => ${snapshot.connectionState}');
+  //         switch (snapshot.connectionState) {
+  //           case ConnectionState.none:
+  //           case ConnectionState.active:
+  //           case ConnectionState.waiting:
+  //             return CircleAvatar(
+  //               radius: 30,
+  //               backgroundColor: Theme.of(context).primaryColor,
+  //               child: Center(
+  //                 child: CircularProgressIndicator(
+  //                   color: Colors.white,
+  //                 ),
+  //               ),
+  //             );
+  //           case ConnectionState.done:
+  //             if (snapshot.hasError && !snapshot.hasData)
+  //               return Center(child: Text('Error: ${snapshot.error}'));
+  //             BlocProvider.of<FilterCubit>(context)
+  //                 .cacheImage(filter.name + filename, snapshot.data!);
+  //             return FilterThumbnail(
+  //               image: Image.memory(
+  //                 snapshot.data as dynamic,
+  //               ),
+  //             );
+  //         }
+  //         // unreachable
+  //       },
+  //     );
+  //   } else {
+  //     print('Reading cache: ${filter.name + filename}');
+  //     return FilterThumbnail(
+  //       image: Image.memory(
+  //         Uint8List.fromList(
+  //             filterState.cachedFilters[filter.name + filename]!),
+  //       ),
+  //     );
+  //   }
+  // }
 
   // Future<String> get _localPath async {
   //   final directory = await getApplicationDocumentsDirectory();
-
   //   return directory.path;
   // }
-
   // Future<File> get _localFile async {
   //   final path = await _localPath;
   //   return File('$path/filtered_${_filter?.name ?? "_"}_$filename');
   // }
-
   // Future<File> saveFilteredImage() async {
   //   var imageFile = await _localFile;
   //   await imageFile.writeAsBytes(PreviewScreen.previewModel.cachedFilters[_filter?.name ?? "_"]!);
@@ -303,20 +302,81 @@ class _FilterScreenState extends State<FilterScreen> {
 class FilterThumbnail extends StatelessWidget {
   const FilterThumbnail({
     Key? key,
-    required this.image,
+    required this.imagePath,
+    required this.filter,
   }) : super(key: key);
 
-  final Widget image;
+  final String imagePath;
+  final Filter filter;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 60,
-      width: 60,
-      child: image,
+    String filterName = filter.name + basename(imagePath);
+    return BlocConsumer<FilterCubit, FilterState>(
+      listener: (context, state) {},
+      buildWhen: (previous, current) {
+        return previous.cachedFilters[filterName] !=
+            current.cachedFilters[filterName];
+      },
+      builder: (context, filterState) {
+        return (filterState.cachedFilters[filterName] == null)
+            ? FutureBuilder<List<int>>(
+                future: compute(applyFilter, <String, dynamic>{
+                  "filter": filter,
+                  "image": File(imagePath),
+                  "filename": basename(imagePath),
+                }),
+                builder:
+                    (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
+                  print('$filterName => ${snapshot.connectionState}');
+
+                  switch (snapshot.connectionState) {
+                    case ConnectionState.none:
+                    case ConnectionState.active:
+                    case ConnectionState.waiting:
+                      BlocProvider.of<FilterCubit>(context)
+                          .cacheImage(filterName, null);
+
+                      return CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Theme.of(context).primaryColor,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    case ConnectionState.done:
+                      if (snapshot.hasError && !snapshot.hasData)
+                        return Center(child: Text('Error: ${snapshot.error}'));
+
+                      BlocProvider.of<FilterCubit>(context)
+                          .cacheImage(filterName, snapshot.data!);
+
+                      return Container(
+                        height: 60,
+                        width: 60,
+                        child: Image.memory(
+                          snapshot.data as dynamic,
+                        ),
+                      );
+                  }
+                },
+              )
+            : Container(
+                height: 60,
+                width: 60,
+                child: Image.memory(
+                  Uint8List.fromList(filterState.cachedFilters[filterName]!),
+                ),
+              );
+      },
     );
   }
 }
+
+late imageLib.Image byteImage;
+List<int>? _imageBytes;
 
 ///The global applyfilter function
 Future<List<int>> applyFilter(Map<String, dynamic> params) async {
@@ -324,14 +384,19 @@ Future<List<int>> applyFilter(Map<String, dynamic> params) async {
   File image = params["image"];
   String filename = params["filename"];
 
-  imageLib.Image byteImage = imageLib.decodeImage(await image.readAsBytes())!;
-  List<int> _bytes = byteImage.getBytes();
-  if (filter != null) {
-    filter.apply(_bytes as dynamic, byteImage.width, byteImage.height);
+  if (_imageBytes == null) {
+    byteImage = imageLib.decodeImage(await image.readAsBytes())!;
+    _imageBytes = byteImage.getBytes();
   }
+
+  if (filter != null && filter.name != 'Original') {
+    filter.apply(_imageBytes as dynamic, byteImage.width, byteImage.height);
+  }
+
   // imageLib.Image _image =
   //     imageLib.Image.fromBytes(imageBytes.width, imageBytes.height, _bytes);
-  _bytes = imageLib.encodeNamedImage(byteImage, filename)!;
+
+  _imageBytes = imageLib.encodeNamedImage(byteImage, filename)!;
 
   // PreviewScreen.previewModel.cachedFilters[
   //     filter?.name == null ? '_' + filename : filter!.name + filename] = _bytes;
@@ -339,7 +404,7 @@ Future<List<int>> applyFilter(Map<String, dynamic> params) async {
   print(
       'Caching image: ${filter?.name == null ? '_' + filename : filter!.name + filename}');
 
-  return _bytes;
+  return _imageBytes!;
 }
 
 ///The global buildThumbnail function

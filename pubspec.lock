@@ -52,27 +52,28 @@ packages:
   camera:
     dependency: "direct main"
     description:
-      name: camera
-      sha256: e7ac55af24a890d20276821eb3c95857074d03b7de6f9892b99a205ee30bd179
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.10.3"
+      path: "packages/camera/camera"
+      ref: master
+      resolved-ref: ec2041f82584303d640fc7a3bc4ae31ebd76bc8e
+      url: "https://github.com/camsim99/plugins.git"
+    source: git
+    version: "0.10.0+4"
   camera_android:
     dependency: transitive
     description:
       name: camera_android
-      sha256: e491c836147f60dd8a54cf3895fd2960e13b21b78a9d15b563a1b6c70894f142
+      sha256: df9c3376ccfce13c98a09c1d6433c64b0c6b2de81eeade8151884f8c8f08881f
       url: "https://pub.dev"
     source: hosted
-    version: "0.10.4"
+    version: "0.10.4+1"
   camera_avfoundation:
     dependency: transitive
     description:
       name: camera_avfoundation
-      sha256: "6a68c20593d4cd58974d555f74a48b244f9db28cc9156de57781122d11b8754b"
+      sha256: c328d477e5af88b3edcf277183c3b68f6e73b0f4e4e1053a22026e1c175e5bdb
       url: "https://pub.dev"
     source: hosted
-    version: "0.9.11"
+    version: "0.9.11+1"
   camera_platform_interface:
     dependency: transitive
     description:
@@ -85,10 +86,10 @@ packages:
     dependency: transitive
     description:
       name: camera_web
-      sha256: "496de93c5d462738ce991dbfe91fb19026f115ed36406700a20a380fb0018299"
+      sha256: f7a949ce4d2e091234f2e6607557a0a65398c34c84c1161fb249498595e3b4ce
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.1+1"
+    version: "0.3.1+2"
   characters:
     dependency: transitive
     description:
@@ -561,10 +562,10 @@ packages:
     dependency: "direct main"
     description:
       name: reorderables
-      sha256: "92dd02c27b58f9fe9d467c24b49fafea458e4355fcea474abb17ba79a058275d"
+      sha256: "004a886e4878df1ee27321831c838bc1c976311f4ca6a74ce7d561e506540a77"
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.4"
+    version: "0.6.0"
   sensors_plus:
     dependency: "direct main"
     description:
