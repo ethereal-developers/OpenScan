@@ -4,9 +4,9 @@ import 'package:openscan/view/extensions.dart';
 // import 'package:flutter_neumorphic/flutter_neumorphic.dart' as neumorphic;
 import 'package:url_launcher/url_launcher.dart';
 
-void launchWebsite(String urlString) async {
-  if (await canLaunch(urlString)) {
-    await launch(urlString);
+void launchWebsite(Uri url) async {
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url);
   } else {
     print("Couldn't launch the url");
   }
@@ -57,7 +57,7 @@ class AboutScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   children: [
                     TextSpan(
-                        text: 'Scan',
+                        text: 'Scan ',
                         style: TextStyle(
                             color: Theme.of(context).colorScheme.secondary)),
                     TextSpan(
@@ -115,7 +115,7 @@ class AboutScreen extends StatelessWidget {
             Center(
               child: GestureDetector(
                 onTap: () => launchWebsite(
-                  'https://github.com/Ethereal-Developers-Inc/OpenScan',
+                  Uri.dataFromString('https://github.com/Ethereal-Developers-Inc/OpenScan'),
                 ),
                 child: Container(
                   child: Padding(
