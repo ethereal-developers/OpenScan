@@ -316,6 +316,11 @@ class CanvasImage extends StatelessWidget {
             ValueListenableBuilder(
               valueListenable: cropScreenState.detectionCompleted,
               builder: (context, _documentDetected, _) {
+                if(cropScreenState.detectionCompleted.value) {
+                  /// This snippet is crucial, but idk how it works
+                  cropScreenState.getRenderedBoxSize();
+                  cropScreenState.setPoints();
+                }
                 return cropScreenState.detectionCompleted.value
                     ? cropScreenState.imageRendered.value
                         ? Positioned.fill(

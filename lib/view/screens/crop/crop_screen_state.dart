@@ -56,19 +56,23 @@ class CropScreenState {
         await NativeAndroidUtil.detectDocument(imageFile!.path);
     print('Points => $detectedPointsData');
 
-    setPoints();
     detectionCompleted.value = true;
   }
 
   /// Sets detected points on canvas
   setPoints() {
-    if (detectedPointsData.isEmpty) {
-      /// Setting corner points to boundary
+    double polygonArea = 0;
+    double canvasArea = 1;
+
+    /// Setting corner points to boundary
+    setPointsToCorner() {
       tl = Offset(0, 0);
       tr = Offset(canvasSize.width, 0);
       bl = Offset(0, canvasSize.height);
       br = Offset(canvasSize.width, canvasSize.height);
-    } else {
+    }
+
+    if(detectedPointsData.isNotEmpty){
       /// Setting corner points to detected location
       /// PointsData: [br,tr,tl,bl]: (width, height)
       tl = Offset(
@@ -83,7 +87,14 @@ class CropScreenState {
       bl = Offset(
           (detectedPointsData[3][0] / imageSize!.width) * canvasSize.width,
           (detectedPointsData[3][1] / imageSize!.height) * canvasSize.height);
-    }
+
+    polygonArea =
+          areaOfQuadrilateral(tl, tr, bl, br);
+          canvasArea = canvasSize.width * canvasSize.height;
+
+      if(polygonArea / canvasArea < 0.2) setPointsToCorner(); 
+
+    } else setPointsToCorner();
 
     /// Computing center points
     t = Offset((tl.dx + tr.dx) / 2, (tl.dy + tr.dy) / 2);

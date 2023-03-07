@@ -274,7 +274,7 @@ class _PreviewScreenState extends State<PreviewScreen>
               cropOnPressed: () {
                 BlocProvider.of<DirectoryCubit>(context).cropImage(
                   context,
-                  state.images![pageController.page!.toInt()],
+                  state.images![pageController.page!.round()],
                 );
               },
               deleteOnPressed: () {
