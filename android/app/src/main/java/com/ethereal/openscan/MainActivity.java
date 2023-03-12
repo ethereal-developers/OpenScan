@@ -91,6 +91,7 @@ public class MainActivity extends FlutterActivity {
                                     double br_y = Double.parseDouble(Objects.requireNonNull(call.argument("br_y")));
                                     boolean isCropped = ImageUtil.cropImage(path, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y);
                                     result.success(isCropped);
+                                    break;
                                 }
                                 case "getImageSize": {
                                     String path = call.argument("path");

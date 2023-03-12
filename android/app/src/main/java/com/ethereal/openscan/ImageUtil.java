@@ -97,7 +97,6 @@ public class ImageUtil {
             Log.d(TAG, width + "/" + height);
         } catch (Exception e) {
             Log.e(TAG, "Exception while getting image size --> ", e);
-            return imageSizeMap;
         }
         return imageSizeMap;
     }
