@@ -17,44 +17,43 @@ class PolygonPainter extends CustomPainter {
     this.b,
   });
 
-  Paint innerDot = Paint()
+  Paint dotInnerShade = Paint()
     ..color = AppTheme.secondaryColor.withOpacity(0.4)
-    ..strokeWidth = 1
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.fill;
 
-  Paint linesConnectingDotsOutline = Paint()
+  Paint dotOutline = Paint()
     ..color = AppTheme.secondaryColor.withOpacity(0.9)
     ..strokeWidth = 2
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.stroke;
 
   Paint linesConnectingDots = Paint()
-    ..color = AppTheme.secondaryColor.withOpacity(0.7)
-    ..strokeWidth = 3
+    ..color = AppTheme.secondaryColor.withOpacity(0.8)
+    ..strokeWidth = 2
     ..strokeCap = StrokeCap.round;
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawCircle(t!, centerDotRadius, innerDot);
-    canvas.drawCircle(b!, centerDotRadius, innerDot);
-    canvas.drawCircle(l!, centerDotRadius, innerDot);
-    canvas.drawCircle(r!, centerDotRadius, innerDot);
+    canvas.drawCircle(t!, centerDotRadius, dotInnerShade);
+    canvas.drawCircle(b!, centerDotRadius, dotInnerShade);
+    canvas.drawCircle(l!, centerDotRadius, dotInnerShade);
+    canvas.drawCircle(r!, centerDotRadius, dotInnerShade);
 
-    canvas.drawCircle(t!, centerDotRadius, linesConnectingDotsOutline);
-    canvas.drawCircle(b!, centerDotRadius, linesConnectingDotsOutline);
-    canvas.drawCircle(l!, centerDotRadius, linesConnectingDotsOutline);
-    canvas.drawCircle(r!, centerDotRadius, linesConnectingDotsOutline);
+    canvas.drawCircle(t!, centerDotRadius, dotOutline);
+    canvas.drawCircle(b!, centerDotRadius, dotOutline);
+    canvas.drawCircle(l!, centerDotRadius, dotOutline);
+    canvas.drawCircle(r!, centerDotRadius, dotOutline);
 
-    canvas.drawCircle(tl!, cornerDotRadius, innerDot);
-    canvas.drawCircle(tr!, cornerDotRadius, innerDot);
-    canvas.drawCircle(bl!, cornerDotRadius, innerDot);
-    canvas.drawCircle(br!, cornerDotRadius, innerDot);
+    canvas.drawCircle(tl!, cornerDotRadius, dotInnerShade);
+    canvas.drawCircle(tr!, cornerDotRadius, dotInnerShade);
+    canvas.drawCircle(bl!, cornerDotRadius, dotInnerShade);
+    canvas.drawCircle(br!, cornerDotRadius, dotInnerShade);
 
-    canvas.drawCircle(tl!, cornerDotRadius, linesConnectingDotsOutline);
-    canvas.drawCircle(tr!, cornerDotRadius, linesConnectingDotsOutline);
-    canvas.drawCircle(bl!, cornerDotRadius, linesConnectingDotsOutline);
-    canvas.drawCircle(br!, cornerDotRadius, linesConnectingDotsOutline);
+    canvas.drawCircle(tl!, cornerDotRadius, dotOutline);
+    canvas.drawCircle(tr!, cornerDotRadius, dotOutline);
+    canvas.drawCircle(bl!, cornerDotRadius, dotOutline);
+    canvas.drawCircle(br!, cornerDotRadius, dotOutline);
 
     canvas.drawLine(tl!, tr!, linesConnectingDots);
     canvas.drawLine(tr!, br!, linesConnectingDots);

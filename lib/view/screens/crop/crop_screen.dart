@@ -95,36 +95,162 @@ class _CropImageState extends State<CropImage> {
               )
             ],
           ),
-          body: Container(
-            padding: EdgeInsets.all(13),
-            alignment: Alignment.center,
-            child: !cropLoading
-                ? TweenAnimationBuilder(
-                    tween: Tween(
-                        begin: 1.0,
-                        end: _cropScreen.scaleImage
-                            ? _cropScreen.aspectRatio
-                            : 1.0),
-                    duration: Duration(milliseconds: 100),
-                    builder: ((_, double scale, __) {
-                      return Transform.rotate(
-                        angle: _cropScreen.rotationAngle,
-                        child: Transform.scale(
-                          scale: scale,
-                          child: CanvasImage(
-                            cropScreenState: _cropScreen,
-                            imageFile: _cropScreen.imageFile,
+          body: GestureDetector(
+            key: _cropScreen.bodyKey,
+            onPanUpdate: (updateDetails) {
+              _cropScreen.updatedPoint.value = updateDetails;
+              _cropScreen.updatePolygon();
+            },
+            onPanStart: (startDetails) {
+              _cropScreen.calculateAllSlopes();
+              _cropScreen.getMovingPoint(startDetails);
+              if (_cropScreen.movingPoint.name != 'none')
+                _cropScreen.showMagnifier.value = true;
+            },
+            onPanEnd: (details) {
+              _cropScreen.movingPoint.name = 'none';
+              _cropScreen.movingPoint.offset = Offset.zero;
+              _cropScreen.showMagnifier.value = false;
+            },
+            child: Container(
+              // width: _cropScreen.screenSize.width,
+              // height: _cropScreen.screenSize.height,
+              color: Theme.of(context).primaryColor,
+              child: Stack(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(13),
+                    alignment: Alignment.center,
+                    child: !cropLoading
+                        ? TweenAnimationBuilder(
+                            tween: Tween(
+                                begin: 1.0,
+                                end: _cropScreen.scaleImage
+                                    ? _cropScreen.aspectRatio
+                                    : 1.0),
+                            duration: Duration(milliseconds: 100),
+                            builder: ((_, double scale, __) {
+                              return Transform.rotate(
+                                angle: _cropScreen.rotationAngle,
+                                child: Transform.scale(
+                                  scale: scale,
+                                  child: Image(
+                                    key: _cropScreen.imageKey,
+                                    image: FileImage(_cropScreen.imageFile!),
+                                    loadingBuilder:
+                                        ((context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Center(
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                        ),
+                                      );
+                                    }),
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Center(
+                                        child: Icon(
+                                          Icons.error_rounded,
+                                          color: Colors.red,
+                                          size: 30,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            }),
+                          )
+                        : CircularProgressIndicator(
+                            strokeWidth: 4,
+                            valueColor: AlwaysStoppedAnimation(
+                              Theme.of(context).colorScheme.secondary,
+                            ),
                           ),
-                        ),
-                      );
-                    }),
-                  )
-                : CircularProgressIndicator(
-                    strokeWidth: 4,
-                    valueColor: AlwaysStoppedAnimation(
-                      Theme.of(context).colorScheme.secondary,
-                    ),
                   ),
+                  ValueListenableBuilder(
+                    valueListenable: _cropScreen.detectionCompleted,
+                    builder: (context, _documentDetected, _) {
+                      if (_cropScreen.detectionCompleted.value) {
+                        /// This snippet is crucial, but idk how it works
+                        _cropScreen.getRenderedBoxSize();
+                        _cropScreen.setPoints();
+                      }
+                      return _cropScreen.detectionCompleted.value
+                          ? _cropScreen.imageRendered.value
+                              ? Positioned.fill(
+                                  child: ValueListenableBuilder(
+                                      valueListenable: _cropScreen.updatedPoint,
+                                      builder: (context, _updatedPoint, _) {
+                                        return CustomPaint(
+                                          painter: PolygonPainter(
+                                            tl: _cropScreen.tl,
+                                            tr: _cropScreen.tr,
+                                            bl: _cropScreen.bl,
+                                            br: _cropScreen.br,
+                                            t: _cropScreen.t,
+                                            l: _cropScreen.l,
+                                            b: _cropScreen.b,
+                                            r: _cropScreen.r,
+                                          ),
+                                        );
+                                      }),
+                                )
+                              : Container()
+                          : Positioned.fill(
+                              child: Container(
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(0.7),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white),
+                                ),
+                              ),
+                            );
+                    },
+                  ),
+                  ValueListenableBuilder(
+                    valueListenable: _cropScreen.showMagnifier,
+                    builder: (context, bool _showMagnifier, _) {
+                      if (_showMagnifier)
+                        return ValueListenableBuilder(
+                          valueListenable: _cropScreen.updatedPoint,
+                          builder:
+                              (context, DragUpdateDetails _updatedPoint, _) {
+                            return Positioned(
+                              left: _cropScreen.movingPoint.offset!.dx - 40,
+                              top: _cropScreen.movingPoint.offset!.dy - 120,
+                              child: RawMagnifier(
+                                decoration: MagnifierDecoration(
+                                  shadows: const <BoxShadow>[
+                                    BoxShadow(
+                                        blurRadius: 1.5,
+                                        offset: Offset(0, 2),
+                                        spreadRadius: 1,
+                                        color: Color.fromARGB(25, 0, 0, 0))
+                                  ],
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    side: BorderSide(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                      width: .15,
+                                    ),
+                                  ),
+                                ),
+                                size: Size(80, 80),
+                                magnificationScale: 1.5,
+                                focalPointOffset: Offset(0, 80),
+                              ),
+                            );
+                          },
+                        );
+                      return Container();
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
           bottomNavigationBar: bottomBar(),
         ),
@@ -219,16 +345,18 @@ class _CropImageState extends State<CropImage> {
             valueListenable: _cropScreen.imageRendered,
             builder: (context, bool _imageRendered, _) {
               return MaterialButton(
-                onPressed: _imageRendered ? () {
-                  setState(() {
-                    cropLoading = true;
-                  });
-                  _cropScreen.crop();
-                  setState(() {
-                    cropLoading = false;
-                  });
-                  Navigator.pop(context, _cropScreen.imageFile);
-                } : () {},
+                onPressed: _imageRendered
+                    ? () {
+                        setState(() {
+                          cropLoading = true;
+                        });
+                        _cropScreen.crop();
+                        setState(() {
+                          cropLoading = false;
+                        });
+                        Navigator.pop(context, _cropScreen.imageFile);
+                      }
+                    : () {},
                 color: _imageRendered || !cropLoading
                     ? Theme.of(context).colorScheme.secondary
                     : Theme.of(context).colorScheme.secondary.withOpacity(0.6),
@@ -260,102 +388,6 @@ class _CropImageState extends State<CropImage> {
             },
           )
         ],
-      ),
-    );
-  }
-}
-
-class CanvasImage extends StatelessWidget {
-  const CanvasImage({
-    Key? key,
-    required this.cropScreenState,
-    required this.imageFile,
-  }) : super(key: key);
-
-  final CropScreenState cropScreenState;
-  final File? imageFile;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onPanUpdate: (updateDetails) {
-        cropScreenState.updatedPoint.value = updateDetails;
-        cropScreenState.updatePolygon();
-      },
-      onPanStart: (startDetails) {
-        print('Start Point: $startDetails');
-        cropScreenState.calculateAllSlopes();
-        cropScreenState.getMovingPoint(startDetails);
-      },
-      child: Container(
-        // color: Colors.amber,
-        // padding: EdgeInsets.all(10),
-        child: Stack(
-          children: [
-            Image(
-              key: cropScreenState.imageKey,
-              image: FileImage(imageFile!),
-              loadingBuilder: ((context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                );
-              }),
-              errorBuilder: (context, error, stackTrace) {
-                return Center(
-                  child: Icon(
-                    Icons.error_rounded,
-                    color: Colors.red,
-                    size: 30,
-                  ),
-                );
-              },
-            ),
-            ValueListenableBuilder(
-              valueListenable: cropScreenState.detectionCompleted,
-              builder: (context, _documentDetected, _) {
-                if(cropScreenState.detectionCompleted.value) {
-                  /// This snippet is crucial, but idk how it works
-                  cropScreenState.getRenderedBoxSize();
-                  cropScreenState.setPoints();
-                }
-                return cropScreenState.detectionCompleted.value
-                    ? cropScreenState.imageRendered.value
-                        ? Positioned.fill(
-                            child: ValueListenableBuilder(
-                                valueListenable: cropScreenState.updatedPoint,
-                                builder: (context, _updatedPoint, _) {
-                                  return CustomPaint(
-                                    painter: PolygonPainter(
-                                      tl: cropScreenState.tl,
-                                      tr: cropScreenState.tr,
-                                      bl: cropScreenState.bl,
-                                      br: cropScreenState.br,
-                                      t: cropScreenState.t,
-                                      l: cropScreenState.l,
-                                      b: cropScreenState.b,
-                                      r: cropScreenState.r,
-                                    ),
-                                  );
-                                }),
-                          )
-                        : Container()
-                    : Positioned.fill(
-                        child: Container(
-                          color:
-                              Theme.of(context).primaryColor.withOpacity(0.7),
-                          child: Center(
-                            child:
-                                CircularProgressIndicator(color: Colors.white),
-                          ),
-                        ),
-                      );
-              },
-            ),
-          ],
-        ),
       ),
     );
   }
