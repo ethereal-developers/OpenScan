@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image/image.dart' as imageLib;
+import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/core/image_filter/filters/preset_filters.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/logic/cubit/filter_cubit.dart';
@@ -23,7 +24,7 @@ class PreviewScreen extends StatefulWidget {
 
 class _PreviewScreenState extends State<PreviewScreen>
     with SingleTickerProviderStateMixin {
-  int? _pageNumber;
+  late ValueNotifier<int> _pageNumber;
   late int _currentPageIndex;
   late TapDownDetails _doubleTapDetails;
   TransformationController _transformationController =
@@ -39,7 +40,7 @@ class _PreviewScreenState extends State<PreviewScreen>
 
   void doubleTapImageZoom() async {
     //TODO: Generalize method
-    print(_transformationController.value == Matrix4.identity());
+    debugPrint((_transformationController.value == Matrix4.identity()).toString());
 
     final position = _doubleTapDetails.localPosition;
 
@@ -81,15 +82,15 @@ class _PreviewScreenState extends State<PreviewScreen>
         enablePageScroll = true;
       });
     }
-    print(animationController.status);
+    debugPrint(animationController.status.toString());
   }
 
   @override
   void initState() {
     super.initState();
-    _currentPageIndex = widget.initialIndex!;
-    pageController = PageController(initialPage: _currentPageIndex);
-    _pageNumber = widget.initialIndex! + 1;
+    // _currentPageIndex = widget.initialIndex!;
+    pageController = PageController(initialPage: widget.initialIndex!);
+    _pageNumber = ValueNotifier(widget.initialIndex! + 1);
     animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 200),
@@ -119,16 +120,13 @@ class _PreviewScreenState extends State<PreviewScreen>
                   itemCount: state.imageCount,
                   itemBuilder: (context, index) {
                     GlobalKey imageKey = GlobalKey();
-                    _currentPageIndex = index;
+                    // _currentPageIndex = index;
 
                     // TODO: Apply Future builder
                     // imageBytes = PreviewScreen.previewModel
                     //     .getImageBytes(state.images![index].imgPath);
-
                     // imageBytes!.getBytes();
-
                     // imageLib.decodeImage(imageBytes!.getBytes());
-
                     // imageBytes = imageLib.decodeImage(imageBytes!.getBytes());
 
                     return GestureDetector(
@@ -199,7 +197,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                   onPageChanged: (index) {
                     _transformationController.value = Matrix4.identity();
                     setState(() {
-                      _pageNumber = index + 1;
+                      _pageNumber.value = index + 1;
                     });
                   },
                 ),
@@ -255,7 +253,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                         ),
                         // TODO: [Bug] Fix Page Index- wrong when image is deleted
                         child: Text(
-                          '$_pageNumber/${state.imageCount}',
+                          '${_pageNumber.value}/${state.imageCount}',
                           style: TextStyle(color: Colors.white, fontSize: 14),
                         ),
                       ),
@@ -282,15 +280,28 @@ class _PreviewScreenState extends State<PreviewScreen>
                   context: context,
                   builder: (_) {
                     return DeleteDialog(
-                      deleteOnPressed: () {
-                        BlocProvider.of<DirectoryCubit>(context).deleteImage(
+                      deleteOnPressed: () async {
+                        bool directoryDeleted = await BlocProvider.of<DirectoryCubit>(context).deleteImage(
                           context,
                           imageToDelete:
                               state.images![pageController.page!.toInt()],
                         );
                         Navigator.pop(context);
+                        if (directoryDeleted) {
+                          Navigator.popUntil(context, ModalRoute.withName(AppRouter.HOME_SCREEN));
+                          // Navigator.pop(context);
+                          // Navigator.pop(context);
+                        }
+
                         setState(() {
-                          _pageNumber = _currentPageIndex + 1;
+                          if (state.imageCount + 1 == _pageNumber.value) {
+                            _pageNumber.value = pageController.page!.toInt();
+                          } else
+                            _pageNumber.value =
+                                pageController.page!.toInt() + 1;
+
+                          debugPrint(
+                              'Controller Page: ${pageController.page} : ${state.imageCount} : ${_pageNumber.value}');
                         });
                         // pageIndex = _pageController!.page!.toInt() + 1;
                       },
@@ -305,10 +316,10 @@ class _PreviewScreenState extends State<PreviewScreen>
                   });
                 }
 
-                print(_pageNumber!);
-                print(state.images![_pageNumber! - 1]);
+                // debugPrint(_pageNumber.value);
+                // debugPrint(state.images![_pageNumber.value - 1]);
                 var image = imageLib.decodeImage(
-                    await File(state.images![_pageNumber! - 1].imgPath)
+                    await File(state.images![_pageNumber.value - 1].imgPath)
                         .readAsBytes());
                 // image = imageLib.copyResize(image!, width: 600);
 
@@ -328,7 +339,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                         ),
                       ],
                       child: FilterScreen(
-                        pageIndex: _currentPageIndex,
+                        pageIndex: pageController.page!.round(),
                       ),
                     ),
                   ),

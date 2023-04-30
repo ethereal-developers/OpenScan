@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:openscan/core/models.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -107,7 +108,7 @@ class DatabaseHelper {
     });
 
     getDirectoryTableName(directory.dirName);
-    print('Directory Index: $index');
+    debugPrint('Directory Index: $index');
     db.execute('''
       CREATE TABLE $_dirTableName(
       idx INTEGER,
@@ -125,7 +126,7 @@ class DatabaseHelper {
     List<Map<String, dynamic>> data =
         await db.query(_dirTableName, orderBy: 'idx');
 
-    addFilteredImageColumn(tableName);
+    // addFilteredImageColumn(tableName);
 
     return data;
   }
@@ -179,8 +180,6 @@ class DatabaseHelper {
     }
   }
 
-  // <=========================== Cache Operations ============================>
-
   // <=========================== CRUD Operations =============================>
 
   /// Adds image to database.
@@ -196,7 +195,7 @@ class DatabaseHelper {
       'img_path': image.imgPath,
       // 'shouldCompress': image.shouldCompress,
     });
-    print('Image Index: $index');
+    debugPrint('Image Index: $index');
 
     return await db.update(
         _masterTableName,

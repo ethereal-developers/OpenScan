@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
+import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
@@ -12,15 +13,12 @@ import 'package:openscan/view/Widgets/FAB.dart';
 import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/drawer.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
-import 'package:openscan/view/screens/demo_screen.dart';
 import 'package:openscan/view/screens/view_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quick_actions/quick_actions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
-  static String route = "HomeScreen";
-
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -35,10 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
     await getMasterData();
     setState(() {});
   }
-
-  // void getData() {
-  //   homeRefresh();
-  // }
 
   Future<bool> _requestPermission() async {
     if (await Permission.storage.request().isGranted &&
@@ -62,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ..createImage(context),
               child: ViewScreen(),
             ),
+            settings: RouteSettings(name: AppRouter.VIEW_SCREEN),
           ),
         ).whenComplete(() {
           homeRefresh();
@@ -80,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               child: ViewScreen(),
             ),
+            settings: RouteSettings(name: AppRouter.VIEW_SCREEN),
           ),
         ).whenComplete(() {
           homeRefresh();
@@ -98,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               child: ViewScreen(),
             ),
+            settings: RouteSettings(name: AppRouter.VIEW_SCREEN),
           ),
         ).whenComplete(() {
           homeRefresh();
@@ -119,10 +116,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 images: <ImageOS>[],
               )..getImageData(),
               lazy: false,
-              child: ViewScreen(
-                  // directoryOS: masterDirectory,
-                  ),
+              child: ViewScreen(),
             ),
+            settings: RouteSettings(name: AppRouter.VIEW_SCREEN),
           ),
         ).whenComplete(() {
           homeRefresh();
@@ -133,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<DirectoryOS>> getMasterData() async {
     masterDirectories = [];
     masterData = await database.getMasterData();
-    print('Master Table => $masterData');
+    debugPrint('Master Table => $masterData');
     for (var directory in masterData) {
       var alreadyExistsFlag = false;
       for (var dir in masterDirectories) {
@@ -168,8 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     await preferences.setBool('alreadyVisited', true);
 
-    if (!visitingFlag)
-      Navigator.of(context).pushNamed(DemoScreen.route);
+    if (!visitingFlag) Navigator.of(context).pushNamed(AppRouter.DEMO_SCREEN);
   }
 
   @override

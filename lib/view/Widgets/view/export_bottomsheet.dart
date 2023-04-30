@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:openscan/core/appRouter.dart';
 // import 'package:fluttertoast/fluttertoast.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
@@ -35,7 +36,7 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
     return BottomSheet(
       enableDrag: false,
       onClosing: () {
-        Navigator.popUntil(context, ModalRoute.withName(ViewScreen.route));
+        Navigator.popUntil(context, ModalRoute.withName(AppRouter.VIEW_SCREEN));
       },
       builder: (context) {
         return Container(
@@ -116,7 +117,7 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
                                 fileName: fileName,
                                 images: state.images!,
                               );
-                          print('Filename => $fileNameWithPath');
+                          debugPrint('Filename => $fileNameWithPath');
 
                           if (fileNameWithPath != null) {
                             ShareExtend.share(

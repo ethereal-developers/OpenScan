@@ -12,9 +12,9 @@ import 'core/theme/appTheme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Globals.cameras = await availableCameras();
-  print('Cameras => ');
+  debugPrint('Cameras => ');
   Globals.cameras.every((cameraDescription) {
-    print(
+    debugPrint(
         '${cameraDescription.name} : ${cameraDescription.lensDirection}: ${cameraDescription.sensorOrientation}');
     return true;
   });

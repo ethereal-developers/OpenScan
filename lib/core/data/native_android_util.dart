@@ -50,7 +50,7 @@ class NativeAndroidUtil {
       "bl_x": "$blX",
       "bl_y": "$blY",
       "br_x": "$brX",
-      "br_y": "$brY"
+      "br_y": "$brY",
     });
   }
 }

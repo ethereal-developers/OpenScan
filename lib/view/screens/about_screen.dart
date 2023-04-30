@@ -8,12 +8,11 @@ void launchWebsite(Uri url) async {
   if (await canLaunchUrl(url)) {
     await launchUrl(url);
   } else {
-    print("Couldn't launch the url");
+    debugPrint("Couldn't launch the url");
   }
 }
 
 class AboutScreen extends StatelessWidget {
-  static String route = "AboutScreen";
   final String vjLink = "https://www.linkedin.com/in/vijay-t-s/";
   final String vikramLink = "https://www.linkedin.com/in/vikram-harikrishnan/";
 

@@ -5,7 +5,6 @@ import 'package:openscan/view/extensions.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DemoScreen extends StatefulWidget {
-  static String route = 'GettingStarted';
 
   DemoScreen({this.showSkip = true});
 

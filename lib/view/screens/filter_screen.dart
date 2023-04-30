@@ -79,7 +79,7 @@ class _FilterScreenState extends State<FilterScreen> {
                         padding: EdgeInsets.all(12.0),
                         child: BlocConsumer<FilterCubit, FilterState>(
                           listener: (context, state) {
-                            print('Filter Cubit: ${state.cachedFilters.keys}');
+                            debugPrint('Filter Cubit: ${state.cachedFilters.keys}');
                           },
                           buildWhen: (previous, current) {
                             if(!imageReady && current.cachedFilters[filterImageName] !=
@@ -189,7 +189,7 @@ class FilterThumbnail extends StatelessWidget {
                 }),
                 builder:
                     (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
-                  print('$filterName => ${snapshot.connectionState}');
+                  debugPrint('$filterName => ${snapshot.connectionState}');
 
                   switch (snapshot.connectionState) {
                     case ConnectionState.none:
@@ -262,7 +262,7 @@ Future<List<int>> applyFilter(Map<String, dynamic> params) async {
   // PreviewScreen.previewModel.cachedFilters[
   //     filter?.name == null ? '_' + filename : filter!.name + filename] = _bytes;
 
-  print(
+  debugPrint(
       'Caching image: ${filter?.name == null ? '_' + filename : filter!.name + filename}');
 
   return _imageBytes!;

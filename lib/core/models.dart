@@ -28,6 +28,14 @@ class ImageOS {
     required this.imgPath,
     this.selected = false,
   });
+
+  Map toMap() {
+    return {
+      'idx': idx,
+      'imgPath': imgPath,
+      'selected': selected,
+    };
+  }
 }
 
 class DocumentPoints {

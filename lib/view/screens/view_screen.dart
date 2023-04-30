@@ -11,7 +11,6 @@ import 'package:openscan/view/screens/preview_screen.dart';
 import 'package:reorderables/reorderables.dart';
 
 class ViewScreen extends StatefulWidget {
-  static String route = "ViewDocument";
   final bool quickScan;
   final bool fromGallery;
 
@@ -81,7 +80,7 @@ class _ViewScreenState extends State<ViewScreen> {
                   ),
             title: BlocConsumer<DirectoryCubit, DirectoryState>(
               listener: (context, state) {
-                // print('DirName updated: ${state.dirName}');
+                // debugPrint('DirName updated: ${state.dirName}');
               },
               builder: (context, state) {
                 return GestureDetector(
@@ -133,7 +132,7 @@ class _ViewScreenState extends State<ViewScreen> {
                     IconGestureDetector(
                       icon: Icon(Icons.select_all_rounded),
                       onTap: () {
-                        print('select all');
+                        debugPrint('select all');
                         BlocProvider.of<DirectoryCubit>(context)
                             .selectAllImages();
                       },
@@ -161,7 +160,7 @@ class _ViewScreenState extends State<ViewScreen> {
                       onTap: () {
                         setState(() {
                           selectionEnabled = true;
-                          print('selection Enabled');
+                          debugPrint('selection Enabled');
                         });
                       },
                     ),

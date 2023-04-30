@@ -3,8 +3,8 @@ import 'package:openscan/core/theme/appTheme.dart';
 
 class PolygonPainter extends CustomPainter {
   final Offset? tl, tr, bl, br, t, l, r, b;
-  final double cornerDotRadius = 12.0;
-  final double centerDotRadius = 9.0;
+  final double cornerDotRadius = 10.0;
+  final double centerDotRadius = 8.0;
 
   PolygonPainter({
     this.tl,
@@ -18,19 +18,19 @@ class PolygonPainter extends CustomPainter {
   });
 
   Paint dotInnerShade = Paint()
-    ..color = AppTheme.secondaryColor.withOpacity(0.4)
+    ..color = AppTheme.secondaryColor.withOpacity(0.2)
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.fill;
 
   Paint dotOutline = Paint()
     ..color = AppTheme.secondaryColor.withOpacity(0.9)
-    ..strokeWidth = 2
+    ..strokeWidth = 1.5
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.stroke;
 
   Paint linesConnectingDots = Paint()
     ..color = AppTheme.secondaryColor.withOpacity(0.8)
-    ..strokeWidth = 2
+    ..strokeWidth = 1.7
     ..strokeCap = StrokeCap.round;
 
   @override

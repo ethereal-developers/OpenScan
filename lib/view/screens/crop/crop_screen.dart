@@ -56,7 +56,7 @@ class _CropImageState extends State<CropImage> {
   @override
   Widget build(BuildContext context) {
     _cropScreen.screenSize = MediaQuery.of(context).size;
-    print(
+    debugPrint(
         'Screen size=> ${_cropScreen.screenSize.width} / ${_cropScreen.screenSize.height}');
     return SafeArea(
       child: WillPopScope(
@@ -89,7 +89,8 @@ class _CropImageState extends State<CropImage> {
                 highlightColor: Colors.transparent,
                 onPressed: () {
                   setState(() {
-                    _cropScreen.setPoints();
+                    _cropScreen.initPoints();
+                    debugPrint('TL: ${_cropScreen.tl}');
                   });
                 },
               )
@@ -173,7 +174,7 @@ class _CropImageState extends State<CropImage> {
                       if (_cropScreen.detectionCompleted.value) {
                         /// This snippet is crucial, but idk how it works
                         _cropScreen.getRenderedBoxSize();
-                        _cropScreen.setPoints();
+                        _cropScreen.initPoints();
                       }
                       return _cropScreen.detectionCompleted.value
                           ? _cropScreen.imageRendered.value
@@ -286,12 +287,12 @@ class _CropImageState extends State<CropImage> {
                 /// Subtracting 90* from image rotation
                 _cropScreen.rotationAngle =
                     (_cropScreen.rotationAngle - pi / 2) % (2 * pi);
-                print('rotationAngle => ${_cropScreen.rotationAngle}');
+                debugPrint('rotationAngle => ${_cropScreen.rotationAngle}');
 
                 /// Scaling image before rotation- solves Transform.rotate issue
                 _cropScreen.scaleImage =
                     _cropScreen.rotationAngle % pi == pi / 2;
-                print(_cropScreen.scaleImage);
+                debugPrint(_cropScreen.scaleImage.toString());
 
                 /// Updates canvas size that is passed to PolygonBuilder
                 _cropScreen.canvasSize = _cropScreen.scaleImage
@@ -299,7 +300,8 @@ class _CropImageState extends State<CropImage> {
                         _cropScreen.canvasSize.height * _cropScreen.aspectRatio,
                         _cropScreen.canvasSize.width * _cropScreen.aspectRatio)
                     : _cropScreen.imageBox.size;
-                print(_cropScreen.canvasSize);
+                debugPrint(_cropScreen.canvasSize.toString());
+                debugPrint('TL: ${_cropScreen.tl}');
               });
             },
           ),
@@ -323,13 +325,13 @@ class _CropImageState extends State<CropImage> {
                 /// Adding 90* to image rotation
                 _cropScreen.rotationAngle =
                     (_cropScreen.rotationAngle + pi / 2) % (2 * pi);
-                print(
+                debugPrint(
                     'rotationAngle => ${vector.degrees(_cropScreen.rotationAngle)}');
 
                 /// Scaling image before rotation- solves Transform.rotate issue
                 _cropScreen.scaleImage =
                     _cropScreen.rotationAngle % pi == pi / 2;
-                print(_cropScreen.scaleImage);
+                debugPrint(_cropScreen.scaleImage.toString());
 
                 /// Updates canvas size to be passed to PolygonBuilder
                 _cropScreen.canvasSize = _cropScreen.scaleImage
@@ -337,7 +339,7 @@ class _CropImageState extends State<CropImage> {
                         _cropScreen.canvasSize.height * _cropScreen.aspectRatio,
                         _cropScreen.canvasSize.width * _cropScreen.aspectRatio)
                     : _cropScreen.imageBox.size;
-                print(_cropScreen.canvasSize);
+                debugPrint(_cropScreen.canvasSize.toString());
               });
             },
           ),

@@ -3,33 +3,20 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
 import 'package:openscan/view/Widgets/view/export_bottomsheet.dart';
 import 'package:openscan/view/extensions.dart';
 import 'package:openscan/view/screens/home_screen.dart';
+import 'package:openscan/view/screens/view_screen.dart';
 
 class MainBottomSheet extends StatefulWidget {
   final bool imagesSelected;
 
   const MainBottomSheet({Key? key, this.imagesSelected = false})
       : super(key: key);
-  // final String? fileName;
-  // final Function? saveToDevice;
-  // final Function? sharePdf;
-  // final Function? shareImages;
-  // final Function? qualitySelection;
-  // final String? dirPath;
-
-  // CustomBottomSheet({
-  //   this.fileName,
-  //   this.saveToDevice,
-  //   this.sharePdf,
-  //   this.shareImages,
-  //   this.qualitySelection,
-  //   this.dirPath,
-  // });
 
   @override
   State<MainBottomSheet> createState() => _MainBottomSheetState();
@@ -57,10 +44,10 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                 padding: EdgeInsets.fromLTRB(15, 10, 10, 5),
                 child: BlocConsumer<DirectoryCubit, DirectoryState>(
                   listener: (context, state) {
-                    // print('DirName updated: ${state.dirName}');q
+                    // debugPrint('DirName updated: ${state.dirName}');q
                   },
                   builder: (context, state) {
-                    print(state.firstImgPath);
+                    debugPrint(state.firstImgPath);
                     return Row(
                       children: [
                         CircleAvatar(
@@ -154,7 +141,7 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
               //           imageQuality: imageQuality,
               //           qualitySelected: (quality) {
               //             imageQuality = quality;
-              //             print('Selected Image Quality: ');
+              //             debugPrint('Selected Image Quality: ');
               //             Navigator.pop(context);
               // showModalBottomSheet(
               //   context: context,
@@ -248,11 +235,13 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                                 context,
                                 deleteAll: !widget.imagesSelected,
                               );
-                              if (returnToHome)
+                              if (returnToHome) {
+                                debugPrint('Returning home');
                                 Navigator.popUntil(context,
-                                    ModalRoute.withName(HomeScreen.route));
-                              else {
-                                Navigator.pop(context);
+                                    ModalRoute.withName(AppRouter.HOME_SCREEN));
+                              } else {
+                                Navigator.popUntil(context,
+                                    ModalRoute.withName(AppRouter.VIEW_SCREEN));
                                 setState(() {});
                               }
                             },
@@ -362,7 +351,7 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
               //                   DatabaseHelper()..deleteDirectory(dirPath: dirPath);
               //                   Navigator.popUntil(
               //                     context,
-              //                     ModalRoute.withName(HomeScreen.route),
+              //                     ModalRoute.withName(AppRouter.HOME_SCREEN),
               //                   );
               //                 },
               //                 cancelOnPressed: () => Navigator.pop(context),

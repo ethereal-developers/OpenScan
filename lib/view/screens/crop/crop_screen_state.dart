@@ -61,13 +61,13 @@ class CropScreenState {
 
     detectedPointsData =
         await NativeAndroidUtil.detectDocument(imageFile!.path);
-    print('Points => $detectedPointsData');
+    debugPrint('Points => $detectedPointsData');
 
     detectionCompleted.value = true;
   }
 
   /// Sets detected points on canvas
-  setPoints() {
+  initPoints() {
     double polygonArea = 0;
     double canvasArea = 1;
 
@@ -120,12 +120,13 @@ class CropScreenState {
 
   /// Updates the points in the polygon when changed manually
   updatePolygon() {
-    print('Updated Point (local) => ${updatedPoint.value.localPosition}');
-    print('Updated Point (global) => ${updatedPoint.value.globalPosition}');
-    print('TL => $tl');
-    print('TR => $tr');
-    print('BL => $bl');
-    print('BR => $br');
+    debugPrint('Updated Point (local) => ${updatedPoint.value.localPosition}');
+    debugPrint(
+        'Updated Point (global) => ${updatedPoint.value.globalPosition}');
+    debugPrint('TL => $tl');
+    debugPrint('TR => $tr');
+    debugPrint('BL => $bl');
+    debugPrint('BR => $br');
 
     if (movingPoint.name == 'tl') {
       Offset tlTemp =
@@ -279,7 +280,7 @@ class CropScreenState {
 
   /// Crops and returns the image
   crop() async {
-    NativeAndroidUtil.cropImage(
+    bool result = await NativeAndroidUtil.cropImage(
       path: imageFile!.path,
       tlX: (imageSize!.width / canvasSize.width) * tl.dx,
       tlY: (imageSize!.height / canvasSize.height) * tl.dy,
@@ -291,7 +292,7 @@ class CropScreenState {
       brY: (imageSize!.height / canvasSize.height) * br.dy,
     );
 
-    print('cropper: ${imageFile!.path}');
+    debugPrint('cropper: ${imageFile!.path}');
   }
 
   /// Gets the current moving point
@@ -451,7 +452,7 @@ class CropScreenState {
         Size(decodedImage.width.toDouble(), decodedImage.height.toDouble());
     aspectRatio = imageSize!.width / imageSize!.height;
     getRenderedBoxSize();
-    print(
+    debugPrint(
         'Orginal Image=> ${imageSize!.width} / ${imageSize!.height} = $aspectRatio');
   }
 
@@ -460,20 +461,21 @@ class CropScreenState {
     imageBox = imageKey.currentContext!.findRenderObject() as RenderBox;
     originalCanvasSize = imageBox.size;
     canvasSize = originalCanvasSize;
-    print('Renderbox=> $canvasSize=> ${canvasSize.width / canvasSize.height}');
+    debugPrint(
+        'Renderbox=> $canvasSize=> ${canvasSize.width / canvasSize.height}');
 
     canvasOffset = imageBox.localToGlobal(
       Offset.zero,
       ancestor: bodyKey.currentContext!.findRenderObject() as RenderBox,
     );
     canvasOffset = Offset(canvasOffset.dx, canvasOffset.dy);
-    print('Canvas Offset => $canvasOffset');
+    debugPrint('Canvas Offset => $canvasOffset');
 
     verticalScaleFactor = screenSize.height / imageBox.size.width;
-    print('VerticalScaleFactor=> $verticalScaleFactor');
+    debugPrint('VerticalScaleFactor=> $verticalScaleFactor');
 
     horizontalScaleFactor = screenSize.width / imageBox.size.height;
-    print('HorizontalScaleFactor=> $horizontalScaleFactor');
+    debugPrint('HorizontalScaleFactor=> $horizontalScaleFactor');
 
     imageRendered.value = true;
   }

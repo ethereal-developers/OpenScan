@@ -91,7 +91,7 @@ class FileOperations {
         imageFiles.add(File(image.path));
       }
     }
-    print(imageFiles);
+    debugPrint(imageFiles as String?);
     return imageFiles;
   }
 
@@ -226,7 +226,7 @@ class FileOperations {
       desiredQuality = 100;
     }
 
-    print(desiredQuality);
+    debugPrint(desiredQuality as String?);
 
     Directory cacheDir = await getTemporaryDirectory();
 

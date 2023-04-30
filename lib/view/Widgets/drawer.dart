@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/view/screens/about_screen.dart';
 import 'package:openscan/view/screens/demo_screen.dart';
 
@@ -54,7 +55,7 @@ class CustomDrawer extends StatelessWidget {
             ),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, AboutScreen.route);
+              Navigator.pushNamed(context, AppRouter.ABOUT_SCREEN);
             },
           ),
           Divider(
