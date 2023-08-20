@@ -2,6 +2,18 @@
 
 An open source app that enables users to scan hardcopies of documents or notes and convert it to a PDF file. No ads. No data collection. We respect your privacy.
 
+# PSA
+OpenScan is currently **NOT** under active development due to life happening right now. PRs and enhancements are welcome. If you are planning to contribute checkout the dev_v3 branch.
+
+### OpenScan was delisted from the Play Store because a dependency had an unnecessary permission to request installing other apps (Request Install Packages Permission). This was neither used nor required for OpenScan which Google warned us about before de-listing it.
+
+To rectify this situation would mean to update the dependency which in-turn has a chain of dependencies. Since the Flutter SDK (used to build the app) has evolved significantly since the last release of the app, it will involve a lot of work updating all the other parts of the app. We worked on these issues in the dev_v3 branch which is a full revamp. But the development has been stale due to above mentioned reason.
+
+### However, the app remains available on IzzyOnDroid.
+
+---
+
+
 [<img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/gplay%20badge.png" alt="Get it on Google Play" height="80">](https://play.google.com/store/apps/details?id=com.ethereal.openscan)
 
 [<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height="80">](https://apt.izzysoft.de/fdroid/index/apk/com.ethereal.openscan)
