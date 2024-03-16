@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
@@ -20,11 +19,11 @@ class ImageCard extends StatefulWidget {
   final Function imageViewerCallback;
 
   const ImageCard({
-    this.fileEditCallback,
-    this.directoryOS,
-    this.imageOS,
-    this.selectCallback,
-    this.imageViewerCallback,
+    required this.fileEditCallback,
+    required this.directoryOS,
+    required this.imageOS,
+    required this.selectCallback,
+    required this.imageViewerCallback,
   });
 
   @override
@@ -78,9 +77,7 @@ class _ImageCardState extends State<ImageCard> {
                           0, widget.imageOS.imgPath.lastIndexOf(".")) +
                       "c.jpg");
                   File(widget.imageOS.imgPath).deleteSync();
-                  if (image != null) {
-                    image.copySync(temp.path);
-                  }
+                  image.copySync(temp.path);
                   widget.imageOS.imgPath = temp.path;
                   database.updateImagePath(
                     tableName: widget.directoryOS.dirName,

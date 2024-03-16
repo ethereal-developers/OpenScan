@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'Utilities/constants.dart';
@@ -28,7 +27,10 @@ class OpenScan extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-          accentColor: secondaryColor, accentColorBrightness: Brightness.dark),
+        colorScheme: ThemeData.dark().colorScheme.copyWith(
+          secondary: secondaryColor,
+        ),
+      ),
       initialRoute: SplashScreen.route,
       routes: {
         SplashScreen.route: (context) => SplashScreen(),

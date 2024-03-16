@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:open_file/open_file.dart';
@@ -279,22 +278,10 @@ class _ViewDocumentState extends State<ViewDocument>
   void initState() {
     super.initState();
     fileOperations = FileOperations();
-    if (widget.directoryOS.dirPath != null) {
-      dirPath = widget.directoryOS.dirPath;
-      fileName = widget.directoryOS.newName;
-      getDirectoryData();
-    } else {
-      createDirectoryPath();
-      if (widget.fromGallery) {
-        createImage(
-          quickScan: false,
-          fromGallery: true,
-        );
-      } else {
-        createImage(quickScan: widget.quickScan);
-      }
-    }
-
+    dirPath = widget.directoryOS.dirPath;
+    fileName = widget.directoryOS.newName;
+    getDirectoryData();
+  
     _animationController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 200))
           ..addListener(() {
@@ -552,7 +539,7 @@ class _ViewDocumentState extends State<ViewDocument>
                 child: Padding(
                   padding: EdgeInsets.all(size.width * 0.01),
                   child: Theme(
-                    data: Theme.of(context).copyWith(accentColor: primaryColor),
+                    data: Theme.of(context).copyWith(colorScheme: ColorScheme.fromSwatch().copyWith(secondary: primaryColor)),
                     child: ListView(
                       children: [
                         ReorderableWrap(

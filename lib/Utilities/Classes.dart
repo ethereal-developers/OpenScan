@@ -3,29 +3,27 @@ class DirectoryOS {
   String dirPath;
   DateTime created;
   int imageCount;
-  String firstImgPath;
+  String? firstImgPath;
   DateTime lastModified;
   String newName;
 
   DirectoryOS({
-    this.dirName,
-    this.created,
-    this.dirPath,
+    required this.dirName,
+    required this.created,
+    required this.dirPath,
+    required this.imageCount,
+    required this.lastModified,
+    required this.newName,
     this.firstImgPath,
-    this.imageCount,
-    this.lastModified,
-    this.newName,
   });
 }
 
 class ImageOS {
   int idx;
   String imgPath;
-  int shouldCompress;
 
   ImageOS({
-    this.idx,
-    this.imgPath,
-    this.shouldCompress,
+    required this.idx,
+    required this.imgPath,
   });
 }
