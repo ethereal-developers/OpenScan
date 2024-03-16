@@ -404,8 +404,8 @@ class _ViewDocumentState extends State<ViewDocument>
                                   final result = await OpenFile.open(
                                       '${storedDirectory.path}/$fileName.pdf');
                                   setState(() {
-                                    String _openResult =
-                                        "type=${result.type}  message=${result.message}";
+                                    // String _openResult =
+                                    //     "type=${result.type}  message=${result.message}";
                                     // print(_openResult);
                                   });
                                 },
