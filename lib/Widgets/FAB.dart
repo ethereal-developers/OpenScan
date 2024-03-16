@@ -7,16 +7,15 @@ class FAB extends StatefulWidget {
   final Function()? normalScanOnPressed;
   final Function()? quickScanOnPressed;
   final Function()? galleryOnPressed;
-  final Function dialOpen;
-  final Function dialClose;
+  final Function? dialOpen;
+  final Function? dialClose;
 
   const FAB({
-    required Key key,
     required this.normalScanOnPressed,
     required this.quickScanOnPressed,
     required this.galleryOnPressed,
-    required this.dialOpen,
-    required this.dialClose,
+    this.dialOpen,
+    this.dialClose,
   });
 
   @override

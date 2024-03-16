@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -169,7 +168,7 @@ class ContactCard extends StatelessWidget {
   final String name;
   final AssetImage image;
 
-  const ContactCard({Key key, this.link, this.name, this.image});
+  const ContactCard({required this.link, required this.name, required this.image});
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
@@ -23,7 +22,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   DatabaseHelper database = DatabaseHelper();
-  List<Map<String, dynamic>> masterData;
+  List<Map<String, dynamic>>? masterData;
   List<DirectoryOS> masterDirectories = [];
   QuickActions quickActions = QuickActions();
 
@@ -53,8 +52,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<List<DirectoryOS>> getMasterData() async {
     masterDirectories = [];
     masterData = await database.getMasterData();
-    print('Master Table => $masterData');
-    for (var directory in masterData) {
+    // print('Master Table => $masterData');
+    for (var directory in masterData!) {
       var flag = false;
       for (var dir in masterDirectories) {
         if (dir.dirPath == directory['dir_path']) {
@@ -119,8 +118,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             context,
             MaterialPageRoute(
               builder: (context) => ViewDocument(
-                quickScan: false,
                 directoryOS: DirectoryOS(),
+                quickScan: false,
                 fromGallery: true,
               ),
             ),
@@ -285,22 +284,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   builder: (BuildContext context, AsyncSnapshot snapshot) {
                     return Theme(
                       data:
-                          Theme.of(context).copyWith(accentColor: primaryColor),
+                          Theme.of(context).copyWith(colorScheme: ColorScheme.fromSwatch().copyWith(secondary: primaryColor)),
                       child: ListView.builder(
                         itemCount: masterDirectories.length,
                         itemBuilder: (context, index) {
                           return FocusedMenuHolder(
-                            onPressed: null,
+                            onPressed: () => {},
                             menuWidth: size.width * 0.44,
                             child: ListTile(
                               leading: Image.file(
-                                File(masterDirectories[index].firstImgPath),
+                                File(masterDirectories[index].firstImgPath!),
                                 width: 50,
                                 height: 50,
                               ),
                               title: Text(
                                 masterDirectories[index].newName ??
-                                    masterDirectories[index].dirName,
+                                    masterDirectories[index].dirName!,
                                 style: TextStyle(fontSize: 14),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -309,7 +308,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'Last Modified: ${masterDirectories[index].lastModified.day}-${masterDirectories[index].lastModified.month}-${masterDirectories[index].lastModified.year}',
+                                    'Last Modified: ${masterDirectories[index].lastModified!.day}-${masterDirectories[index].lastModified!.month}-${masterDirectories[index].lastModified!.year}',
                                     style: TextStyle(fontSize: 11),
                                   ),
                                   Text(
@@ -351,7 +350,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   showDialog(
                                     context: context,
                                     builder: (context) {
-                                      String fileName;
+                                      String? fileName;
                                       return StatefulBuilder(
                                         builder: (BuildContext context,
                                             void Function(void Function())
@@ -400,10 +399,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               ),
                                               TextButton(
                                                 onPressed: () {
-                                                  fileName = fileName.trim();
-                                                  fileName = fileName
-                                                      .replaceAll('/', '');
-                                                  if (fileName.isNotEmpty) {
+                                                  fileName = fileName!.trim();
+                                                  fileName = fileName!.replaceAll('/', '');
+                                                  if (fileName!.isNotEmpty) {
                                                     masterDirectories[index]
                                                         .newName = fileName;
                                                     database.renameDirectory(
@@ -464,12 +462,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                           TextButton(
                                             onPressed: () {
                                               Directory(masterDirectories[index]
-                                                      .dirPath)
+                                                      .dirPath!)
                                                   .deleteSync(recursive: true);
                                               database.deleteDirectory(
                                                   dirPath:
                                                       masterDirectories[index]
-                                                          .dirPath);
+                                                          .dirPath!);
                                               Navigator.pop(context);
                                               homeRefresh();
                                             },
@@ -504,8 +502,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               context,
               MaterialPageRoute(
                 builder: (context) => ViewDocument(
-                  quickScan: false,
                   directoryOS: DirectoryOS(),
+                  quickScan: false,
                 ),
               ),
             ).whenComplete(() {
@@ -517,8 +515,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               context,
               MaterialPageRoute(
                 builder: (context) => ViewDocument(
-                  quickScan: true,
                   directoryOS: DirectoryOS(),
+                  quickScan: true,
                 ),
               ),
             ).whenComplete(() {
@@ -530,8 +528,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               context,
               MaterialPageRoute(
                 builder: (context) => ViewDocument(
-                  quickScan: false,
                   directoryOS: DirectoryOS(),
+                  quickScan: false,
                   fromGallery: true,
                 ),
               ),

@@ -1,19 +1,19 @@
 class DirectoryOS {
-  String dirName;
-  String dirPath;
-  DateTime created;
-  int imageCount;
+  String? dirName;
+  String? dirPath;
+  DateTime? created;
+  int? imageCount;
   String? firstImgPath;
-  DateTime lastModified;
-  String newName;
+  DateTime? lastModified;
+  String? newName;
 
   DirectoryOS({
-    required this.dirName,
-    required this.created,
-    required this.dirPath,
-    required this.imageCount,
-    required this.lastModified,
-    required this.newName,
+    this.dirName,
+    this.created,
+    this.dirPath,
+    this.imageCount,
+    this.lastModified,
+    this.newName,
     this.firstImgPath,
   });
 }

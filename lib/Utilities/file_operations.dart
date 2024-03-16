@@ -69,7 +69,7 @@ class FileOperations {
     return image;
   }
 
-  Future<dynamic> openGallery() async {
+  Future<List<File>> openGallery() async {
     List<XFile> pic = [];
     try {
       pic = await ImagePicker().pickMultiImage();
@@ -82,7 +82,7 @@ class FileOperations {
     for (XFile image in pic) {
       imageFiles.add(File(image.path));
     }
-    print(imageFiles);
+    // print(imageFiles);
     return imageFiles;
   }
 

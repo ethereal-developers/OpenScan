@@ -65,8 +65,8 @@ class DatabaseHelper {
       'new_name': directory.newName
     });
 
-    getDirectoryTableName(directory.dirName);
-    print('Directory Index: $index');
+    getDirectoryTableName(directory.dirName!);
+    // print('Directory Index: $index');
     db.execute('''
       CREATE TABLE $_dirTableName(
       idx INTEGER,
@@ -143,7 +143,7 @@ class DatabaseHelper {
 
   /// <---- Directory Table Operations ---->
 
-  Future getDirectoryData(String tableName) async {
+  Future<List<Map<String, dynamic>>> getDirectoryData(String tableName) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     List<Map<String, dynamic>> data = await db.query(_dirTableName);

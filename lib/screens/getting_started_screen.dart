@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../Utilities/constants.dart';
 import '../Utilities/slide.dart';
@@ -9,7 +8,7 @@ import 'home_screen.dart';
 class GettingStartedScreen extends StatefulWidget {
   static String route = 'GettingStarted';
 
-  GettingStartedScreen({this.showSkip});
+  GettingStartedScreen({this.showSkip = false});
 
   final bool showSkip;
 
@@ -110,7 +109,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                   children: <Widget>[
                     Theme(
                       data: Theme.of(context).copyWith(
-                        accentColor: primaryColor,
+                        colorScheme: ColorScheme.fromSwatch().copyWith(secondary: primaryColor),
                       ),
                       child: PageView.builder(
                         scrollDirection: Axis.horizontal,
