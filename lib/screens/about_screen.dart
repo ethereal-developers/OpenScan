@@ -152,7 +152,7 @@ class AboutScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14),
                 children: [
                   TextSpan(
-                      text: '2.2.0', style: TextStyle(color: secondaryColor)),
+                      text: '2.2.1', style: TextStyle(color: secondaryColor)),
                 ],
               ),
             ),

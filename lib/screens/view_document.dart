@@ -122,6 +122,7 @@ class _ViewDocumentState extends State<ViewDocument>
     String fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
     widget.directoryOS.dirPath = dirPath;
     widget.directoryOS.dirName = fileName;
+    widget.directoryOS.newName = fileName;
     // print('New Directory => ${widget.directoryOS.dirName}');
   }
 
@@ -139,7 +140,7 @@ class _ViewDocumentState extends State<ViewDocument>
     String? imageFilePath;
     Directory cacheDir = await getTemporaryDirectory();
     if (image != null || galleryImages != null) {
-      if (!(quickScan && fromGallery)) {
+      if (!(quickScan || fromGallery)) {
         imageFilePath = await FlutterScannerCropper.openCrop(
           src: image!.path,
           dest: cacheDir.path,
@@ -148,15 +149,16 @@ class _ViewDocumentState extends State<ViewDocument>
       }
 
       if (fromGallery) {
+        int dirImageLen = directoryImages.length;
         for (File galleryImage in galleryImages!) {
           if (galleryImage.existsSync()) {
             await fileOperations.saveImage(
               image: galleryImage,
-              index: directoryImages.length + 1,
+              index: dirImageLen + 1,
               dirPath: widget.directoryOS.dirPath!,
             );
           }
-          directoryImages.length++;
+          dirImageLen++;
         }
       } else {
         File imageFile = File(imageFilePath ?? image!.path);
