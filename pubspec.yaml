@@ -16,7 +16,7 @@ dependencies:
   flutter_scanner_cropper:
     git:
       url: https://github.com/Ethereal-Developers-Inc/flutter-scanner-plugin.git
-      ref: null_safety_migration_branch
+      ref: master
       path: flutter_scanner_cropper/
   cupertino_icons:
   flutter_speed_dial:
