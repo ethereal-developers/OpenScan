@@ -470,7 +470,7 @@ class _ViewDocumentState extends State<ViewDocument>
                                 onSelected: handleClick,
                                 color: primaryColor.withOpacity(0.95),
                                 elevation: 30,
-                                offset: Offset.fromDirection(20, 20),
+                                offset: Offset.fromDirection(20, 50),
                                 icon: Icon(Icons.more_vert),
                                 itemBuilder: (context) {
                                   return [

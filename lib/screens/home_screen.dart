@@ -301,7 +301,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               title: Text(
                                 masterDirectories[index].newName ??
                                     masterDirectories[index].dirName!,
-                                style: TextStyle(fontSize: 14),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               subtitle: Row(
@@ -310,11 +313,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 children: [
                                   Text(
                                     'Last Modified: ${masterDirectories[index].lastModified!.day}-${masterDirectories[index].lastModified!.month}-${masterDirectories[index].lastModified!.year}',
-                                    style: TextStyle(fontSize: 11),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.white54,
+                                    ),
                                   ),
                                   Text(
                                     '${masterDirectories[index].imageCount} ${(masterDirectories[index].imageCount == 1) ? 'image' : 'images'}',
-                                    style: TextStyle(fontSize: 11),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.white54,
+                                    ),
                                   ),
                                 ],
                               ),
