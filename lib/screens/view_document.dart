@@ -138,9 +138,6 @@ class _ViewDocumentState extends State<ViewDocument>
     }
     String? imageFilePath;
     Directory cacheDir = await getTemporaryDirectory();
-    if (image == null && galleryImages == null) {
-        return;
-      }
     if (image != null || galleryImages != null) {
       if (!(quickScan && fromGallery)) {
         imageFilePath = await FlutterScannerCropper.openCrop(
@@ -161,7 +158,6 @@ class _ViewDocumentState extends State<ViewDocument>
           }
           directoryImages.length++;
         }
-        setState(() {});
       } else {
         File imageFile = File(imageFilePath ?? image!.path);
         await fileOperations.saveImage(
@@ -175,9 +171,9 @@ class _ViewDocumentState extends State<ViewDocument>
           getDirectoryData();
           return createImage(quickScan: quickScan);
         }
-        setState(() {});
         imageFilePath = null;
       }
+      setState(() {});
       getDirectoryData();
     }
   }
@@ -537,7 +533,9 @@ class _ViewDocumentState extends State<ViewDocument>
                 child: Padding(
                   padding: EdgeInsets.all(size.width * 0.01),
                   child: Theme(
-                    data: Theme.of(context).copyWith(colorScheme: ColorScheme.fromSwatch().copyWith(secondary: primaryColor)),
+                    data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.fromSwatch()
+                            .copyWith(secondary: primaryColor)),
                     child: ListView(
                       children: [
                         ReorderableWrap(
@@ -885,7 +883,9 @@ class _ViewDocumentState extends State<ViewDocument>
                 }
               }
               await fileOperations.saveToAppDirectory(
-                fileName: (enableSelect) ? selectedFileName : widget.directoryOS.newName!,
+                fileName: (enableSelect)
+                    ? selectedFileName
+                    : widget.directoryOS.newName!,
                 images: (enableSelect) ? selectedImages : directoryImages,
               );
               Directory storedDirectory =
@@ -911,7 +911,9 @@ class _ViewDocumentState extends State<ViewDocument>
               }
               String? savedDirectory = await fileOperations.saveToDevice(
                 context: context,
-                fileName: (enableSelect) ? selectedFileName : widget.directoryOS.newName!,
+                fileName: (enableSelect)
+                    ? selectedFileName
+                    : widget.directoryOS.newName!,
                 images: (enableSelect) ? selectedImages : directoryImages,
                 quality: imageQuality,
               );
@@ -939,7 +941,7 @@ class _ViewDocumentState extends State<ViewDocument>
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                'Saved to Directory',
+                                'Saved to Device',
                                 style: TextStyle(
                                     fontSize: 18, fontWeight: FontWeight.w600),
                               ),

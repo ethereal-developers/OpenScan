@@ -129,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           break;
       }
     });
-    
+
     quickActions.setShortcutItems(<ShortcutItem>[
       ShortcutItem(
         type: 'Normal Scan',
@@ -283,8 +283,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   future: getMasterData(),
                   builder: (BuildContext context, AsyncSnapshot snapshot) {
                     return Theme(
-                      data:
-                          Theme.of(context).copyWith(colorScheme: ColorScheme.fromSwatch().copyWith(secondary: primaryColor)),
+                      data: Theme.of(context).copyWith(
+                          colorScheme: ColorScheme.fromSwatch()
+                              .copyWith(secondary: primaryColor)),
                       child: ListView.builder(
                         itemCount: masterDirectories.length,
                         itemBuilder: (context, index) {
@@ -400,7 +401,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               TextButton(
                                                 onPressed: () {
                                                   fileName = fileName!.trim();
-                                                  fileName = fileName!.replaceAll('/', '');
+                                                  fileName = fileName!
+                                                      .replaceAll('/', '');
                                                   if (fileName!.isNotEmpty) {
                                                     masterDirectories[index]
                                                         .newName = fileName;
@@ -542,4 +544,3 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 }
-

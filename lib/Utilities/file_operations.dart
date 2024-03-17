@@ -160,6 +160,8 @@ class FileOperations {
     try {
       if (!openscanDir.existsSync()) {
         openscanDir.createSync();
+      }
+      if (!openscanPdfDir.existsSync()) {
         openscanPdfDir.createSync();
       }
       selectedDirectory = openscanPdfDir;
