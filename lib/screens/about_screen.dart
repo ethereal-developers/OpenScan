@@ -202,10 +202,10 @@ class ContactCard extends StatelessWidget {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
-              Text(
-                'Tap for more',
-                style: TextStyle(color: Colors.grey[700], fontSize: 12),
-              ),
+              // Text(
+              //   'Tap for more',
+              //   style: TextStyle(color: Colors.grey[700], fontSize: 12),
+              // ),
             ],
           ),
         ),
