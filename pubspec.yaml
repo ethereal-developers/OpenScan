@@ -22,10 +22,10 @@ dependencies:
   flutter_speed_dial:
   focused_menu:
   image_picker:
-  open_file:
+  open_filex:
   path_provider:
   pdf:
-  permission_handler:
+  permission_handler: ^11.3.0
   quick_actions:
   reorderables:
   share_extend:

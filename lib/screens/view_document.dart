@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
-import 'package:open_file/open_file.dart';
+import 'package:open_filex/open_filex.dart';
 import '../Utilities/Classes.dart';
 import '../Utilities/constants.dart';
 import '../Utilities/database_helper.dart';
@@ -401,7 +401,7 @@ class _ViewDocumentState extends State<ViewDocument>
                                   );
                                   Directory storedDirectory =
                                       await getApplicationDocumentsDirectory();
-                                  final result = await OpenFile.open(
+                                  final result = await OpenFilex.open(
                                       '${storedDirectory.path}/$fileName.pdf');
                                   setState(() {
                                     // String _openResult =

@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 import org.apache.tools.ant.taskdefs.condition.Os
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 34
     buildToolsVersion "29.0.3"
 
     defaultConfig {
