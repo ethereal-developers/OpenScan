@@ -8,7 +8,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 2.2.0+4
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: '>=3.2.4 <4.0.0'
 
 dependencies:
   flutter:
@@ -16,24 +16,27 @@ dependencies:
   flutter_scanner_cropper:
     git:
       url: https://github.com/Ethereal-Developers-Inc/flutter-scanner-plugin.git
-      ref: master
+      ref: null_safety_migration_branch
       path: flutter_scanner_cropper/
-  cupertino_icons: ^0.1.3
-  flutter_speed_dial: ^1.2.5
-  focused_menu: ^1.0.1
-  image_picker: ^0.8.4
-  open_file: ^3.2.1
-  path_provider: ^2.0.2
-  pdf: ^3.6.0
-  permission_handler: ^8.0.1
-  quick_actions: ^0.6.0+2
-  reorderables: ^0.3.2
-  share_extend: ^1.1.9
-  shared_preferences: ^0.5.7+3
-  simple_animated_icon: ^1.0.0
-  sqflite: ^1.3.1+2
-  url_launcher: ^6.0.6
+  cupertino_icons:
+  flutter_speed_dial:
+  focused_menu:
+  image_picker:
+  open_filex:
+  path_provider:
+  pdf:
+  permission_handler:
+  quick_actions:
+  reorderables:
+  share_extend:
+  shared_preferences:
+  simple_animated_icon:
+  sqflite:
+  url_launcher:
 
+  path: any
+  flutter_gen: any
+  vector_math: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

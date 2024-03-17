@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:openscan/Utilities/Classes.dart';
 import 'Utilities/constants.dart';
 import 'screens/about_screen.dart';
 import 'screens/getting_started_screen.dart';
@@ -28,13 +28,16 @@ class OpenScan extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-          accentColor: secondaryColor, accentColorBrightness: Brightness.dark),
+        colorScheme: ThemeData.dark().colorScheme.copyWith(
+          secondary: secondaryColor,
+        ),
+      ),
       initialRoute: SplashScreen.route,
       routes: {
         SplashScreen.route: (context) => SplashScreen(),
         GettingStartedScreen.route: (context) => GettingStartedScreen(),
         HomeScreen.route: (context) => HomeScreen(),
-        ViewDocument.route: (context) => ViewDocument(),
+        ViewDocument.route: (context) => ViewDocument(directoryOS: DirectoryOS()),
         AboutScreen.route: (context) => AboutScreen(),
       },
     );

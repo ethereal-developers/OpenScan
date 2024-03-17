@@ -11,7 +11,6 @@ import 'package:pdf/widgets.dart' as pw;
 
 class FileOperations {
   final String appName = 'OpenScan';
-  static bool pdfStatus;
   DatabaseHelper database = DatabaseHelper();
 
   Future<String> getAppPath() async {
@@ -30,7 +29,7 @@ class FileOperations {
 
   /// Create new PDF
   Future<bool> createPdf(
-      {selectedDirectory, fileName, List<File> images}) async {
+      {selectedDirectory, fileName, required List<File> images}) async {
     try {
       final output = File("${selectedDirectory.path}/$fileName.pdf");
 
@@ -61,8 +60,8 @@ class FileOperations {
   }
 
   // ADD IMAGES
-  Future<File> openCamera() async {
-    File image;
+  Future<File?> openCamera() async {
+    File? image;
     var picture = await ImagePicker().pickImage(source: ImageSource.camera);
     if (picture != null) {
       image = File(picture.path);
@@ -70,8 +69,8 @@ class FileOperations {
     return image;
   }
 
-  Future<dynamic> openGallery() async {
-    List<XFile> pic;
+  Future<List<File>> openGallery() async {
+    List<XFile> pic = [];
     try {
       pic = await ImagePicker().pickMultiImage();
     } catch (e) {
@@ -80,16 +79,17 @@ class FileOperations {
 
     List<File> imageFiles = [];
 
-    if (pic != null) {
-      for (XFile image in pic) {
-        imageFiles.add(File(image.path));
-      }
+    for (XFile image in pic) {
+      imageFiles.add(File(image.path));
     }
-    print(imageFiles);
+    // print(imageFiles);
     return imageFiles;
   }
 
-  Future<void> saveImage({File image, int index, String dirPath}) async {
+  Future<void> saveImage(
+      {required File image,
+      required int index,
+      required String dirPath}) async {
     if (!await Directory(dirPath).exists()) {
       new Directory(dirPath).create();
       await database.createDirectory(
@@ -108,7 +108,6 @@ class FileOperations {
               .substring(
                   dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
                       1)),
-          firstImgPath: null,
         ),
       );
     }
@@ -129,9 +128,9 @@ class FileOperations {
   }
 
   // SAVE TO DEVICE
-  Future<Directory> pickDirectory(
+  Future<Directory?> pickDirectory(
       BuildContext context, selectedDirectory) async {
-    Directory directory = selectedDirectory;
+    Directory? directory = selectedDirectory;
     try {
       if (Platform.isAndroid) {
         directory = Directory("/storage/emulated/0/Documents/");
@@ -146,12 +145,13 @@ class FileOperations {
     return directory;
   }
 
-  Future<String> saveToDevice(
-      {BuildContext context,
-      String fileName,
-      List<ImageOS> images,
-      int quality,}) async {
-    Directory selectedDirectory;
+  Future<String?> saveToDevice({
+    required BuildContext context,
+    required String fileName,
+    required List<ImageOS> images,
+    required int quality,
+  }) async {
+    Directory? selectedDirectory;
     Directory openscanDir = Directory("/storage/emulated/0/Documents/OpenScan");
     Directory openscanPdfDir =
         Directory("/storage/emulated/0/Documents/OpenScan/PDF");
@@ -160,6 +160,8 @@ class FileOperations {
     try {
       if (!openscanDir.existsSync()) {
         openscanDir.createSync();
+      }
+      if (!openscanPdfDir.existsSync()) {
         openscanPdfDir.createSync();
       }
       selectedDirectory = openscanPdfDir;
@@ -197,16 +199,16 @@ class FileOperations {
     fileName = fileName.replaceAll('.', '');
     fileName = fileName.replaceAll(':', '');
 
-    pdfStatus = await createPdf(
+    bool pdfStatus = await createPdf(
       selectedDirectory: selectedDirectory,
       fileName: fileName,
       images: imageFiles,
     );
-    return (pdfStatus) ? selectedDirectory.path : null;
+    return (pdfStatus) ? selectedDirectory?.path : null;
   }
 
   Future<bool> saveToAppDirectory(
-      {BuildContext context, String fileName, dynamic images}) async {
+      {required String fileName, required List<ImageOS> images}) async {
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
 
     List<ImageOS> imageOSList = [];
@@ -218,7 +220,7 @@ class FileOperations {
       }
     }
 
-    pdfStatus = await createPdf(
+    bool pdfStatus = await createPdf(
       selectedDirectory: selectedDirectory,
       fileName: fileName,
       images: imageFiles,
@@ -228,9 +230,9 @@ class FileOperations {
 
   /// Delete the temporary files created by the image_picker package
   Future<void> deleteTemporaryFiles() async {
-    Directory appDocDir = await getExternalStorageDirectory();
+    Directory? appDocDir = await getExternalStorageDirectory();
     Directory cacheDir = await getTemporaryDirectory();
-    String appDocPath = "${appDocDir.path}/Pictures/";
+    String appDocPath = "${appDocDir?.path}/Pictures/";
     Directory del = Directory(appDocPath);
     if (del.existsSync()) {
       del.deleteSync(recursive: true);

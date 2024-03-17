@@ -1,9 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
-import 'package:open_file/open_file.dart';
+import 'package:open_filex/open_filex.dart';
 import '../Utilities/Classes.dart';
 import '../Utilities/constants.dart';
 import '../Utilities/database_helper.dart';
@@ -27,7 +26,7 @@ class ViewDocument extends StatefulWidget {
 
   ViewDocument({
     this.quickScan = false,
-    this.directoryOS,
+    required this.directoryOS,
     this.fromGallery = false,
   });
 
@@ -42,20 +41,15 @@ class _ViewDocumentState extends State<ViewDocument>
   DatabaseHelper database = DatabaseHelper();
   List<String> imageFilesPath = [];
   List<Widget> imageCards = [];
-  String imageFilePath;
-  FileOperations fileOperations;
-  String dirPath;
-  String fileName = '';
-  List<Map<String, dynamic>> directoryData;
+  FileOperations fileOperations = FileOperations();
+  late List<Map<String, dynamic>> directoryData;
   List<ImageOS> directoryImages = [];
   List<ImageOS> initDirectoryImages = [];
   bool enableSelectionIcons = false;
   bool resetReorder = false;
-  ImageOS displayImage;
+  late ImageOS displayImage;
   int imageQuality = 2;
-  AnimationController _animationController;
-  Animation<double> _progress;
-  TapDownDetails _doubleTapDetails;
+  late TapDownDetails doubleTapDetails;
 
   void getDirectoryData({
     bool updateFirstImage = false,
@@ -66,13 +60,12 @@ class _ViewDocumentState extends State<ViewDocument>
     imageFilesPath = [];
     selectedImageIndex = [];
     int index = 1;
-    directoryData = await database.getDirectoryData(widget.directoryOS.dirName);
-    print('Directory table[${widget.directoryOS.dirName}] => $directoryData');
+    directoryData = await database.getDirectoryData(widget.directoryOS.dirName!);
     for (var image in directoryData) {
       /// Updating first image path after delete
       if (updateFirstImage) {
         database.updateFirstImagePath(
-            imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath);
+            imagePath: image['img_path'], dirPath: widget.directoryOS.dirPath!);
         updateFirstImage = false;
       }
       var i = image['idx'];
@@ -85,7 +78,7 @@ class _ViewDocumentState extends State<ViewDocument>
             idx: i,
             imgPath: image['img_path'],
           ),
-          tableName: widget.directoryOS.dirName,
+          tableName: widget.directoryOS.dirName!,
         );
       }
 
@@ -124,53 +117,55 @@ class _ViewDocumentState extends State<ViewDocument>
   }
 
   Future<void> createDirectoryPath() async {
-    Directory appDir = await getExternalStorageDirectory();
-    dirPath = "${appDir.path}/OpenScan ${DateTime.now()}";
-    fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
+    Directory? appDir = await getExternalStorageDirectory();
+    String dirPath = "${appDir?.path}/OpenScan ${DateTime.now()}";
+    String fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
     widget.directoryOS.dirPath = dirPath;
     widget.directoryOS.dirName = fileName;
+    widget.directoryOS.newName = fileName;
     // print('New Directory => ${widget.directoryOS.dirName}');
   }
 
   Future<dynamic> createImage({
-    bool quickScan,
+    required bool quickScan,
     bool fromGallery = false,
   }) async {
-    File image;
-    List<File> galleryImages;
+    File? image;
+    List<File>? galleryImages;
     if (fromGallery) {
       galleryImages = await fileOperations.openGallery();
     } else {
       image = await fileOperations.openCamera();
     }
+    String? imageFilePath;
     Directory cacheDir = await getTemporaryDirectory();
     if (image != null || galleryImages != null) {
-      if (!quickScan && !fromGallery) {
+      if (!(quickScan || fromGallery)) {
         imageFilePath = await FlutterScannerCropper.openCrop(
-          src: image.path,
+          src: image!.path,
           dest: cacheDir.path,
           shouldCompress: true,
         );
       }
 
       if (fromGallery) {
-        for (File galleryImage in galleryImages) {
+        int dirImageLen = directoryImages.length;
+        for (File galleryImage in galleryImages!) {
           if (galleryImage.existsSync()) {
             await fileOperations.saveImage(
               image: galleryImage,
-              index: directoryImages.length + 1,
-              dirPath: dirPath,
+              index: dirImageLen + 1,
+              dirPath: widget.directoryOS.dirPath!,
             );
           }
-          directoryImages.length++;
+          dirImageLen++;
         }
-        setState(() {});
       } else {
-        File imageFile = File(imageFilePath ?? image.path);
+        File imageFile = File(imageFilePath ?? image!.path);
         await fileOperations.saveImage(
           image: imageFile,
           index: directoryImages.length + 1,
-          dirPath: dirPath,
+          dirPath: widget.directoryOS.dirPath!,
         );
 
         await fileOperations.deleteTemporaryFiles();
@@ -178,14 +173,14 @@ class _ViewDocumentState extends State<ViewDocument>
           getDirectoryData();
           return createImage(quickScan: quickScan);
         }
-        setState(() {});
         imageFilePath = null;
       }
+      setState(() {});
       getDirectoryData();
     }
   }
 
-  selectionCallback({ImageOS imageOS}) {
+  selectionCallback({required ImageOS imageOS}) {
     if (selectedImageIndex.contains(true)) {
       setState(() {
         enableSelectionIcons = true;
@@ -197,7 +192,7 @@ class _ViewDocumentState extends State<ViewDocument>
     }
   }
 
-  void fileEditCallback({ImageOS imageOS}) {
+  void fileEditCallback({required ImageOS imageOS}) {
     bool isFirstImage = false;
     if (imageOS.imgPath == widget.directoryOS.firstImgPath) {
       isFirstImage = true;
@@ -208,7 +203,7 @@ class _ViewDocumentState extends State<ViewDocument>
     );
   }
 
-  imageViewerCallback({ImageOS imageOS}) {
+  imageViewerCallback({required ImageOS imageOS}) {
     setState(() {
       displayImage = imageOS;
       showImage = true;
@@ -255,16 +250,16 @@ class _ViewDocumentState extends State<ViewDocument>
         File(directoryImages[i].imgPath).deleteSync();
         database.deleteImage(
           imgPath: directoryImages[i].imgPath,
-          tableName: widget.directoryOS.dirName,
+          tableName: widget.directoryOS.dirName!,
         );
       }
     }
     database.updateImageCount(
-      tableName: widget.directoryOS.dirName,
+      tableName: widget.directoryOS.dirName!,
     );
     try {
-      Directory(widget.directoryOS.dirPath).deleteSync(recursive: false);
-      database.deleteDirectory(dirPath: widget.directoryOS.dirPath);
+      Directory(widget.directoryOS.dirPath!).deleteSync(recursive: false);
+      database.deleteDirectory(dirPath: widget.directoryOS.dirPath!);
     } catch (e) {
       getDirectoryData(
         updateFirstImage: isFirstImage,
@@ -278,10 +273,7 @@ class _ViewDocumentState extends State<ViewDocument>
   @override
   void initState() {
     super.initState();
-    fileOperations = FileOperations();
     if (widget.directoryOS.dirPath != null) {
-      dirPath = widget.directoryOS.dirPath;
-      fileName = widget.directoryOS.newName;
       getDirectoryData();
     } else {
       createDirectoryPath();
@@ -294,14 +286,6 @@ class _ViewDocumentState extends State<ViewDocument>
         createImage(quickScan: widget.quickScan);
       }
     }
-
-    _animationController =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 200))
-          ..addListener(() {
-            setState(() {});
-          });
-    _progress =
-        Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
   }
 
   @override
@@ -320,7 +304,7 @@ class _ViewDocumentState extends State<ViewDocument>
           } else {
             Navigator.pop(context);
           }
-          return;
+          return Future.value(false);
         },
         child: Stack(
           children: [
@@ -357,7 +341,7 @@ class _ViewDocumentState extends State<ViewDocument>
                         },
                       ),
                 title: Text(
-                  fileName,
+                  widget.directoryOS.newName ?? "",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -372,7 +356,7 @@ class _ViewDocumentState extends State<ViewDocument>
                               directoryImages[i - 1].idx = i;
                               if (i == 1) {
                                 database.updateFirstImagePath(
-                                  dirPath: widget.directoryOS.dirPath,
+                                  dirPath: widget.directoryOS.dirPath!,
                                   imagePath: directoryImages[i - 1].imgPath,
                                 );
                                 widget.directoryOS.firstImgPath =
@@ -380,7 +364,7 @@ class _ViewDocumentState extends State<ViewDocument>
                               }
                               database.updateImagePath(
                                 image: directoryImages[i - 1],
-                                tableName: widget.directoryOS.dirName,
+                                tableName: widget.directoryOS.dirName!,
                               );
                               // print('$i: ${directoryImages[i - 1].imgPath}');
                             }
@@ -420,17 +404,16 @@ class _ViewDocumentState extends State<ViewDocument>
                                 icon: Icon(Icons.picture_as_pdf),
                                 onPressed: () async {
                                   await fileOperations.saveToAppDirectory(
-                                    context: context,
-                                    fileName: fileName,
+                                    fileName: widget.directoryOS.newName!,
                                     images: directoryImages,
                                   );
                                   Directory storedDirectory =
                                       await getApplicationDocumentsDirectory();
-                                  final result = await OpenFile.open(
-                                      '${storedDirectory.path}/$fileName.pdf');
+                                  final result = await OpenFilex.open(
+                                      '${storedDirectory.path}/${widget.directoryOS.newName!}.pdf');
                                   setState(() {
-                                    String _openResult =
-                                        "type=${result.type}  message=${result.message}";
+                                    // String _openResult =
+                                    //     "type=${result.type}  message=${result.message}";
                                     // print(_openResult);
                                   });
                                 },
@@ -489,7 +472,7 @@ class _ViewDocumentState extends State<ViewDocument>
                                 onSelected: handleClick,
                                 color: primaryColor.withOpacity(0.95),
                                 elevation: 30,
-                                offset: Offset.fromDirection(20, 20),
+                                offset: Offset.fromDirection(20, 50),
                                 icon: Icon(Icons.more_vert),
                                 itemBuilder: (context) {
                                   return [
@@ -552,7 +535,9 @@ class _ViewDocumentState extends State<ViewDocument>
                 child: Padding(
                   padding: EdgeInsets.all(size.width * 0.01),
                   child: Theme(
-                    data: Theme.of(context).copyWith(accentColor: primaryColor),
+                    data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.fromSwatch()
+                            .copyWith(secondary: primaryColor)),
                     child: ListView(
                       children: [
                         ReorderableWrap(
@@ -622,13 +607,13 @@ class _ViewDocumentState extends State<ViewDocument>
                       color: primaryColor.withOpacity(0.8),
                       child: GestureDetector(
                         onDoubleTapDown: (details) {
-                          _doubleTapDetails = details;
+                          doubleTapDetails = details;
                         },
                         onDoubleTap: () {
                           if (_controller.value != Matrix4.identity()) {
                             _controller.value = Matrix4.identity();
                           } else {
-                            final position = _doubleTapDetails.localPosition;
+                            final position = doubleTapDetails.localPosition;
                             _controller.value = Matrix4.identity()
                               ..translate(-position.dx, -position.dy)
                               ..scale(2.0);
@@ -655,14 +640,14 @@ class _ViewDocumentState extends State<ViewDocument>
 
   Widget _buildBottomSheet(BuildContext context) {
     FileOperations fileOperations = FileOperations();
-    String selectedFileName;
+    late String selectedFileName;
 
     updateSelectedFileName() {
       int selectedCount = 0;
       for (bool i in selectedImageIndex) {
         selectedCount += (i) ? 1 : 0;
       }
-      selectedFileName = fileName + ' $selectedCount';
+      selectedFileName = widget.directoryOS.newName! + ' $selectedCount';
       // print(selectedFileName);
     }
 
@@ -679,7 +664,7 @@ class _ViewDocumentState extends State<ViewDocument>
               children: [
                 Expanded(
                   child: Text(
-                    fileName,
+                    widget.directoryOS.newName!,
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -900,14 +885,15 @@ class _ViewDocumentState extends State<ViewDocument>
                 }
               }
               await fileOperations.saveToAppDirectory(
-                context: context,
-                fileName: (enableSelect) ? selectedFileName : fileName,
+                fileName: (enableSelect)
+                    ? selectedFileName
+                    : widget.directoryOS.newName!,
                 images: (enableSelect) ? selectedImages : directoryImages,
               );
               Directory storedDirectory =
                   await getApplicationDocumentsDirectory();
               ShareExtend.share(
-                  '${storedDirectory.path}/${(enableSelect) ? selectedFileName : fileName}.pdf',
+                  '${storedDirectory.path}/${(enableSelect) ? selectedFileName : widget.directoryOS.newName!}.pdf',
                   'file');
               Navigator.pop(context);
             },
@@ -925,10 +911,11 @@ class _ViewDocumentState extends State<ViewDocument>
                   selectedImages.add(image);
                 }
               }
-              String savedDirectory;
-              savedDirectory = await fileOperations.saveToDevice(
+              String? savedDirectory = await fileOperations.saveToDevice(
                 context: context,
-                fileName: (enableSelect) ? selectedFileName : fileName,
+                fileName: (enableSelect)
+                    ? selectedFileName
+                    : widget.directoryOS.newName!,
                 images: (enableSelect) ? selectedImages : directoryImages,
                 quality: imageQuality,
               );
@@ -956,7 +943,7 @@ class _ViewDocumentState extends State<ViewDocument>
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                'Saved to Directory',
+                                'Saved to Device',
                                 style: TextStyle(
                                     fontSize: 18, fontWeight: FontWeight.w600),
                               ),
@@ -1064,11 +1051,5 @@ class _ViewDocumentState extends State<ViewDocument>
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _animationController.dispose();
   }
 }

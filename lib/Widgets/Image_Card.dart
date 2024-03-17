@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_scanner_cropper/flutter_scanner_cropper.dart';
 import 'package:focused_menu/focused_menu.dart';
@@ -20,11 +19,11 @@ class ImageCard extends StatefulWidget {
   final Function imageViewerCallback;
 
   const ImageCard({
-    this.fileEditCallback,
-    this.directoryOS,
-    this.imageOS,
-    this.selectCallback,
-    this.imageViewerCallback,
+    required this.fileEditCallback,
+    required this.directoryOS,
+    required this.imageOS,
+    required this.selectCallback,
+    required this.imageViewerCallback,
   });
 
   @override
@@ -78,18 +77,16 @@ class _ImageCardState extends State<ImageCard> {
                           0, widget.imageOS.imgPath.lastIndexOf(".")) +
                       "c.jpg");
                   File(widget.imageOS.imgPath).deleteSync();
-                  if (image != null) {
-                    image.copySync(temp.path);
-                  }
+                  image.copySync(temp.path);
                   widget.imageOS.imgPath = temp.path;
                   database.updateImagePath(
-                    tableName: widget.directoryOS.dirName,
+                    tableName: widget.directoryOS.dirName!,
                     image: widget.imageOS,
                   );
                   if (widget.imageOS.idx == 1) {
                     database.updateFirstImagePath(
                       imagePath: widget.imageOS.imgPath,
-                      dirPath: widget.directoryOS.dirPath,
+                      dirPath: widget.directoryOS.dirPath!,
                     );
                   }
                   // if (widget.imageOS.shouldCompress == 1) {
@@ -133,16 +130,16 @@ class _ImageCardState extends State<ImageCard> {
                               File(widget.imageOS.imgPath).deleteSync();
                               database.deleteImage(
                                 imgPath: widget.imageOS.imgPath,
-                                tableName: widget.directoryOS.dirName,
+                                tableName: widget.directoryOS.dirName!,
                               );
                               database.updateImageCount(
-                                tableName: widget.directoryOS.dirName,
+                                tableName: widget.directoryOS.dirName!,
                               );
                               try {
-                                Directory(widget.directoryOS.dirPath)
+                                Directory(widget.directoryOS.dirPath!)
                                     .deleteSync(recursive: false);
                                 database.deleteDirectory(
-                                    dirPath: widget.directoryOS.dirPath);
+                                    dirPath: widget.directoryOS.dirPath!);
                                 Navigator.pop(context);
                               } catch (e) {
                                 widget.fileEditCallback();

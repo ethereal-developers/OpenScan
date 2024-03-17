@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -153,7 +152,7 @@ class AboutScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14),
                 children: [
                   TextSpan(
-                      text: '2.2.0', style: TextStyle(color: secondaryColor)),
+                      text: '2.2.1', style: TextStyle(color: secondaryColor)),
                 ],
               ),
             ),
@@ -169,7 +168,7 @@ class ContactCard extends StatelessWidget {
   final String name;
   final AssetImage image;
 
-  const ContactCard({Key key, this.link, this.name, this.image});
+  const ContactCard({required this.link, required this.name, required this.image});
 
   @override
   Widget build(BuildContext context) {
@@ -203,10 +202,10 @@ class ContactCard extends StatelessWidget {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
-              Text(
-                'Tap for more',
-                style: TextStyle(color: Colors.grey[700], fontSize: 12),
-              ),
+              // Text(
+              //   'Tap for more',
+              //   style: TextStyle(color: Colors.grey[700], fontSize: 12),
+              // ),
             ],
           ),
         ),
