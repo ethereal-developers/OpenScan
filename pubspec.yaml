@@ -25,7 +25,7 @@ dependencies:
   open_filex:
   path_provider:
   pdf:
-  permission_handler: ^11.3.0
+  permission_handler:
   quick_actions:
   reorderables:
   share_extend:

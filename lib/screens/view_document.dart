@@ -42,7 +42,6 @@ class _ViewDocumentState extends State<ViewDocument>
   List<String> imageFilesPath = [];
   List<Widget> imageCards = [];
   FileOperations fileOperations = FileOperations();
-  String fileName = '';
   late List<Map<String, dynamic>> directoryData;
   List<ImageOS> directoryImages = [];
   List<ImageOS> initDirectoryImages = [];
@@ -120,7 +119,7 @@ class _ViewDocumentState extends State<ViewDocument>
   Future<void> createDirectoryPath() async {
     Directory? appDir = await getExternalStorageDirectory();
     String dirPath = "${appDir?.path}/OpenScan ${DateTime.now()}";
-    fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
+    String fileName = dirPath.substring(dirPath.lastIndexOf("/") + 1);
     widget.directoryOS.dirPath = dirPath;
     widget.directoryOS.dirName = fileName;
     // print('New Directory => ${widget.directoryOS.dirName}');
@@ -276,8 +275,19 @@ class _ViewDocumentState extends State<ViewDocument>
   @override
   void initState() {
     super.initState();
-    fileName = widget.directoryOS.newName!;
-    getDirectoryData();
+    if (widget.directoryOS.dirPath != null) {
+      getDirectoryData();
+    } else {
+      createDirectoryPath();
+      if (widget.fromGallery) {
+        createImage(
+          quickScan: false,
+          fromGallery: true,
+        );
+      } else {
+        createImage(quickScan: widget.quickScan);
+      }
+    }
   }
 
   @override
@@ -333,7 +343,7 @@ class _ViewDocumentState extends State<ViewDocument>
                         },
                       ),
                 title: Text(
-                  fileName,
+                  widget.directoryOS.newName ?? "",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -396,13 +406,13 @@ class _ViewDocumentState extends State<ViewDocument>
                                 icon: Icon(Icons.picture_as_pdf),
                                 onPressed: () async {
                                   await fileOperations.saveToAppDirectory(
-                                    fileName: fileName,
+                                    fileName: widget.directoryOS.newName!,
                                     images: directoryImages,
                                   );
                                   Directory storedDirectory =
                                       await getApplicationDocumentsDirectory();
                                   final result = await OpenFilex.open(
-                                      '${storedDirectory.path}/$fileName.pdf');
+                                      '${storedDirectory.path}/${widget.directoryOS.newName!}.pdf');
                                   setState(() {
                                     // String _openResult =
                                     //     "type=${result.type}  message=${result.message}";
@@ -637,7 +647,7 @@ class _ViewDocumentState extends State<ViewDocument>
       for (bool i in selectedImageIndex) {
         selectedCount += (i) ? 1 : 0;
       }
-      selectedFileName = fileName + ' $selectedCount';
+      selectedFileName = widget.directoryOS.newName! + ' $selectedCount';
       // print(selectedFileName);
     }
 
@@ -654,7 +664,7 @@ class _ViewDocumentState extends State<ViewDocument>
               children: [
                 Expanded(
                   child: Text(
-                    fileName,
+                    widget.directoryOS.newName!,
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -875,13 +885,13 @@ class _ViewDocumentState extends State<ViewDocument>
                 }
               }
               await fileOperations.saveToAppDirectory(
-                fileName: (enableSelect) ? selectedFileName : fileName,
+                fileName: (enableSelect) ? selectedFileName : widget.directoryOS.newName!,
                 images: (enableSelect) ? selectedImages : directoryImages,
               );
               Directory storedDirectory =
                   await getApplicationDocumentsDirectory();
               ShareExtend.share(
-                  '${storedDirectory.path}/${(enableSelect) ? selectedFileName : fileName}.pdf',
+                  '${storedDirectory.path}/${(enableSelect) ? selectedFileName : widget.directoryOS.newName!}.pdf',
                   'file');
               Navigator.pop(context);
             },
@@ -901,7 +911,7 @@ class _ViewDocumentState extends State<ViewDocument>
               }
               String? savedDirectory = await fileOperations.saveToDevice(
                 context: context,
-                fileName: (enableSelect) ? selectedFileName : fileName,
+                fileName: (enableSelect) ? selectedFileName : widget.directoryOS.newName!,
                 images: (enableSelect) ? selectedImages : directoryImages,
                 quality: imageQuality,
               );
