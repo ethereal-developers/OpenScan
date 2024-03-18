@@ -78,4 +78,6 @@ flutter {
     source '../..'
 }
 
-dependencies {}
+dependencies {
+    implementation 'com.quickbirdstudios:opencv:4.3.0'
+}
