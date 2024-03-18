@@ -1,0 +1,31 @@
+Nasza aplikacja do skanowania dokumentów typu open source umożliwi Ci skanowanie wszystkiego (oficjalne dokumenty, notatki, zdjęcia, wizytówki itp.), konwertowanie go na plik PDF i udostępnianie go za pośrednictwem dowolnej aplikacji do przesyłania wiadomości, która na to pozwala.
+
+Dlaczego warto korzystać z tej aplikacji? Czasami musisz zeskanować kilka dokumentów i udostępnić je w szybkim tempie. Być może chcesz zeskanować i przechowywać paragony,informacje rozliczeniowe w celu złożenia deklaracji podatkowej. W dzisiejszych czasach szukamy nie tylko łatwości użytkowania technologii, ale także aplikacji, które szanują naszą prywatność, dane i nie wciskają rPrz
+
+Przedstawiamy OpenScan, aplikację, która szanuje Twoją prywatność w połączeniu z wszechstronnym i pięknym interfejsem użytkownika.
+
+Od innych aplikacji tego typu odróżnia nas to że:
+
+- aplikacja jest otwartoźródłowa
+- sznujemy Twoje dane( nie wykorzystujemy, przechwytujemy żadnych dokumentów)
+
+NAJWAŻNIEJSZE FUNKCJE
+
+* Skanuj swoje dokumenty, notatki, paragony.
+* Prosta możliwość przycinania i edycji.
+* Udostępnianie w postaci PDF.
+
+WYDAJNOŚĆ PODCZAS PRACY:
+
+- Zwiększ wydajność pracy, szybko skanując i zapisując dokumenty lub notatki i udostępniając je każdemu.
+- Nigdy nie zapominaj niczyich danych kontaktowych, skanując wizytówki i przechowując je.
+- Zeskanuj wydrukowane dokumenty i zapisz je do późniejszego przejrzenia lub wyślij do kontaktów, aby je przejrzeć.
+- Nigdy nie martw się o paragony. Wystarczy zeskanować paragony i zapisać je na urządzeniu i udostępnić w razie potrzeby.
+
+
+WYDAJNOŚĆ PODCZAS NAUKI
+
+- Skanuj wszystkie swoje odręczne notatki i udostępniaj je natychmiast znajomym podczas stresujących egzaminów. 
+- Nigdy nie przegap notatek z wykładu. Wszystkie dokumenty są oznaczone znacznikiem czasu, więc wystarczy sprawdzić datę lub godzinę wykładu.
+- Zrób zdjęcia tablic lub tablic do wykorzystania w przyszłości i zapisz je jako pliki PDF.
+- Natychmiast prześlij notatki z zajęć do wybranej pamięci masowej w chmurze.
