@@ -18,35 +18,34 @@ dependencies:
      url: https://github.com/camsim99/plugins.git
      path: packages/camera/camera
      ref: master
-  cupertino_icons: ^1.0.3
-  exif: ^3.1.2
+  cupertino_icons:
+  exif:
   flutter:
     sdk: flutter
   flutter_bloc: ^8.1.1
   # flutter_neumorphic: ^3.1.0
   flutter_localizations:
     sdk: flutter
-    version: ^0.0.0
-  flutter_speed_dial: ^5.0.0+1
+  flutter_speed_dial:
   # fluttertoast: ^8.0.8
-  focused_menu: ^1.0.5
-  image: ^3.2.0
-  image_picker: 0.8.4+8
-  intl: ^0.17.0
-  multi_image_picker: ^4.8.01
-  open_filex: ^4.3.2
-  path: ^1.8.2
-  path_provider: ^2.0.5
-  pdf: ^3.8.4
-  permission_handler: ^10.2.0
-  quick_actions: ^0.6.0+7
-  reorderables: ^0.6.0
-  sensors_plus: ^1.2.1
-  share_extend: ^2.0.0
-  shared_preferences: ^2.0.8
-  simple_animated_icon: ^1.1.0
-  sqflite: ^2.0.0+4
-  url_launcher: ^6.0.12
+  focused_menu:
+  image:
+  image_picker:
+  intl:
+  multi_image_picker:
+  open_filex:
+  path:
+  path_provider:
+  pdf:
+  permission_handler:
+  quick_actions:
+  reorderables:
+  sensors_plus:
+  share_extend:
+  shared_preferences:
+  simple_animated_icon:
+  sqflite:
+  url_launcher:
   vector_math: 
 
 dev_dependencies:

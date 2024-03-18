@@ -24,8 +24,8 @@
       </intent-filter>
     </activity>
 
-    <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileProvider" android:exported="false" android:grantUriPermissions="true" tools:replace="android:authorities">
-        <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/filepaths" tools:replace="android:resource" />
+    <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileProvider" android:exported="false" android:grantUriPermissions="true">
+      <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/filepaths" />
     </provider>
 
     <!-- Don't delete the meta-data below.
@@ -37,14 +37,10 @@
     <intent>
       <action android:name="android.media.action.IMAGE_CAPTURE" />
     </intent>
-    <intent>
-      <action android:name="android.intent.action.VIEW" />
-      <category android:name="android.intent.category.BROWSABLE" />
-      <data android:scheme="https" />
-    </intent>
   </queries>
 
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.CAMERA" />
+
 </manifest>

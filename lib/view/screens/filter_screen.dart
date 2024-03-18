@@ -257,7 +257,7 @@ Future<List<int>> applyFilter(Map<String, dynamic> params) async {
   // imageLib.Image _image =
   //     imageLib.Image.fromBytes(imageBytes.width, imageBytes.height, _bytes);
 
-  _imageBytes = imageLib.encodeNamedImage(byteImage, filename)!;
+  _imageBytes = imageLib.encodeNamedImage(filename, byteImage)!;
 
   // PreviewScreen.previewModel.cachedFilters[
   //     filter?.name == null ? '_' + filename : filter!.name + filename] = _bytes;
