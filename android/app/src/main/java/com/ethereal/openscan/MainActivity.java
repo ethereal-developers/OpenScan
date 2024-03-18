@@ -28,7 +28,7 @@ import io.flutter.plugins.GeneratedPluginRegistrant;
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "com.ethereal.openscan/cropper";
     private static final String TAG_NAME = "JavaMainActivity";
-    private static final boolean isOpenCVInitialized  = false;
+    private static boolean isOpenCVInitialized  = false;
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
@@ -38,6 +38,7 @@ public class MainActivity extends FlutterActivity {
                         (call, result) -> {
                             if (!isOpenCVInitialized) {
                                 if (OpenCVLoader.initDebug()) {
+                                    isOpenCVInitialized = true;
                                     Log.d(TAG_NAME, "OpenCV loaded successfully");
                                 } else {
                                     Log.d(TAG_NAME, "OpenCV NOT loaded");

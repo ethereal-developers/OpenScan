@@ -226,8 +226,6 @@ class FileOperations {
       desiredQuality = 100;
     }
 
-    debugPrint(desiredQuality as String?);
-
     Directory cacheDir = await getTemporaryDirectory();
 
     try {

@@ -276,12 +276,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text(
                                 AppLocalizations.of(context)!.last_updated +
-                                    ': ${masterDirectories[index].lastModified!.day}-${masterDirectories[index].lastModified!.month}-${masterDirectories[index].lastModified!.year}',
-                                style: TextStyle(fontSize: 11),
+                                    ': ${masterDirectories[index].lastModified!.day}/${masterDirectories[index].lastModified!.month}/${masterDirectories[index].lastModified!.year}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white54,
+                                ),
                               ),
                               Text(
                                 '${masterDirectories[index].imageCount} ${(masterDirectories[index].imageCount == 1) ? AppLocalizations.of(context)!.image : AppLocalizations.of(context)!.images}',
-                                style: TextStyle(fontSize: 11),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white54,
+                                ),
                               ),
                             ],
                           ),
