@@ -91,7 +91,6 @@ class FileOperations {
         imageFiles.add(File(image.path));
       }
     }
-    // debugPrint(imageFiles as String?);
     return imageFiles;
   }
 
