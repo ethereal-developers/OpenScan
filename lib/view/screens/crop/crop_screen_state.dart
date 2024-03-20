@@ -14,9 +14,6 @@ class CropScreenState {
   late Size screenSize;
   bool isLoading = false;
   double aspectRatio = 1;
-  late RenderBox imageBox;
-  late double rotationAngle;
-  late Size originalCanvasSize;
   double verticalScaleFactor = 1;
   double horizontalScaleFactor = 1;
   Offset canvasOffset = Offset.zero;
@@ -67,7 +64,7 @@ class CropScreenState {
   }
 
   /// Sets detected points on canvas
-  initPoints() {
+  initPoints({bool isReset = false}) {
     double polygonArea = 0;
     double canvasArea = 1;
 
@@ -80,7 +77,7 @@ class CropScreenState {
           canvasOffset.dy + canvasSize.height);
     }
 
-    if (detectedPointsData.isNotEmpty) {
+    if (detectedPointsData.isNotEmpty && !isReset) {
       /// Setting corner points to detected location
       /// PointsData: [br,tr,tl,bl]: (width, height)
       tl = Offset(
@@ -107,9 +104,12 @@ class CropScreenState {
       polygonArea = areaOfQuadrilateral(tl, tr, bl, br);
       canvasArea = canvasSize.width * canvasSize.height;
 
-      if (polygonArea / canvasArea < 0.2) setPointsToCorner();
-    } else
+      if (polygonArea / canvasArea < 0.2) {
+        setPointsToCorner();
+      }
+    } else {
       setPointsToCorner();
+    }
 
     /// Computing center points
     t = Offset((tl.dx + tr.dx) / 2, (tl.dy + tr.dy) / 2);
@@ -120,13 +120,13 @@ class CropScreenState {
 
   /// Updates the points in the polygon when changed manually
   updatePolygon() {
-    debugPrint('Updated Point (local) => ${updatedPoint.value.localPosition}');
-    debugPrint(
-        'Updated Point (global) => ${updatedPoint.value.globalPosition}');
-    debugPrint('TL => $tl');
-    debugPrint('TR => $tr');
-    debugPrint('BL => $bl');
-    debugPrint('BR => $br');
+    // debugPrint('Updated Point (local) => ${updatedPoint.value.localPosition}');
+    // debugPrint(
+    //     'Updated Point (global) => ${updatedPoint.value.globalPosition}');
+    // debugPrint('TL => $tl');
+    // debugPrint('TR => $tr');
+    // debugPrint('BL => $bl');
+    // debugPrint('BR => $br');
 
     if (movingPoint.name == 'tl') {
       Offset tlTemp =
@@ -280,6 +280,7 @@ class CropScreenState {
 
   /// Crops and returns the image
   crop() async {
+    // TODO: check why this is NOT WORKING
     bool result = await NativeAndroidUtil.cropImage(
       path: imageFile!.path,
       tlX: (imageSize!.width / canvasSize.width) * tl.dx,
@@ -423,7 +424,7 @@ class CropScreenState {
 
   /// Check if points cross-over eachother
   ///
-  /// Returns: [True] if points cross-over eachother, else [False]
+  /// Returns: [true] if points cross-over eachother, else [false]
   bool checkCrossover(Offset tl, Offset tr, Offset bl, Offset br, Offset t,
       Offset b, Offset l, Offset r) {
     if (tl.dx > tr.dx - crossoverThreshold) return true;
@@ -458,9 +459,9 @@ class CropScreenState {
 
   /// Gets the size of image canvas
   getRenderedBoxSize() {
-    imageBox = imageKey.currentContext!.findRenderObject() as RenderBox;
-    originalCanvasSize = imageBox.size;
-    canvasSize = originalCanvasSize;
+    RenderBox imageBox =
+        imageKey.currentContext!.findRenderObject() as RenderBox;
+    canvasSize = imageBox.size;
     debugPrint(
         'Renderbox=> $canvasSize=> ${canvasSize.width / canvasSize.height}');
 
@@ -468,7 +469,6 @@ class CropScreenState {
       Offset.zero,
       ancestor: bodyKey.currentContext!.findRenderObject() as RenderBox,
     );
-    canvasOffset = Offset(canvasOffset.dx, canvasOffset.dy);
     debugPrint('Canvas Offset => $canvasOffset');
 
     verticalScaleFactor = screenSize.height / imageBox.size.width;

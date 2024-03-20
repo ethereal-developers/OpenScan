@@ -191,7 +191,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           index: state.images!.length + 1,
           dirPath: state.dirPath!,
         );
-        debugPrint('Saved ${savedImage.path}');
+        // debugPrint('Saved ${savedImage.path}');
 
         ImageOS tempImage = ImageOS(
           idx: state.imageCount + 1,

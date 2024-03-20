@@ -4,9 +4,9 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
-import 'package:vector_math/vector_math.dart' as vector;
 
 Future<File> imageCropper(BuildContext context, File image) async {
   File? croppedImage;
@@ -41,8 +41,6 @@ class _CropImageState extends State<CropImage> {
     _cropScreen.imageFile = widget.file;
     _cropScreen.detectDocument();
     _cropScreen.canvasSize = Size(0, 0);
-    _cropScreen.rotationAngle = 0;
-    _cropScreen.originalCanvasSize = Size(0, 0);
     _cropScreen.tl = Offset(0, 0);
     _cropScreen.tr = Offset(0, 0);
     _cropScreen.bl = Offset(0, 0);
@@ -56,8 +54,8 @@ class _CropImageState extends State<CropImage> {
   @override
   Widget build(BuildContext context) {
     _cropScreen.screenSize = MediaQuery.of(context).size;
-    debugPrint(
-        'Screen size=> ${_cropScreen.screenSize.width} / ${_cropScreen.screenSize.height}');
+    // debugPrint(
+    //     'Screen size=> ${_cropScreen.screenSize.width} / ${_cropScreen.screenSize.height}');
     return SafeArea(
       child: WillPopScope(
         onWillPop: () async {
@@ -82,19 +80,6 @@ class _CropImageState extends State<CropImage> {
                 Navigator.pop(context, null);
               },
             ),
-            actions: [
-              MaterialButton(
-                child: Icon(Icons.document_scanner_rounded),
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                onPressed: () {
-                  setState(() {
-                    _cropScreen.initPoints();
-                    debugPrint('TL: ${_cropScreen.tl}');
-                  });
-                },
-              )
-            ],
           ),
           body: GestureDetector(
             key: _cropScreen.bodyKey,
@@ -119,6 +104,7 @@ class _CropImageState extends State<CropImage> {
               color: Theme.of(context).primaryColor,
               child: Stack(
                 children: [
+                  /// Image Container
                   Container(
                     padding: EdgeInsets.all(13),
                     alignment: Alignment.center,
@@ -131,32 +117,29 @@ class _CropImageState extends State<CropImage> {
                                     : 1.0),
                             duration: Duration(milliseconds: 100),
                             builder: ((_, double scale, __) {
-                              return Transform.rotate(
-                                angle: _cropScreen.rotationAngle,
-                                child: Transform.scale(
-                                  scale: scale,
-                                  child: Image(
-                                    key: _cropScreen.imageKey,
-                                    image: FileImage(_cropScreen.imageFile!),
-                                    loadingBuilder:
-                                        ((context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return Center(
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                        ),
-                                      );
-                                    }),
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Center(
-                                        child: Icon(
-                                          Icons.error_rounded,
-                                          color: Colors.red,
-                                          size: 30,
-                                        ),
-                                      );
-                                    },
-                                  ),
+                              return Transform.scale(
+                                scale: scale,
+                                child: Image(
+                                  key: _cropScreen.imageKey,
+                                  image: FileImage(_cropScreen.imageFile!),
+                                  loadingBuilder:
+                                      ((context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                      ),
+                                    );
+                                  }),
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Icon(
+                                        Icons.error_rounded,
+                                        color: Colors.red,
+                                        size: 30,
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
                             }),
@@ -168,6 +151,8 @@ class _CropImageState extends State<CropImage> {
                             ),
                           ),
                   ),
+
+                  /// Points Container
                   ValueListenableBuilder(
                     valueListenable: _cropScreen.detectionCompleted,
                     builder: (context, _documentDetected, _) {
@@ -204,12 +189,15 @@ class _CropImageState extends State<CropImage> {
                                     .withOpacity(0.7),
                                 child: Center(
                                   child: CircularProgressIndicator(
-                                      color: Colors.white),
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             );
                     },
                   ),
+
+                  /// Magnifier Container
                   ValueListenableBuilder(
                     valueListenable: _cropScreen.showMagnifier,
                     builder: (context, bool _showMagnifier, _) {
@@ -275,33 +263,18 @@ class _CropImageState extends State<CropImage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.rotate_left_rounded),
+                Icon(Icons.restore_page),
                 Text(
-                  'Rotate Left',
+                  // TODO: i18n
+                  'Reset',
                   style: TextStyle(fontSize: 9),
                 )
               ],
             ),
             onPressed: () async {
               setState(() {
-                /// Subtracting 90* from image rotation
-                _cropScreen.rotationAngle =
-                    (_cropScreen.rotationAngle - pi / 2) % (2 * pi);
-                debugPrint('rotationAngle => ${_cropScreen.rotationAngle}');
-
-                /// Scaling image before rotation- solves Transform.rotate issue
-                _cropScreen.scaleImage =
-                    _cropScreen.rotationAngle % pi == pi / 2;
-                debugPrint(_cropScreen.scaleImage.toString());
-
-                /// Updates canvas size that is passed to PolygonBuilder
-                _cropScreen.canvasSize = _cropScreen.scaleImage
-                    ? Size(
-                        _cropScreen.canvasSize.height * _cropScreen.aspectRatio,
-                        _cropScreen.canvasSize.width * _cropScreen.aspectRatio)
-                    : _cropScreen.imageBox.size;
-                debugPrint(_cropScreen.canvasSize.toString());
-                debugPrint('TL: ${_cropScreen.tl}');
+                // TODO: fix this functionality
+                _cropScreen.initPoints(isReset: true);
               });
             },
           ),
@@ -313,33 +286,18 @@ class _CropImageState extends State<CropImage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.rotate_right_rounded),
+                Icon(Icons.document_scanner_rounded),
                 Text(
-                  'Rotate Right',
+                  // TODO: i18n
+                  'Auto-Detect',
                   style: TextStyle(fontSize: 9),
                 )
               ],
             ),
             onPressed: () async {
               setState(() {
-                /// Adding 90* to image rotation
-                _cropScreen.rotationAngle =
-                    (_cropScreen.rotationAngle + pi / 2) % (2 * pi);
-                debugPrint(
-                    'rotationAngle => ${vector.degrees(_cropScreen.rotationAngle)}');
-
-                /// Scaling image before rotation- solves Transform.rotate issue
-                _cropScreen.scaleImage =
-                    _cropScreen.rotationAngle % pi == pi / 2;
-                debugPrint(_cropScreen.scaleImage.toString());
-
-                /// Updates canvas size to be passed to PolygonBuilder
-                _cropScreen.canvasSize = _cropScreen.scaleImage
-                    ? Size(
-                        _cropScreen.canvasSize.height * _cropScreen.aspectRatio,
-                        _cropScreen.canvasSize.width * _cropScreen.aspectRatio)
-                    : _cropScreen.imageBox.size;
-                debugPrint(_cropScreen.canvasSize.toString());
+                _cropScreen.initPoints();
+                // debugPrint('TL: ${_cropScreen.tl}');
               });
             },
           ),
@@ -366,23 +324,14 @@ class _CropImageState extends State<CropImage> {
                 disabledColor:
                     Theme.of(context).colorScheme.secondary.withOpacity(0.5),
                 disabledTextColor: Colors.white.withOpacity(0.5),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Icon(Icons.done),
                     Text(
-                      AppLocalizations.of(context)!.next,
-                      style: TextStyle(
-                        color: _imageRendered || !cropLoading
-                            ? Colors.white
-                            : Colors.white.withOpacity(0.5),
-                        fontSize: 18,
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: _imageRendered || !cropLoading
-                          ? Colors.white
-                          : Colors.white.withOpacity(0.5),
+                      // TODO: i18n
+                      'Done',
+                      style: TextStyle(fontSize: 9),
                     )
                   ],
                 ),

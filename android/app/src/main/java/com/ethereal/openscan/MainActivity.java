@@ -103,7 +103,7 @@ public class MainActivity extends FlutterActivity {
                                 }
                                 case "rotateImage": {
                                     String path = call.argument("path");
-                                    int degree = Integer.parseInt(Objects.requireNonNull(call.argument("degree")));
+                                    int degree = Objects.requireNonNull(call.argument("degree"));
                                     boolean isRotated = ImageUtil.rotateImage(path, degree);
                                     result.success(isRotated);
                                     break;
