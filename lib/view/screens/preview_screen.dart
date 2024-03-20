@@ -39,7 +39,7 @@ class _PreviewScreenState extends State<PreviewScreen>
   late PageController pageController;
 
   void doubleTapImageZoom() async {
-    //TODO: Generalize method
+        //TODO: Generalize method
     debugPrint((_transformationController.value == Matrix4.identity()).toString());
 
     final position = _doubleTapDetails.localPosition;
@@ -139,6 +139,8 @@ class _PreviewScreenState extends State<PreviewScreen>
                       onTap: () {
                         setState(() {
                           isAppBarVisible = !isAppBarVisible;
+                          // TODO check why this is not working
+                          enablePageScroll = !isAppBarVisible;
                         });
                         // showModalBottomSheet(
                         //   context: context,
@@ -167,6 +169,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                         },
                         maxScale: 5,
                         child: Container(
+                          padding: EdgeInsets.all(8.0),
                           child: Center(
                             child: Hero(
                               tag: 'hero-image-${index + 1}',
@@ -345,7 +348,6 @@ class _PreviewScreenState extends State<PreviewScreen>
                   ),
                 );
               },
-              moreOnPressed: () {},
             );
           },
         ),
