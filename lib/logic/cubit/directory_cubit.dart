@@ -166,22 +166,24 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
     if (fromGallery) {
       imageList = await (fileOperations.openGallery());
+      // debugPrint('imageList --> $imageList');
     } else {
       File? image = await fileOperations.openCamera();
       if (image != null) {
-        imageList = [await imageCropper(context, image)];
+        imageList = [await generateTempFileAndCropImage(context, image, state.dirPath!, true)];
       }
     }
 
     for (File image in imageList) {
-      Directory cacheDir = await getTemporaryDirectory();
+      // Directory cacheDir = await getTemporaryDirectory();
 
-      String imgPath =
-          await NativeAndroidUtil.compress(image.path, cacheDir.path, 90);
+      // String imgPath =
+      //     await NativeAndroidUtil.compress(image.path, cacheDir.path, 90);
 
-      File compressedImage = File(imgPath);
+      // File compressedImage = File(imgPath);
 
       if (image.existsSync()) {
+        debugPrint("imgpath --> ${image.path}");
         // getImageSize('Original', image);
         // getImageSize('Compressed', compressedImage);
         // debugPrint('Image = ${Image.file(compressedImage).width}');
@@ -205,31 +207,35 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           state.firstImgPath = savedImage.path;
         }
 
-        emitState(state);
-
-        await fileOperations.deleteTemporaryImages();
         if (quickScan) {
           return createImage(context, quickScan: quickScan);
         }
       }
     }
+    await fileOperations.deleteTemporaryImages();
+    emitState(state);
   }
 
   /// Calls image cropper
   void cropImage(context, ImageOS imageOS) async {
-    File image = await imageCropper(
-      context,
-      File(imageOS.imgPath),
-    );
-
     // Creating new imagePath for cropped image
     File temp = File(
         imageOS.imgPath.substring(0, imageOS.imgPath.lastIndexOf("/")) +
             '/' +
             DateTime.now().toString() +
             '.jpg');
-    image.copySync(temp.path);
-    File(imageOS.imgPath).deleteSync();
+    File original = File(imageOS.imgPath);
+    await imageCropper(
+      context,
+      original,
+      temp,
+    );
+
+    if (!temp.existsSync()) {
+      original.copySync(temp.path);
+    }
+
+    original.deleteSync();
     imageOS.imgPath = temp.path;
     debugPrint('Image Cropped');
 
@@ -317,7 +323,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       }
     }
 
-    for(ImageOS image in imagesToDelete){
+    for (ImageOS image in imagesToDelete) {
       // Deleting image from storage
       File(image.imgPath).deleteSync();
 

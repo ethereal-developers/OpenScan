@@ -32,7 +32,8 @@ class NativeAndroidUtil {
   }
 
   static Future cropImage(
-      {required String path,
+      {required String srcPath,
+      required String destPath,
       required double tlX,
       required double tlY,
       required double trX,
@@ -42,7 +43,8 @@ class NativeAndroidUtil {
       required double brX,
       required double brY}) async {
     return _channel.invokeMethod('cropImage', {
-      "path": path,
+      "srcPath": srcPath,
+      "destPath": destPath,
       "tl_x": "$tlX",
       "tl_y": "$tlY",
       "tr_x": "$trX",

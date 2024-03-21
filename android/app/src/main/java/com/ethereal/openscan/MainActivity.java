@@ -82,7 +82,8 @@ public class MainActivity extends FlutterActivity {
                                     break;
                                 }
                                 case "cropImage": {
-                                    String path = call.argument("path");
+                                    String srcPath = call.argument("srcPath");
+                                    String destPath = call.argument("destPath");
                                     double tl_x = Double.parseDouble(Objects.requireNonNull(call.argument("tl_x")));
                                     double tl_y = Double.parseDouble(Objects.requireNonNull(call.argument("tl_y")));
                                     double tr_x = Double.parseDouble(Objects.requireNonNull(call.argument("tr_x")));
@@ -91,7 +92,8 @@ public class MainActivity extends FlutterActivity {
                                     double bl_y = Double.parseDouble(Objects.requireNonNull(call.argument("bl_y")));
                                     double br_x = Double.parseDouble(Objects.requireNonNull(call.argument("br_x")));
                                     double br_y = Double.parseDouble(Objects.requireNonNull(call.argument("br_y")));
-                                    boolean isCropped = ImageUtil.cropImage(path, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y);
+                                    Log.d(TAG_NAME, "Points " + tl_x + " " + tl_y + " " + tr_x + " " + tr_y + " " + bl_x + " " + bl_y + " " + br_x + " " + br_y);
+                                    boolean isCropped = ImageUtil.cropImage(srcPath, destPath, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y);
                                     result.success(isCropped);
                                     break;
                                 }

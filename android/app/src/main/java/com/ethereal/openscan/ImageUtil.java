@@ -16,6 +16,7 @@ import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -28,8 +29,8 @@ import java.util.Map;
 public class ImageUtil {
     public static final String TAG = ImageUtil.class.getSimpleName();
 
-    public static boolean cropImage(String path, double tl_x, double tl_y, double tr_x, double tr_y, double bl_x, double bl_y, double br_x, double br_y) {
-        Bitmap original = BitmapFactory.decodeFile(path);
+    public static boolean cropImage(String srcPath, String destPath, double tl_x, double tl_y, double tr_x, double tr_y, double bl_x, double bl_y, double br_x, double br_y) {
+        Bitmap original = BitmapFactory.decodeFile(srcPath);
         Log.d(TAG, "Perspective crop started");
         try {
             Log.d(TAG, "OpenCV started");
@@ -61,7 +62,7 @@ public class ImageUtil {
             Utils.matToBitmap(resultDoc, cropped);
             FileOutputStream stream;
             try {
-                stream = new FileOutputStream(path);
+                stream = new FileOutputStream(destPath);
             } catch (FileNotFoundException e) {
                 Log.e(TAG, "Perspective crop done, but error while creating output file stream --> ", e);
                 return false;

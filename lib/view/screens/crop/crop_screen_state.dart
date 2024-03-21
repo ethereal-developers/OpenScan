@@ -7,7 +7,8 @@ import 'package:openscan/core/data/native_android_util.dart';
 class CropScreenState {
   GlobalKey imageKey = GlobalKey();
   GlobalKey bodyKey = GlobalKey();
-  File? imageFile;
+  File? srcImage;
+  File? destImage;
   Size? imageSize;
   List detectedPointsData = [];
   late Size canvasSize;
@@ -57,7 +58,7 @@ class CropScreenState {
     await getSize();
 
     detectedPointsData =
-        await NativeAndroidUtil.detectDocument(imageFile!.path);
+        await NativeAndroidUtil.detectDocument(srcImage!.path);
     debugPrint('Points => $detectedPointsData');
 
     detectionCompleted.value = true;
@@ -282,7 +283,8 @@ class CropScreenState {
   crop() async {
     // TODO: check why this is NOT WORKING
     bool result = await NativeAndroidUtil.cropImage(
-      path: imageFile!.path,
+      srcPath: srcImage!.path,
+      destPath: destImage!.path,
       tlX: (imageSize!.width / canvasSize.width) * tl.dx,
       tlY: (imageSize!.height / canvasSize.height) * tl.dy,
       trX: (imageSize!.width / canvasSize.width) * tr.dx,
@@ -293,7 +295,7 @@ class CropScreenState {
       brY: (imageSize!.height / canvasSize.height) * br.dy,
     );
 
-    debugPrint('cropper: ${imageFile!.path}');
+    debugPrint('cropper: ${srcImage!.path}');
   }
 
   /// Gets the current moving point
@@ -448,7 +450,7 @@ class CropScreenState {
 
   /// Reads image size from file
   getSize() async {
-    var decodedImage = await decodeImageFromList(imageFile!.readAsBytesSync());
+    var decodedImage = await decodeImageFromList(srcImage!.readAsBytesSync());
     imageSize =
         Size(decodedImage.width.toDouble(), decodedImage.height.toDouble());
     aspectRatio = imageSize!.width / imageSize!.height;

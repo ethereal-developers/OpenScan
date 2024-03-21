@@ -277,6 +277,8 @@ class _PreviewScreenState extends State<PreviewScreen>
                   context,
                   state.images![pageController.page!.round()],
                 );
+                // TODO: check why this is needed and emit(state) doesn't work
+                setState(() {});
               },
               deleteOnPressed: () {
                 showDialog(

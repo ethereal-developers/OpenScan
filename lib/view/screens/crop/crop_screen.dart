@@ -1,31 +1,43 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
 
-Future<File> imageCropper(BuildContext context, File image) async {
+Future<File> generateTempFileAndCropImage(BuildContext context, File srcImage,
+    String dirPath, bool shouldGenerateDestFile) async {
+  File temp = File(
+    dirPath + '/' + DateTime.now().toString() + '.jpg',
+  );
+  return imageCropper(context, srcImage, temp);
+}
+
+Future<File> imageCropper(
+  BuildContext context,
+  File srcImage,
+  File resultImage,
+) async {
   File? croppedImage;
 
   await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => CropImage(
-        file: image,
+        srcImage: srcImage,
+        destImage: resultImage,
       ),
     ),
   ).then((value) => croppedImage = value);
-  return croppedImage ?? image;
+  return croppedImage ?? srcImage;
 }
 
 class CropImage extends StatefulWidget {
-  final File? file;
+  final File? srcImage;
+  final File? destImage;
 
-  CropImage({this.file});
+  CropImage({this.srcImage, this.destImage});
 
   _CropImageState createState() => _CropImageState();
 }
@@ -38,7 +50,8 @@ class _CropImageState extends State<CropImage> {
   @override
   initState() {
     super.initState();
-    _cropScreen.imageFile = widget.file;
+    _cropScreen.srcImage = widget.srcImage;
+    _cropScreen.destImage = widget.destImage;
     _cropScreen.detectDocument();
     _cropScreen.canvasSize = Size(0, 0);
     _cropScreen.tl = Offset(0, 0);
@@ -121,7 +134,7 @@ class _CropImageState extends State<CropImage> {
                                 scale: scale,
                                 child: Image(
                                   key: _cropScreen.imageKey,
-                                  image: FileImage(_cropScreen.imageFile!),
+                                  image: FileImage(_cropScreen.srcImage!),
                                   loadingBuilder:
                                       ((context, child, loadingProgress) {
                                     if (loadingProgress == null) return child;
@@ -314,7 +327,7 @@ class _CropImageState extends State<CropImage> {
                         setState(() {
                           cropLoading = false;
                         });
-                        Navigator.pop(context, _cropScreen.imageFile);
+                        Navigator.pop(context, _cropScreen.srcImage);
                       }
                     : () {},
                 color: _imageRendered || !cropLoading
