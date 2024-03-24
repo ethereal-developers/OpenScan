@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">OpenScan</string>
     <string name="done">Done</string>
+    <string name="made_in_india">Made with ❤ from India</string>
 </resources>

@@ -1,0 +1,67 @@
+{
+    "scan_options":"Szkennelési beállítások",
+    "@scan_options": {
+        "description": "Szkennelés gomb buboréksúgója" 
+    },
+    "normal_scan": "Normál szkennelés",
+    "@normal_scan": {
+        "description": "1-es típusú szkennelés" 
+    },
+    "quick_scan": "Gyors szkennelés",
+    "@quick_scan": {
+        "description": "2-es típusú szkennelés"
+    },
+    "import_from_gallery": "Importálás a Galériából",
+    "@import_from_gallery": {
+        "description": "3-as típusú szkennelés"
+    },
+    "refresh": "Húzza le a frissítéshez",
+    "@refresh": {
+        "description": "Frissítés buboréksúgója"
+    },
+    "last_updated": "Utoljára frissítve",
+    "@last_updated": {
+        "description": "Fájl utolsó frissítése"
+    },
+    "images": "képek",
+    "@images": {
+        "description": "Több kép"
+    },
+    "app_description": "egy nyílt forráskódú alkalmazás, amely lehetővé teszi, hogy a felhasználók szkenneljék a dokumentumaikat, és PDF-fájllá alakítsák azokat.",
+    "@app_description": {
+        "description": "Az alkalmazás rövid leírása a névjegy képernyőn"
+    },
+    "app_description_2": "Nincsenek reklámok. Nem gyűjtünk adatokat.\n Tiszteletben tartjuk a magánszféráját.",
+    "@app_description_2": {
+        "description": "Mottó a névjegy képernyőn"
+    },
+    "crop_image": "Kép levágása",
+    "@crop_image": {
+        "description": "Képlevágás fejléce"
+    },
+    "rotate_right": "Forgatás jobbra",
+    "@rotate_right": {
+        "description": "Kép forgatása jobbra"
+    },
+    "rotate_left": "Forgatás balra",
+    "@rotate_left": {
+        "description": "Kép forgatása balra"
+    },
+    "about":"Névjegy",
+    "rename": "Átnevezés",
+    "delete": "Törlés",
+    "image": "kép",
+    "developers": "Fejlesztők",
+    "version": "verzió",
+    "next": "Folytatás",
+    "tutorial_title": "Hogyan használja az alkalmazást?",
+    "done": "Kész",
+    "skip": "Kihagyás",
+    "loading": "Betöltés",
+    "home": "Kezdőlap",
+    "demo": "Demó",
+    "quality": "Minőség",
+    "save_to_device": "Mentés eszközre",
+    "share_pdf": "PDF megosztása",
+    "share_images": "Képek megosztása"
+}

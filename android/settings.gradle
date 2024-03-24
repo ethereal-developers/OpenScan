@@ -30,5 +30,4 @@ plugins {
     id "com.android.application" version "7.3.0" apply false
 }
 
-include ':app', ':scanlibrary'
-project(':scanlibrary').projectDir = file('scanlibrary')
+include ':app'

@@ -1,0 +1,67 @@
+{
+    "scan_options":"Opcje skanowania",
+    "@scan_options": {
+        "description": "Podpowiedź dotycząca przycisku skanowania" 
+    },
+    "normal_scan": "Normalny Skan",
+    "@normal_scan": {
+        "description": "Typ skanowania 1" 
+    },
+    "quick_scan": "Szybki Skan",
+    "@quick_scan": {
+        "description": "Typ skanowania 2" 
+    },
+    "import_from_gallery": "Import z Galerii",
+    "@import_from_gallery": {
+        "description": "Typ skanowania 3" 
+    },
+    "refresh": "Przeciągnij w dół, aby odświeżyć",
+    "@refresh": {
+        "description": "Podpowiedź dotycząca odświeżania" 
+    },
+    "last_updated": "Ostatnio Zaktualizowany",
+    "@last_updated": {
+        "description": "Plik ostatnio zaktualizowany" 
+    },
+    "images": "obrazy",
+    "@images": {
+        "description": "Wiele obrazów" 
+    },
+    "app_description": "to aplikacja typu open source, która umożliwia użytkownikom skanowanie papierowych kopii dokumentów i konwertowanie ich do pliku PDF.",
+    "@app_description": {
+        "description": "Krótki opis aplikacji na ekranie Informacji" 
+    },
+    "app_description_2": "Bez reklam. Nie zbieramy żadnych danych.\n Szanujemy Twoją prywatność.",
+    "@app_description_2": {
+        "description": "Motto na ekranie informacyjnym" 
+    },
+    "crop_image": "Przytnij Obraz",
+    "@crop_image": {
+        "description": "Nagłówek Ekranu Przycinania" 
+    },
+    "rotate_right": "Obróć w prawo",
+    "@rotate_right": {
+        "description": "Obróć obraz w prawo" 
+    },
+    "rotate_left": "Obróć w lewo",
+    "@rotate_left": {
+        "description": "Obróć obraz w lewo" 
+    },
+    "about":"O programie",
+    "rename": "Zmień Nazwę",
+    "delete": "Usuń",
+    "image": "obraz",
+    "developers": "Twórcy",
+    "version": "Wersja",
+    "next": "Kontynuuj",
+    "tutorial_title": "Jak używać aplikacji?",
+    "done": "Gotowe",
+    "skip": "Pomiń",
+    "loading": "Wczytywanie",
+    "home": "Początek",
+    "demo": "Demo",
+    "quality": "Jakość",
+    "save_to_device": "Zapisz na urządzeniu",
+    "save_pdf": "Udostępnij PDF",
+    "share_images": "Udostępnij obrazy"
+}
