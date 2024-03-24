@@ -14,7 +14,6 @@ class CropScreenState {
   List detectedPointsData = [];
   late Size canvasSize;
   late Size screenSize;
-  bool isLoading = false;
   double aspectRatio = 1;
   double verticalScaleFactor = 1;
   double horizontalScaleFactor = 1;
@@ -24,6 +23,7 @@ class CropScreenState {
   Size imageSizeNative = Size(600.0, 600.0);
   late double tSlope, bSlope, rSlope, lSlope;
   bool isReset = false;
+  bool isCroppingLoading = false;
 
   int errorOffset = 92;
 
@@ -60,7 +60,7 @@ class CropScreenState {
     await getSize();
 
     detectedPointsData = await NativeAndroidUtil.detectDocument(srcImage!.path);
-    debugPrint('Points => $detectedPointsData');
+    // debugPrint('Points => $detectedPointsData');
 
     detectionCompleted.value = true;
   }
@@ -475,8 +475,8 @@ class CropScreenState {
         Size(decodedImage.width.toDouble(), decodedImage.height.toDouble());
     aspectRatio = imageSize!.width / imageSize!.height;
     getRenderedBoxSize();
-    debugPrint(
-        'Orginal Image=> ${imageSize!.width} / ${imageSize!.height} = $aspectRatio');
+    // debugPrint(
+    //     'Orginal Image=> ${imageSize!.width} / ${imageSize!.height} = $aspectRatio');
   }
 
   /// Gets the size of image canvas

@@ -53,7 +53,6 @@ class _CropImageState extends State<CropImage> {
     super.initState();
     _cropScreen.srcImage = widget.srcImage;
     _cropScreen.destImage = widget.destImage;
-    _cropScreen.detectDocument();
     _cropScreen.canvasSize = Size(0, 0);
     _cropScreen.tl = Offset(0, 0);
     _cropScreen.tr = Offset(0, 0);
@@ -63,6 +62,7 @@ class _CropImageState extends State<CropImage> {
     _cropScreen.l = Offset(0, 0);
     _cropScreen.b = Offset(0, 0);
     _cropScreen.r = Offset(0, 0);
+    _cropScreen.detectDocument();
   }
 
   @override
@@ -125,10 +125,11 @@ class _CropImageState extends State<CropImage> {
                     child: !cropLoading
                         ? TweenAnimationBuilder(
                             tween: Tween(
-                                begin: 1.0,
-                                end: _cropScreen.scaleImage
-                                    ? _cropScreen.aspectRatio
-                                    : 1.0),
+                              begin: 1.0,
+                              end: _cropScreen.scaleImage
+                                  ? _cropScreen.aspectRatio
+                                  : 1.0,
+                            ),
                             duration: Duration(milliseconds: 100),
                             builder: ((_, double scale, __) {
                               return Transform.scale(
@@ -169,13 +170,26 @@ class _CropImageState extends State<CropImage> {
                   /// Points Container
                   ValueListenableBuilder(
                     valueListenable: _cropScreen.detectionCompleted,
-                    builder: (context, _documentDetected, _) {
-                      if (_cropScreen.detectionCompleted.value) {
+                    builder: (context, bool _documentDetected, _) {
+                      if (_cropScreen.isCroppingLoading) {
+                        return Positioned.fill(
+                          child: Container(
+                            color:
+                                Theme.of(context).primaryColor.withOpacity(0.7),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      if (_documentDetected) {
                         /// This snippet is crucial, but idk how it works
                         _cropScreen.getRenderedBoxSize();
                         _cropScreen.initPoints();
                       }
-                      return _cropScreen.detectionCompleted.value
+                      return _documentDetected
                           ? _cropScreen.imageRendered.value
                               ? Positioned.fill(
                                   child: ValueListenableBuilder(
@@ -316,14 +330,12 @@ class _CropImageState extends State<CropImage> {
             builder: (context, bool _imageRendered, _) {
               return MaterialButton(
                 onPressed: _imageRendered
-                    ? () {
+                    ? () async {
                         setState(() {
                           cropLoading = true;
+                          _cropScreen.isCroppingLoading = true;
                         });
-                        _cropScreen.crop();
-                        setState(() {
-                          cropLoading = false;
-                        });
+                        await _cropScreen.crop();
                         Navigator.pop(context, _cropScreen.srcImage);
                       }
                     : () {},
