@@ -131,15 +131,6 @@ class CropScreenState {
           fontSize: 16.0,
         );
       }
-
-      Fluttertoast.showToast(
-        msg: "Detected document",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
     }
 
     /// Computing center points
@@ -314,14 +305,14 @@ class CropScreenState {
     bool result = await NativeAndroidUtil.cropImage(
       srcPath: srcImage!.path,
       destPath: destImage!.path,
-      tlX: (imageSize!.width / canvasSize.width) * tl.dx,
-      tlY: (imageSize!.height / canvasSize.height) * tl.dy,
-      trX: (imageSize!.width / canvasSize.width) * tr.dx,
-      trY: (imageSize!.height / canvasSize.height) * tr.dy,
-      blX: (imageSize!.width / canvasSize.width) * bl.dx,
-      blY: (imageSize!.height / canvasSize.height) * bl.dy,
-      brX: (imageSize!.width / canvasSize.width) * br.dx,
-      brY: (imageSize!.height / canvasSize.height) * br.dy,
+      tlX: (imageSize!.width / canvasSize.width) * (tl.dx - canvasOffset.dx),
+      tlY: (imageSize!.height / canvasSize.height) * (tl.dy - canvasOffset.dy),
+      trX: (imageSize!.width / canvasSize.width) * (tr.dx - canvasOffset.dx),
+      trY: (imageSize!.height / canvasSize.height) * (tr.dy - canvasOffset.dy),
+      blX: (imageSize!.width / canvasSize.width) * (bl.dx - canvasOffset.dx),
+      blY: (imageSize!.height / canvasSize.height) * (bl.dy - canvasOffset.dy),
+      brX: (imageSize!.width / canvasSize.width) * (br.dx - canvasOffset.dx),
+      brY: (imageSize!.height / canvasSize.height) * (br.dy - canvasOffset.dy),
     );
 
     debugPrint('cropper: ${srcImage!.path}');
