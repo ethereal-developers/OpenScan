@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
 
@@ -286,8 +287,7 @@ class _CropImageState extends State<CropImage> {
             ),
             onPressed: () async {
               setState(() {
-                // TODO: fix this functionality
-                _cropScreen.initPoints(isReset: true);
+                _cropScreen.isReset = true;
               });
             },
           ),
@@ -308,10 +308,7 @@ class _CropImageState extends State<CropImage> {
               ],
             ),
             onPressed: () async {
-              setState(() {
-                _cropScreen.initPoints();
-                // debugPrint('TL: ${_cropScreen.tl}');
-              });
+              setState(() {});
             },
           ),
           ValueListenableBuilder(

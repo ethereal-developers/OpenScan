@@ -27,7 +27,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_speed_dial:
-  # fluttertoast: ^8.0.8
+  fluttertoast:
   focused_menu:
   image:
   image_picker:

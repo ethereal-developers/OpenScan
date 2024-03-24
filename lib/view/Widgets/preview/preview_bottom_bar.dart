@@ -18,7 +18,7 @@ class PreviewScreenBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: Duration(milliseconds: 200),
-      height: isAppBarVisible ? 60.0 : 0.0,
+      height: isAppBarVisible ? 70.0 : 0.0,
       child: Container(
         padding: EdgeInsets.all(8.0),
         color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
@@ -83,6 +83,8 @@ class BottomButton extends StatelessWidget {
       color: Colors.transparent,
       splashColor: Colors.transparent,
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           icon,
           Text(text),

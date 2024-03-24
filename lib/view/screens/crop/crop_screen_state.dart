@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:openscan/core/data/native_android_util.dart';
 
 class CropScreenState {
@@ -22,6 +23,7 @@ class CropScreenState {
   MovingPoint movingPoint = MovingPoint();
   Size imageSizeNative = Size(600.0, 600.0);
   late double tSlope, bSlope, rSlope, lSlope;
+  bool isReset = false;
 
   int errorOffset = 92;
 
@@ -57,15 +59,14 @@ class CropScreenState {
   detectDocument() async {
     await getSize();
 
-    detectedPointsData =
-        await NativeAndroidUtil.detectDocument(srcImage!.path);
+    detectedPointsData = await NativeAndroidUtil.detectDocument(srcImage!.path);
     debugPrint('Points => $detectedPointsData');
 
     detectionCompleted.value = true;
   }
 
   /// Sets detected points on canvas
-  initPoints({bool isReset = false}) {
+  initPoints() {
     double polygonArea = 0;
     double canvasArea = 1;
 
@@ -78,7 +79,21 @@ class CropScreenState {
           canvasOffset.dy + canvasSize.height);
     }
 
-    if (detectedPointsData.isNotEmpty && !isReset) {
+    if (isReset || detectedPointsData.isEmpty) {
+      setPointsToCorner();
+      if (isReset) {
+        isReset = false;
+      } else {
+        Fluttertoast.showToast(
+          msg: "Document not detected",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+      }
+    } else {
       /// Setting corner points to detected location
       /// PointsData: [br,tr,tl,bl]: (width, height)
       tl = Offset(
@@ -107,9 +122,24 @@ class CropScreenState {
 
       if (polygonArea / canvasArea < 0.2) {
         setPointsToCorner();
+        Fluttertoast.showToast(
+          msg: "Document not detected",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
       }
-    } else {
-      setPointsToCorner();
+
+      Fluttertoast.showToast(
+        msg: "Detected document",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
     }
 
     /// Computing center points
@@ -281,7 +311,6 @@ class CropScreenState {
 
   /// Crops and returns the image
   crop() async {
-    // TODO: check why this is NOT WORKING
     bool result = await NativeAndroidUtil.cropImage(
       srcPath: srcImage!.path,
       destPath: destImage!.path,
