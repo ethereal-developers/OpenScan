@@ -288,10 +288,11 @@ class _CropImageState extends State<CropImage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.restore_page),
+                // TODO: finalize on this icon for no crop
+                Icon(Icons.aspect_ratio_rounded),
                 Text(
                   // TODO: i18n
-                  'Reset',
+                  'No Crop',
                   style: TextStyle(fontSize: 9),
                 )
               ],

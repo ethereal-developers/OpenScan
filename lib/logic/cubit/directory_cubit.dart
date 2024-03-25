@@ -183,7 +183,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       // File compressedImage = File(imgPath);
 
       if (image.existsSync()) {
-        debugPrint("imgpath --> ${image.path}");
+        // debugPrint("imgpath --> ${image.path}");
         // getImageSize('Original', image);
         // getImageSize('Compressed', compressedImage);
         // debugPrint('Image = ${Image.file(compressedImage).width}');
