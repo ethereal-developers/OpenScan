@@ -3,12 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
 
-Future<File> generateTempFileAndCropImage(BuildContext context, File srcImage,
-    String dirPath, bool shouldGenerateDestFile) async {
+Future<File> generateTempFileAndCropImage(BuildContext context, File srcImage, String dirPath) async {
+  debugPrint("directory path --> " + dirPath);
   File temp = File(
     dirPath + '/' + DateTime.now().toString() + '.jpg',
   );
@@ -20,8 +19,6 @@ Future<File> imageCropper(
   File srcImage,
   File resultImage,
 ) async {
-  File? croppedImage;
-
   await Navigator.push(
     context,
     MaterialPageRoute(
@@ -30,8 +27,8 @@ Future<File> imageCropper(
         destImage: resultImage,
       ),
     ),
-  ).then((value) => croppedImage = value);
-  return croppedImage ?? srcImage;
+  );
+  return resultImage;
 }
 
 class CropImage extends StatefulWidget {

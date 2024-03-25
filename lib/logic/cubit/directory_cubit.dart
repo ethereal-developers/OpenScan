@@ -170,7 +170,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     } else {
       File? image = await fileOperations.openCamera();
       if (image != null) {
-        imageList = [await generateTempFileAndCropImage(context, image, state.dirPath!, true)];
+        imageList = [await generateTempFileAndCropImage(context, image, state.dirPath!)];
       }
     }
 
