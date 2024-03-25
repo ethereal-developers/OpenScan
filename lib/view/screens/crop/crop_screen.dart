@@ -5,20 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
-
-Future<File> generateTempFileAndCropImage(BuildContext context, File srcImage, String dirPath) async {
-  debugPrint("directory path --> " + dirPath);
-  File temp = File(
-    dirPath + '/' + DateTime.now().toString() + '.jpg',
-  );
-  return imageCropper(context, srcImage, temp);
-}
+import 'package:path_provider/path_provider.dart';
 
 Future<File> imageCropper(
   BuildContext context,
   File srcImage,
-  File resultImage,
 ) async {
+  Directory cacheDir = await getTemporaryDirectory();
+  File resultImage = File(
+    cacheDir.path + '/' + DateTime.now().toString() + '.jpg',
+  );
+
   await Navigator.push(
     context,
     MaterialPageRoute(
@@ -321,6 +318,7 @@ class _CropImageState extends State<CropImage> {
             ),
             onPressed: () async {
               setState(() {});
+              _cropScreen.autoDetectTriggered = true;
             },
           ),
           ValueListenableBuilder(

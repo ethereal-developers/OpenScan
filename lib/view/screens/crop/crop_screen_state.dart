@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:openscan/core/data/native_android_util.dart';
+import 'package:path/path.dart';
 
 class CropScreenState {
   GlobalKey imageKey = GlobalKey();
@@ -24,6 +25,7 @@ class CropScreenState {
   late double tSlope, bSlope, rSlope, lSlope;
   bool isReset = false;
   bool isCroppingLoading = false;
+  bool autoDetectTriggered = false;
 
   int errorOffset = 92;
 
@@ -83,8 +85,9 @@ class CropScreenState {
       setPointsToCorner();
       if (isReset) {
         isReset = false;
-      } else {
+      } else if (autoDetectTriggered) {
         Fluttertoast.showToast(
+          // TODO: need to do i18n
           msg: "Document not detected",
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.CENTER,
@@ -92,6 +95,7 @@ class CropScreenState {
           textColor: Colors.white,
           fontSize: 16.0,
         );
+        autoDetectTriggered = false;
       }
     } else {
       /// Setting corner points to detected location
@@ -122,14 +126,17 @@ class CropScreenState {
 
       if (polygonArea / canvasArea < 0.2) {
         setPointsToCorner();
-        Fluttertoast.showToast(
-          msg: "Document not detected",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          timeInSecForIosWeb: 1,
-          textColor: Colors.white,
-          fontSize: 16.0,
-        );
+        if (autoDetectTriggered) {
+          Fluttertoast.showToast(
+            msg: "Document not detected",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 1,
+            textColor: Colors.white,
+            fontSize: 16.0,
+          );
+          autoDetectTriggered = false;
+        }
       }
     }
 
@@ -315,7 +322,7 @@ class CropScreenState {
       brY: (imageSize!.height / canvasSize.height) * (br.dy - canvasOffset.dy),
     );
 
-    debugPrint('cropper: ${srcImage!.path}');
+    // debugPrint('cropper: ${srcImage!.path}');
   }
 
   /// Gets the current moving point

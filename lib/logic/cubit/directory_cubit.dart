@@ -170,7 +170,12 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     } else {
       File? image = await fileOperations.openCamera();
       if (image != null) {
-        imageList = [await generateTempFileAndCropImage(context, image, state.dirPath!)];
+        imageList = [
+          await imageCropper(
+            context,
+            image,
+          )
+        ];
       }
     }
 
@@ -218,25 +223,17 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
   /// Calls image cropper
   void cropImage(context, ImageOS imageOS) async {
-    // Creating new imagePath for cropped image
-    File temp = File(
-        imageOS.imgPath.substring(0, imageOS.imgPath.lastIndexOf("/")) +
-            '/' +
-            DateTime.now().toString() +
-            '.jpg');
     File original = File(imageOS.imgPath);
-    await imageCropper(
+    File result = await imageCropper(
       context,
       original,
-      temp,
     );
 
-    if (!temp.existsSync()) {
-      original.copySync(temp.path);
+    if (result.existsSync()) {
+      original.deleteSync();
+      result.copySync(original.path);
     }
-
-    original.deleteSync();
-    imageOS.imgPath = temp.path;
+    imageOS.imgPath = original.path;
     debugPrint('Image Cropped');
 
     database.updateImagePath(

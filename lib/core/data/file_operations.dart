@@ -123,7 +123,8 @@ class FileOperations {
     }
 
     File tempPic = File("$dirPath/${DateTime.now()}.jpg");
-    image.copy(tempPic.path);
+    image.copySync(tempPic.path);
+    image.deleteSync();
     database.createImage(
       image: ImageOS(
         imgPath: tempPic.path,
