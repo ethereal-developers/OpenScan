@@ -180,16 +180,31 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
 
     for (File image in imageList) {
-      // Directory cacheDir = await getTemporaryDirectory();
-
-      // String imgPath =
-      //     await NativeAndroidUtil.compress(image.path, cacheDir.path, 90);
-
-      // File compressedImage = File(imgPath);
-
       if (image.existsSync()) {
-        // debugPrint("imgpath --> ${image.path}");
-        // getImageSize('Original', image);
+        debugPrint("imgpath --> ${image.path}");
+        getImageSize('Original', image);
+
+        Directory cacheDir = await getTemporaryDirectory();
+        String imgPath =
+            await NativeAndroidUtil.compress(image.path, cacheDir.path, 70);
+
+        File compressedImage = File(imgPath);
+        if (compressedImage.existsSync()) {
+          image.deleteSync();
+          image = compressedImage;
+        }
+
+        String exifFixedPath = await NativeAndroidUtil.fixRotation(
+          srcPath: image.path,
+          destPath: cacheDir.path,
+        );
+
+        File exifFixedImage = File(exifFixedPath);
+        if (exifFixedImage.existsSync()) {
+          image.deleteSync();
+          image = exifFixedImage;
+        }
+
         // getImageSize('Compressed', compressedImage);
         // debugPrint('Image = ${Image.file(compressedImage).width}');
 
@@ -224,10 +239,13 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   /// Calls image cropper
   void cropImage(context, ImageOS imageOS) async {
     File original = File(imageOS.imgPath);
+    debugPrint("originalllll ${imageOS.imgPath}");
+
     File result = await imageCropper(
       context,
       original,
     );
+    debugPrint("cropresultttt ${result.path}");
 
     if (result.existsSync()) {
       original.deleteSync();

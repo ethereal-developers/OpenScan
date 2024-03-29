@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:openscan/core/data/native_android_util.dart';
-import 'package:path/path.dart';
 
 class CropScreenState {
   GlobalKey imageKey = GlobalKey();
@@ -23,11 +22,11 @@ class CropScreenState {
   MovingPoint movingPoint = MovingPoint();
   Size imageSizeNative = Size(600.0, 600.0);
   late double tSlope, bSlope, rSlope, lSlope;
-  bool isReset = false;
-  bool isCroppingLoading = false;
   bool autoDetectTriggered = false;
 
   int errorOffset = 92;
+
+  ValueNotifier<bool> renderBoxReady = ValueNotifier(false);
 
   /// Scales image up or down while rotating
   bool scaleImage = false;
@@ -38,8 +37,8 @@ class CropScreenState {
   /// Reverse step when neighbor crosses over: 11
   int crossoverAdjust = 11;
 
-  /// Detects point from a distance: 20
-  int pickupDistance = 20;
+  /// Detects point from specified distance
+  int pickupDistance = 40;
 
   /// Notifies magnifier when points move
   ValueNotifier<bool> showMagnifier = ValueNotifier(false);
@@ -50,21 +49,29 @@ class CropScreenState {
   /// Notifies canvas when canvas image has rendered
   ValueNotifier<bool> imageRendered = ValueNotifier(false);
 
-  /// Notifies canvas when edge detection is completed
-  late ValueNotifier<bool> detectionCompleted = ValueNotifier(false);
-
   /// Notifies polygon when points are moved
   ValueNotifier<DragUpdateDetails> updatedPoint =
       ValueNotifier(DragUpdateDetails(globalPosition: Offset.zero));
 
   /// Edges of document is detected and plotted on canvas
   detectDocument() async {
-    await getSize();
-
     detectedPointsData = await NativeAndroidUtil.detectDocument(srcImage!.path);
     // debugPrint('Points => $detectedPointsData');
+  }
 
-    detectionCompleted.value = true;
+  /// Setting corner points to boundary
+  setPointsToCorner() {
+    tl = Offset(canvasOffset.dx, canvasOffset.dy);
+    tr = Offset(canvasOffset.dx + canvasSize.width, canvasOffset.dy);
+    bl = Offset(canvasOffset.dx, canvasOffset.dy + canvasSize.height);
+    br = Offset(canvasOffset.dx + canvasSize.width,
+        canvasOffset.dy + canvasSize.height);
+
+    /// Computing center points
+    t = Offset((tl.dx + tr.dx) / 2, (tl.dy + tr.dy) / 2);
+    b = Offset((bl.dx + br.dx) / 2, (bl.dy + br.dy) / 2);
+    l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
+    r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
   }
 
   /// Sets detected points on canvas
@@ -72,20 +79,9 @@ class CropScreenState {
     double polygonArea = 0;
     double canvasArea = 1;
 
-    /// Setting corner points to boundary
-    setPointsToCorner() {
-      tl = Offset(canvasOffset.dx, canvasOffset.dy);
-      tr = Offset(canvasOffset.dx + canvasSize.width, canvasOffset.dy);
-      bl = Offset(canvasOffset.dx, canvasOffset.dy + canvasSize.height);
-      br = Offset(canvasOffset.dx + canvasSize.width,
-          canvasOffset.dy + canvasSize.height);
-    }
-
-    if (isReset || detectedPointsData.isEmpty) {
+    if (detectedPointsData.isEmpty) {
       setPointsToCorner();
-      if (isReset) {
-        isReset = false;
-      } else if (autoDetectTriggered) {
+      if (autoDetectTriggered) {
         Fluttertoast.showToast(
           // TODO: need to do i18n
           msg: "Document not detected",
@@ -156,6 +152,7 @@ class CropScreenState {
     // debugPrint('TR => $tr');
     // debugPrint('BL => $bl');
     // debugPrint('BR => $br');
+    // debugPrint('movingpoint name => ${movingPoint.name}');
 
     if (movingPoint.name == 'tl') {
       Offset tlTemp =
@@ -327,40 +324,44 @@ class CropScreenState {
 
   /// Gets the current moving point
   getMovingPoint(DragStartDetails startDetails) {
+  //   debugPrint("yo0 ${startDetails.globalPosition}");
+  //   debugPrint("yo1 ${startDetails.localPosition}");
+  //   debugPrint("yo2 ${tl}");
     if (getDistance(startDetails.globalPosition.dx,
             startDetails.globalPosition.dy, tl.dx, tl.dy + errorOffset) <
-        pickupDistance)
+        pickupDistance) {
       movingPoint.name = 'tl';
-    else if (getDistance(startDetails.globalPosition.dx,
+    } else if (getDistance(startDetails.globalPosition.dx,
             startDetails.globalPosition.dy, tr.dx, tr.dy + errorOffset) <
-        pickupDistance)
+        pickupDistance) {
       movingPoint.name = 'tr';
-    else if (getDistance(startDetails.globalPosition.dx,
+    } else if (getDistance(startDetails.globalPosition.dx,
             startDetails.globalPosition.dy, bl.dx, bl.dy + errorOffset) <
-        pickupDistance)
+        pickupDistance) {
       movingPoint.name = 'bl';
-    else if (getDistance(startDetails.globalPosition.dx,
+    } else if (getDistance(startDetails.globalPosition.dx,
             startDetails.globalPosition.dy, br.dx, br.dy + errorOffset) <
-        pickupDistance)
+        pickupDistance) {
       movingPoint.name = 'br';
-    else if (getDistance(startDetails.globalPosition.dx,
+    } else if (getDistance(startDetails.globalPosition.dx,
             startDetails.globalPosition.dy, t.dx, t.dy + errorOffset) <
-        pickupDistance)
+        pickupDistance) {
       movingPoint.name = 't';
-    else if (getDistance(startDetails.globalPosition.dx,
+    } else if (getDistance(startDetails.globalPosition.dx,
             startDetails.globalPosition.dy, b.dx, b.dy + errorOffset) <
-        pickupDistance)
+        pickupDistance) {
       movingPoint.name = 'b';
-    else if (getDistance(startDetails.globalPosition.dx,
+    } else if (getDistance(startDetails.globalPosition.dx,
             startDetails.globalPosition.dy, l.dx, l.dy + errorOffset) <
-        pickupDistance)
+        pickupDistance) {
       movingPoint.name = 'l';
-    else if (getDistance(startDetails.globalPosition.dx,
+    } else if (getDistance(startDetails.globalPosition.dx,
             startDetails.globalPosition.dy, r.dx, r.dy + errorOffset) <
-        pickupDistance)
+        pickupDistance) {
       movingPoint.name = 'r';
-    else
+    } else {
       movingPoint.name = 'none';
+    }
   }
 
   /// Calculates displacement of point wrt to slope
@@ -484,6 +485,8 @@ class CropScreenState {
     getRenderedBoxSize();
     // debugPrint(
     //     'Orginal Image=> ${imageSize!.width} / ${imageSize!.height} = $aspectRatio');
+    renderBoxReady.value = true;
+    initPoints();
   }
 
   /// Gets the size of image canvas
@@ -491,20 +494,20 @@ class CropScreenState {
     RenderBox imageBox =
         imageKey.currentContext!.findRenderObject() as RenderBox;
     canvasSize = imageBox.size;
-    debugPrint(
-        'Renderbox=> $canvasSize=> ${canvasSize.width / canvasSize.height}');
+    // debugPrint(
+    //     'Renderbox=> $canvasSize=> ${canvasSize.width / canvasSize.height}');
 
     canvasOffset = imageBox.localToGlobal(
       Offset.zero,
       ancestor: bodyKey.currentContext!.findRenderObject() as RenderBox,
     );
-    debugPrint('Canvas Offset => $canvasOffset');
+    // debugPrint('Canvas Offset => $canvasOffset');
 
     verticalScaleFactor = screenSize.height / imageBox.size.width;
-    debugPrint('VerticalScaleFactor=> $verticalScaleFactor');
+    // debugPrint('VerticalScaleFactor=> $verticalScaleFactor');
 
     horizontalScaleFactor = screenSize.width / imageBox.size.height;
-    debugPrint('HorizontalScaleFactor=> $horizontalScaleFactor');
+    // debugPrint('HorizontalScaleFactor=> $horizontalScaleFactor');
 
     imageRendered.value = true;
   }
@@ -545,6 +548,7 @@ class CropScreenState {
   ///
   /// Returns: Distance [double]
   double getDistance(double x1, double y1, double x2, double y2) {
+    // debugPrint("x1 $x1 -- y1 $y1 -- x2 $x2 -- y2 $y2 ==== ${sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2))}");
     return sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
   }
 }

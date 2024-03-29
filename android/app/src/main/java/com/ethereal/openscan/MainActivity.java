@@ -2,6 +2,8 @@ package com.ethereal.openscan;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -78,6 +80,47 @@ public class MainActivity extends FlutterActivity {
                                             }
                                         } catch (Exception ignored) {
                                         }
+                                    }
+                                    break;
+                                }
+                                case "fixRotation": {
+                                    String srcPath = call.argument("srcPath");
+                                    String destPath = call.argument("destPath");
+                                    String fileName = String.format("%s/%d.jpg", destPath, System.currentTimeMillis());
+                                    try {
+                                        ExifInterface exif = new ExifInterface(srcPath);
+                                        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                                        int rotationAngle = 0;
+                                        switch (orientation) {
+                                            case ExifInterface.ORIENTATION_ROTATE_90:
+                                                rotationAngle = 90;
+                                                break;
+                                            case ExifInterface.ORIENTATION_ROTATE_180:
+                                                rotationAngle = 180;
+                                                break;
+                                            case ExifInterface.ORIENTATION_ROTATE_270:
+                                                rotationAngle = 270;
+                                                break;
+                                        }
+                                        Bitmap bitmap = BitmapFactory.decodeFile(srcPath);
+                                        Matrix matrix = new Matrix();
+                                        matrix.setRotate(rotationAngle, (float) bitmap.getWidth() / 2, (float) bitmap.getHeight() / 2);
+                                        Bitmap bmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                                        FileOutputStream stream = null;
+                                        try {
+                                            stream = new FileOutputStream(fileName);
+                                            bmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                                            result.success(fileName);
+                                        } catch (FileNotFoundException e) {
+                                            e.printStackTrace();
+                                        } finally {
+                                            if (stream != null) {
+                                                stream.close();
+                                            }
+                                            bmap.recycle();
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
                                     }
                                     break;
                                 }

@@ -4,20 +4,27 @@ class NativeAndroidUtil {
   static MethodChannel _channel =
       new MethodChannel('com.ethereal.openscan/cropper');
 
+  static String _GET_IMAGE_SIZE = "getImageSize";
+  static String _DETECT_DOCUMENT = "detectDocument";
+  static String _COMPRESS = "compress";
+  static String _ROTATE_IMAGE = "rotateImage";
+  static String _CROP_IMAGE = "cropImage";
+  static String _FIX_ROTATION = "fixRotation";
+
   static Future getImageSize(String path) async {
-    return _channel.invokeMethod("getImageSize", {
+    return _channel.invokeMethod(_GET_IMAGE_SIZE, {
       "path": path,
     });
   }
 
   static Future detectDocument(String path) {
-    return _channel.invokeMethod("detectDocument", {
+    return _channel.invokeMethod(_DETECT_DOCUMENT, {
       "path": path,
     });
   }
 
   static Future compress(String src, String dest, int desiredQuality) async {
-    return _channel.invokeMethod('compress', {
+    return _channel.invokeMethod(_COMPRESS, {
       "src": src,
       "dest": dest,
       "desiredQuality": desiredQuality,
@@ -25,7 +32,7 @@ class NativeAndroidUtil {
   }
 
   static Future rotate(String imgPath, int degree) async {
-    return _channel.invokeMethod('rotateImage', {
+    return _channel.invokeMethod(_ROTATE_IMAGE, {
       'path': imgPath,
       'degree': degree,
     });
@@ -42,7 +49,7 @@ class NativeAndroidUtil {
       required double blY,
       required double brX,
       required double brY}) async {
-    return _channel.invokeMethod('cropImage', {
+    return _channel.invokeMethod(_CROP_IMAGE, {
       "srcPath": srcPath,
       "destPath": destPath,
       "tl_x": "$tlX",
@@ -53,6 +60,13 @@ class NativeAndroidUtil {
       "bl_y": "$blY",
       "br_x": "$brX",
       "br_y": "$brY",
+    });
+  }
+
+  static Future fixRotation({required String srcPath, required String destPath}) {
+    return _channel.invokeMethod(_FIX_ROTATION, {
+      "srcPath": srcPath,
+      "destPath": destPath,
     });
   }
 }

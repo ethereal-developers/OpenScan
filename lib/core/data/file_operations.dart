@@ -66,7 +66,7 @@ class FileOperations {
   /// Returns: Picked image [File]
   Future<File?> openCamera() async {
     File? image;
-    var picture = await ImagePicker().pickImage(source: ImageSource.camera);
+    XFile? picture = await ImagePicker().pickImage(source: ImageSource.camera);
     if (picture != null) {
       image = File(picture.path);
     }

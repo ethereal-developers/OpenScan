@@ -39,8 +39,9 @@ class _PreviewScreenState extends State<PreviewScreen>
   late PageController pageController;
 
   void doubleTapImageZoom() async {
-        //TODO: Generalize method
-    debugPrint((_transformationController.value == Matrix4.identity()).toString());
+    //TODO: Generalize method
+    debugPrint(
+        (_transformationController.value == Matrix4.identity()).toString());
 
     final position = _doubleTapDetails.localPosition;
 
@@ -108,7 +109,9 @@ class _PreviewScreenState extends State<PreviewScreen>
         extendBodyBehindAppBar: true,
         backgroundColor: Theme.of(context).primaryColor,
         body: BlocConsumer<DirectoryCubit, DirectoryState>(
-          listener: (context, state) {},
+          listener: (context, state) {
+            // debugPrint('${state.images![pageController.page!.round()]}');
+          },
           builder: (context, state) {
             return Stack(
               children: [
@@ -277,8 +280,6 @@ class _PreviewScreenState extends State<PreviewScreen>
                   context,
                   state.images![pageController.page!.round()],
                 );
-                // TODO: check why this is needed and emit(state) doesn't work
-                setState(() {});
               },
               deleteOnPressed: () {
                 showDialog(
@@ -286,14 +287,17 @@ class _PreviewScreenState extends State<PreviewScreen>
                   builder: (_) {
                     return DeleteDialog(
                       deleteOnPressed: () async {
-                        bool directoryDeleted = await BlocProvider.of<DirectoryCubit>(context).deleteImage(
+                        bool directoryDeleted =
+                            await BlocProvider.of<DirectoryCubit>(context)
+                                .deleteImage(
                           context,
                           imageToDelete:
                               state.images![pageController.page!.toInt()],
                         );
                         Navigator.pop(context);
                         if (directoryDeleted) {
-                          Navigator.popUntil(context, ModalRoute.withName(AppRouter.HOME_SCREEN));
+                          Navigator.popUntil(context,
+                              ModalRoute.withName(AppRouter.HOME_SCREEN));
                           // Navigator.pop(context);
                           // Navigator.pop(context);
                         }

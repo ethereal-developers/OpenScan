@@ -3,6 +3,7 @@ package com.ethereal.openscan;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.os.Build;
 import android.util.Log;
 
@@ -60,14 +61,18 @@ public class ImageUtil {
 
             Bitmap cropped = Bitmap.createBitmap(maxWidth, maxHeight, Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(resultDoc, cropped);
-            FileOutputStream stream;
+            FileOutputStream stream = null;
             try {
                 stream = new FileOutputStream(destPath);
+                cropped.compress(Bitmap.CompressFormat.JPEG, 100, stream);
             } catch (FileNotFoundException e) {
                 Log.e(TAG, "Perspective crop done, but error while creating output file stream --> ", e);
                 return false;
+            } finally {
+                if (stream != null) {
+                    stream.close();
+                }
             }
-            cropped.compress(Bitmap.CompressFormat.JPEG, 100, stream);
 
             mat.release();
             resultDoc.release();
@@ -81,6 +86,11 @@ public class ImageUtil {
             return false;
         }
         return true;
+    }
+
+    public static String fixRotation(String srcPath, String destPath) {
+
+        return srcPath;
     }
 
     public static Map<String, Integer> getImageSize(String path) {
@@ -112,14 +122,13 @@ public class ImageUtil {
             FileOutputStream stream = null;
             try {
                 stream = new FileOutputStream(path);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
-            }
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-            try {
-                stream.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+            } finally {
+                if (stream != null) {
+                    stream.close();
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "Exception while rotating image --> ", e);

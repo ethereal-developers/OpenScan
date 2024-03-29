@@ -5,6 +5,7 @@ import 'package:openscan/view/screens/demo_screen.dart';
 import 'package:openscan/view/screens/home_screen.dart';
 import 'package:openscan/view/screens/preview_screen.dart';
 import 'package:openscan/view/screens/view_screen.dart';
+import 'package:openscan/view/screens/camera_screen.dart';
 
 class AppRouter {
   static const String ABOUT_SCREEN = 'AboutScreen';
@@ -13,6 +14,7 @@ class AppRouter {
   static const String HOME_SCREEN = 'HomeScreen';
   static const String PREVIEW_SCREEN = 'PreviewScreen';
   static const String VIEW_SCREEN = 'ViewScreen';
+  static const String CAMERA_SCREEN = 'CameraScreen';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -45,6 +47,11 @@ class AppRouter {
         return MaterialPageRoute(
           settings: RouteSettings(name: AppRouter.VIEW_SCREEN),
           builder: (_) => ViewScreen(),
+        );
+      case AppRouter.CAMERA_SCREEN:
+        return MaterialPageRoute(
+          settings: RouteSettings(name: AppRouter.CAMERA_SCREEN),
+          builder: (_) => CameraScreen(),
         );
       default:
         return MaterialPageRoute(

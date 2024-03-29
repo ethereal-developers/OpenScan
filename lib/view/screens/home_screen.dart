@@ -13,6 +13,7 @@ import 'package:openscan/view/Widgets/FAB.dart';
 import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/drawer.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
+import 'package:openscan/view/screens/camera_screen.dart';
 import 'package:openscan/view/screens/view_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quick_actions/quick_actions.dart';

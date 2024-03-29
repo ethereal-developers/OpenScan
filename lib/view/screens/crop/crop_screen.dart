@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
@@ -40,7 +41,6 @@ class CropImage extends StatefulWidget {
 class _CropImageState extends State<CropImage> {
   CropScreenState _cropScreen = CropScreenState();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool cropLoading = false;
 
   @override
   initState() {
@@ -89,133 +89,92 @@ class _CropImageState extends State<CropImage> {
               },
             ),
           ),
-          body: GestureDetector(
-            key: _cropScreen.bodyKey,
-            onPanUpdate: (updateDetails) {
-              _cropScreen.updatedPoint.value = updateDetails;
-              _cropScreen.updatePolygon();
-            },
-            onPanStart: (startDetails) {
-              _cropScreen.calculateAllSlopes();
-              _cropScreen.getMovingPoint(startDetails);
-              if (_cropScreen.movingPoint.name != 'none')
-                _cropScreen.showMagnifier.value = true;
-            },
-            onPanEnd: (details) {
-              _cropScreen.movingPoint.name = 'none';
-              _cropScreen.movingPoint.offset = Offset.zero;
-              _cropScreen.showMagnifier.value = false;
-            },
-            child: Container(
-              // width: _cropScreen.screenSize.width,
-              // height: _cropScreen.screenSize.height,
-              color: Theme.of(context).primaryColor,
+          body: Container(
+            // width: _cropScreen.screenSize.width,
+            // height: _cropScreen.screenSize.height,
+            color: Theme.of(context).primaryColor,
+            child: GestureDetector(
+              key: _cropScreen.bodyKey,
+              onPanStart: (startDetails) {
+                _cropScreen.calculateAllSlopes();
+                _cropScreen.getMovingPoint(startDetails);
+                if (_cropScreen.movingPoint.name != 'none')
+                  _cropScreen.showMagnifier.value = true;
+              },
+              onPanUpdate: (updateDetails) {
+                _cropScreen.updatedPoint.value = updateDetails;
+                _cropScreen.updatePolygon();
+              },
+              onPanEnd: (details) {
+                _cropScreen.movingPoint.name = 'none';
+                _cropScreen.movingPoint.offset = Offset.zero;
+                _cropScreen.showMagnifier.value = false;
+              },
               child: Stack(
                 children: [
-                  /// Image Container
                   Container(
-                    padding: EdgeInsets.all(13),
                     alignment: Alignment.center,
-                    child: !cropLoading
-                        ? TweenAnimationBuilder(
-                            tween: Tween(
-                              begin: 1.0,
-                              end: _cropScreen.scaleImage
-                                  ? _cropScreen.aspectRatio
-                                  : 1.0,
-                            ),
-                            duration: Duration(milliseconds: 100),
-                            builder: ((_, double scale, __) {
-                              return Transform.scale(
-                                scale: scale,
-                                child: Image(
-                                  key: _cropScreen.imageKey,
-                                  image: FileImage(_cropScreen.srcImage!),
-                                  loadingBuilder:
-                                      ((context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Center(
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                      ),
-                                    );
-                                  }),
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Icon(
-                                        Icons.error_rounded,
-                                        color: Colors.red,
-                                        size: 30,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            }),
-                          )
-                        : CircularProgressIndicator(
-                            strokeWidth: 4,
-                            valueColor: AlwaysStoppedAnimation(
-                              Theme.of(context).colorScheme.secondary,
-                            ),
+                    padding: EdgeInsets.all(16.0),
+                    child: Image(
+                      key: _cropScreen.imageKey,
+                      image: FileImage(_cropScreen.srcImage!),
+                      loadingBuilder: ((context, child, loadingProgress) {
+                        if (loadingProgress == null) {
+                          WidgetsBinding.instance
+                              .addPostFrameCallback((_) async {
+                            await _cropScreen.getSize();
+                          });
+                          return child;
+                        }
+                        ;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
                           ),
+                        );
+                      }),
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Icon(
+                            Icons.error_rounded,
+                            color: Colors.red,
+                            size: 30,
+                          ),
+                        );
+                      },
+                    ),
                   ),
 
                   /// Points Container
                   ValueListenableBuilder(
-                    valueListenable: _cropScreen.detectionCompleted,
-                    builder: (context, bool _documentDetected, _) {
-                      if (_cropScreen.isCroppingLoading) {
+                    valueListenable: _cropScreen.renderBoxReady,
+                    builder: (BuildContext context, bool value, Widget? child) {
+                      if (value) {
                         return Positioned.fill(
-                          child: Container(
-                            color:
-                                Theme.of(context).primaryColor.withOpacity(0.7),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                              ),
-                            ),
+                          child: ValueListenableBuilder(
+                              valueListenable: _cropScreen.updatedPoint,
+                              builder: (context, _, __) {
+                                return CustomPaint(
+                                  painter: PolygonPainter(
+                                    tl: _cropScreen.tl,
+                                    tr: _cropScreen.tr,
+                                    bl: _cropScreen.bl,
+                                    br: _cropScreen.br,
+                                    t: _cropScreen.t,
+                                    l: _cropScreen.l,
+                                    b: _cropScreen.b,
+                                    r: _cropScreen.r,
+                                  ),
+                                );
+                              }),
+                        );
+                      } else {
+                        return Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
                           ),
                         );
                       }
-                      if (_documentDetected) {
-                        /// This snippet is crucial, but idk how it works
-                        _cropScreen.getRenderedBoxSize();
-                        _cropScreen.initPoints();
-                      }
-                      return _documentDetected
-                          ? _cropScreen.imageRendered.value
-                              ? Positioned.fill(
-                                  child: ValueListenableBuilder(
-                                      valueListenable: _cropScreen.updatedPoint,
-                                      builder: (context, _updatedPoint, _) {
-                                        return CustomPaint(
-                                          painter: PolygonPainter(
-                                            tl: _cropScreen.tl,
-                                            tr: _cropScreen.tr,
-                                            bl: _cropScreen.bl,
-                                            br: _cropScreen.br,
-                                            t: _cropScreen.t,
-                                            l: _cropScreen.l,
-                                            b: _cropScreen.b,
-                                            r: _cropScreen.r,
-                                          ),
-                                        );
-                                      }),
-                                )
-                              : Container()
-                          : Positioned.fill(
-                              child: Container(
-                                color: Theme.of(context)
-                                    .primaryColor
-                                    .withOpacity(0.7),
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            );
                     },
                   ),
 
@@ -295,9 +254,8 @@ class _CropImageState extends State<CropImage> {
               ],
             ),
             onPressed: () async {
-              setState(() {
-                _cropScreen.isReset = true;
-              });
+              _cropScreen.setPointsToCorner();
+              setState(() {});
             },
           ),
           MaterialButton(
@@ -317,45 +275,34 @@ class _CropImageState extends State<CropImage> {
               ],
             ),
             onPressed: () async {
-              setState(() {});
               _cropScreen.autoDetectTriggered = true;
+              setState(() {});
             },
           ),
-          ValueListenableBuilder(
-            valueListenable: _cropScreen.imageRendered,
-            builder: (context, bool _imageRendered, _) {
-              return MaterialButton(
-                onPressed: _imageRendered
-                    ? () async {
-                        setState(() {
-                          cropLoading = true;
-                          _cropScreen.isCroppingLoading = true;
-                        });
-                        await _cropScreen.crop();
-                        Navigator.pop(context, _cropScreen.srcImage);
-                      }
-                    : () {},
-                color: _imageRendered || !cropLoading
-                    ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.secondary.withOpacity(0.6),
-                splashColor: Colors.transparent,
-                disabledColor:
-                    Theme.of(context).colorScheme.secondary.withOpacity(0.5),
-                disabledTextColor: Colors.white.withOpacity(0.5),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.done),
-                    Text(
-                      // TODO: i18n
-                      'Done',
-                      style: TextStyle(fontSize: 9),
-                    )
-                  ],
-                ),
-              );
+          MaterialButton(
+            onPressed: () async {
+              if (_cropScreen.renderBoxReady.value) {
+                await _cropScreen.crop();
+                Navigator.pop(context, _cropScreen.srcImage);
+              }
             },
-          )
+            color: Theme.of(context).colorScheme.secondary,
+            splashColor: Colors.transparent,
+            disabledColor:
+                Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+            disabledTextColor: Colors.white.withOpacity(0.5),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.done),
+                Text(
+                  // TODO: i18n
+                  'Done',
+                  style: TextStyle(fontSize: 9),
+                )
+              ],
+            ),
+          ),
         ],
       ),
     );
