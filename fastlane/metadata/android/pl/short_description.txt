@@ -1,0 +1,1 @@
+Skanowanie dokumentów do pliku PDF lub kilku obrazów i udostępnianie ich kontaktom.
