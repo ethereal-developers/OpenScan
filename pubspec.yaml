@@ -5,43 +5,52 @@ description: An open source app that enables users to scan hardcopies of
 
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
-version: 2.2.0+4
+version: 3.0.0+5
 
 environment:
-  sdk: '>=3.2.4 <4.0.0'
+  sdk: '>=2.17.0 <3.0.0'
 
 dependencies:
+  bloc: ^8.1.0
+  # camera: ^0.10.0+1
+  camera:
+  video_player:
+  cupertino_icons:
+  exif:
   flutter:
     sdk: flutter
-  flutter_scanner_cropper:
-    git:
-      url: https://github.com/Ethereal-Developers-Inc/flutter-scanner-plugin.git
-      ref: master
-      path: flutter_scanner_cropper/
-  cupertino_icons:
+  flutter_bloc: ^8.1.1
+  # flutter_neumorphic: ^3.1.0
+  flutter_localizations:
+    sdk: flutter
   flutter_speed_dial:
+  fluttertoast:
   focused_menu:
+  image:
   image_picker:
+  intl:
+  multi_image_picker:
   open_filex:
+  path:
   path_provider:
   pdf:
   permission_handler:
   quick_actions:
   reorderables:
+  sensors_plus:
   share_extend:
   shared_preferences:
   simple_animated_icon:
   sqflite:
   url_launcher:
+  vector_math: 
 
-  path: any
-  flutter_gen: any
-  vector_math: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
 flutter:
+  generate: true
   uses-material-design: true
 
   assets:

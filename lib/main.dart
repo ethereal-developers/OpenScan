@@ -1,15 +1,24 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:openscan/Utilities/Classes.dart';
-import 'Utilities/constants.dart';
-import 'screens/about_screen.dart';
-import 'screens/getting_started_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/view_document.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:openscan/config/globals.dart';
+import 'package:openscan/core/appRouter.dart';
+import 'package:openscan/l10n/l10n.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'screens/splash_screen.dart';
+import 'core/theme/appTheme.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  Globals.cameras = await availableCameras();
+  debugPrint('Cameras => ');
+  Globals.cameras.every((cameraDescription) {
+    debugPrint(
+        '${cameraDescription.name} : ${cameraDescription.lensDirection}: ${cameraDescription.sensorOrientation}');
+    return true;
+  });
+
   runApp(OpenScan());
 }
 
@@ -17,29 +26,36 @@ class OpenScan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: primaryColor,
+      systemNavigationBarColor: AppTheme.primaryColor,
       systemNavigationBarIconBrightness: Brightness.light,
-      statusBarColor: primaryColor,
-      statusBarBrightness: Brightness.light,
+      systemNavigationBarDividerColor: AppTheme.primaryColor,
+      statusBarIconBrightness: Brightness.light,
+      statusBarColor: AppTheme.primaryColor,
+      statusBarBrightness: Brightness.dark,
     ));
-    SystemChrome.setPreferredOrientations(
-        [DeviceOrientation.portraitDown, DeviceOrientation.portraitUp]);
+    // SystemChrome.setEnabledSystemUIOverlays([
+    //   SystemUiOverlay.bottom,
+    //   SystemUiOverlay.top,
+    // ]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.portraitUp,
+    ]);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        colorScheme: ThemeData.dark().colorScheme.copyWith(
-          secondary: secondaryColor,
-        ),
-      ),
-      initialRoute: SplashScreen.route,
-      routes: {
-        SplashScreen.route: (context) => SplashScreen(),
-        GettingStartedScreen.route: (context) => GettingStartedScreen(),
-        HomeScreen.route: (context) => HomeScreen(),
-        ViewDocument.route: (context) => ViewDocument(directoryOS: DirectoryOS()),
-        AboutScreen.route: (context) => AboutScreen(),
-      },
+      // theme: ThemeData.dark().copyWith(colorScheme.secondary: AppTheme.colorScheme.secondary),
+      theme: AppTheme.appTheme,
+      themeMode: ThemeMode.dark,
+      initialRoute: AppRouter.HOME_SCREEN,
+      onGenerateRoute: AppRouter.onGenerateRoute,
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: L10n.all,
     );
   }
 }
