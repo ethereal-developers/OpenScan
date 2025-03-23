@@ -38,7 +38,7 @@ class CropScreenState {
   int crossoverAdjust = 11;
 
   /// Detects point from specified distance
-  int pickupDistance = 40;
+  int pickupDistance = 80;
 
   /// Notifies magnifier when points move
   ValueNotifier<bool> showMagnifier = ValueNotifier(false);
@@ -83,8 +83,7 @@ class CropScreenState {
       setPointsToCorner();
       if (autoDetectTriggered) {
         Fluttertoast.showToast(
-          // TODO: need to do i18n
-          msg: "Document not detected",
+          msg: "No document detected",
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.CENTER,
           timeInSecForIosWeb: 1,
@@ -93,47 +92,50 @@ class CropScreenState {
         );
         autoDetectTriggered = false;
       }
-    } else {
-      /// Setting corner points to detected location
-      /// PointsData: [br,tr,tl,bl]: (width, height)
-      tl = Offset(
-          (detectedPointsData[0][0] / imageSize!.width) * canvasSize.width +
-              canvasOffset.dx,
-          (detectedPointsData[0][1] / imageSize!.height) * canvasSize.height +
-              canvasOffset.dy);
-      tr = Offset(
-          (detectedPointsData[1][0] / imageSize!.width) * canvasSize.width +
-              canvasOffset.dx,
-          (detectedPointsData[1][1] / imageSize!.height) * canvasSize.height +
-              canvasOffset.dy);
-      br = Offset(
-          (detectedPointsData[2][0] / imageSize!.width) * canvasSize.width +
-              canvasOffset.dx,
-          (detectedPointsData[2][1] / imageSize!.height) * canvasSize.height +
-              canvasOffset.dy);
-      bl = Offset(
-          (detectedPointsData[3][0] / imageSize!.width) * canvasSize.width +
-              canvasOffset.dx,
-          (detectedPointsData[3][1] / imageSize!.height) * canvasSize.height +
-              canvasOffset.dy);
+      return;
+    }
 
-      polygonArea = areaOfQuadrilateral(tl, tr, bl, br);
-      canvasArea = canvasSize.width * canvasSize.height;
+    /// Setting corner points to detected location
+    /// PointsData: [br,tr,tl,bl]: (width, height)
+    tl = Offset(
+        (detectedPointsData[0][0] / imageSize!.width) * canvasSize.width +
+            canvasOffset.dx,
+        (detectedPointsData[0][1] / imageSize!.height) * canvasSize.height +
+            canvasOffset.dy);
+    tr = Offset(
+        (detectedPointsData[1][0] / imageSize!.width) * canvasSize.width +
+            canvasOffset.dx,
+        (detectedPointsData[1][1] / imageSize!.height) * canvasSize.height +
+            canvasOffset.dy);
+    br = Offset(
+        (detectedPointsData[2][0] / imageSize!.width) * canvasSize.width +
+            canvasOffset.dx,
+        (detectedPointsData[2][1] / imageSize!.height) * canvasSize.height +
+            canvasOffset.dy);
+    bl = Offset(
+        (detectedPointsData[3][0] / imageSize!.width) * canvasSize.width +
+            canvasOffset.dx,
+        (detectedPointsData[3][1] / imageSize!.height) * canvasSize.height +
+            canvasOffset.dy);
 
-      if (polygonArea / canvasArea < 0.2) {
-        setPointsToCorner();
-        if (autoDetectTriggered) {
-          Fluttertoast.showToast(
-            msg: "Document not detected",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.CENTER,
-            timeInSecForIosWeb: 1,
-            textColor: Colors.white,
-            fontSize: 16.0,
-          );
-          autoDetectTriggered = false;
-        }
+    polygonArea = areaOfQuadrilateral(tl, tr, bl, br);
+    canvasArea = canvasSize.width * canvasSize.height;
+
+    // If the detected area is less than 10% of the total image area, consider it too small
+    if (polygonArea / canvasArea < 0.1) {
+      setPointsToCorner();
+      if (autoDetectTriggered) {
+        Fluttertoast.showToast(
+          msg: "No document detected",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+        autoDetectTriggered = false;
       }
+      return;
     }
 
     /// Computing center points
@@ -145,20 +147,22 @@ class CropScreenState {
 
   /// Updates the points in the polygon when changed manually
   updatePolygon() {
-    // debugPrint('Updated Point (local) => ${updatedPoint.value.localPosition}');
-    // debugPrint(
-    //     'Updated Point (global) => ${updatedPoint.value.globalPosition}');
-    // debugPrint('TL => $tl');
-    // debugPrint('TR => $tr');
-    // debugPrint('BL => $bl');
-    // debugPrint('BR => $br');
-    // debugPrint('movingpoint name => ${movingPoint.name}');
+    print('Updating polygon for point: ${movingPoint.name}');
+
+    // Convert global position to local position relative to the canvas
+    final localPosition = Offset(
+        updatedPoint.value.globalPosition.dx - canvasOffset.dx,
+        updatedPoint.value.globalPosition.dy - canvasOffset.dy);
+
+    print('Local position: $localPosition');
+
+    if (movingPoint.name == 'none') {
+      print('No point selected for movement');
+      return;
+    }
 
     if (movingPoint.name == 'tl') {
-      Offset tlTemp =
-          constraintPointToBoundary(updatedPoint.value.globalPosition);
-
-      // localToGlobal(updatedPoint.value.globalPosition)
+      Offset tlTemp = constraintPointToBoundary(localPosition);
       if (checkPolygon(tlTemp, br, tr, bl)) {
         if (!checkCrossover(tlTemp, tr, bl, br, t, b, l, r)) {
           tl = tlTemp;
@@ -168,8 +172,7 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'tr') {
-      Offset trTemp =
-          constraintPointToBoundary(updatedPoint.value.globalPosition);
+      Offset trTemp = constraintPointToBoundary(localPosition);
       if (checkPolygon(tl, br, trTemp, bl)) {
         if (!checkCrossover(tl, trTemp, bl, br, t, b, l, r)) {
           tr = trTemp;
@@ -179,8 +182,7 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'bl') {
-      Offset blTemp =
-          constraintPointToBoundary(updatedPoint.value.globalPosition);
+      Offset blTemp = constraintPointToBoundary(localPosition);
       if (checkPolygon(tl, br, tr, blTemp)) {
         if (!checkCrossover(tl, tr, blTemp, br, t, b, l, r)) {
           bl = blTemp;
@@ -190,8 +192,7 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'br') {
-      Offset brTemp =
-          constraintPointToBoundary(updatedPoint.value.globalPosition);
+      Offset brTemp = constraintPointToBoundary(localPosition);
       if (checkPolygon(tl, brTemp, tr, bl)) {
         if (!checkCrossover(tl, tr, bl, brTemp, t, b, l, r)) {
           br = brTemp;
@@ -201,15 +202,9 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 't') {
-      double yDisplacement =
-          constraintPointToBoundary(updatedPoint.value.globalPosition).dy -
-              t.dy;
-
+      double yDisplacement = localPosition.dy - t.dy;
       Offset tlTemp = updatePoint(tl, bl, yDisplacement, 'x', lSlope);
       Offset trTemp = updatePoint(tr, br, yDisplacement, 'x', rSlope);
-
-      // tlTemp = constraintPointToBoundary(tlTemp);
-      // trTemp = constraintPointToBoundary(trTemp);
 
       if (checkPolygon(tlTemp, br, trTemp, bl)) {
         if (!checkCrossover(tlTemp, trTemp, bl, br, t, b, l, r)) {
@@ -222,15 +217,9 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'b') {
-      double yDisplacement =
-          constraintPointToBoundary(updatedPoint.value.globalPosition).dy -
-              b.dy;
-
+      double yDisplacement = localPosition.dy - b.dy;
       Offset blTemp = updatePoint(bl, tl, yDisplacement, 'x', lSlope);
       Offset brTemp = updatePoint(br, tr, yDisplacement, 'x', rSlope);
-
-      // blTemp = constraintPointToBoundary(blTemp);
-      // brTemp = constraintPointToBoundary(brTemp);
 
       if (checkPolygon(tl, brTemp, tr, blTemp)) {
         if (!checkCrossover(tl, tr, blTemp, brTemp, t, b, l, r)) {
@@ -243,15 +232,9 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'l') {
-      double xDisplacement =
-          constraintPointToBoundary(updatedPoint.value.globalPosition).dx -
-              l.dx;
-
+      double xDisplacement = localPosition.dx - l.dx;
       Offset tlTemp = updatePoint(tl, tr, xDisplacement, 'y', tSlope);
       Offset blTemp = updatePoint(bl, br, xDisplacement, 'y', bSlope);
-
-      // tlTemp = constraintPointToBoundary(tlTemp);
-      // blTemp = constraintPointToBoundary(blTemp);
 
       if (checkPolygon(tlTemp, br, tr, blTemp)) {
         if (!checkCrossover(tlTemp, tr, blTemp, br, t, b, l, r)) {
@@ -264,15 +247,9 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'r') {
-      double xDisplacement =
-          constraintPointToBoundary(updatedPoint.value.globalPosition).dx -
-              r.dx;
-
+      double xDisplacement = localPosition.dx - r.dx;
       Offset trTemp = updatePoint(tr, tl, xDisplacement, 'y', tSlope);
       Offset brTemp = updatePoint(br, bl, xDisplacement, 'y', bSlope);
-
-      // trTemp = constraintPointToBoundary(trTemp);
-      // brTemp = constraintPointToBoundary(brTemp);
 
       if (checkPolygon(tl, brTemp, trTemp, bl)) {
         if (!checkCrossover(tl, trTemp, bl, br, t, b, l, r)) {
@@ -346,40 +323,62 @@ class CropScreenState {
 
   /// Gets the current moving point
   getMovingPoint(DragStartDetails startDetails) {
-    if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, tl.dx, tl.dy) <
+    // Check if points are properly initialized
+    if (tl == Offset.zero &&
+        tr == Offset.zero &&
+        bl == Offset.zero &&
+        br == Offset.zero) {
+      print('Points not properly initialized');
+      return;
+    }
+
+    print('Drag started at: ${startDetails.globalPosition}');
+    print('Current points:');
+    print('TL: $tl, TR: $tr, BL: $bl, BR: $br');
+    print('T: $t, B: $b, L: $l, R: $r');
+
+    // Convert global position to local position relative to the canvas
+    final localPosition = Offset(
+        startDetails.globalPosition.dx - canvasOffset.dx,
+        startDetails.globalPosition.dy - canvasOffset.dy);
+
+    print('Local position: $localPosition');
+
+    if (getDistance(localPosition.dx, localPosition.dy, tl.dx, tl.dy) <
         pickupDistance) {
       movingPoint.name = 'tl';
-    } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, tr.dx, tr.dy) <
+      print('Picked up TL point');
+    } else if (getDistance(localPosition.dx, localPosition.dy, tr.dx, tr.dy) <
         pickupDistance) {
       movingPoint.name = 'tr';
-    } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, bl.dx, bl.dy) <
+      print('Picked up TR point');
+    } else if (getDistance(localPosition.dx, localPosition.dy, bl.dx, bl.dy) <
         pickupDistance) {
       movingPoint.name = 'bl';
-    } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, br.dx, br.dy) <
+      print('Picked up BL point');
+    } else if (getDistance(localPosition.dx, localPosition.dy, br.dx, br.dy) <
         pickupDistance) {
       movingPoint.name = 'br';
-    } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, t.dx, t.dy) <
+      print('Picked up BR point');
+    } else if (getDistance(localPosition.dx, localPosition.dy, t.dx, t.dy) <
         pickupDistance) {
       movingPoint.name = 't';
-    } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, b.dx, b.dy) <
+      print('Picked up T point');
+    } else if (getDistance(localPosition.dx, localPosition.dy, b.dx, b.dy) <
         pickupDistance) {
       movingPoint.name = 'b';
-    } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, l.dx, l.dy) <
+      print('Picked up B point');
+    } else if (getDistance(localPosition.dx, localPosition.dy, l.dx, l.dy) <
         pickupDistance) {
       movingPoint.name = 'l';
-    } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, r.dx, r.dy) <
+      print('Picked up L point');
+    } else if (getDistance(localPosition.dx, localPosition.dy, r.dx, r.dy) <
         pickupDistance) {
       movingPoint.name = 'r';
+      print('Picked up R point');
     } else {
       movingPoint.name = 'none';
+      print('No point picked up');
     }
   }
 

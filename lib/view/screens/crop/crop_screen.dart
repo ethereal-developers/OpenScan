@@ -100,67 +100,63 @@ class _CropImageState extends State<CropImage> {
             ),
           ),
           body: Container(
-            // width: _cropScreen.screenSize.width,
-            // height: _cropScreen.screenSize.height,
             color: Theme.of(context).primaryColor,
-            child: GestureDetector(
-              key: _cropScreen.bodyKey,
-              onPanStart: (startDetails) {
-                _cropScreen.calculateAllSlopes();
-                _cropScreen.getMovingPoint(startDetails);
-                if (_cropScreen.movingPoint.name != 'none')
-                  _cropScreen.showMagnifier.value = true;
-              },
-              onPanUpdate: (updateDetails) {
-                _cropScreen.updatedPoint.value = updateDetails;
-                _cropScreen.updatePolygon();
-              },
-              onPanEnd: (details) {
-                _cropScreen.movingPoint.name = 'none';
-                _cropScreen.movingPoint.offset = Offset.zero;
-                _cropScreen.showMagnifier.value = false;
-              },
-              child: Stack(
-                children: [
-                  Container(
-                    alignment: Alignment.center,
-                    padding: EdgeInsets.all(16.0),
-                    child: Image(
-                      key: _cropScreen.imageKey,
-                      image: FileImage(_cropScreen.srcImage!),
-                      loadingBuilder: ((context, child, loadingProgress) {
-                        if (loadingProgress == null) {
-                          WidgetsBinding.instance
-                              .addPostFrameCallback((_) async {
-                            await _cropScreen.getSize();
-                          });
-                          return child;
-                        }
-                        ;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
-                        );
-                      }),
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child: Icon(
-                            Icons.error_rounded,
-                            color: Colors.red,
-                            size: 30,
-                          ),
-                        );
-                      },
-                    ),
+            child: Stack(
+              children: [
+                Container(
+                  alignment: Alignment.center,
+                  padding: EdgeInsets.all(16.0),
+                  child: Image(
+                    key: _cropScreen.imageKey,
+                    image: FileImage(_cropScreen.srcImage!),
+                    loadingBuilder: ((context, child, loadingProgress) {
+                      if (loadingProgress == null) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          await _cropScreen.getSize();
+                        });
+                        return child;
+                      }
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      );
+                    }),
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(
+                        child: Icon(
+                          Icons.error_rounded,
+                          color: Colors.red,
+                          size: 30,
+                        ),
+                      );
+                    },
                   ),
+                ),
 
-                  /// Points Container
-                  ValueListenableBuilder(
-                    valueListenable: _cropScreen.renderBoxReady,
-                    builder: (BuildContext context, bool value, Widget? child) {
-                      if (value) {
-                        return Positioned.fill(
+                /// Points Container
+                ValueListenableBuilder(
+                  valueListenable: _cropScreen.renderBoxReady,
+                  builder: (BuildContext context, bool value, Widget? child) {
+                    if (value) {
+                      return Positioned.fill(
+                        child: GestureDetector(
+                          key: _cropScreen.bodyKey,
+                          onPanStart: (startDetails) {
+                            _cropScreen.calculateAllSlopes();
+                            _cropScreen.getMovingPoint(startDetails);
+                            if (_cropScreen.movingPoint.name != 'none')
+                              _cropScreen.showMagnifier.value = true;
+                          },
+                          onPanUpdate: (updateDetails) {
+                            _cropScreen.updatedPoint.value = updateDetails;
+                            _cropScreen.updatePolygon();
+                          },
+                          onPanEnd: (details) {
+                            _cropScreen.movingPoint.name = 'none';
+                            _cropScreen.movingPoint.offset = Offset.zero;
+                            _cropScreen.showMagnifier.value = false;
+                          },
                           child: ValueListenableBuilder(
                               valueListenable: _cropScreen.updatedPoint,
                               builder: (context, _, __) {
@@ -177,59 +173,61 @@ class _CropImageState extends State<CropImage> {
                                   ),
                                 );
                               }),
-                        );
-                      } else {
-                        return Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
-                        );
-                      }
-                    },
-                  ),
+                        ),
+                      );
+                    } else {
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      );
+                    }
+                  },
+                ),
 
-                  /// Magnifier Container
-                  ValueListenableBuilder(
-                    valueListenable: _cropScreen.showMagnifier,
-                    builder: (context, bool _showMagnifier, _) {
-                      if (_showMagnifier)
-                        return ValueListenableBuilder(
-                          valueListenable: _cropScreen.updatedPoint,
-                          builder:
-                              (context, DragUpdateDetails _updatedPoint, _) {
-                            return Positioned(
-                              left: _cropScreen.movingPoint.offset!.dx - 40,
-                              top: _cropScreen.movingPoint.offset!.dy - 120,
-                              child: RawMagnifier(
-                                decoration: MagnifierDecoration(
-                                  shadows: const <BoxShadow>[
-                                    BoxShadow(
-                                        blurRadius: 1.5,
-                                        offset: Offset(0, 2),
-                                        spreadRadius: 1,
-                                        color: Color.fromARGB(25, 0, 0, 0))
-                                  ],
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                    side: BorderSide(
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                      width: .15,
-                                    ),
+                /// Magnifier Container
+                ValueListenableBuilder(
+                  valueListenable: _cropScreen.showMagnifier,
+                  builder: (context, bool _showMagnifier, _) {
+                    if (_showMagnifier)
+                      return ValueListenableBuilder(
+                        valueListenable: _cropScreen.updatedPoint,
+                        builder: (context, DragUpdateDetails _updatedPoint, _) {
+                          // Position magnifier slightly above the finger
+                          return Positioned(
+                            left: _cropScreen.movingPoint.offset!.dx -
+                                40, // Center horizontally
+                            top: _cropScreen.movingPoint.offset!.dy -
+                                120, // 120px above finger
+                            child: RawMagnifier(
+                              decoration: MagnifierDecoration(
+                                shadows: const <BoxShadow>[
+                                  BoxShadow(
+                                      blurRadius: 1.5,
+                                      offset: Offset(0, 2),
+                                      spreadRadius: 1,
+                                      color: Color.fromARGB(25, 0, 0, 0))
+                                ],
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                  side: BorderSide(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    width: .15,
                                   ),
                                 ),
-                                size: Size(80, 80),
-                                magnificationScale: 1.5,
-                                focalPointOffset: Offset(0, 80),
                               ),
-                            );
-                          },
-                        );
-                      return Container();
-                    },
-                  ),
-                ],
-              ),
+                              size: Size(80, 80),
+                              magnificationScale: 1.5,
+                              focalPointOffset: Offset(0, 80),
+                            ),
+                          );
+                        },
+                      );
+                    return Container();
+                  },
+                ),
+              ],
             ),
           ),
           bottomNavigationBar: bottomBar(),
