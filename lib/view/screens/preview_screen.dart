@@ -37,67 +37,77 @@ class _PreviewScreenState extends State<PreviewScreen>
   imageLib.Image? imageBytes;
   Widget loader = Center(child: CircularProgressIndicator());
   late PageController pageController;
+  bool _isZoomed = false;
 
   void doubleTapImageZoom() async {
-    //TODO: Generalize method
-    debugPrint(
-        (_transformationController.value == Matrix4.identity()).toString());
-
     final position = _doubleTapDetails.localPosition;
 
-    if (_transformationController.value == Matrix4.identity()) {
-      _matrixAnimation = Matrix4Tween(
-              begin: Matrix4.identity(),
-              end: Matrix4.translationValues(-position.dx, -position.dy, 0)
-                ..scale(2.0))
-          .chain(CurveTween(curve: Curves.decelerate))
-          .animate(animationController);
-
-      await animationController.forward();
-
-      setState(() {
-        enablePageScroll = false;
-      });
-    } else {
-      if (animationController.isDismissed) {
-        _matrixAnimation = Matrix4Tween(
-          begin: _transformationController.value,
-          end: Matrix4.identity(),
-        )
-            .chain(CurveTween(curve: Curves.decelerate))
-            .animate(animationController);
-
-        await animationController.forward();
-      }
-
+    if (!_isZoomed) {
+      // Zoom in
       _matrixAnimation = Matrix4Tween(
         begin: Matrix4.identity(),
-        end: _transformationController.value,
+        end: Matrix4.translationValues(-position.dx, -position.dy, 0)
+          ..scale(2.0),
       )
           .chain(CurveTween(curve: Curves.decelerate))
           .animate(animationController);
 
-      await animationController.reverse();
-
+      await animationController.forward();
       setState(() {
+        _isZoomed = true;
+        enablePageScroll = false;
+      });
+    } else {
+      // Zoom out
+      _matrixAnimation = Matrix4Tween(
+        begin: _transformationController.value,
+        end: Matrix4.identity(),
+      )
+          .chain(CurveTween(curve: Curves.decelerate))
+          .animate(animationController);
+
+      await animationController.forward();
+      setState(() {
+        _isZoomed = false;
         enablePageScroll = true;
       });
     }
-    debugPrint(animationController.status.toString());
+  }
+
+  void _handleInteractionEnd(ScaleEndDetails details) {
+    if (_transformationController.value.getColumn(0) !=
+        Matrix4.identity().getColumn(0)) {
+      setState(() {
+        _isZoomed = true;
+        enablePageScroll = false;
+      });
+    } else {
+      setState(() {
+        _isZoomed = false;
+        enablePageScroll = true;
+      });
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    // _currentPageIndex = widget.initialIndex!;
     pageController = PageController(initialPage: widget.initialIndex!);
     _pageNumber = ValueNotifier(widget.initialIndex! + 1);
     animationController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 200),
     )..addListener(() {
         _transformationController.value = _matrixAnimation.value;
       });
+  }
+
+  @override
+  void dispose() {
+    pageController.dispose();
+    _pageNumber.dispose();
+    animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -117,8 +127,8 @@ class _PreviewScreenState extends State<PreviewScreen>
               children: [
                 PageView.builder(
                   physics: enablePageScroll
-                      ? ClampingScrollPhysics()
-                      : NeverScrollableScrollPhysics(),
+                      ? const BouncingScrollPhysics()
+                      : const NeverScrollableScrollPhysics(),
                   controller: pageController,
                   itemCount: state.imageCount,
                   itemBuilder: (context, index) {
@@ -136,43 +146,18 @@ class _PreviewScreenState extends State<PreviewScreen>
                       onDoubleTapDown: (details) {
                         _doubleTapDetails = details;
                       },
-                      onDoubleTap: () {
-                        doubleTapImageZoom();
-                      },
+                      onDoubleTap: doubleTapImageZoom,
                       onTap: () {
                         setState(() {
                           isAppBarVisible = !isAppBarVisible;
-                          // TODO check why this is not working
-                          enablePageScroll = !isAppBarVisible;
                         });
-                        // showModalBottomSheet(
-                        //   context: context,
-                        //   barrierColor: Colors.transparent,
-                        //   backgroundColor:
-                        //       Theme.of(context).primaryColor.withOpacity(0.5),
-                        //   builder: (_) {
-                        //     return BlocProvider<DirectoryCubit>.value(
-                        //       value: BlocProvider.of<DirectoryCubit>(context),
-                        //       child: PreviewBottomBar(
-                        //         pageIndex: pageIndex!,
-                        //       ),
-                        //     );
-                        //   },
-                        // );
                       },
                       child: InteractiveViewer(
                         transformationController: _transformationController,
-                        onInteractionEnd: (scaleEndDetails) {
-                          if (_transformationController.value.getColumn(0) !=
-                              Matrix4.identity().getColumn(0)) {
-                            setState(() {
-                              enablePageScroll = false;
-                            });
-                          }
-                        },
+                        onInteractionEnd: _handleInteractionEnd,
                         maxScale: 5,
                         child: Container(
-                          padding: EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(8.0),
                           child: Center(
                             child: Hero(
                               tag: 'hero-image-${index + 1}',
@@ -204,6 +189,8 @@ class _PreviewScreenState extends State<PreviewScreen>
                     _transformationController.value = Matrix4.identity();
                     setState(() {
                       _pageNumber.value = index + 1;
+                      _isZoomed = false;
+                      enablePageScroll = true;
                     });
                   },
                 ),

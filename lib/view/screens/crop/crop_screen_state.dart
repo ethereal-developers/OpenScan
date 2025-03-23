@@ -148,13 +148,7 @@ class CropScreenState {
   /// Updates the points in the polygon when changed manually
   updatePolygon() {
     print('Updating polygon for point: ${movingPoint.name}');
-
-    // Convert global position to local position relative to the canvas
-    final localPosition = Offset(
-        updatedPoint.value.globalPosition.dx - canvasOffset.dx,
-        updatedPoint.value.globalPosition.dy - canvasOffset.dy);
-
-    print('Local position: $localPosition');
+    print('New position: ${updatedPoint.value.globalPosition}');
 
     if (movingPoint.name == 'none') {
       print('No point selected for movement');
@@ -162,7 +156,10 @@ class CropScreenState {
     }
 
     if (movingPoint.name == 'tl') {
-      Offset tlTemp = constraintPointToBoundary(localPosition);
+      Offset tlTemp =
+          constraintPointToBoundary(updatedPoint.value.globalPosition);
+
+      // localToGlobal(updatedPoint.value.globalPosition)
       if (checkPolygon(tlTemp, br, tr, bl)) {
         if (!checkCrossover(tlTemp, tr, bl, br, t, b, l, r)) {
           tl = tlTemp;
@@ -172,7 +169,8 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'tr') {
-      Offset trTemp = constraintPointToBoundary(localPosition);
+      Offset trTemp =
+          constraintPointToBoundary(updatedPoint.value.globalPosition);
       if (checkPolygon(tl, br, trTemp, bl)) {
         if (!checkCrossover(tl, trTemp, bl, br, t, b, l, r)) {
           tr = trTemp;
@@ -182,7 +180,8 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'bl') {
-      Offset blTemp = constraintPointToBoundary(localPosition);
+      Offset blTemp =
+          constraintPointToBoundary(updatedPoint.value.globalPosition);
       if (checkPolygon(tl, br, tr, blTemp)) {
         if (!checkCrossover(tl, tr, blTemp, br, t, b, l, r)) {
           bl = blTemp;
@@ -192,7 +191,8 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'br') {
-      Offset brTemp = constraintPointToBoundary(localPosition);
+      Offset brTemp =
+          constraintPointToBoundary(updatedPoint.value.globalPosition);
       if (checkPolygon(tl, brTemp, tr, bl)) {
         if (!checkCrossover(tl, tr, bl, brTemp, t, b, l, r)) {
           br = brTemp;
@@ -202,9 +202,15 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 't') {
-      double yDisplacement = localPosition.dy - t.dy;
+      double yDisplacement =
+          constraintPointToBoundary(updatedPoint.value.globalPosition).dy -
+              t.dy;
+
       Offset tlTemp = updatePoint(tl, bl, yDisplacement, 'x', lSlope);
       Offset trTemp = updatePoint(tr, br, yDisplacement, 'x', rSlope);
+
+      // tlTemp = constraintPointToBoundary(tlTemp);
+      // trTemp = constraintPointToBoundary(trTemp);
 
       if (checkPolygon(tlTemp, br, trTemp, bl)) {
         if (!checkCrossover(tlTemp, trTemp, bl, br, t, b, l, r)) {
@@ -217,9 +223,15 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'b') {
-      double yDisplacement = localPosition.dy - b.dy;
+      double yDisplacement =
+          constraintPointToBoundary(updatedPoint.value.globalPosition).dy -
+              b.dy;
+
       Offset blTemp = updatePoint(bl, tl, yDisplacement, 'x', lSlope);
       Offset brTemp = updatePoint(br, tr, yDisplacement, 'x', rSlope);
+
+      // blTemp = constraintPointToBoundary(blTemp);
+      // brTemp = constraintPointToBoundary(brTemp);
 
       if (checkPolygon(tl, brTemp, tr, blTemp)) {
         if (!checkCrossover(tl, tr, blTemp, brTemp, t, b, l, r)) {
@@ -232,9 +244,15 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'l') {
-      double xDisplacement = localPosition.dx - l.dx;
+      double xDisplacement =
+          constraintPointToBoundary(updatedPoint.value.globalPosition).dx -
+              l.dx;
+
       Offset tlTemp = updatePoint(tl, tr, xDisplacement, 'y', tSlope);
       Offset blTemp = updatePoint(bl, br, xDisplacement, 'y', bSlope);
+
+      // tlTemp = constraintPointToBoundary(tlTemp);
+      // blTemp = constraintPointToBoundary(blTemp);
 
       if (checkPolygon(tlTemp, br, tr, blTemp)) {
         if (!checkCrossover(tlTemp, tr, blTemp, br, t, b, l, r)) {
@@ -247,9 +265,15 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'r') {
-      double xDisplacement = localPosition.dx - r.dx;
+      double xDisplacement =
+          constraintPointToBoundary(updatedPoint.value.globalPosition).dx -
+              r.dx;
+
       Offset trTemp = updatePoint(tr, tl, xDisplacement, 'y', tSlope);
       Offset brTemp = updatePoint(br, bl, xDisplacement, 'y', bSlope);
+
+      // trTemp = constraintPointToBoundary(trTemp);
+      // brTemp = constraintPointToBoundary(brTemp);
 
       if (checkPolygon(tl, brTemp, trTemp, bl)) {
         if (!checkCrossover(tl, trTemp, bl, br, t, b, l, r)) {

@@ -26,11 +26,18 @@ class ViewScreen extends StatefulWidget {
 class _ViewScreenState extends State<ViewScreen> {
   static bool selectionEnabled = false;
   GlobalKey scaffoldKey = GlobalKey<ScaffoldMessengerState>();
+  List<Widget>? _cachedImageCards;
 
   @override
   void initState() {
     super.initState();
     selectionEnabled = false;
+  }
+
+  @override
+  void dispose() {
+    _cachedImageCards = null;
+    super.dispose();
   }
 
   @override
@@ -43,7 +50,6 @@ class _ViewScreenState extends State<ViewScreen> {
             setState(() {
               selectionEnabled = false;
               BlocProvider.of<DirectoryCubit>(context).resetSelection();
-              selectionEnabled = false;
             });
           } else {
             Navigator.pop(context);
@@ -59,11 +65,11 @@ class _ViewScreenState extends State<ViewScreen> {
             backgroundColor: Theme.of(context).primaryColor,
             leading: selectionEnabled
                 ? IconButton(
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.close_rounded,
                       size: 30,
                     ),
-                    padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
+                    padding: const EdgeInsets.fromLTRB(15, 8, 0, 8),
                     onPressed: () {
                       BlocProvider.of<DirectoryCubit>(context).resetSelection();
                       setState(() {
@@ -72,8 +78,8 @@ class _ViewScreenState extends State<ViewScreen> {
                     },
                   )
                 : IconButton(
-                    icon: Icon(Icons.arrow_back_ios),
-                    padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
+                    icon: const Icon(Icons.arrow_back_ios),
+                    padding: const EdgeInsets.fromLTRB(15, 8, 0, 8),
                     onPressed: () {
                       Navigator.pop(context, true);
                     },
@@ -181,7 +187,7 @@ class _ViewScreenState extends State<ViewScreen> {
                   ],
           ),
           body: SingleChildScrollView(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             child: BlocConsumer<DirectoryCubit, DirectoryState>(
               listener: (context, state) {},
               builder: (context_, state) {
@@ -191,14 +197,14 @@ class _ViewScreenState extends State<ViewScreen> {
                           spacing: 10,
                           runSpacing: 10,
                           crossAxisAlignment: WrapCrossAlignment.center,
-                          children: getImageCards(state)!,
+                          children: _getImageCards(state),
                         )
                       : ReorderableWrap(
                           spacing: 10,
                           runSpacing: 10,
                           minMainAxisCount: 2,
                           crossAxisAlignment: WrapCrossAlignment.center,
-                          children: getImageCards(state)!,
+                          children: _getImageCards(state),
                           onReorder: (int oldIndex, int newIndex) {
                             BlocProvider.of<DirectoryCubit>(context_)
                                 .updateImageIndex(oldIndex, newIndex);
@@ -214,7 +220,7 @@ class _ViewScreenState extends State<ViewScreen> {
                         );
                 }
                 // TODO: Loading
-                return Container();
+                return const SizedBox.shrink();
               },
             ),
           ),
@@ -244,9 +250,14 @@ class _ViewScreenState extends State<ViewScreen> {
     );
   }
 
-  List<Widget>? getImageCards(state) {
-    return state.images.map<Widget>((image) {
+  List<Widget> _getImageCards(DirectoryState state) {
+    if (_cachedImageCards != null) {
+      return _cachedImageCards!;
+    }
+
+    _cachedImageCards = state.images!.map<Widget>((image) {
       return ImageCard(
+        key: ValueKey(image.idx),
         image: image,
         onPressed: selectionEnabled
             ? () => BlocProvider.of<DirectoryCubit>(context).selectImage(image)
@@ -256,7 +267,7 @@ class _ViewScreenState extends State<ViewScreen> {
                     builder: (_) => BlocProvider<DirectoryCubit>.value(
                       value: BlocProvider.of<DirectoryCubit>(context),
                       child: PreviewScreen(
-                        initialIndex: image.idx - 1,
+                        initialIndex: (image.idx ?? 1) - 1,
                       ),
                     ),
                   ),
@@ -264,5 +275,7 @@ class _ViewScreenState extends State<ViewScreen> {
         onSelect: () {},
       );
     }).toList();
+
+    return _cachedImageCards!;
   }
 }

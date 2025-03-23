@@ -8,11 +8,12 @@ class ImageCard extends StatelessWidget {
   final void Function()? onPressed;
   final void Function()? onSelect;
 
-  ImageCard({
+  const ImageCard({
+    Key? key,
     this.image,
     this.onPressed,
     this.onSelect,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -51,10 +52,7 @@ class ImageCard extends StatelessWidget {
                   ),
                 ),
               )
-            : Container(
-                width: 0.0001,
-                height: 0.0001,
-              ),
+            : const SizedBox.shrink(),
         Positioned(
           bottom: 10,
           right: 10,
