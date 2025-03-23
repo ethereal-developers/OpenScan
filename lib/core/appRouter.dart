@@ -8,44 +8,43 @@ import 'package:openscan/view/screens/view_screen.dart';
 import 'package:openscan/view/screens/camera_screen.dart';
 
 class AppRouter {
-  static const String ABOUT_SCREEN = 'AboutScreen';
-  static const String CROP_SCREEN = 'CropImage';
-  static const String DEMO_SCREEN = 'DemoScreen';
-  static const String HOME_SCREEN = 'HomeScreen';
-  static const String PREVIEW_SCREEN = 'PreviewScreen';
-  static const String VIEW_SCREEN = 'ViewScreen';
-  static const String CAMERA_SCREEN = 'CameraScreen';
+  static const String aboutScreen = 'AboutScreen';
+  static const String cropScreen = 'CropImage';
+  static const String demoScreen = 'DemoScreen';
+  static const String homeScreen = 'HomeScreen';
+  static const String previewScreen = 'PreviewScreen';
+  static const String viewScreen = 'ViewScreen';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case AppRouter.ABOUT_SCREEN:
+      case aboutScreen:
         return MaterialPageRoute(
-          settings: RouteSettings(name: AppRouter.ABOUT_SCREEN),
+          settings: const RouteSettings(name: aboutScreen),
           builder: (_) => AboutScreen(),
         );
-      case AppRouter.CROP_SCREEN:
+      case cropScreen:
         return MaterialPageRoute(
-          settings: RouteSettings(name: AppRouter.CROP_SCREEN),
+          settings: const RouteSettings(name: cropScreen),
           builder: (_) => CropImage(),
         );
-      case AppRouter.DEMO_SCREEN:
+      case demoScreen:
         return MaterialPageRoute(
-          settings: RouteSettings(name: AppRouter.DEMO_SCREEN),
+          settings: const RouteSettings(name: demoScreen),
           builder: (_) => DemoScreen(),
         );
-      case AppRouter.HOME_SCREEN:
+      case homeScreen:
         return MaterialPageRoute(
-          settings: RouteSettings(name: AppRouter.HOME_SCREEN),
+          settings: const RouteSettings(name: homeScreen),
           builder: (_) => HomeScreen(),
         );
-      case AppRouter.PREVIEW_SCREEN:
+      case previewScreen:
         return MaterialPageRoute(
-          settings: RouteSettings(name: AppRouter.PREVIEW_SCREEN),
+          settings: const RouteSettings(name: previewScreen),
           builder: (_) => PreviewScreen(),
         );
-      case AppRouter.VIEW_SCREEN:
+      case viewScreen:
         return MaterialPageRoute(
-          settings: RouteSettings(name: AppRouter.VIEW_SCREEN),
+          settings: const RouteSettings(name: viewScreen),
           builder: (_) => ViewScreen(),
         );
       case AppRouter.CAMERA_SCREEN:
@@ -55,7 +54,7 @@ class AppRouter {
         );
       default:
         return MaterialPageRoute(
-          settings: RouteSettings(name: AppRouter.DEMO_SCREEN),
+          settings: const RouteSettings(name: demoScreen),
           builder: (_) => DemoScreen(),
         );
     }

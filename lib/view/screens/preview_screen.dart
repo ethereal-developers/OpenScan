@@ -297,7 +297,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                         Navigator.pop(context);
                         if (directoryDeleted) {
                           Navigator.popUntil(context,
-                              ModalRoute.withName(AppRouter.HOME_SCREEN));
+                              ModalRoute.withName(AppRouter.homeScreen));
                           // Navigator.pop(context);
                           // Navigator.pop(context);
                         }

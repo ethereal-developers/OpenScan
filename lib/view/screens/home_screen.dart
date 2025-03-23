@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ..createImage(context),
               child: ViewScreen(),
             ),
-            settings: RouteSettings(name: AppRouter.VIEW_SCREEN),
+            settings: RouteSettings(name: AppRouter.viewScreen),
           ),
         ).whenComplete(() {
           homeRefresh();
@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               child: ViewScreen(),
             ),
-            settings: RouteSettings(name: AppRouter.VIEW_SCREEN),
+            settings: RouteSettings(name: AppRouter.viewScreen),
           ),
         ).whenComplete(() {
           homeRefresh();
@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               child: ViewScreen(),
             ),
-            settings: RouteSettings(name: AppRouter.VIEW_SCREEN),
+            settings: RouteSettings(name: AppRouter.viewScreen),
           ),
         ).whenComplete(() {
           homeRefresh();
@@ -119,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
               lazy: false,
               child: ViewScreen(),
             ),
-            settings: RouteSettings(name: AppRouter.VIEW_SCREEN),
+            settings: RouteSettings(name: AppRouter.viewScreen),
           ),
         ).whenComplete(() {
           homeRefresh();
@@ -165,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     await preferences.setBool('alreadyVisited', true);
 
-    if (!visitingFlag) Navigator.of(context).pushNamed(AppRouter.DEMO_SCREEN);
+    if (!visitingFlag) Navigator.of(context).pushNamed(AppRouter.demoScreen);
   }
 
   @override

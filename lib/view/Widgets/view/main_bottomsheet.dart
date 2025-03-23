@@ -9,8 +9,6 @@ import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
 import 'package:openscan/view/Widgets/view/export_bottomsheet.dart';
 import 'package:openscan/view/extensions.dart';
-import 'package:openscan/view/screens/home_screen.dart';
-import 'package:openscan/view/screens/view_screen.dart';
 
 class MainBottomSheet extends StatefulWidget {
   final bool imagesSelected;
@@ -238,10 +236,10 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
                               if (returnToHome) {
                                 debugPrint('Returning home');
                                 Navigator.popUntil(context,
-                                    ModalRoute.withName(AppRouter.HOME_SCREEN));
+                                    ModalRoute.withName(AppRouter.homeScreen));
                               } else {
                                 Navigator.popUntil(context,
-                                    ModalRoute.withName(AppRouter.VIEW_SCREEN));
+                                    ModalRoute.withName(AppRouter.viewScreen));
                                 setState(() {});
                               }
                             },
