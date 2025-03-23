@@ -228,31 +228,6 @@ class _PreviewScreenState extends State<PreviewScreen>
                     ),
                   ),
                 ),
-                Visibility(
-                  visible: isAppBarVisible,
-                  child: Positioned.fill(
-                    bottom: 65,
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        // TODO: [Bug] Fix Page Index- wrong when image is deleted
-                        child: Text(
-                          '${_pageNumber.value}/${state.imageCount}',
-                          style: TextStyle(color: Colors.white, fontSize: 14),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ],
             );
           },
@@ -262,6 +237,7 @@ class _PreviewScreenState extends State<PreviewScreen>
           builder: (context, state) {
             return PreviewScreenBottomBar(
               isAppBarVisible: isAppBarVisible,
+              currentPage: _pageNumber.value - 1,
               cropOnPressed: () {
                 BlocProvider.of<DirectoryCubit>(context).cropImage(
                   context,

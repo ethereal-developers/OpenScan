@@ -111,8 +111,25 @@ class _CropImageState extends State<CropImage> {
                     image: FileImage(_cropScreen.srcImage!),
                     loadingBuilder: ((context, child, loadingProgress) {
                       if (loadingProgress == null) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) async {
-                          await _cropScreen.getSize();
+                        // Wait for the next frame to ensure the image is rendered
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          // Add a small delay to ensure the image is fully rendered
+                          Future.delayed(Duration(milliseconds: 100), () async {
+                            try {
+                              await _cropScreen.getSize();
+                            } catch (e) {
+                              print('Error getting size: $e');
+                              // Retry once after a longer delay if the first attempt fails
+                              Future.delayed(Duration(milliseconds: 500),
+                                  () async {
+                                try {
+                                  await _cropScreen.getSize();
+                                } catch (e) {
+                                  print('Error getting size after retry: $e');
+                                }
+                              });
+                            }
+                          });
                         });
                         return child;
                       }
@@ -193,7 +210,7 @@ class _CropImageState extends State<CropImage> {
                       return ValueListenableBuilder(
                         valueListenable: _cropScreen.updatedPoint,
                         builder: (context, DragUpdateDetails _updatedPoint, _) {
-                          // Position magnifier slightly above the finger
+                          // Position magnifier above the finger
                           return Positioned(
                             left: _cropScreen.movingPoint.offset!.dx -
                                 40, // Center horizontally
@@ -219,7 +236,8 @@ class _CropImageState extends State<CropImage> {
                               ),
                               size: Size(80, 80),
                               magnificationScale: 1.5,
-                              focalPointOffset: Offset(0, 80),
+                              focalPointOffset: Offset(0,
+                                  80), // Adjust focal point to show area above finger
                             ),
                           );
                         },

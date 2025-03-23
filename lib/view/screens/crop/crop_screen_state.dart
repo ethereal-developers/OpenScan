@@ -528,23 +528,30 @@ class CropScreenState {
 
   /// Gets the size of image canvas
   getRenderedBoxSize() {
-    RenderBox imageBox =
-        imageKey.currentContext!.findRenderObject() as RenderBox;
-    canvasSize = imageBox.size;
-    // debugPrint(
-    //     'Renderbox=> $canvasSize=> ${canvasSize.width / canvasSize.height}');
+    final imageContext = imageKey.currentContext;
+    final bodyContext = bodyKey.currentContext;
 
+    if (imageContext == null || bodyContext == null) {
+      print('Context not available yet');
+      return;
+    }
+
+    final imageBox = imageContext.findRenderObject() as RenderBox?;
+    final bodyBox = bodyContext.findRenderObject() as RenderBox?;
+
+    if (imageBox == null || bodyBox == null) {
+      print('RenderBox not available yet');
+      return;
+    }
+
+    canvasSize = imageBox.size;
     canvasOffset = imageBox.localToGlobal(
       Offset.zero,
-      ancestor: bodyKey.currentContext!.findRenderObject() as RenderBox,
+      ancestor: bodyBox,
     );
-    // debugPrint('Canvas Offset => $canvasOffset');
 
     verticalScaleFactor = screenSize.height / imageBox.size.width;
-    // debugPrint('VerticalScaleFactor=> $verticalScaleFactor');
-
     horizontalScaleFactor = screenSize.width / imageBox.size.height;
-    // debugPrint('HorizontalScaleFactor=> $horizontalScaleFactor');
 
     imageRendered.value = true;
   }

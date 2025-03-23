@@ -13,12 +13,14 @@ class PreviewScreenBottomBar extends StatefulWidget {
     required this.deleteOnPressed,
     required this.filterOnPressed,
     required this.isAppBarVisible,
+    required this.currentPage,
   }) : super(key: key);
 
   final bool isAppBarVisible;
   final Function()? cropOnPressed;
   final Function()? deleteOnPressed;
   final Function()? filterOnPressed;
+  final int currentPage;
 
   @override
   State<PreviewScreenBottomBar> createState() => _PreviewScreenBottomBarState();
@@ -27,14 +29,15 @@ class PreviewScreenBottomBar extends StatefulWidget {
 class _PreviewScreenBottomBarState extends State<PreviewScreenBottomBar> {
   bool _isRotating = false;
   final DatabaseHelper _database = DatabaseHelper();
+  final ValueNotifier<int> _pageNumber = ValueNotifier<int>(1);
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      height: widget.isAppBarVisible ? 70.0 : 0.0,
+      height: widget.isAppBarVisible ? 100.0 : 0.0,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
         color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -71,8 +74,7 @@ class _PreviewScreenBottomBarState extends State<PreviewScreenBottomBar> {
                             final currentIndex = state.images!.indexWhere(
                                 (img) =>
                                     img.imgPath ==
-                                    state
-                                        .images![state.imageCount - 1].imgPath);
+                                    state.images![widget.currentPage].imgPath);
                             if (currentIndex != -1) {
                               final imagePath =
                                   state.images![currentIndex].imgPath;
@@ -170,13 +172,13 @@ class BottomButton extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
-            height: 18,
+            height: 24,
             child: icon,
           ),
-          const SizedBox(height: 1),
+          const SizedBox(height: 4),
           Text(
             text,
-            style: const TextStyle(fontSize: 11),
+            style: const TextStyle(fontSize: 13),
           ),
         ],
       ),

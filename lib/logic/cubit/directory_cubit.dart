@@ -79,23 +79,34 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Extracts image data from db and stores it in [images] object list
-  void getImageData() async {
-    state.images = [];
-    var directoryData = await database.getImageData(state.dirName!);
-    debugPrint('From Cubit => $directoryData');
-    for (var image in directoryData) {
-      ImageOS tempImage = ImageOS(
-        idx: image['idx'],
-        imgPath: image['img_path'],
-        selected: false,
-      );
-      debugPrint('${tempImage.imgPath} => ${tempImage.idx}');
-      state.images!.add(
-        tempImage,
-      );
+  Future<void> getImageData() async {
+    try {
+      state.images = [];
+      emitState(state); // Emit empty state first to show loading
+
+      var directoryData = await database.getImageData(state.dirName!);
+      debugPrint('From Cubit => $directoryData');
+
+      List<ImageOS> newImages = [];
+      for (var image in directoryData) {
+        ImageOS tempImage = ImageOS(
+          idx: image['idx'],
+          imgPath: image['img_path'],
+          selected: false,
+        );
+        debugPrint('${tempImage.imgPath} => ${tempImage.idx}');
+        newImages.add(tempImage);
+      }
+
+      state.images = newImages;
+      state.imageCount = state.images!.length;
+      emitState(state);
+    } catch (e) {
+      debugPrint('Error loading images: $e');
+      state.images = [];
+      state.imageCount = 0;
+      emitState(state);
     }
-    state.imageCount = state.images!.length;
-    emitState(state);
   }
 
   /// Updates image index after reordering

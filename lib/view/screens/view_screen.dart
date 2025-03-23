@@ -191,36 +191,42 @@ class _ViewScreenState extends State<ViewScreen> {
             child: BlocConsumer<DirectoryCubit, DirectoryState>(
               listener: (context, state) {},
               builder: (context_, state) {
-                if (state.images != null) {
-                  return selectionEnabled
-                      ? Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: _getImageCards(state),
-                        )
-                      : ReorderableWrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          minMainAxisCount: 2,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: _getImageCards(state),
-                          onReorder: (int oldIndex, int newIndex) {
-                            BlocProvider.of<DirectoryCubit>(context_)
-                                .updateImageIndex(oldIndex, newIndex);
-                          },
-                          onNoReorder: (int index) {
-                            debugPrint(
-                                '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
-                          },
-                          onReorderStarted: (int index) {
-                            debugPrint(
-                                '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
-                          },
-                        );
+                if (state.images == null) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
                 }
-                // TODO: Loading
-                return const SizedBox.shrink();
+                if (state.images!.isEmpty) {
+                  return const Center(
+                    child: Text('No images found'),
+                  );
+                }
+                return selectionEnabled
+                    ? Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: _getImageCards(state),
+                      )
+                    : ReorderableWrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        minMainAxisCount: 2,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: _getImageCards(state),
+                        onReorder: (int oldIndex, int newIndex) {
+                          BlocProvider.of<DirectoryCubit>(context_)
+                              .updateImageIndex(oldIndex, newIndex);
+                        },
+                        onNoReorder: (int index) {
+                          debugPrint(
+                              '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
+                        },
+                        onReorderStarted: (int index) {
+                          debugPrint(
+                              '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
+                        },
+                      );
               },
             ),
           ),

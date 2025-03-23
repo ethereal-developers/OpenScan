@@ -28,7 +28,34 @@ class ImageCard extends StatelessWidget {
           child: Container(
             child: Hero(
               tag: 'hero-image-${image!.idx}',
-              child: Image.file(File(image!.imgPath)),
+              child: FutureBuilder<void>(
+                future: precacheImage(FileImage(File(image!.imgPath)), context),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Container(
+                      color: Colors.grey[300],
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+                  return Image.file(
+                    File(image!.imgPath),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      debugPrint('Error loading image: $error');
+                      return Container(
+                        color: Colors.grey[300],
+                        child: const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 40,
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
             height: size.height * 0.25,
             width: size.width * 0.38,
