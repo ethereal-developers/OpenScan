@@ -36,6 +36,18 @@ class ImageOS {
       'selected': selected,
     };
   }
+
+  ImageOS copyWith({
+    int? idx,
+    String? imgPath,
+    bool? selected,
+  }) {
+    return ImageOS(
+      idx: idx ?? this.idx,
+      imgPath: imgPath ?? this.imgPath,
+      selected: selected ?? this.selected,
+    );
+  }
 }
 
 class DocumentPoints {
@@ -48,7 +60,7 @@ class DocumentPoints {
     return DocumentPoints(
       hasData: data['hasPoints'],
       //TODO: Fill canvas if no points detected
-      points:  data['hasPoints'] ? data['points']: data['points'],
+      points: data['hasPoints'] ? data['points'] : data['points'],
     );
   }
 }

@@ -260,10 +260,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPressed: () {},
                         menuWidth: size.width * 0.44,
                         child: ListTile(
-                          leading: Image.file(
-                            File(masterDirectories[index].firstImgPath!),
+                          leading: Container(
                             width: 50,
                             height: 50,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Image.file(
+                                File(masterDirectories[index].firstImgPath!),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
                           ),
                           title: Text(
                             masterDirectories[index].newName ??
