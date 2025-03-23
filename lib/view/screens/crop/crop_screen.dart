@@ -2,13 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
 import 'package:path_provider/path_provider.dart';
 
-Future<File> imageCropper(
+Future<File?> imageCropper(
   BuildContext context,
   File srcImage,
 ) async {
@@ -17,7 +16,7 @@ Future<File> imageCropper(
     cacheDir.path + '/' + DateTime.now().toString() + '.jpg',
   );
 
-  await Navigator.push(
+  final result = await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => CropImage(
@@ -26,6 +25,17 @@ Future<File> imageCropper(
       ),
     ),
   );
+
+  // Return null if crop was cancelled or failed
+  if (result == null) {
+    return null;
+  }
+
+  // Verify the result file exists and has content
+  if (!await resultImage.exists() || await resultImage.length() == 0) {
+    return null;
+  }
+
   return resultImage;
 }
 
@@ -282,8 +292,18 @@ class _CropImageState extends State<CropImage> {
           MaterialButton(
             onPressed: () async {
               if (_cropScreen.renderBoxReady.value) {
-                await _cropScreen.crop();
-                Navigator.pop(context, _cropScreen.srcImage);
+                bool success = await _cropScreen.crop();
+                if (success) {
+                  Navigator.pop(context, _cropScreen.destImage);
+                } else {
+                  // Show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(AppLocalizations.of(context)!.cropFailed),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             color: Theme.of(context).colorScheme.secondary,

@@ -170,12 +170,13 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     } else {
       File? image = await fileOperations.openCamera();
       if (image != null) {
-        imageList = [
-          await imageCropper(
-            context,
-            image,
-          )
-        ];
+        File? croppedImage = await imageCropper(
+          context,
+          image,
+        );
+        if (croppedImage != null) {
+          imageList = [croppedImage];
+        }
       }
     }
 
@@ -241,13 +242,13 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     File original = File(imageOS.imgPath);
     debugPrint("originalllll ${imageOS.imgPath}");
 
-    File result = await imageCropper(
+    File? result = await imageCropper(
       context,
       original,
     );
-    debugPrint("cropresultttt ${result.path}");
+    debugPrint("cropresultttt ${result?.path}");
 
-    if (result.existsSync()) {
+    if (result != null && result.existsSync()) {
       original.deleteSync();
       result.copySync(original.path);
     }

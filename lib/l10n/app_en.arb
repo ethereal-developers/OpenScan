@@ -63,5 +63,9 @@
     "quality": "Quality",
     "save_to_device": "Save to device",
     "share_pdf": "Share PDF",
-    "share_images": "Share images"
+    "share_images": "Share images",
+    "cropFailed": "Failed to crop image",
+    "@cropFailed": {
+        "description": "Error message when image cropping fails"
+    }
 }

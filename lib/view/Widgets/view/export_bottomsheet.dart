@@ -5,7 +5,7 @@ import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/view/OSSwitch.dart';
 import 'package:openscan/view/extensions.dart';
-import 'package:share_extend/share_extend.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ExportBottomSheet extends StatefulWidget {
   final bool imagesSelected;
@@ -117,10 +117,9 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
                           debugPrint('Filename => $fileNameWithPath');
 
                           if (fileNameWithPath != null) {
-                            ShareExtend.share(
-                              fileNameWithPath,
-                              'file',
-                              sharePanelTitle: 'Share',
+                            await Share.shareXFiles(
+                              [XFile(fileNameWithPath)],
+                              subject: 'OpenScan Document',
                             );
                             Navigator.pop(context);
                             Navigator.pop(context);

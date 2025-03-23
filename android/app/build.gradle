@@ -30,7 +30,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace "com.ethereal.openscan"
-    compileSdkVersion 34
+    compileSdkVersion 35
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -53,7 +53,7 @@ android {
     defaultConfig {
         applicationId "com.ethereal.openscan"
         minSdkVersion 21
-        targetSdkVersion 33
+        targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -79,5 +79,5 @@ flutter {
 }
 
 dependencies {
-    implementation 'com.quickbirdstudios:opencv:4.3.0'
+    implementation 'com.quickbirdstudios:opencv:4.5.0'
 }

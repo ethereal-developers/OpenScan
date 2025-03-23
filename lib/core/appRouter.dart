@@ -14,6 +14,7 @@ class AppRouter {
   static const String homeScreen = 'HomeScreen';
   static const String previewScreen = 'PreviewScreen';
   static const String viewScreen = 'ViewScreen';
+  static const String cameraScreen = 'CameraScreen';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -47,9 +48,9 @@ class AppRouter {
           settings: const RouteSettings(name: viewScreen),
           builder: (_) => ViewScreen(),
         );
-      case AppRouter.CAMERA_SCREEN:
+      case cameraScreen:
         return MaterialPageRoute(
-          settings: RouteSettings(name: AppRouter.CAMERA_SCREEN),
+          settings: RouteSettings(name: cameraScreen),
           builder: (_) => CameraScreen(),
         );
       default:

@@ -11,15 +11,14 @@ environment:
   sdk: '>=2.17.0 <3.0.0'
 
 dependencies:
-  bloc: ^8.1.0
-  # camera: ^0.10.0+1
-  camera:
+  bloc: ^9.0.0
+  camera: ^0.11.1
   video_player:
   cupertino_icons:
   exif:
   flutter:
     sdk: flutter
-  flutter_bloc: ^8.1.1
+  flutter_bloc: ^9.1.0
   # flutter_neumorphic: ^3.1.0
   flutter_localizations:
     sdk: flutter
@@ -29,7 +28,6 @@ dependencies:
   image:
   image_picker:
   intl:
-  multi_image_picker:
   open_filex:
   path:
   path_provider:
@@ -38,7 +36,7 @@ dependencies:
   quick_actions:
   reorderables:
   sensors_plus:
-  share_extend:
+  share_plus: ^10.1.4 
   shared_preferences:
   simple_animated_icon:
   sqflite:

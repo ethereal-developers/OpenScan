@@ -35,32 +35,66 @@ class PolygonPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawCircle(t!, centerDotRadius, dotInnerShade);
-    canvas.drawCircle(b!, centerDotRadius, dotInnerShade);
-    canvas.drawCircle(l!, centerDotRadius, dotInnerShade);
-    canvas.drawCircle(r!, centerDotRadius, dotInnerShade);
+    // Draw center dots if they exist
+    if (t != null) {
+      canvas.drawCircle(t!, centerDotRadius, dotInnerShade);
+      canvas.drawCircle(t!, centerDotRadius, dotOutline);
+    }
+    if (b != null) {
+      canvas.drawCircle(b!, centerDotRadius, dotInnerShade);
+      canvas.drawCircle(b!, centerDotRadius, dotOutline);
+    }
+    if (l != null) {
+      canvas.drawCircle(l!, centerDotRadius, dotInnerShade);
+      canvas.drawCircle(l!, centerDotRadius, dotOutline);
+    }
+    if (r != null) {
+      canvas.drawCircle(r!, centerDotRadius, dotInnerShade);
+      canvas.drawCircle(r!, centerDotRadius, dotOutline);
+    }
 
-    canvas.drawCircle(t!, centerDotRadius, dotOutline);
-    canvas.drawCircle(b!, centerDotRadius, dotOutline);
-    canvas.drawCircle(l!, centerDotRadius, dotOutline);
-    canvas.drawCircle(r!, centerDotRadius, dotOutline);
+    // Draw corner dots if they exist
+    if (tl != null) {
+      canvas.drawCircle(tl!, cornerDotRadius, dotInnerShade);
+      canvas.drawCircle(tl!, cornerDotRadius, dotOutline);
+    }
+    if (tr != null) {
+      canvas.drawCircle(tr!, cornerDotRadius, dotInnerShade);
+      canvas.drawCircle(tr!, cornerDotRadius, dotOutline);
+    }
+    if (bl != null) {
+      canvas.drawCircle(bl!, cornerDotRadius, dotInnerShade);
+      canvas.drawCircle(bl!, cornerDotRadius, dotOutline);
+    }
+    if (br != null) {
+      canvas.drawCircle(br!, cornerDotRadius, dotInnerShade);
+      canvas.drawCircle(br!, cornerDotRadius, dotOutline);
+    }
 
-    canvas.drawCircle(tl!, cornerDotRadius, dotInnerShade);
-    canvas.drawCircle(tr!, cornerDotRadius, dotInnerShade);
-    canvas.drawCircle(bl!, cornerDotRadius, dotInnerShade);
-    canvas.drawCircle(br!, cornerDotRadius, dotInnerShade);
-
-    canvas.drawCircle(tl!, cornerDotRadius, dotOutline);
-    canvas.drawCircle(tr!, cornerDotRadius, dotOutline);
-    canvas.drawCircle(bl!, cornerDotRadius, dotOutline);
-    canvas.drawCircle(br!, cornerDotRadius, dotOutline);
-
-    canvas.drawLine(tl!, tr!, linesConnectingDots);
-    canvas.drawLine(tr!, br!, linesConnectingDots);
-    canvas.drawLine(br!, bl!, linesConnectingDots);
-    canvas.drawLine(bl!, tl!, linesConnectingDots);
+    // Draw connecting lines if both endpoints exist
+    if (tl != null && tr != null) {
+      canvas.drawLine(tl!, tr!, linesConnectingDots);
+    }
+    if (tr != null && br != null) {
+      canvas.drawLine(tr!, br!, linesConnectingDots);
+    }
+    if (br != null && bl != null) {
+      canvas.drawLine(br!, bl!, linesConnectingDots);
+    }
+    if (bl != null && tl != null) {
+      canvas.drawLine(bl!, tl!, linesConnectingDots);
+    }
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(PolygonPainter oldDelegate) {
+    return tl != oldDelegate.tl ||
+        tr != oldDelegate.tr ||
+        bl != oldDelegate.bl ||
+        br != oldDelegate.br ||
+        t != oldDelegate.t ||
+        l != oldDelegate.l ||
+        r != oldDelegate.r ||
+        b != oldDelegate.b;
+  }
 }

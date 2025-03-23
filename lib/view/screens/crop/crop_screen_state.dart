@@ -305,58 +305,77 @@ class CropScreenState {
   }
 
   /// Crops and returns the image
-  crop() async {
-    bool result = await NativeAndroidUtil.cropImage(
-      srcPath: srcImage!.path,
-      destPath: destImage!.path,
-      tlX: (imageSize!.width / canvasSize.width) * (tl.dx - canvasOffset.dx),
-      tlY: (imageSize!.height / canvasSize.height) * (tl.dy - canvasOffset.dy),
-      trX: (imageSize!.width / canvasSize.width) * (tr.dx - canvasOffset.dx),
-      trY: (imageSize!.height / canvasSize.height) * (tr.dy - canvasOffset.dy),
-      blX: (imageSize!.width / canvasSize.width) * (bl.dx - canvasOffset.dx),
-      blY: (imageSize!.height / canvasSize.height) * (bl.dy - canvasOffset.dy),
-      brX: (imageSize!.width / canvasSize.width) * (br.dx - canvasOffset.dx),
-      brY: (imageSize!.height / canvasSize.height) * (br.dy - canvasOffset.dy),
-    );
+  Future<bool> crop() async {
+    try {
+      if (srcImage == null || destImage == null || imageSize == null) {
+        return false;
+      }
 
-    // debugPrint('cropper: ${srcImage!.path}');
+      bool result = await NativeAndroidUtil.cropImage(
+        srcPath: srcImage!.path,
+        destPath: destImage!.path,
+        tlX: (imageSize!.width / canvasSize.width) * (tl.dx - canvasOffset.dx),
+        tlY:
+            (imageSize!.height / canvasSize.height) * (tl.dy - canvasOffset.dy),
+        trX: (imageSize!.width / canvasSize.width) * (tr.dx - canvasOffset.dx),
+        trY:
+            (imageSize!.height / canvasSize.height) * (tr.dy - canvasOffset.dy),
+        blX: (imageSize!.width / canvasSize.width) * (bl.dx - canvasOffset.dx),
+        blY:
+            (imageSize!.height / canvasSize.height) * (bl.dy - canvasOffset.dy),
+        brX: (imageSize!.width / canvasSize.width) * (br.dx - canvasOffset.dx),
+        brY:
+            (imageSize!.height / canvasSize.height) * (br.dy - canvasOffset.dy),
+      );
+
+      if (!result) {
+        return false;
+      }
+
+      // Verify the cropped file exists and has content
+      if (!await destImage!.exists() || await destImage!.length() == 0) {
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      print('Error during crop: $e');
+      return false;
+    }
   }
 
   /// Gets the current moving point
   getMovingPoint(DragStartDetails startDetails) {
-  //   debugPrint("yo0 ${startDetails.globalPosition}");
-  //   debugPrint("yo1 ${startDetails.localPosition}");
-  //   debugPrint("yo2 ${tl}");
     if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, tl.dx, tl.dy + errorOffset) <
+            startDetails.globalPosition.dy, tl.dx, tl.dy) <
         pickupDistance) {
       movingPoint.name = 'tl';
     } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, tr.dx, tr.dy + errorOffset) <
+            startDetails.globalPosition.dy, tr.dx, tr.dy) <
         pickupDistance) {
       movingPoint.name = 'tr';
     } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, bl.dx, bl.dy + errorOffset) <
+            startDetails.globalPosition.dy, bl.dx, bl.dy) <
         pickupDistance) {
       movingPoint.name = 'bl';
     } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, br.dx, br.dy + errorOffset) <
+            startDetails.globalPosition.dy, br.dx, br.dy) <
         pickupDistance) {
       movingPoint.name = 'br';
     } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, t.dx, t.dy + errorOffset) <
+            startDetails.globalPosition.dy, t.dx, t.dy) <
         pickupDistance) {
       movingPoint.name = 't';
     } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, b.dx, b.dy + errorOffset) <
+            startDetails.globalPosition.dy, b.dx, b.dy) <
         pickupDistance) {
       movingPoint.name = 'b';
     } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, l.dx, l.dy + errorOffset) <
+            startDetails.globalPosition.dy, l.dx, l.dy) <
         pickupDistance) {
       movingPoint.name = 'l';
     } else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, r.dx, r.dy + errorOffset) <
+            startDetails.globalPosition.dy, r.dx, r.dy) <
         pickupDistance) {
       movingPoint.name = 'r';
     } else {
@@ -380,10 +399,10 @@ class CropScreenState {
   ) {
     if (updateAxis == 'x') {
       double x1 = p2.dx - ((p2.dy - p1.dy + displacement) / slope);
-      p1 = Offset(x1, p1.dy + displacement + errorOffset);
+      p1 = Offset(x1, p1.dy + displacement);
     } else if (updateAxis == 'y') {
       double y1 = p2.dy - ((p2.dx - p1.dx + displacement) * slope);
-      p1 = Offset(p1.dx + displacement, y1 + errorOffset);
+      p1 = Offset(p1.dx + displacement, y1);
     }
     p1 = constraintPointToBoundary(p1);
     return p1;
@@ -431,12 +450,8 @@ class CropScreenState {
   ///
   /// Returns: Corrected Point [Offset]
   Offset constraintPointToBoundary(Offset point) {
-    // double topBoundary = 0;
-    // double bottomBoundary = canvasSize.height;
-    // double leftBoundary = 0;
-    // double rightBoundary = canvasSize.width;
-    double topBoundary = canvasOffset.dy + errorOffset;
-    double bottomBoundary = canvasOffset.dy + errorOffset + canvasSize.height;
+    double topBoundary = canvasOffset.dy;
+    double bottomBoundary = canvasOffset.dy + canvasSize.height;
     double leftBoundary = canvasOffset.dx;
     double rightBoundary = canvasOffset.dx + canvasSize.width;
 
@@ -448,7 +463,6 @@ class CropScreenState {
     point = Offset(
         point.dx, (point.dy > bottomBoundary) ? bottomBoundary : point.dy);
 
-    point = Offset(point.dx, point.dy - errorOffset);
     return point;
   }
 

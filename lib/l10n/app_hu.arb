@@ -63,5 +63,9 @@
     "quality": "Minőség",
     "save_to_device": "Mentés eszközre",
     "share_pdf": "PDF megosztása",
-    "share_images": "Képek megosztása"
+    "share_images": "Képek megosztása",
+    "cropFailed": "Nem sikerült a kép körülvágása",
+    "@cropFailed": {
+        "description": "Error message when image cropping fails"
+    }
 }
