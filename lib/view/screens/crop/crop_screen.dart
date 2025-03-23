@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' show Point;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -43,42 +44,45 @@ class CropImage extends StatefulWidget {
   final File? srcImage;
   final File? destImage;
 
-  CropImage({this.srcImage, this.destImage});
+  const CropImage({
+    Key? key,
+    this.srcImage,
+    this.destImage,
+  }) : super(key: key);
 
+  @override
   _CropImageState createState() => _CropImageState();
 }
 
 class _CropImageState extends State<CropImage> {
-  CropScreenState _cropScreen = CropScreenState();
+  late final CropScreenState _cropScreen;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
-  initState() {
+  void initState() {
     super.initState();
-    _cropScreen.srcImage = widget.srcImage;
-    _cropScreen.destImage = widget.destImage;
-    _cropScreen.canvasSize = Size(0, 0);
-    _cropScreen.tl = Offset(0, 0);
-    _cropScreen.tr = Offset(0, 0);
-    _cropScreen.bl = Offset(0, 0);
-    _cropScreen.br = Offset(0, 0);
-    _cropScreen.t = Offset(0, 0);
-    _cropScreen.l = Offset(0, 0);
-    _cropScreen.b = Offset(0, 0);
-    _cropScreen.r = Offset(0, 0);
-    _cropScreen.detectDocument();
+    _cropScreen = CropScreenState();
+    _initializeCropScreen();
+  }
+
+  Future<void> _initializeCropScreen() async {
+    if (widget.srcImage == null || widget.destImage == null) {
+      Navigator.pop(context, null);
+      return;
+    }
+
+    await _cropScreen.initialize(widget.srcImage!, widget.destImage!);
   }
 
   @override
   Widget build(BuildContext context) {
     _cropScreen.screenSize = MediaQuery.of(context).size;
-    // debugPrint(
-    //     'Screen size=> ${_cropScreen.screenSize.width} / ${_cropScreen.screenSize.height}');
+
     return SafeArea(
       child: WillPopScope(
         onWillPop: () async {
-          // Navigator.pop(context, null);
-          return true;
+          Navigator.pop(context, null);
+          return false;
         },
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
@@ -86,175 +90,220 @@ class _CropImageState extends State<CropImage> {
           appBar: AppBar(
             title: Text(
               AppLocalizations.of(context)!.crop,
-              // style: TextStyle().appBarStyle,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             centerTitle: true,
             elevation: 0.0,
             backgroundColor: Theme.of(context).primaryColor,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios),
-              padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
-              onPressed: () {
-                Navigator.pop(context, null);
-              },
+              icon: const Icon(Icons.arrow_back_ios),
+              padding: const EdgeInsets.fromLTRB(15, 8, 0, 8),
+              onPressed: () => Navigator.pop(context, null),
             ),
           ),
-          body: Container(
-            color: Theme.of(context).primaryColor,
-            child: Stack(
-              children: [
-                Container(
-                  alignment: Alignment.center,
-                  padding: EdgeInsets.all(16.0),
-                  child: Image(
-                    key: _cropScreen.imageKey,
-                    image: FileImage(_cropScreen.srcImage!),
-                    loadingBuilder: ((context, child, loadingProgress) {
-                      if (loadingProgress == null) {
-                        // Wait for the next frame to ensure the image is rendered
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          // Add a small delay to ensure the image is fully rendered
-                          Future.delayed(Duration(milliseconds: 100), () async {
-                            try {
-                              await _cropScreen.getSize();
-                            } catch (e) {
-                              print('Error getting size: $e');
-                              // Retry once after a longer delay if the first attempt fails
-                              Future.delayed(Duration(milliseconds: 500),
-                                  () async {
-                                try {
-                                  await _cropScreen.getSize();
-                                } catch (e) {
-                                  print('Error getting size after retry: $e');
-                                }
-                              });
-                            }
-                          });
-                        });
-                        return child;
-                      }
-                      return Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                        ),
-                      );
-                    }),
-                    errorBuilder: (context, error, stackTrace) {
-                      return Center(
-                        child: Icon(
-                          Icons.error_rounded,
+          body: ValueListenableBuilder<CropScreenStatus>(
+            valueListenable: _cropScreen.status,
+            builder: (context, status, _) {
+              switch (status) {
+                case CropScreenStatus.initial:
+                case CropScreenStatus.loading:
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                    ),
+                  );
+                case CropScreenStatus.error:
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
                           color: Colors.red,
-                          size: 30,
+                          size: 48,
                         ),
-                      );
-                    },
-                  ),
-                ),
-
-                /// Points Container
-                ValueListenableBuilder(
-                  valueListenable: _cropScreen.renderBoxReady,
-                  builder: (BuildContext context, bool value, Widget? child) {
-                    if (value) {
-                      return Positioned.fill(
-                        child: GestureDetector(
-                          key: _cropScreen.bodyKey,
-                          onPanStart: (startDetails) {
-                            _cropScreen.calculateAllSlopes();
-                            _cropScreen.getMovingPoint(startDetails);
-                            if (_cropScreen.movingPoint.name != 'none')
-                              _cropScreen.showMagnifier.value = true;
-                          },
-                          onPanUpdate: (updateDetails) {
-                            _cropScreen.updatedPoint.value = updateDetails;
-                            _cropScreen.updatePolygon();
-                          },
-                          onPanEnd: (details) {
-                            _cropScreen.movingPoint.name = 'none';
-                            _cropScreen.movingPoint.offset = Offset.zero;
-                            _cropScreen.showMagnifier.value = false;
-                          },
-                          child: ValueListenableBuilder(
-                              valueListenable: _cropScreen.updatedPoint,
-                              builder: (context, _, __) {
-                                return CustomPaint(
-                                  painter: PolygonPainter(
-                                    tl: _cropScreen.tl,
-                                    tr: _cropScreen.tr,
-                                    bl: _cropScreen.bl,
-                                    br: _cropScreen.br,
-                                    t: _cropScreen.t,
-                                    l: _cropScreen.l,
-                                    b: _cropScreen.b,
-                                    r: _cropScreen.r,
-                                  ),
-                                );
-                              }),
+                        const SizedBox(height: 16),
+                        Text(
+                          _cropScreen.errorMessage ?? 'An error occurred',
+                          style: const TextStyle(color: Colors.white),
+                          textAlign: TextAlign.center,
                         ),
-                      );
-                    } else {
-                      return Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _initializeCropScreen,
+                          child: const Text('Retry'),
                         ),
-                      );
-                    }
-                  },
-                ),
-
-                /// Magnifier Container
-                ValueListenableBuilder(
-                  valueListenable: _cropScreen.showMagnifier,
-                  builder: (context, bool _showMagnifier, _) {
-                    if (_showMagnifier)
-                      return ValueListenableBuilder(
-                        valueListenable: _cropScreen.updatedPoint,
-                        builder: (context, DragUpdateDetails _updatedPoint, _) {
-                          // Position magnifier above the finger
-                          return Positioned(
-                            left: _cropScreen.movingPoint.offset!.dx -
-                                40, // Center horizontally
-                            top: _cropScreen.movingPoint.offset!.dy -
-                                120, // 120px above finger
-                            child: RawMagnifier(
-                              decoration: MagnifierDecoration(
-                                shadows: const <BoxShadow>[
-                                  BoxShadow(
-                                      blurRadius: 1.5,
-                                      offset: Offset(0, 2),
-                                      spreadRadius: 1,
-                                      color: Color.fromARGB(25, 0, 0, 0))
-                                ],
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  side: BorderSide(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    width: .15,
-                                  ),
-                                ),
-                              ),
-                              size: Size(80, 80),
-                              magnificationScale: 1.5,
-                              focalPointOffset: Offset(0,
-                                  80), // Adjust focal point to show area above finger
-                            ),
-                          );
-                        },
-                      );
-                    return Container();
-                  },
-                ),
-              ],
-            ),
+                      ],
+                    ),
+                  );
+                case CropScreenStatus.ready:
+                case CropScreenStatus.processing:
+                  return _buildCropContent();
+              }
+            },
           ),
-          bottomNavigationBar: bottomBar(),
+          bottomNavigationBar: _buildBottomBar(),
         ),
       ),
     );
   }
 
-  Widget bottomBar() {
+  Widget _buildCropContent() {
+    return Container(
+      color: Theme.of(context).primaryColor,
+      child: Stack(
+        children: [
+          // Image Container
+          Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.all(16.0),
+            child: Image(
+              key: _cropScreen.imageKey,
+              image: FileImage(_cropScreen.srcImage!),
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) {
+                  // Image is loaded, now we can get its size
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _cropScreen.getSize().catchError((error) {
+                      print('Error getting size: $error');
+                      // Retry after a short delay if needed
+                      Future.delayed(const Duration(milliseconds: 500), () {
+                        _cropScreen.getSize().catchError((e) {
+                          print('Error getting size after retry: $e');
+                        });
+                      });
+                    });
+                  });
+                  return child;
+                }
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return const Center(
+                  child: Icon(
+                    Icons.error_rounded,
+                    color: Colors.red,
+                    size: 30,
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Points Container
+          ValueListenableBuilder(
+            valueListenable: _cropScreen.renderBoxReady,
+            builder: (BuildContext context, bool value, Widget? child) {
+              if (!value) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                );
+              }
+
+              return Positioned.fill(
+                child: GestureDetector(
+                  key: _cropScreen.bodyKey,
+                  onPanStart: (startDetails) {
+                    _cropScreen.calculateAllSlopes();
+                    _cropScreen.onPanStart(startDetails);
+                    if (_cropScreen.movingPoint.name != 'none') {
+                      _cropScreen.showMagnifier.value = true;
+                    }
+                  },
+                  onPanUpdate: (updateDetails) {
+                    _cropScreen.updatedPoint.value = updateDetails;
+                    _cropScreen.updatePolygon();
+                  },
+                  onPanEnd: (details) {
+                    _cropScreen.movingPoint.name = 'none';
+                    _cropScreen.movingPoint.offset = Point<num>(0, 0);
+                    _cropScreen.showMagnifier.value = false;
+                  },
+                  child: ValueListenableBuilder(
+                    valueListenable: _cropScreen.updatedPoint,
+                    builder: (context, _, __) {
+                      return CustomPaint(
+                        painter: PolygonPainter(
+                          tl: Offset(_cropScreen.tl.x.toDouble(),
+                              _cropScreen.tl.y.toDouble()),
+                          tr: Offset(_cropScreen.tr.x.toDouble(),
+                              _cropScreen.tr.y.toDouble()),
+                          bl: Offset(_cropScreen.bl.x.toDouble(),
+                              _cropScreen.bl.y.toDouble()),
+                          br: Offset(_cropScreen.br.x.toDouble(),
+                              _cropScreen.br.y.toDouble()),
+                          t: Offset(_cropScreen.t.x.toDouble(),
+                              _cropScreen.t.y.toDouble()),
+                          l: Offset(_cropScreen.l.x.toDouble(),
+                              _cropScreen.l.y.toDouble()),
+                          b: Offset(_cropScreen.b.x.toDouble(),
+                              _cropScreen.b.y.toDouble()),
+                          r: Offset(_cropScreen.r.x.toDouble(),
+                              _cropScreen.r.y.toDouble()),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // Magnifier Container
+          ValueListenableBuilder(
+            valueListenable: _cropScreen.showMagnifier,
+            builder: (context, bool showMagnifier, _) {
+              if (!showMagnifier) return const SizedBox.shrink();
+
+              return ValueListenableBuilder<DragUpdateDetails?>(
+                valueListenable: _cropScreen.updatedPoint,
+                builder: (context, DragUpdateDetails? updatedPoint, _) {
+                  if (updatedPoint == null) return const SizedBox.shrink();
+                  return Positioned(
+                    left: _cropScreen.movingPoint.offset!.x.toDouble() - 40,
+                    top: _cropScreen.movingPoint.offset!.y.toDouble() - 120,
+                    child: RawMagnifier(
+                      decoration: MagnifierDecoration(
+                        shadows: const <BoxShadow>[
+                          BoxShadow(
+                            blurRadius: 1.5,
+                            offset: Offset(0, 2),
+                            spreadRadius: 1,
+                            color: Color.fromARGB(25, 0, 0, 0),
+                          ),
+                        ],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: .15,
+                          ),
+                        ),
+                      ),
+                      size: const Size(80, 80),
+                      magnificationScale: 1.5,
+                      focalPointOffset: const Offset(0, 80),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
     return Container(
       color: Theme.of(context).primaryColor,
       width: MediaQuery.of(context).size.width,
@@ -262,57 +311,31 @@ class _CropImageState extends State<CropImage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          MaterialButton(
-            elevation: 0,
-            highlightElevation: 0,
-            color: Colors.transparent,
-            splashColor: Colors.transparent,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // TODO: finalize on this icon for no crop
-                Icon(Icons.aspect_ratio_rounded),
-                Text(
-                  // TODO: i18n
-                  'No Crop',
-                  style: TextStyle(fontSize: 9),
-                )
-              ],
-            ),
-            onPressed: () async {
+          _buildBottomBarButton(
+            icon: Icons.aspect_ratio_rounded,
+            label: 'No Crop',
+            onPressed: () {
               _cropScreen.setPointsToCorner();
               setState(() {});
             },
           ),
-          MaterialButton(
-            elevation: 0,
-            highlightElevation: 0,
-            color: Colors.transparent,
-            splashColor: Colors.transparent,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.document_scanner_rounded),
-                Text(
-                  // TODO: i18n
-                  'Auto-Detect',
-                  style: TextStyle(fontSize: 9),
-                )
-              ],
-            ),
+          _buildBottomBarButton(
+            icon: Icons.document_scanner_rounded,
+            label: 'Auto-Detect',
             onPressed: () async {
-              _cropScreen.autoDetectTriggered = true;
+              await _cropScreen.handleAutoDetect();
               setState(() {});
             },
           ),
-          MaterialButton(
+          _buildBottomBarButton(
+            icon: Icons.done,
+            label: 'Done',
             onPressed: () async {
               if (_cropScreen.renderBoxReady.value) {
                 bool success = await _cropScreen.crop();
                 if (success) {
                   Navigator.pop(context, _cropScreen.destImage);
                 } else {
-                  // Show error message
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(AppLocalizations.of(context)!.cropFailed),
@@ -322,22 +345,38 @@ class _CropImageState extends State<CropImage> {
                 }
               }
             },
-            color: Theme.of(context).colorScheme.secondary,
-            splashColor: Colors.transparent,
-            disabledColor:
-                Theme.of(context).colorScheme.secondary.withOpacity(0.5),
-            disabledTextColor: Colors.white.withOpacity(0.5),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.done),
-                Text(
-                  // TODO: i18n
-                  'Done',
-                  style: TextStyle(fontSize: 9),
-                )
-              ],
-            ),
+            isPrimary: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBarButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+    bool isPrimary = false,
+  }) {
+    return MaterialButton(
+      elevation: 0,
+      highlightElevation: 0,
+      color: isPrimary
+          ? Theme.of(context).colorScheme.secondary
+          : Colors.transparent,
+      splashColor: Colors.transparent,
+      disabledColor: isPrimary
+          ? Theme.of(context).colorScheme.secondary.withOpacity(0.5)
+          : null,
+      disabledTextColor: Colors.white.withOpacity(0.5),
+      onPressed: onPressed,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 9),
           ),
         ],
       ),

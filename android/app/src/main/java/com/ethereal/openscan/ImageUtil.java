@@ -32,11 +32,13 @@ public class ImageUtil {
     private static final String TAG = ImageUtil.class.getSimpleName();
     
     // OpenCV parameters
-    private static final double CANNY_LOW_THRESHOLD = 75.0;
-    private static final double CANNY_HIGH_THRESHOLD = 200.0;
-    private static final double APPROX_POLY_EPSILON = 0.03;
-    private static final Size GAUSSIAN_KERNEL_SIZE = new Size(3.0, 3.0);
-    private static final Size MORPH_KERNEL_SIZE = new Size(9.0, 9.0);
+    private static final double CANNY_LOW_THRESHOLD = 50.0;
+    private static final double CANNY_HIGH_THRESHOLD = 150.0;
+    private static final double APPROX_POLY_EPSILON = 0.02;
+    private static final Size GAUSSIAN_KERNEL_SIZE = new Size(5.0, 5.0);
+    private static final Size MORPH_KERNEL_SIZE = new Size(3.0, 3.0);
+    private static final double MIN_AREA_RATIO = 0.1;
+    private static final double MAX_AREA_RATIO = 0.95;
 
     public static boolean cropImage(String srcPath, String destPath, double tl_x, double tl_y, 
             double tr_x, double tr_y, double bl_x, double bl_y, double br_x, double br_y) {
@@ -74,8 +76,11 @@ public class ImageUtil {
             // Apply perspective transform
             Imgproc.warpPerspective(mat, resultDoc, perspectiveTransform, resultDoc.size());
 
+            // Enhance the result
+            Mat enhanced = enhanceDocument(resultDoc);
+
             Bitmap cropped = Bitmap.createBitmap(maxWidth, maxHeight, Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(resultDoc, cropped);
+            Utils.matToBitmap(enhanced, cropped);
 
             // Save the result
             try (FileOutputStream stream = new FileOutputStream(destPath)) {
@@ -86,6 +91,7 @@ public class ImageUtil {
                 return false;
             } finally {
                 cropped.recycle();
+                enhanced.release();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error during perspective crop", e);
@@ -95,8 +101,41 @@ public class ImageUtil {
         }
     }
 
-    public static String fixRotation(String srcPath, String destPath) {
+    private static Mat enhanceDocument(Mat document) {
+        Mat enhanced = new Mat();
+        
+        // Convert to grayscale
+        Mat gray = new Mat();
+        Imgproc.cvtColor(document, gray, Imgproc.COLOR_BGR2GRAY);
+        
+        // Apply bilateral filter for edge-preserving smoothing
+        Mat smoothed = new Mat();
+        Imgproc.bilateralFilter(gray, smoothed, 9, 75, 75);
+        
+        // Apply adaptive thresholding
+        Mat binary = new Mat();
+        Imgproc.adaptiveThreshold(smoothed, binary, 255, 
+            Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 11, 2);
+        
+        // Apply morphological operations for noise removal
+        Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
+        Mat morph = new Mat();
+        Imgproc.morphologyEx(binary, morph, Imgproc.MORPH_CLOSE, kernel);
+        
+        // Convert back to color
+        Imgproc.cvtColor(morph, enhanced, Imgproc.COLOR_GRAY2BGR);
+        
+        // Clean up
+        gray.release();
+        smoothed.release();
+        binary.release();
+        kernel.release();
+        morph.release();
+        
+        return enhanced;
+    }
 
+    public static String fixRotation(String srcPath, String destPath) {
         return srcPath;
     }
 
@@ -148,6 +187,7 @@ public class ImageUtil {
     }
 
     public static Corners detectDocument(String path) {
+        Log.d(TAG, "Starting document detection for path: " + path);
         Mat src = Imgcodecs.imread(path);
         if (src.empty()) {
             Log.e(TAG, "Failed to read image for document detection");
@@ -155,97 +195,204 @@ public class ImageUtil {
         }
 
         try {
-            ArrayList<MatOfPoint> contours = findContours(src);
-            return getCorners(contours, src.size());
+            Log.d(TAG, "Preprocessing image");
+            // Preprocess image
+            Mat preprocessed = preprocessImage(src);
+            
+            Log.d(TAG, "Finding contours");
+            // Find contours
+            ArrayList<MatOfPoint> contours = findContours(preprocessed);
+            Log.d(TAG, "Found " + contours.size() + " contours");
+            
+            // Find the best document corners
+            Log.d(TAG, "Finding best document corners");
+            Corners corners = getCorners(contours, src.size());
+            Log.d(TAG, "Document corners found: " + (corners != null));
+            
+            // Clean up
+            preprocessed.release();
+            
+            return corners;
         } finally {
             src.release();
         }
     }
 
-    private static ArrayList<MatOfPoint> findContours(Mat src) {
-        Mat grayImage = new Mat(src.size(), CvType.CV_8UC4);
-        Mat cannedImage = new Mat(src.size(), CvType.CV_8UC1);
+    private static Mat preprocessImage(Mat src) {
+        Log.d(TAG, "Starting image preprocessing");
+        Mat processed = new Mat();
+        
+        // Convert to grayscale
+        Mat gray = new Mat();
+        Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
+        
+        // Apply Gaussian blur
+        Mat blurred = new Mat();
+        Imgproc.GaussianBlur(gray, blurred, GAUSSIAN_KERNEL_SIZE, 0);
+        
+        // Apply Canny edge detection
+        Mat edges = new Mat();
+        Imgproc.Canny(blurred, edges, CANNY_LOW_THRESHOLD, CANNY_HIGH_THRESHOLD);
+        
+        // Apply morphological operations
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, MORPH_KERNEL_SIZE);
-        Mat dilate = new Mat(src.size(), CvType.CV_8UC1);
+        Imgproc.morphologyEx(edges, processed, Imgproc.MORPH_CLOSE, kernel);
+        
+        // Clean up
+        gray.release();
+        blurred.release();
+        edges.release();
+        kernel.release();
+        
+        Log.d(TAG, "Image preprocessing completed");
+        return processed;
+    }
 
-        try {
-            // Preprocessing
-            Imgproc.cvtColor(src, grayImage, Imgproc.COLOR_BGR2GRAY);
-            Imgproc.GaussianBlur(grayImage, grayImage, GAUSSIAN_KERNEL_SIZE, 0.0);
-            Imgproc.Canny(grayImage, cannedImage, CANNY_LOW_THRESHOLD, CANNY_HIGH_THRESHOLD);
-            Imgproc.dilate(cannedImage, dilate, kernel);
-            Imgproc.threshold(dilate, dilate, 20.0, 255.0, Imgproc.THRESH_TRIANGLE);
-
-            // Find contours
-            ArrayList<MatOfPoint> contours = new ArrayList<>();
-            Mat hierarchy = new Mat();
-            Imgproc.findContours(dilate, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
-            hierarchy.release();
-
-            // Sort contours by area
-            Collections.sort(contours, (lhs, rhs) -> Double.compare(Imgproc.contourArea(rhs), Imgproc.contourArea(lhs)));
-            return contours;
-        } finally {
-            grayImage.release();
-            cannedImage.release();
-            kernel.release();
-            dilate.release();
-        }
+    private static ArrayList<MatOfPoint> findContours(Mat src) {
+        Log.d(TAG, "Finding contours");
+        ArrayList<MatOfPoint> contours = new ArrayList<>();
+        Mat hierarchy = new Mat();
+        
+        Imgproc.findContours(src, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        
+        hierarchy.release();
+        Log.d(TAG, "Found " + contours.size() + " contours");
+        return contours;
     }
 
     private static Corners getCorners(ArrayList<MatOfPoint> contours, Size size) {
-        int maxContoursToCheck = Math.min(contours.size(), 5);
+        Log.d(TAG, "Finding best document corners from " + contours.size() + " contours");
+        double maxArea = 0;
+        MatOfPoint maxContour = null;
         
-        for (int index = 0; index < maxContoursToCheck; index++) {
-            MatOfPoint2f c2f = new MatOfPoint2f(contours.get(index).toArray());
-            double peri = Imgproc.arcLength(c2f, true);
-            MatOfPoint2f approx = new MatOfPoint2f();
-            
-            try {
-                Imgproc.approxPolyDP(c2f, approx, APPROX_POLY_EPSILON * peri, true);
-                List<Point> points = approx.toList();
-                MatOfPoint convex = new MatOfPoint();
-                
-                try {
-                    approx.convertTo(convex, CvType.CV_32S);
-                    Log.d(TAG, "Detected Points: " + points);
-
-                    if (points.size() == 4 && Imgproc.isContourConvex(convex)) {
-                        List<Point> sortedPoints = sortPoints(points);
-                        return new Corners(sortedPoints, size);
-                    }
-                } finally {
-                    convex.release();
-                }
-            } finally {
-                approx.release();
+        // Find the largest contour
+        for (MatOfPoint contour : contours) {
+            double area = Imgproc.contourArea(contour);
+            if (area > maxArea) {
+                maxArea = area;
+                maxContour = contour;
             }
         }
-        return null;
+        
+        if (maxContour == null) {
+            Log.d(TAG, "No suitable contour found");
+            return null;
+        }
+        
+        // Check if the contour area is within reasonable bounds
+        double totalArea = size.width * size.height;
+        double areaRatio = maxArea / totalArea;
+        
+        Log.d(TAG, "Largest contour area ratio: " + areaRatio);
+        
+        if (areaRatio < MIN_AREA_RATIO || areaRatio > MAX_AREA_RATIO) {
+            Log.d(TAG, "Contour area ratio outside acceptable bounds");
+            return null;
+        }
+        
+        // Approximate the contour to a polygon
+        MatOfPoint2f contour2f = new MatOfPoint2f(maxContour.toArray());
+        double peri = Imgproc.arcLength(contour2f, true);
+        MatOfPoint2f approx = new MatOfPoint2f();
+        
+        try {
+            Imgproc.approxPolyDP(contour2f, approx, APPROX_POLY_EPSILON * peri, true);
+            List<Point> points = approx.toList();
+            
+            // Check if we have exactly 4 points
+            if (points.size() != 4) {
+                Log.d(TAG, "Contour has " + points.size() + " points, expected 4");
+                return null;
+            }
+            
+            // Sort points in clockwise order
+            List<Point> sortedPoints = sortPoints(points);
+            Log.d(TAG, "Successfully found 4 document corners");
+            return new Corners(sortedPoints, size);
+        } finally {
+            contour2f.release();
+            approx.release();
+        }
     }
 
     private static List<Point> sortPoints(List<Point> points) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            points.sort((point1, point2) -> (int) ((point1.x + point1.y) - (point2.x + point2.y)));
-        }
-        Point p0 = points.get(0);
+        // Sort points by their sum (x + y)
+        points.sort((p1, p2) -> Double.compare(p1.x + p1.y, p2.x + p2.y));
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            points.sort((point1, point2) -> (int) ((point1.y - point1.x) - (point2.y - point2.x)));
-        }
-        Point p1 = points.get(0);
+        // Get the top-left point
+        Point topLeft = points.get(0);
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            points.sort((point1, point2) -> (int) ((point2.x + point2.y) - (point1.x + point1.y)));
-        }
-        Point p2 = points.get(0);
+        // Sort remaining points by their angle relative to top-left
+        points.subList(1, points.size()).sort((p1, p2) -> {
+            double angle1 = Math.atan2(p1.y - topLeft.y, p1.x - topLeft.x);
+            double angle2 = Math.atan2(p2.y - topLeft.y, p2.x - topLeft.x);
+            return Double.compare(angle1, angle2);
+        });
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            points.sort((point1, point2) -> (int) ((point2.y - point2.x) - (point1.y - point1.x)));
+        return points;
+    }
+
+    public static List<Point> detectDocumentCorners(String imagePath) {
+        Log.d(TAG, "Starting document detection for path: " + imagePath);
+        try {
+            // Read the image
+            Mat source = Imgcodecs.imread(imagePath);
+            if (source.empty()) {
+                Log.e(TAG, "Failed to load image");
+                return null;
+            }
+            Log.d(TAG, "Image loaded successfully. Size: " + source.size());
+
+            // Preprocess the image
+            Log.d(TAG, "Preprocessing image");
+            Mat gray = new Mat();
+            Imgproc.cvtColor(source, gray, Imgproc.COLOR_BGR2GRAY);
+            Mat blur = new Mat();
+            Imgproc.GaussianBlur(gray, blur, new Size(5, 5), 0);
+            Mat edges = new Mat();
+            Imgproc.Canny(blur, edges, 75, 200);
+            Log.d(TAG, "Preprocessing completed");
+
+            // Find contours
+            Log.d(TAG, "Finding contours");
+            List<MatOfPoint> contours = new ArrayList<>();
+            Mat hierarchy = new Mat();
+            Imgproc.findContours(edges, contours, hierarchy, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
+            Log.d(TAG, "Found " + contours.size() + " contours");
+
+            // Find the best document corners
+            Log.d(TAG, "Finding best document corners");
+            List<Point> bestCorners = null;
+            double maxArea = 0;
+
+            for (MatOfPoint contour : contours) {
+                double area = Imgproc.contourArea(contour);
+                if (area > maxArea) {
+                    MatOfPoint2f approxCurve = new MatOfPoint2f();
+                    MatOfPoint2f contour2f = new MatOfPoint2f(contour.toArray());
+                    double epsilon = 0.02 * Imgproc.arcLength(contour2f, true);
+                    Imgproc.approxPolyDP(contour2f, approxCurve, epsilon, true);
+
+                    if (approxCurve.total() == 4) {
+                        Point[] corners = approxCurve.toArray();
+                        bestCorners = Arrays.asList(corners);
+                        maxArea = area;
+                        Log.d(TAG, "Found potential document with area: " + area);
+                    }
+                }
+            }
+
+            if (bestCorners != null) {
+                Log.d(TAG, "Document corners found: " + bestCorners);
+                return bestCorners;
+            } else {
+                Log.w(TAG, "No suitable document corners found");
+                return null;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in detectDocumentCorners: " + e.getMessage(), e);
+            return null;
         }
-        Point p3 = points.get(0);
-        
-        return Arrays.asList(p0, p1, p2, p3);
     }
 }
 

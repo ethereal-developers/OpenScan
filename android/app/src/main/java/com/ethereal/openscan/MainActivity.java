@@ -39,7 +39,9 @@ public class MainActivity extends FlutterActivity {
     }
 
     private void handleMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+        Log.d(TAG_NAME, "Method called: " + call.method);
         if (!isOpenCVInitialized) {
+            Log.d(TAG_NAME, "OpenCV not initialized, initializing...");
             initializeOpenCV();
         }
 
@@ -62,6 +64,7 @@ public class MainActivity extends FlutterActivity {
                     handleRotateImage(call, result);
                     break;
                 case "detectDocument":
+                    Log.d(TAG_NAME, "Starting document detection");
                     handleDetectDocument(call, result);
                     break;
                 default:
@@ -74,11 +77,13 @@ public class MainActivity extends FlutterActivity {
     }
 
     private void initializeOpenCV() {
+        Log.d(TAG_NAME, "Attempting to initialize OpenCV");
         if (OpenCVLoader.initDebug()) {
             isOpenCVInitialized = true;
             Log.d(TAG_NAME, "OpenCV loaded successfully");
         } else {
             Log.e(TAG_NAME, "OpenCV NOT loaded");
+            isOpenCVInitialized = false;
         }
     }
 
@@ -171,16 +176,43 @@ public class MainActivity extends FlutterActivity {
     }
 
     private void handleDetectDocument(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-        String path = call.argument("path");
-        Corners corners = ImageUtil.detectDocument(path);
-        Log.d(TAG_NAME, "Detected corners: " + corners);
-        
-        List<List<Double>> resultList = new ArrayList<>();
-        if (corners != null) {
-            for (Point p : corners.getCorners()) {
-                resultList.add(Arrays.asList(p.x, p.y));
+        Log.d(TAG_NAME, "detectDocument method called");
+        try {
+            String imagePath = call.argument("path");
+            Log.d(TAG_NAME, "Image path: " + imagePath);
+            
+            if (imagePath == null) {
+                Log.e(TAG_NAME, "Image path is null");
+                result.error("INVALID_PATH", "Image path is null", null);
+                return;
             }
+
+            File imageFile = new File(imagePath);
+            if (!imageFile.exists()) {
+                Log.e(TAG_NAME, "Image file does not exist: " + imagePath);
+                result.error("FILE_NOT_FOUND", "Image file does not exist", null);
+                return;
+            }
+
+            Log.d(TAG_NAME, "Starting document detection process");
+            List<Point> corners = ImageUtil.detectDocumentCorners(imagePath);
+            Log.d(TAG_NAME, "Document detection completed. Found " + (corners != null ? corners.size() : 0) + " corners");
+
+            if (corners == null || corners.isEmpty()) {
+                Log.w(TAG_NAME, "No corners detected");
+                result.success(new ArrayList<>());
+                return;
+            }
+
+            List<List<Double>> points = new ArrayList<>();
+            for (Point corner : corners) {
+                points.add(Arrays.asList(corner.x, corner.y));
+            }
+            Log.d(TAG_NAME, "Returning detected points: " + points);
+            result.success(points);
+        } catch (Exception e) {
+            Log.e(TAG_NAME, "Error in detectDocument: " + e.getMessage(), e);
+            result.error("DETECTION_ERROR", e.getMessage(), null);
         }
-        result.success(resultList);
     }
 }

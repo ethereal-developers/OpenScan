@@ -17,10 +17,24 @@ class NativeAndroidUtil {
     });
   }
 
-  static Future detectDocument(String path) {
-    return _channel.invokeMethod(_DETECT_DOCUMENT, {
-      "path": path,
-    });
+  static Future detectDocument(String path) async {
+    print('NativeAndroidUtil.detectDocument called with path: $path');
+    try {
+      print('Invoking native method through channel');
+      final result = await _channel.invokeMethod(_DETECT_DOCUMENT, {
+        "path": path,
+      });
+      print('Native method returned result: $result');
+      if (result == null) {
+        print('Native method returned null result');
+        return [];
+      }
+      return result;
+    } catch (e, stackTrace) {
+      print('Error calling native detectDocument: $e');
+      print('Stack trace: $stackTrace');
+      rethrow;
+    }
   }
 
   static Future compress(String src, String dest, int desiredQuality) async {
@@ -63,7 +77,8 @@ class NativeAndroidUtil {
     });
   }
 
-  static Future fixRotation({required String srcPath, required String destPath}) {
+  static Future fixRotation(
+      {required String srcPath, required String destPath}) {
     return _channel.invokeMethod(_FIX_ROTATION, {
       "srcPath": srcPath,
       "destPath": destPath,
