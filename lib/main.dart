@@ -2,54 +2,59 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/appRouter.dart';
+import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/l10n/l10n.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-
-import 'core/theme/appTheme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  Globals.cameras = await availableCameras();
-  debugPrint('Cameras => ');
-  Globals.cameras.every((cameraDescription) {
-    debugPrint(
-        '${cameraDescription.name} : ${cameraDescription.lensDirection}: ${cameraDescription.sensorOrientation}');
-    return true;
-  });
+  await _initializeCameras();
+  runApp(const OpenScan());
+}
 
-  runApp(OpenScan());
+Future<void> _initializeCameras() async {
+  Globals.cameras = await availableCameras();
+  debugPrint('Available Cameras:');
+  for (final camera in Globals.cameras) {
+    debugPrint(
+        '${camera.name}: ${camera.lensDirection} (${camera.sensorOrientation})');
+  }
 }
 
 class OpenScan extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: AppTheme.primaryColor,
-      systemNavigationBarIconBrightness: Brightness.light,
-      systemNavigationBarDividerColor: AppTheme.primaryColor,
-      statusBarIconBrightness: Brightness.light,
-      statusBarColor: AppTheme.primaryColor,
-      statusBarBrightness: Brightness.dark,
-    ));
-    // SystemChrome.setEnabledSystemUIOverlays([
-    //   SystemUiOverlay.bottom,
-    //   SystemUiOverlay.top,
-    // ]);
+  const OpenScan({Key? key}) : super(key: key);
+
+  void _configureSystemUI() {
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        systemNavigationBarColor: AppTheme.primaryColor,
+        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarDividerColor: AppTheme.primaryColor,
+        statusBarIconBrightness: Brightness.light,
+        statusBarColor: AppTheme.primaryColor,
+        statusBarBrightness: Brightness.dark,
+      ),
+    );
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitDown,
       DeviceOrientation.portraitUp,
     ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _configureSystemUI();
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      // theme: ThemeData.dark().copyWith(colorScheme.secondary: AppTheme.colorScheme.secondary),
       theme: AppTheme.appTheme,
       themeMode: ThemeMode.dark,
-      initialRoute: AppRouter.HOME_SCREEN,
+      initialRoute: AppRouter
+          .homeScreen, // Changed to lowercase to match Dart naming conventions
       onGenerateRoute: AppRouter.onGenerateRoute,
-      localizationsDelegates: [
+      localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

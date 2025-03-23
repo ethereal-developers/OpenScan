@@ -40,7 +40,8 @@ class _PreviewScreenState extends State<PreviewScreen>
 
   void doubleTapImageZoom() async {
     //TODO: Generalize method
-    debugPrint((_transformationController.value == Matrix4.identity()).toString());
+    debugPrint(
+        (_transformationController.value == Matrix4.identity()).toString());
 
     final position = _doubleTapDetails.localPosition;
 
@@ -281,14 +282,17 @@ class _PreviewScreenState extends State<PreviewScreen>
                   builder: (_) {
                     return DeleteDialog(
                       deleteOnPressed: () async {
-                        bool directoryDeleted = await BlocProvider.of<DirectoryCubit>(context).deleteImage(
+                        bool directoryDeleted =
+                            await BlocProvider.of<DirectoryCubit>(context)
+                                .deleteImage(
                           context,
                           imageToDelete:
                               state.images![pageController.page!.toInt()],
                         );
                         Navigator.pop(context);
                         if (directoryDeleted) {
-                          Navigator.popUntil(context, ModalRoute.withName(AppRouter.HOME_SCREEN));
+                          Navigator.popUntil(context,
+                              ModalRoute.withName(AppRouter.homeScreen));
                           // Navigator.pop(context);
                           // Navigator.pop(context);
                         }

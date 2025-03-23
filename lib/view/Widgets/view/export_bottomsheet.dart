@@ -1,13 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/appRouter.dart';
-// import 'package:fluttertoast/fluttertoast.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/view/OSSwitch.dart';
 import 'package:openscan/view/extensions.dart';
-import 'package:openscan/view/screens/view_screen.dart';
 import 'package:share_extend/share_extend.dart';
 
 class ExportBottomSheet extends StatefulWidget {
@@ -36,7 +33,7 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
     return BottomSheet(
       enableDrag: false,
       onClosing: () {
-        Navigator.popUntil(context, ModalRoute.withName(AppRouter.VIEW_SCREEN));
+        Navigator.popUntil(context, ModalRoute.withName(AppRouter.viewScreen));
       },
       builder: (context) {
         return Container(
@@ -110,13 +107,13 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
 
                       if (exportType == 'PDF') {
                         if (widget.share) {
-                          String? fileNameWithPath = await fileOperations
-                              .saveToAppDirectory(
-                                context: context,
-                                imagesSelected: widget.imagesSelected,
-                                fileName: fileName,
-                                images: state.images!,
-                              );
+                          String? fileNameWithPath =
+                              await fileOperations.saveToAppDirectory(
+                            context: context,
+                            imagesSelected: widget.imagesSelected,
+                            fileName: fileName,
+                            images: state.images!,
+                          );
                           debugPrint('Filename => $fileNameWithPath');
 
                           if (fileNameWithPath != null) {
