@@ -9,6 +9,7 @@ import 'package:openscan/core/models.dart';
 import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:openscan/core/services/document_scanner_service.dart';
+import 'package:openscan/core/services/image_processing_service.dart';
 
 part 'directory_state.dart';
 
@@ -178,7 +179,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
     if (fromGallery) {
       imageList = await (fileOperations.openGallery());
-      // debugPrint('imageList --> $imageList');
     } else {
       File? image = await fileOperations.openCamera();
       if (image != null) {
@@ -192,61 +192,72 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       }
     }
 
-    for (File image in imageList) {
-      if (image.existsSync()) {
-        debugPrint("imgpath --> ${image.path}");
-        getImageSize('Original', image);
+    if (imageList.isEmpty) return;
 
-        Directory cacheDir = await getTemporaryDirectory();
-        String imgPath =
-            await NativeAndroidUtil.compress(image.path, cacheDir.path, 70);
+    // Pre-calculate all indices before processing
+    final startIndex = state.images!.length + 1;
+    final indices = List.generate(
+      imageList.length,
+      (index) => startIndex + index,
+    );
 
-        File compressedImage = File(imgPath);
-        if (compressedImage.existsSync()) {
-          image.deleteSync();
-          image = compressedImage;
-        }
+    // Process all images in parallel using isolates
+    List<Future<void>> processingFutures = [];
+    List<String> errors = [];
 
-        String exifFixedPath = await NativeAndroidUtil.fixRotation(
-          srcPath: image.path,
-          destPath: cacheDir.path,
-        );
+    for (int i = 0; i < imageList.length; i++) {
+      final message = ImageProcessMessage(
+        image: imageList[i],
+        dirPath: state.dirPath!,
+        index: indices[i], // Use pre-calculated index
+        quickScan: quickScan,
+        fromGallery: fromGallery,
+      );
 
-        File exifFixedImage = File(exifFixedPath);
-        if (exifFixedImage.existsSync()) {
-          image.deleteSync();
-          image = exifFixedImage;
-        }
-
-        // getImageSize('Compressed', compressedImage);
-        // debugPrint('Image = ${Image.file(compressedImage).width}');
-
-        File savedImage = await fileOperations.saveImage(
-          image: image,
-          index: state.images!.length + 1,
-          dirPath: state.dirPath!,
-        );
-        // debugPrint('Saved ${savedImage.path}');
-
-        ImageOS tempImage = ImageOS(
-          idx: state.imageCount + 1,
-          imgPath: savedImage.path,
-        );
-        debugPrint(tempImage.idx.toString());
-        state.images!.add(tempImage);
-        state.imageCount = state.images!.length;
-
-        if (state.imageCount == 1) {
-          state.firstImgPath = savedImage.path;
-        }
-
-        if (quickScan) {
-          return createImage(context, quickScan: quickScan);
-        }
-      }
+      processingFutures.add(
+        ImageProcessingService.processImageInIsolate(message).then((result) {
+          if (result.success && result.imagePath != null) {
+            // Create new ImageOS object with pre-calculated index
+            final newImage = ImageOS(
+              idx: indices[i], // Use the same pre-calculated index
+              imgPath: result.imagePath!,
+              selected: false,
+            );
+            // Update state with new image
+            state.images!.add(newImage);
+            state.imageCount = state.images!.length;
+            if (state.imageCount == 1) {
+              state.firstImgPath = newImage.imgPath;
+            }
+            emitState(state);
+          } else {
+            errors.add(result.error ?? 'Unknown error processing image');
+          }
+        }),
+      );
     }
+
+    // Wait for all images to be processed
+    await Future.wait(processingFutures);
+
+    // Show error message if any images failed to process
+    if (errors.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Failed to process ${errors.length} images: ${errors.join(", ")}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+
+    // Clean up temporary files
     await fileOperations.deleteTemporaryImages();
-    emitState(state);
+
+    // If quick scan, start another scan
+    if (quickScan) {
+      return createImage(context, quickScan: quickScan);
+    }
   }
 
   /// Calls image cropper

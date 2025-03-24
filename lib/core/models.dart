@@ -1,4 +1,5 @@
 import 'package:openscan/core/services/document_scanner_service.dart';
+import 'dart:io';
 
 class DirectoryOS {
   String dirName;
@@ -70,4 +71,20 @@ class DocumentPoints {
       points: data['hasPoints'] ? data['points'] : data['points'],
     );
   }
+}
+
+class ImageProcessMessage {
+  final File image;
+  final String dirPath;
+  final int index;
+  final bool quickScan;
+  final bool fromGallery;
+
+  ImageProcessMessage({
+    required this.image,
+    required this.dirPath,
+    required this.index,
+    this.quickScan = false,
+    this.fromGallery = false,
+  });
 }
