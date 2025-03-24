@@ -84,7 +84,7 @@ class ImageCard extends StatelessWidget {
           right: 10,
           child: CircleAvatar(
             backgroundColor:
-                Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+                Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
             radius: 13,
             child: Text(
               image!.idx.toString(),

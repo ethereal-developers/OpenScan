@@ -133,14 +133,14 @@ class _PreviewScreenState extends State<PreviewScreen>
                   itemCount: state.imageCount,
                   itemBuilder: (context, index) {
                     GlobalKey imageKey = GlobalKey();
-                    // _currentPageIndex = index;
 
-                    // TODO: Apply Future builder
-                    // imageBytes = PreviewScreen.previewModel
-                    //     .getImageBytes(state.images![index].imgPath);
-                    // imageBytes!.getBytes();
-                    // imageLib.decodeImage(imageBytes!.getBytes());
-                    // imageBytes = imageLib.decodeImage(imageBytes!.getBytes());
+                    if (index >= state.images!.length) {
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      );
+                    }
 
                     return GestureDetector(
                       onDoubleTapDown: (details) {

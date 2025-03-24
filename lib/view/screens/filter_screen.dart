@@ -28,7 +28,7 @@ class _FilterScreenState extends State<FilterScreen> {
   late String currentImagePath;
   late String filterImageName;
   final DocumentScannerService _documentScanner = DocumentScannerService();
-  DocumentFilterType _selectedFilter = DocumentFilterType.adaptiveThreshold;
+  DocumentFilterType _selectedFilter = DocumentFilterType.original;
   bool imageReady = false;
 
   @override
@@ -45,16 +45,51 @@ class _FilterScreenState extends State<FilterScreen> {
           elevation: 0,
           centerTitle: true,
           backgroundColor: Theme.of(context).primaryColor.withOpacity(0.5),
+          title: Text(
+            'Apply Filter',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios),
             padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
             onPressed: () => Navigator.pop(context),
           ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.check),
+              padding: EdgeInsets.fromLTRB(0, 8, 15, 8),
+              onPressed: () async {
+                // First update the filter
+                BlocProvider.of<DirectoryCubit>(context).updateImageFilter(
+                  currentImagePath,
+                  _selectedFilter,
+                );
+                // Wait a brief moment for the state to update
+                await Future.delayed(Duration(milliseconds: 100));
+                // Then refresh the state
+                BlocProvider.of<DirectoryCubit>(context).getImageData();
+                // Finally navigate back
+                Navigator.pop(context);
+              },
+            ),
+          ],
         ),
         backgroundColor: Theme.of(context).primaryColor,
         body: BlocConsumer<DirectoryCubit, DirectoryState>(
           listener: (context, state) {},
           builder: (context, directoryState) {
+            if (directoryState.images == null ||
+                directoryState.images!.isEmpty) {
+              return Center(
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                ),
+              );
+            }
             return PageView.builder(
               physics: ClampingScrollPhysics(),
               controller: _pageController,
@@ -109,6 +144,11 @@ class _FilterScreenState extends State<FilterScreen> {
                         scrollDirection: Axis.horizontal,
                         itemCount: DocumentFilterType.values.length,
                         itemBuilder: (BuildContext context, int filterIndex) {
+                          if (filterIndex >= DocumentFilterType.values.length) {
+                            return SizedBox.shrink();
+                          }
+                          final filterType =
+                              DocumentFilterType.values[filterIndex];
                           return InkWell(
                             child: Container(
                               padding: EdgeInsets.all(5.0),
@@ -117,17 +157,13 @@ class _FilterScreenState extends State<FilterScreen> {
                                 children: <Widget>[
                                   FilterThumbnail(
                                     imagePath: currentImagePath,
-                                    filterType:
-                                        DocumentFilterType.values[filterIndex],
+                                    filterType: filterType,
                                   ),
                                   SizedBox(height: 5.0),
                                   Text(
-                                    DocumentFilterType
-                                        .values[filterIndex].displayName,
+                                    filterType.displayName,
                                     style: TextStyle(
-                                      color: _selectedFilter ==
-                                              DocumentFilterType
-                                                  .values[filterIndex]
+                                      color: _selectedFilter == filterType
                                           ? Colors.white
                                           : Colors.grey,
                                     ),
@@ -136,11 +172,9 @@ class _FilterScreenState extends State<FilterScreen> {
                               ),
                             ),
                             onTap: () {
-                              if (_selectedFilter !=
-                                  DocumentFilterType.values[filterIndex]) {
+                              if (_selectedFilter != filterType) {
                                 setState(() {
-                                  _selectedFilter =
-                                      DocumentFilterType.values[filterIndex];
+                                  _selectedFilter = filterType;
                                   filterImageName = _selectedFilter.value +
                                       basename(currentImagePath);
                                 });
@@ -268,12 +302,15 @@ Future<List<int>> _readAndProcessFile(String filePath) async {
   // First read the file
   final bytes = await File(filePath).readAsBytes();
 
-  // Only delete after we've successfully read the file
-  try {
-    await File(filePath).delete();
-  } catch (e) {
-    // Log the error but don't fail the operation
-    debugPrint('Failed to delete temporary file: $e');
+  // Only delete after we've successfully read the file, and only if it's not the original image
+  // We can check this by looking for the "_enhanced.jpg" suffix which is only present in processed images
+  if (filePath.contains("_enhanced.jpg")) {
+    try {
+      await File(filePath).delete();
+    } catch (e) {
+      // Log the error but don't fail the operation
+      debugPrint('Failed to delete temporary file: $e');
+    }
   }
 
   return bytes;

@@ -8,6 +8,7 @@ import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:openscan/core/services/document_scanner_service.dart';
 
 part 'directory_state.dart';
 
@@ -428,5 +429,33 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   void renameDocument(String newName) {
     state.newName = newName;
     emitState(state);
+  }
+
+  /// Updates the filter for a specific image
+  void updateImageFilter(
+      String imagePath, DocumentFilterType filterType) async {
+    // Find the image in the state
+    final imageIndex =
+        state.images!.indexWhere((img) => img.imgPath == imagePath);
+    if (imageIndex != -1) {
+      try {
+        // Get the filtered image path
+        final documentScanner = DocumentScannerService();
+        final enhancedPath =
+            await documentScanner.enhanceDocument(imagePath, filterType.value);
+
+        // Delete the original file
+        await File(imagePath).delete();
+
+        // Copy the filtered image to the original path
+        await File(enhancedPath).copy(imagePath);
+
+        // Update the filter type for the image
+        state.images![imageIndex].filterType = filterType;
+        emitState(state);
+      } catch (e) {
+        debugPrint('Error updating image filter: $e');
+      }
+    }
   }
 }

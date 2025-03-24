@@ -1,3 +1,5 @@
+import 'package:openscan/core/services/document_scanner_service.dart';
+
 class DirectoryOS {
   String dirName;
   String dirPath;
@@ -22,11 +24,13 @@ class ImageOS {
   int? idx;
   String imgPath;
   bool selected;
+  DocumentFilterType? filterType;
 
   ImageOS({
     this.idx,
     required this.imgPath,
     this.selected = false,
+    this.filterType,
   });
 
   Map toMap() {
@@ -34,6 +38,7 @@ class ImageOS {
       'idx': idx,
       'imgPath': imgPath,
       'selected': selected,
+      'filterType': filterType?.value,
     };
   }
 
@@ -41,11 +46,13 @@ class ImageOS {
     int? idx,
     String? imgPath,
     bool? selected,
+    DocumentFilterType? filterType,
   }) {
     return ImageOS(
       idx: idx ?? this.idx,
       imgPath: imgPath ?? this.imgPath,
       selected: selected ?? this.selected,
+      filterType: filterType ?? this.filterType,
     );
   }
 }

@@ -11,6 +11,7 @@ class DocumentScannerService {
 }
 
 enum DocumentFilterType {
+  original,
   adaptiveThreshold,
   otsuThreshold,
   edgeEnhancement,
@@ -20,6 +21,8 @@ enum DocumentFilterType {
 extension DocumentFilterTypeExtension on DocumentFilterType {
   String get value {
     switch (this) {
+      case DocumentFilterType.original:
+        return 'original';
       case DocumentFilterType.adaptiveThreshold:
         return 'adaptive_threshold';
       case DocumentFilterType.otsuThreshold:
@@ -33,6 +36,8 @@ extension DocumentFilterTypeExtension on DocumentFilterType {
 
   String get displayName {
     switch (this) {
+      case DocumentFilterType.original:
+        return 'Original';
       case DocumentFilterType.adaptiveThreshold:
         return 'Adaptive Threshold';
       case DocumentFilterType.otsuThreshold:

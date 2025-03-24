@@ -407,6 +407,9 @@ public class ImageUtil {
 
             Mat result;
             switch (filterType) {
+                case "original":
+                    result = source.clone();
+                    break;
                 case "adaptive_threshold":
                     result = applyAdaptiveThreshold(source);
                     break;
