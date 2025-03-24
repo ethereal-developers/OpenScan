@@ -188,54 +188,88 @@ class _ViewScreenState extends State<ViewScreen> {
                     ),
                   ],
           ),
-          body: SingleChildScrollView(
-            controller: _scrollController,
-            key: const PageStorageKey('view_screen_scroll'),
-            padding: const EdgeInsets.all(10),
-            child: BlocConsumer<DirectoryCubit, DirectoryState>(
-              listener: (context, state) {
-                // Clear the image card cache when state changes
-                _imageCardCache.clear();
-              },
-              builder: (context_, state) {
-                if (state.images == null) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                }
-                if (state.images!.isEmpty) {
-                  return const Center(
-                    child: Text('No images found'),
-                  );
-                }
-                return selectionEnabled
-                    ? Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: _getImageCards(state),
-                      )
-                    : ReorderableWrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        minMainAxisCount: 2,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: _getImageCards(state),
-                        onReorder: (int oldIndex, int newIndex) {
-                          BlocProvider.of<DirectoryCubit>(context_)
-                              .updateImageIndex(oldIndex, newIndex);
-                        },
-                        onNoReorder: (int index) {
-                          debugPrint(
-                              '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
-                        },
-                        onReorderStarted: (int index) {
-                          debugPrint(
-                              '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
-                        },
+          body: Stack(
+            children: [
+              SingleChildScrollView(
+                controller: _scrollController,
+                key: const PageStorageKey('view_screen_scroll'),
+                padding: const EdgeInsets.all(10),
+                child: BlocConsumer<DirectoryCubit, DirectoryState>(
+                  listener: (context, state) {
+                    // Clear the image card cache when state changes
+                    _imageCardCache.clear();
+                  },
+                  builder: (context_, state) {
+                    if (state.images == null) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
                       );
-              },
-            ),
+                    }
+                    if (state.images!.isEmpty) {
+                      return const Center(
+                        child: Text('No images found'),
+                      );
+                    }
+                    return selectionEnabled
+                        ? Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: _getImageCards(state),
+                          )
+                        : ReorderableWrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            minMainAxisCount: 2,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: _getImageCards(state),
+                            onReorder: (int oldIndex, int newIndex) {
+                              BlocProvider.of<DirectoryCubit>(context_)
+                                  .updateImageIndex(oldIndex, newIndex);
+                            },
+                            onNoReorder: (int index) {
+                              debugPrint(
+                                  '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
+                            },
+                            onReorderStarted: (int index) {
+                              debugPrint(
+                                  '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
+                            },
+                          );
+                  },
+                ),
+              ),
+              BlocBuilder<DirectoryCubit, DirectoryState>(
+                builder: (context, state) {
+                  if (state.isLoading) {
+                    return Container(
+                      color: Colors.black.withOpacity(0.3),
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Processing images...',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
           ),
           floatingActionButton: FAB(
             normalScanOnPressed: () {

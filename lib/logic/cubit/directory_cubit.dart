@@ -61,6 +61,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       lastModified: state.lastModified,
       newName: state.newName,
       images: state.images,
+      isLoading: state.isLoading,
     ));
   }
 
@@ -68,23 +69,25 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   void createDirectory() async {
     Directory? appDir = await getExternalStorageDirectory();
     var now = DateTime.now();
+    var dirName = 'OpenScan $now';
 
-    state.dirName = 'OpenScan $now';
-    state.created = now;
-    state.dirPath = '${appDir!.path}/${state.dirName}';
-    state.firstImgPath = '';
-    state.imageCount = 0;
-    state.lastModified = now;
-    state.newName = null;
-    state.images = <ImageOS>[];
-    emitState(state);
+    emit(DirectoryState(
+      dirName: dirName,
+      created: now,
+      dirPath: '${appDir!.path}/$dirName',
+      firstImgPath: '',
+      imageCount: 0,
+      lastModified: now,
+      newName: null,
+      images: <ImageOS>[],
+    ));
   }
 
   /// Extracts image data from db and stores it in [images] object list
   Future<void> getImageData() async {
     try {
-      state.images = [];
-      emitState(state); // Emit empty state first to show loading
+      emit(
+          state.copyWith(images: [])); // Emit empty state first to show loading
 
       var directoryData = await database.getImageData(state.dirName!);
       debugPrint('From Cubit => $directoryData');
@@ -100,21 +103,24 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         newImages.add(tempImage);
       }
 
-      state.images = newImages;
-      state.imageCount = state.images!.length;
-      emitState(state);
+      emit(state.copyWith(
+        images: newImages,
+        imageCount: newImages.length,
+      ));
     } catch (e) {
       debugPrint('Error loading images: $e');
-      state.images = [];
-      state.imageCount = 0;
-      emitState(state);
+      emit(state.copyWith(
+        images: [],
+        imageCount: 0,
+      ));
     }
   }
 
   /// Updates image index after reordering
   void updateImageIndex(int oldIndex, int newIndex) {
-    ImageOS image = state.images!.removeAt(oldIndex);
-    state.images!.insert(newIndex, image);
+    final newImages = List<ImageOS>.from(state.images!);
+    ImageOS image = newImages.removeAt(oldIndex);
+    newImages.insert(newIndex, image);
 
     int start, end;
     if (newIndex > oldIndex) {
@@ -126,40 +132,46 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
 
     for (int index = start; index <= end; index++) {
-      state.images![index].idx = index + 1;
+      newImages[index].idx = index + 1;
       database.updateImageIndex(
-        imgPath: state.images![index].imgPath,
+        imgPath: newImages[index].imgPath,
         newIndex: index + 1,
         tableName: state.dirName!,
       );
       if (index == 1) {
         database.updateFirstImagePath(
           dirPath: state.dirPath,
-          imagePath: state.images![index - 1].imgPath,
+          imagePath: newImages[index - 1].imgPath,
         );
-        state.firstImgPath = state.images![index - 1].imgPath;
+        emit(state.copyWith(
+          images: newImages,
+          firstImgPath: newImages[index - 1].imgPath,
+        ));
       }
     }
-    emitState(state);
+    emit(state.copyWith(images: newImages));
   }
 
   /// Reorders images in database
   void reorderImages() {
-    for (var i = 1; i <= state.images!.length; i++) {
-      state.images![i - 1].idx = i;
+    final newImages = List<ImageOS>.from(state.images!);
+    for (var i = 1; i <= newImages.length; i++) {
+      newImages[i - 1].idx = i;
       if (i == 1) {
         database.updateFirstImagePath(
           dirPath: state.dirPath,
-          imagePath: state.images![i - 1].imgPath,
+          imagePath: newImages[i - 1].imgPath,
         );
-        state.firstImgPath = state.images![i - 1].imgPath;
+        emit(state.copyWith(
+          images: newImages,
+          firstImgPath: newImages[i - 1].imgPath,
+        ));
       }
       database.updateImagePath(
-        imgPath: state.images![i - 1].imgPath,
-        idx: state.images![i - 1].idx,
+        imgPath: newImages[i - 1].imgPath,
+        idx: newImages[i - 1].idx,
         tableName: state.dirName!,
       );
-      emitState(state);
     }
   }
 
@@ -194,6 +206,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
     if (imageList.isEmpty) return;
 
+    // Set loading state to true
+    emit(state.copyWith(isLoading: true));
+
     // Pre-calculate all indices before processing
     final startIndex = state.images!.length + 1;
     final indices = List.generate(
@@ -201,62 +216,91 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       (index) => startIndex + index,
     );
 
-    // Process all images in parallel using isolates
-    List<Future<void>> processingFutures = [];
+    // Process images in batches of 5
+    List<ImageOS?> processedImages = [];
     List<String> errors = [];
+    const batchSize = 3;
 
-    for (int i = 0; i < imageList.length; i++) {
-      final message = ImageProcessMessage(
-        image: imageList[i],
-        dirPath: state.dirPath!,
-        index: indices[i], // Use pre-calculated index
-        quickScan: quickScan,
-        fromGallery: fromGallery,
-      );
+    try {
+      for (int i = 0; i < imageList.length; i += batchSize) {
+        final end = (i + batchSize < imageList.length)
+            ? i + batchSize
+            : imageList.length;
+        final batch = imageList.sublist(i, end);
 
-      processingFutures.add(
-        ImageProcessingService.processImageInIsolate(message).then((result) {
-          if (result.success && result.imagePath != null) {
-            // Create new ImageOS object with pre-calculated index
-            final newImage = ImageOS(
-              idx: indices[i], // Use the same pre-calculated index
-              imgPath: result.imagePath!,
-              selected: false,
-            );
-            // Update state with new image
-            state.images!.add(newImage);
-            state.imageCount = state.images!.length;
-            if (state.imageCount == 1) {
-              state.firstImgPath = newImage.imgPath;
+        // Process current batch of images
+        final batchFutures = batch.asMap().entries.map((entry) {
+          final message = ImageProcessMessage(
+            image: entry.value,
+            dirPath: state.dirPath!,
+            index: indices[i + entry.key],
+            quickScan: quickScan,
+            fromGallery: fromGallery,
+          );
+
+          return ImageProcessingService.processImageInIsolate(message)
+              .then((result) {
+            if (result.success && result.imagePath != null) {
+              return ImageOS(
+                idx: indices[i + entry.key],
+                imgPath: result.imagePath!,
+                selected: false,
+              );
+            } else {
+              errors.add(result.error ?? 'Unknown error processing image');
+              return null;
             }
-            emitState(state);
-          } else {
-            errors.add(result.error ?? 'Unknown error processing image');
-          }
-        }),
-      );
-    }
+          });
+        });
 
-    // Wait for all images to be processed
-    await Future.wait(processingFutures);
+        // Wait for current batch to complete
+        final batchResults = await Future.wait(batchFutures);
+        processedImages.addAll(batchResults);
 
-    // Show error message if any images failed to process
-    if (errors.isNotEmpty) {
+        // Update state after each batch
+        final validImages = batchResults.whereType<ImageOS>().toList()
+          ..sort((a, b) => a.idx!.compareTo(b.idx!));
+
+        emit(state.copyWith(
+          images: List<ImageOS>.from(state.images!)..addAll(validImages),
+          imageCount: state.images!.length + validImages.length,
+          firstImgPath: state.images!.isEmpty && validImages.isNotEmpty
+              ? validImages[0].imgPath
+              : state.firstImgPath,
+          isLoading: true,
+        ));
+      }
+
+      // Just update loading state to false
+      emit(state.copyWith(isLoading: false));
+
+      // Show error message if any images failed to process
+      if (errors.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Failed to process ${errors.length} images: ${errors.join(", ")}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
+      // Clean up temporary files
+      await fileOperations.deleteTemporaryImages();
+
+      // If quick scan, start another scan
+      if (quickScan) {
+        return createImage(context, quickScan: quickScan);
+      }
+    } catch (e) {
+      debugPrint('Error processing images: $e');
+      emit(state.copyWith(isLoading: false));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              'Failed to process ${errors.length} images: ${errors.join(", ")}'),
+          content: Text('Error processing images: $e'),
           backgroundColor: Colors.red,
         ),
       );
-    }
-
-    // Clean up temporary files
-    await fileOperations.deleteTemporaryImages();
-
-    // If quick scan, start another scan
-    if (quickScan) {
-      return createImage(context, quickScan: quickScan);
     }
   }
 
@@ -318,16 +362,17 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       directoryDeleted = true;
       debugPrint('Directory deleted');
     } catch (e) {
-      state.images!.remove(imageToDelete);
-      state.imageCount = state.images!.length;
+      final newImages = List<ImageOS>.from(state.images!);
+      newImages.remove(imageToDelete);
+      final newImageCount = newImages.length;
       database.updateImageCount(tableName: state.dirName!);
 
       // Updating index of images
-      for (int i = imageToDelete.idx! - 1; i < state.imageCount; i++) {
-        state.images![i].idx = i + 1;
+      for (int i = imageToDelete.idx! - 1; i < newImageCount; i++) {
+        newImages[i].idx = i + 1;
         database.updateImageIndex(
-          imgPath: state.images![i].imgPath,
-          newIndex: state.images![i].idx,
+          imgPath: newImages[i].imgPath,
+          newIndex: newImages[i].idx,
           tableName: state.dirName!,
         );
       }
@@ -335,12 +380,15 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       // Updating first image path
       if (imageToDelete.idx == 1) {
         database.updateFirstImagePath(
-          imagePath: state.images![0].imgPath,
+          imagePath: newImages[0].imgPath,
           dirPath: state.dirPath,
         );
       }
+      emit(state.copyWith(
+        images: newImages,
+        imageCount: newImageCount,
+      ));
     }
-    emitState(state);
     return directoryDeleted;
   }
 
@@ -377,7 +425,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       debugPrint(res ? 'Image: Ahhh!' : 'Image: I\'m Alive');
     }
 
-    state.imageCount = state.images!.length;
+    final newImages = state.images!;
+    final newImageCount = newImages.length;
 
     try {
       // Delete directory if 1 image exists
@@ -391,7 +440,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       // Update first image path
       if (firstImageDeleted) {
         database.updateFirstImagePath(
-          imagePath: state.images![0].imgPath,
+          imagePath: newImages[0].imgPath,
           dirPath: state.dirPath,
         );
       }
@@ -399,15 +448,18 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       database.updateImageCount(tableName: state.dirName!);
 
       // Updating image index in cubit and db
-      for (int i = 0; i < state.imageCount; i++) {
-        state.images![i].idx = i + 1;
+      for (int i = 0; i < newImageCount; i++) {
+        newImages[i].idx = i + 1;
         database.updateImageIndex(
-          imgPath: state.images![i].imgPath,
-          newIndex: state.images![i].idx,
+          imgPath: newImages[i].imgPath,
+          newIndex: newImages[i].idx,
           tableName: state.dirName!,
         );
       }
-      emitState(state);
+      emit(state.copyWith(
+        images: newImages,
+        imageCount: newImageCount,
+      ));
     }
     return false;
   }
@@ -438,8 +490,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
   /// Rename the directory name
   void renameDocument(String newName) {
-    state.newName = newName;
-    emitState(state);
+    emit(state.copyWith(newName: newName));
   }
 
   /// Updates the filter for a specific image
