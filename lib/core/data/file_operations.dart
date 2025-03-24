@@ -9,6 +9,7 @@ import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/core/models.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart';
 
 class FileOperations {
   final String appName = 'OpenScan';
@@ -275,5 +276,66 @@ class FileOperations {
     });
 
     return fileNameWithPath;
+  }
+
+  /// Shares PDF file using system share dialog
+  ///
+  /// Returns: Future<void>
+  Future<void> sharePdf({
+    required BuildContext context,
+    required String fileName,
+    required List<ImageOS> images,
+    int? quality,
+  }) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.secondary,
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      String? fileNameWithPath = await saveToAppDirectory(
+        context: context,
+        fileName: fileName,
+        images: images,
+        imagesSelected: false,
+      );
+
+      // Hide loading dialog
+      Navigator.pop(context);
+
+      if (fileNameWithPath != null) {
+        await Share.shareXFiles(
+          [XFile(fileNameWithPath)],
+          subject: 'OpenScan Document',
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate PDF'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Hide loading dialog
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to share PDF'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

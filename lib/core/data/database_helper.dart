@@ -120,7 +120,7 @@ class DatabaseHelper {
   /// Reads image records from Directory table
   ///
   /// Returns: Image records [List]
-  Future getImageData(String tableName) async {
+  Future<List<Map<String, dynamic>>> getImageData(String tableName) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     List<Map<String, dynamic>> data =

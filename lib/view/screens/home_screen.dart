@@ -3,16 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:focused_menu/focused_menu.dart';
-import 'package:focused_menu/modals.dart';
 import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/core/data/database_helper.dart';
+import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/FAB.dart';
 import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/drawer.dart';
-import 'package:openscan/view/Widgets/renameDialog.dart';
 import 'package:openscan/view/screens/view_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quick_actions/quick_actions.dart';
@@ -256,118 +254,204 @@ class _HomeScreenState extends State<HomeScreen> {
                   return ListView.builder(
                     itemCount: masterDirectories.length,
                     itemBuilder: (context, index) {
-                      return FocusedMenuHolder(
-                        onPressed: () {},
-                        menuWidth: size.width * 0.44,
-                        child: ListTile(
-                          leading: Container(
-                            width: 50,
-                            height: 50,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: Image.file(
-                                File(masterDirectories[index].firstImgPath!),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            masterDirectories[index].newName ??
-                                masterDirectories[index].dirName,
-                            style: TextStyle(fontSize: 14),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      return InkWell(
+                        onTap: () async {
+                          pushView(
+                            scanType: 'default',
+                            masterDirectory: masterDirectories[index],
+                          );
+                        },
+                        child: Card(
+                          color: Theme.of(context).primaryColor,
+                          elevation: 0,
+                          margin:
+                              EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          child: Column(
                             children: [
-                              Text(
-                                AppLocalizations.of(context)!.last_updated +
-                                    ': ${masterDirectories[index].lastModified!.day}/${masterDirectories[index].lastModified!.month}/${masterDirectories[index].lastModified!.year}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white54,
+                              ListTile(
+                                leading: Container(
+                                  width: 50,
+                                  height: 50,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: Image.file(
+                                      File(masterDirectories[index]
+                                          .firstImgPath!),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  masterDirectories[index].newName ??
+                                      masterDirectories[index].dirName,
+                                  style: TextStyle(fontSize: 14),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${masterDirectories[index].lastModified!.year}-${masterDirectories[index].lastModified!.month.toString().padLeft(2, '0')}-${masterDirectories[index].lastModified!.day.toString().padLeft(2, '0')} ${masterDirectories[index].lastModified!.hour.toString().padLeft(2, '0')}:${masterDirectories[index].lastModified!.minute.toString().padLeft(2, '0')}:${masterDirectories[index].lastModified!.second.toString().padLeft(2, '0')}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.white54,
+                                      ),
+                                    ),
+                                    Text(
+                                      // TODO: Add size of document
+                                      '${masterDirectories[index].imageCount} ${AppLocalizations.of(context)!.images} (700kb)',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.white54,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              Text(
-                                '${masterDirectories[index].imageCount} ${(masterDirectories[index].imageCount == 1) ? AppLocalizations.of(context)!.image : AppLocalizations.of(context)!.images}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.white54,
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                    left: 8.0, right: 8.0, bottom: 8.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.share, size: 20),
+                                      onPressed: () async {
+                                        FileOperations fileOps =
+                                            FileOperations();
+                                        var directoryData =
+                                            await database.getImageData(
+                                                masterDirectories[index]
+                                                    .dirName);
+                                        List<ImageOS> images = directoryData
+                                            .map((image) => ImageOS(
+                                                  idx: image['idx'],
+                                                  imgPath: image['img_path'],
+                                                  selected: false,
+                                                ))
+                                            .toList();
+
+                                        await fileOps.sharePdf(
+                                          context: context,
+                                          fileName: masterDirectories[index]
+                                                  .newName ??
+                                              masterDirectories[index].dirName,
+                                          images: images,
+                                        );
+                                      },
+                                      color: Colors.white70,
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.download, size: 20),
+                                      onPressed: () async {
+                                        // Show loading dialog
+                                        showDialog(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (BuildContext context) {
+                                            return Center(
+                                              child: CircularProgressIndicator(
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                        Color>(
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .secondary,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        );
+
+                                        FileOperations fileOps =
+                                            FileOperations();
+                                        var directoryData =
+                                            await database.getImageData(
+                                                masterDirectories[index]
+                                                    .dirName);
+                                        List<ImageOS> images = directoryData
+                                            .map((image) => ImageOS(
+                                                  idx: image['idx'],
+                                                  imgPath: image['img_path'],
+                                                  selected: false,
+                                                ))
+                                            .toList();
+                                        String? savedPath =
+                                            await fileOps.saveToDevice(
+                                          context: context,
+                                          fileName: masterDirectories[index]
+                                                  .newName ??
+                                              masterDirectories[index].dirName,
+                                          images: images,
+                                          quality: 2, // High quality
+                                        );
+
+                                        // Hide loading dialog
+                                        Navigator.pop(context);
+
+                                        if (savedPath != null) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                  'PDF saved successfully at: $savedPath'),
+                                              backgroundColor: Colors.green,
+                                              duration: Duration(seconds: 5),
+                                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content:
+                                                  Text('Failed to save PDF'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      color: Colors.white70,
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete, size: 20),
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (_) {
+                                            return DeleteDialog(
+                                              deleteOnPressed: () {
+                                                Directory(
+                                                        masterDirectories[index]
+                                                            .dirPath)
+                                                    .deleteSync(
+                                                        recursive: true);
+                                                database.deleteDirectory(
+                                                    dirPath:
+                                                        masterDirectories[index]
+                                                            .dirPath);
+                                                Navigator.pop(context);
+                                                homeRefresh();
+                                              },
+                                            );
+                                          },
+                                        );
+                                      },
+                                      color: Colors.white70,
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.more_vert, size: 20),
+                                      onPressed: () {
+                                        // Handle more options
+                                      },
+                                      color: Colors.white70,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                          trailing: Icon(
-                            Icons.arrow_right_rounded,
-                            size: 30,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          onTap: () async {
-                            pushView(
-                              scanType: 'default',
-                              masterDirectory: masterDirectories[index],
-                            );
-                          },
                         ),
-                        menuItems: [
-                          FocusedMenuItem(
-                            title: Text(
-                              AppLocalizations.of(context)!.rename,
-                              style: TextStyle(color: Colors.black),
-                            ),
-                            trailingIcon: Icon(
-                              Icons.edit_rounded,
-                              color: Colors.black,
-                            ),
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return RenameDialog(
-                                    onConfirm: (value) {
-                                      homeRefresh();
-                                    },
-                                    docTableName:
-                                        masterDirectories[index].dirName,
-                                    fileName:
-                                        masterDirectories[index].newName ??
-                                            masterDirectories[index].dirName,
-                                  );
-                                },
-                              ).whenComplete(() {
-                                setState(() {});
-                              });
-                            },
-                          ),
-                          FocusedMenuItem(
-                            title: Text(AppLocalizations.of(context)!.delete),
-                            trailingIcon: Icon(Icons.delete_rounded),
-                            backgroundColor: Colors.redAccent,
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (_) {
-                                  return DeleteDialog(
-                                    deleteOnPressed: () {
-                                      Directory(
-                                              masterDirectories[index].dirPath)
-                                          .deleteSync(recursive: true);
-                                      database.deleteDirectory(
-                                          dirPath:
-                                              masterDirectories[index].dirPath);
-                                      Navigator.pop(context);
-                                      homeRefresh();
-                                    },
-                                  );
-                                },
-                              ).whenComplete(() {
-                                setState(() {});
-                              });
-                            },
-                          ),
-                        ],
                       );
                     },
                   );

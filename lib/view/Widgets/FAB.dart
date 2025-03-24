@@ -17,7 +17,7 @@ class FAB extends StatefulWidget {
     this.galleryOnPressed,
     this.dialOpen,
     this.dialClose,
-  });
+  }) : super(key: key);
 
   @override
   _FABState createState() => _FABState();
@@ -88,7 +88,9 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
           label: AppLocalizations.of(context)!.quick_scan,
           labelBackgroundColor: Colors.white,
           labelStyle: TextStyle(
-              fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
+            fontSize: 18.0,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onTap: widget.quickScanOnPressed,
         ),
         SpeedDialChild(
@@ -100,7 +102,9 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
           label: AppLocalizations.of(context)!.import_from_gallery,
           labelBackgroundColor: Colors.white,
           labelStyle: TextStyle(
-              fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
+            fontSize: 18.0,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onTap: widget.galleryOnPressed,
         ),
       ],
@@ -109,7 +113,7 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    super.dispose();
     _animationController.dispose();
+    super.dispose();
   }
 }

@@ -107,26 +107,13 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
 
                       if (exportType == 'PDF') {
                         if (widget.share) {
-                          String? fileNameWithPath =
-                              await fileOperations.saveToAppDirectory(
+                          await fileOperations.sharePdf(
                             context: context,
-                            imagesSelected: widget.imagesSelected,
                             fileName: fileName,
                             images: state.images!,
                           );
-                          debugPrint('Filename => $fileNameWithPath');
-
-                          if (fileNameWithPath != null) {
-                            await Share.shareXFiles(
-                              [XFile(fileNameWithPath)],
-                              subject: 'OpenScan Document',
-                            );
-                            Navigator.pop(context);
-                            Navigator.pop(context);
-                          } else {
-                            // Fluttertoast.showToast(
-                            //     msg: "Failed to generate pdf. Try Again.");
-                          }
+                          Navigator.pop(context);
+                          Navigator.pop(context);
                         }
                         if (widget.save) {
                           String? fileNameWithPath;
