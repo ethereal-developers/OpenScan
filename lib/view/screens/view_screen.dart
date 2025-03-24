@@ -193,7 +193,10 @@ class _ViewScreenState extends State<ViewScreen> {
             key: const PageStorageKey('view_screen_scroll'),
             padding: const EdgeInsets.all(10),
             child: BlocConsumer<DirectoryCubit, DirectoryState>(
-              listener: (context, state) {},
+              listener: (context, state) {
+                // Clear the image card cache when state changes
+                _imageCardCache.clear();
+              },
               builder: (context_, state) {
                 if (state.images == null) {
                   return const Center(
