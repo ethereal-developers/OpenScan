@@ -266,187 +266,216 @@ class _HomeScreenState extends State<HomeScreen> {
                           elevation: 0,
                           margin:
                               EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                          child: Column(
+                          child: Row(
                             children: [
-                              ListTile(
-                                leading: Container(
-                                  width: 50,
-                                  height: 50,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: Image.file(
-                                      File(masterDirectories[index]
-                                          .firstImgPath!),
-                                      fit: BoxFit.cover,
-                                    ),
+                              Container(
+                                height: 120,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(4),
+                                    bottomLeft: Radius.circular(4),
+                                  ),
+                                  child: Image.file(
+                                    File(
+                                        masterDirectories[index].firstImgPath!),
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
-                                title: Text(
-                                  masterDirectories[index].newName ??
-                                      masterDirectories[index].dirName,
-                                  style: TextStyle(fontSize: 14),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${masterDirectories[index].lastModified!.year}-${masterDirectories[index].lastModified!.month.toString().padLeft(2, '0')}-${masterDirectories[index].lastModified!.day.toString().padLeft(2, '0')} ${masterDirectories[index].lastModified!.hour.toString().padLeft(2, '0')}:${masterDirectories[index].lastModified!.minute.toString().padLeft(2, '0')}:${masterDirectories[index].lastModified!.second.toString().padLeft(2, '0')}',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.white54,
-                                      ),
-                                    ),
-                                    Text(
-                                      // TODO: Add size of document
-                                      '${masterDirectories[index].imageCount} ${AppLocalizations.of(context)!.images} (700kb)',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.white54,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 8.0, right: 8.0, bottom: 8.0),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.share, size: 20),
-                                      onPressed: () async {
-                                        FileOperations fileOps =
-                                            FileOperations();
-                                        var directoryData =
-                                            await database.getImageData(
-                                                masterDirectories[index]
-                                                    .dirName);
-                                        List<ImageOS> images = directoryData
-                                            .map((image) => ImageOS(
-                                                  idx: image['idx'],
-                                                  imgPath: image['img_path'],
-                                                  selected: false,
-                                                ))
-                                            .toList();
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        masterDirectories[index].newName ??
+                                            masterDirectories[index].dirName,
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w500),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        '${masterDirectories[index].lastModified!.year}-${masterDirectories[index].lastModified!.month.toString().padLeft(2, '0')}-${masterDirectories[index].lastModified!.day.toString().padLeft(2, '0')} ${masterDirectories[index].lastModified!.hour.toString().padLeft(2, '0')}:${masterDirectories[index].lastModified!.minute.toString().padLeft(2, '0')}:${masterDirectories[index].lastModified!.second.toString().padLeft(2, '0')}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.white54,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${masterDirectories[index].imageCount} ${AppLocalizations.of(context)!.images} (700kb)',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.white54,
+                                        ),
+                                      ),
+                                      SizedBox(height: 12),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          IconButton(
+                                            padding: EdgeInsets.zero,
+                                            constraints: BoxConstraints(),
+                                            icon: Icon(Icons.share, size: 20),
+                                            onPressed: () async {
+                                              FileOperations fileOps =
+                                                  FileOperations();
+                                              var directoryData =
+                                                  await database.getImageData(
+                                                      masterDirectories[index]
+                                                          .dirName);
+                                              List<ImageOS> images =
+                                                  directoryData
+                                                      .map((image) => ImageOS(
+                                                            idx: image['idx'],
+                                                            imgPath: image[
+                                                                'img_path'],
+                                                            selected: false,
+                                                          ))
+                                                      .toList();
 
-                                        await fileOps.sharePdf(
-                                          context: context,
-                                          fileName: masterDirectories[index]
-                                                  .newName ??
-                                              masterDirectories[index].dirName,
-                                          images: images,
-                                        );
-                                      },
-                                      color: Colors.white70,
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.download, size: 20),
-                                      onPressed: () async {
-                                        // Show loading dialog
-                                        showDialog(
-                                          context: context,
-                                          barrierDismissible: false,
-                                          builder: (BuildContext context) {
-                                            return Center(
-                                              child: CircularProgressIndicator(
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                        Color>(
-                                                  Theme.of(context)
-                                                      .colorScheme
-                                                      .secondary,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        );
-
-                                        FileOperations fileOps =
-                                            FileOperations();
-                                        var directoryData =
-                                            await database.getImageData(
-                                                masterDirectories[index]
-                                                    .dirName);
-                                        List<ImageOS> images = directoryData
-                                            .map((image) => ImageOS(
-                                                  idx: image['idx'],
-                                                  imgPath: image['img_path'],
-                                                  selected: false,
-                                                ))
-                                            .toList();
-                                        String? savedPath =
-                                            await fileOps.saveToDevice(
-                                          context: context,
-                                          fileName: masterDirectories[index]
-                                                  .newName ??
-                                              masterDirectories[index].dirName,
-                                          images: images,
-                                          quality: 2, // High quality
-                                        );
-
-                                        // Hide loading dialog
-                                        Navigator.pop(context);
-
-                                        if (savedPath != null) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                  'PDF saved successfully at: $savedPath'),
-                                              backgroundColor: Colors.green,
-                                              duration: Duration(seconds: 5),
-                                            ),
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content:
-                                                  Text('Failed to save PDF'),
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      color: Colors.white70,
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.delete, size: 20),
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (_) {
-                                            return DeleteDialog(
-                                              deleteOnPressed: () {
-                                                Directory(
+                                              await fileOps.sharePdf(
+                                                context: context,
+                                                fileName:
+                                                    masterDirectories[index]
+                                                            .newName ??
                                                         masterDirectories[index]
-                                                            .dirPath)
-                                                    .deleteSync(
-                                                        recursive: true);
-                                                database.deleteDirectory(
-                                                    dirPath:
+                                                            .dirName,
+                                                images: images,
+                                              );
+                                            },
+                                            color: Colors.white70,
+                                          ),
+                                          IconButton(
+                                            padding: EdgeInsets.zero,
+                                            constraints: BoxConstraints(),
+                                            icon:
+                                                Icon(Icons.download, size: 20),
+                                            onPressed: () async {
+                                              // Show loading dialog
+                                              showDialog(
+                                                context: context,
+                                                barrierDismissible: false,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return Center(
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                              Color>(
+                                                        Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              );
+
+                                              FileOperations fileOps =
+                                                  FileOperations();
+                                              var directoryData =
+                                                  await database.getImageData(
+                                                      masterDirectories[index]
+                                                          .dirName);
+                                              List<ImageOS> images =
+                                                  directoryData
+                                                      .map((image) => ImageOS(
+                                                            idx: image['idx'],
+                                                            imgPath: image[
+                                                                'img_path'],
+                                                            selected: false,
+                                                          ))
+                                                      .toList();
+                                              String? savedPath =
+                                                  await fileOps.saveToDevice(
+                                                context: context,
+                                                fileName:
+                                                    masterDirectories[index]
+                                                            .newName ??
                                                         masterDirectories[index]
-                                                            .dirPath);
-                                                Navigator.pop(context);
-                                                homeRefresh();
-                                              },
-                                            );
-                                          },
-                                        );
-                                      },
-                                      color: Colors.white70,
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.more_vert, size: 20),
-                                      onPressed: () {
-                                        // Handle more options
-                                      },
-                                      color: Colors.white70,
-                                    ),
-                                  ],
+                                                            .dirName,
+                                                images: images,
+                                                quality: 2, // High quality
+                                              );
+
+                                              // Hide loading dialog
+                                              Navigator.pop(context);
+
+                                              if (savedPath != null) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                        'PDF saved successfully at: $savedPath'),
+                                                    backgroundColor:
+                                                        Colors.green,
+                                                    duration:
+                                                        Duration(seconds: 5),
+                                                  ),
+                                                );
+                                              } else {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                        'Failed to save PDF'),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            color: Colors.white70,
+                                          ),
+                                          IconButton(
+                                            padding: EdgeInsets.zero,
+                                            constraints: BoxConstraints(),
+                                            icon: Icon(Icons.delete, size: 20),
+                                            onPressed: () {
+                                              showDialog(
+                                                context: context,
+                                                builder: (_) {
+                                                  return DeleteDialog(
+                                                    deleteOnPressed: () {
+                                                      Directory(
+                                                              masterDirectories[
+                                                                      index]
+                                                                  .dirPath)
+                                                          .deleteSync(
+                                                              recursive: true);
+                                                      database.deleteDirectory(
+                                                          dirPath:
+                                                              masterDirectories[
+                                                                      index]
+                                                                  .dirPath);
+                                                      Navigator.pop(context);
+                                                      homeRefresh();
+                                                    },
+                                                  );
+                                                },
+                                              );
+                                            },
+                                            color: Colors.white70,
+                                          ),
+                                          IconButton(
+                                            padding: EdgeInsets.zero,
+                                            constraints: BoxConstraints(),
+                                            icon:
+                                                Icon(Icons.more_vert, size: 20),
+                                            onPressed: () {
+                                              // Handle more options
+                                            },
+                                            color: Colors.white70,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
