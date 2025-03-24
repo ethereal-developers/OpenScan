@@ -274,19 +274,23 @@ class _ViewScreenState extends State<ViewScreen> {
       final card = ImageCard(
         key: ValueKey(image.idx),
         image: image,
-        onPressed: selectionEnabled
-            ? () => BlocProvider.of<DirectoryCubit>(context).selectImage(image)
-            : () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BlocProvider<DirectoryCubit>.value(
-                      value: BlocProvider.of<DirectoryCubit>(context),
-                      child: PreviewScreen(
-                        initialIndex: (image.idx ?? 1) - 1,
-                      ),
-                    ),
+        onPressed: () {
+          if (selectionEnabled) {
+            BlocProvider.of<DirectoryCubit>(context).selectImage(image);
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BlocProvider<DirectoryCubit>.value(
+                  value: BlocProvider.of<DirectoryCubit>(context),
+                  child: PreviewScreen(
+                    initialIndex: (image.idx ?? 1) - 1,
                   ),
                 ),
+              ),
+            );
+          }
+        },
         onSelect: () {},
       );
 
