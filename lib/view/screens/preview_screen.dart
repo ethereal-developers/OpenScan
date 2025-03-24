@@ -235,88 +235,107 @@ class _PreviewScreenState extends State<PreviewScreen>
         bottomNavigationBar: BlocConsumer<DirectoryCubit, DirectoryState>(
           listener: (context, state) {},
           builder: (context, state) {
-            return PreviewScreenBottomBar(
-              isAppBarVisible: isAppBarVisible,
-              currentPage: _pageNumber.value - 1,
-              cropOnPressed: () {
-                BlocProvider.of<DirectoryCubit>(context).cropImage(
-                  context,
-                  state.images![pageController.page!.round()],
-                );
-              },
-              deleteOnPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (_) {
-                    return DeleteDialog(
-                      deleteOnPressed: () async {
-                        bool directoryDeleted =
-                            await BlocProvider.of<DirectoryCubit>(context)
-                                .deleteImage(
-                          context,
-                          imageToDelete:
-                              state.images![pageController.page!.toInt()],
-                        );
-                        Navigator.pop(context);
-                        if (directoryDeleted) {
-                          Navigator.popUntil(context,
-                              ModalRoute.withName(AppRouter.homeScreen));
-                          // Navigator.pop(context);
-                          // Navigator.pop(context);
-                        }
-
-                        setState(() {
-                          if (state.imageCount + 1 == _pageNumber.value) {
-                            _pageNumber.value = pageController.page!.toInt();
-                          } else
-                            _pageNumber.value =
-                                pageController.page!.toInt() + 1;
-
-                          debugPrint(
-                              'Controller Page: ${pageController.page} : ${state.imageCount} : ${_pageNumber.value}');
-                        });
-                        // pageIndex = _pageController!.page!.toInt() + 1;
-                      },
-                    );
-                  },
-                );
-              },
-              filterOnPressed: () async {
-                if (!isAppBarVisible) {
-                  setState(() {
-                    isAppBarVisible = true;
-                  });
-                }
-
-                // debugPrint(_pageNumber.value);
-                // debugPrint(state.images![_pageNumber.value - 1]);
-                // var image = imageLib.decodeImage(
-                //     await File(state.images![_pageNumber.value - 1].imgPath)
-                //         .readAsBytes());
-                // image = imageLib.copyResize(image!, width: 600);
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MultiBlocProvider(
-                      providers: [
-                        BlocProvider<DirectoryCubit>.value(
-                          value: BlocProvider.of<DirectoryCubit>(context),
-                        ),
-                        BlocProvider(
-                          create: (context) => FilterCubit(
-                            selectedFilter: presetFiltersList[0],
-                            cachedFilters: {},
-                          ),
-                        ),
-                      ],
-                      child: FilterScreen(
-                        pageIndex: pageController.page!.round(),
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  color: Theme.of(context).primaryColor.withOpacity(0.3),
+                  child: Center(
+                    child: Text(
+                      '${_pageNumber.value}/${state.imageCount}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.8),
                       ),
                     ),
                   ),
-                );
-              },
+                ),
+                PreviewScreenBottomBar(
+                  isAppBarVisible: isAppBarVisible,
+                  currentPage: _pageNumber.value - 1,
+                  cropOnPressed: () {
+                    BlocProvider.of<DirectoryCubit>(context).cropImage(
+                      context,
+                      state.images![pageController.page!.round()],
+                    );
+                  },
+                  deleteOnPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) {
+                        return DeleteDialog(
+                          deleteOnPressed: () async {
+                            bool directoryDeleted =
+                                await BlocProvider.of<DirectoryCubit>(context)
+                                    .deleteImage(
+                              context,
+                              imageToDelete:
+                                  state.images![pageController.page!.toInt()],
+                            );
+                            Navigator.pop(context);
+                            if (directoryDeleted) {
+                              Navigator.popUntil(context,
+                                  ModalRoute.withName(AppRouter.homeScreen));
+                              // Navigator.pop(context);
+                              // Navigator.pop(context);
+                            }
+
+                            setState(() {
+                              if (state.imageCount + 1 == _pageNumber.value) {
+                                _pageNumber.value =
+                                    pageController.page!.toInt();
+                              } else
+                                _pageNumber.value =
+                                    pageController.page!.toInt() + 1;
+
+                              debugPrint(
+                                  'Controller Page: ${pageController.page} : ${state.imageCount} : ${_pageNumber.value}');
+                            });
+                            // pageIndex = _pageController!.page!.toInt() + 1;
+                          },
+                        );
+                      },
+                    );
+                  },
+                  filterOnPressed: () async {
+                    if (!isAppBarVisible) {
+                      setState(() {
+                        isAppBarVisible = true;
+                      });
+                    }
+
+                    // debugPrint(_pageNumber.value);
+                    // debugPrint(state.images![_pageNumber.value - 1]);
+                    // var image = imageLib.decodeImage(
+                    //     await File(state.images![_pageNumber.value - 1].imgPath)
+                    //         .readAsBytes());
+                    // image = imageLib.copyResize(image!, width: 600);
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MultiBlocProvider(
+                          providers: [
+                            BlocProvider<DirectoryCubit>.value(
+                              value: BlocProvider.of<DirectoryCubit>(context),
+                            ),
+                            BlocProvider(
+                              create: (context) => FilterCubit(
+                                selectedFilter: presetFiltersList[0],
+                                cachedFilters: {},
+                              ),
+                            ),
+                          ],
+                          child: FilterScreen(
+                            pageIndex: pageController.page!.round(),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             );
           },
         ),
