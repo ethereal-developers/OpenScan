@@ -48,31 +48,39 @@ public class MainActivity extends FlutterActivity {
         String methodCalled = call.method;
         try {
             switch (methodCalled) {
-                case "compress":
-                    handleCompress(call, result);
-                    break;
-                case "fixRotation":
-                    handleFixRotation(call, result);
-                    break;
-                case "cropImage":
-                    handleCropImage(call, result);
+                case "ping":
+                    result.success(null);
                     break;
                 case "getImageSize":
                     handleGetImageSize(call, result);
                     break;
+                case "detectDocument":
+                    handleDetectDocument(call, result);
+                    break;
+                case "compress":
+                    handleCompress(call, result);
+                    break;
                 case "rotateImage":
                     handleRotateImage(call, result);
                     break;
-                case "detectDocument":
-                    Log.d(TAG_NAME, "Starting document detection");
-                    handleDetectDocument(call, result);
+                case "cropImage":
+                    handleCropImage(call, result);
+                    break;
+                case "fixRotation":
+                    handleFixRotation(call, result);
+                    break;
+                case "enhanceDocument":
+                    handleEnhanceDocument(call, result);
                     break;
                 default:
-                    result.error("UNKNOWN_METHOD", "Method " + methodCalled + " not found", null);
+                    result.notImplemented();
             }
+        } catch (IOException e) {
+            Log.e(TAG_NAME, "IO Error in " + methodCalled + ": " + e.getMessage(), e);
+            result.error("IO_ERROR", e.getMessage(), null);
         } catch (Exception e) {
-            Log.e(TAG_NAME, "Error handling method " + methodCalled, e);
-            result.error("METHOD_ERROR", e.getMessage(), null);
+            Log.e(TAG_NAME, "Error in " + methodCalled + ": " + e.getMessage(), e);
+            result.error("GENERAL_ERROR", e.getMessage(), null);
         }
     }
 
@@ -195,17 +203,17 @@ public class MainActivity extends FlutterActivity {
             }
 
             Log.d(TAG_NAME, "Starting document detection process");
-            List<Point> corners = ImageUtil.detectDocumentCorners(imagePath);
-            Log.d(TAG_NAME, "Document detection completed. Found " + (corners != null ? corners.size() : 0) + " corners");
+            Corners corners = ImageUtil.detectDocument(imagePath);
+            Log.d(TAG_NAME, "Document detection completed. Found " + (corners != null ? corners.getCorners().size() : 0) + " corners");
 
-            if (corners == null || corners.isEmpty()) {
+            if (corners == null) {
                 Log.w(TAG_NAME, "No corners detected");
                 result.success(new ArrayList<>());
                 return;
             }
 
             List<List<Double>> points = new ArrayList<>();
-            for (Point corner : corners) {
+            for (Point corner : corners.getCorners()) {
                 points.add(Arrays.asList(corner.x, corner.y));
             }
             Log.d(TAG_NAME, "Returning detected points: " + points);
@@ -213,6 +221,24 @@ public class MainActivity extends FlutterActivity {
         } catch (Exception e) {
             Log.e(TAG_NAME, "Error in detectDocument: " + e.getMessage(), e);
             result.error("DETECTION_ERROR", e.getMessage(), null);
+        }
+    }
+
+    private void handleEnhanceDocument(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+        String imagePath = call.argument("imagePath");
+        String filterType = call.argument("filterType");
+        
+        if (imagePath == null || filterType == null) {
+            result.error("INVALID_ARGUMENTS", "Image path and filter type are required", null);
+            return;
+        }
+
+        try {
+            String enhancedPath = ImageUtil.enhanceDocument(imagePath, filterType);
+            result.success(enhancedPath);
+        } catch (Exception e) {
+            Log.e(TAG_NAME, "Error in enhanceDocument: " + e.getMessage(), e);
+            result.error("ENHANCEMENT_ERROR", e.getMessage(), null);
         }
     }
 }

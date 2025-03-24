@@ -16,6 +16,7 @@ import org.opencv.core.Point;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.core.Core;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -393,6 +394,102 @@ public class ImageUtil {
             Log.e(TAG, "Error in detectDocumentCorners: " + e.getMessage(), e);
             return null;
         }
+    }
+
+    public static String enhanceDocument(String imagePath, String filterType) {
+        Log.d(TAG, "Starting document enhancement with filter: " + filterType);
+        try {
+            Mat source = Imgcodecs.imread(imagePath);
+            if (source.empty()) {
+                Log.e(TAG, "Failed to load image for enhancement");
+                return imagePath;
+            }
+
+            Mat result;
+            switch (filterType) {
+                case "adaptive_threshold":
+                    result = applyAdaptiveThreshold(source);
+                    break;
+                case "otsu_threshold":
+                    result = applyOtsuThreshold(source);
+                    break;
+                case "edge_enhancement":
+                    result = applyEdgeEnhancement(source);
+                    break;
+                case "contrast_enhancement":
+                    result = applyContrastEnhancement(source);
+                    break;
+                default:
+                    Log.w(TAG, "Unknown filter type: " + filterType);
+                    return imagePath;
+            }
+
+            String outputPath = imagePath.replace(".jpg", "_" + filterType + "_enhanced.jpg");
+            boolean success = Imgcodecs.imwrite(outputPath, result);
+            result.release();
+            source.release();
+
+            if (!success) {
+                Log.e(TAG, "Failed to save enhanced image");
+                return imagePath;
+            }
+
+            Log.d(TAG, "Document enhancement completed successfully");
+            return outputPath;
+        } catch (Exception e) {
+            Log.e(TAG, "Error in enhanceDocument: " + e.getMessage(), e);
+            return imagePath;
+        }
+    }
+
+    private static Mat applyAdaptiveThreshold(Mat source) {
+        Mat gray = new Mat();
+        Imgproc.cvtColor(source, gray, Imgproc.COLOR_BGR2GRAY);
+        
+        Mat result = new Mat();
+        Imgproc.adaptiveThreshold(
+            gray, result, 255.0,
+            Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C,
+            Imgproc.THRESH_BINARY, 11, 2.0
+        );
+        
+        gray.release();
+        return result;
+    }
+
+    private static Mat applyOtsuThreshold(Mat source) {
+        Mat gray = new Mat();
+        Imgproc.cvtColor(source, gray, Imgproc.COLOR_BGR2GRAY);
+        
+        Mat result = new Mat();
+        Imgproc.threshold(gray, result, 0.0, 255.0, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU);
+        
+        gray.release();
+        return result;
+    }
+
+    private static Mat applyEdgeEnhancement(Mat source) {
+        Mat gray = new Mat();
+        Imgproc.cvtColor(source, gray, Imgproc.COLOR_BGR2GRAY);
+        
+        Mat edges = new Mat();
+        Imgproc.Canny(gray, edges, 50.0, 150.0);
+        
+        Mat result = new Mat();
+        Core.addWeighted(gray, 1.5, edges, 0.5, 0.0, result);
+        
+        gray.release();
+        edges.release();
+        return result;
+    }
+
+    private static Mat applyContrastEnhancement(Mat source) {
+        Mat result = new Mat();
+        double alpha = 1.3; // Contrast control
+        double beta = 10.0; // Brightness control
+        
+        Core.convertScaleAbs(source, result, alpha, beta);
+        return result;
     }
 }
 

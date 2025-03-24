@@ -13,14 +13,10 @@ class ImageFilter extends Filter {
 
   ImageFilter({required String name})
       : subFilters = [],
-        super(name: name);
+        super(name: name, apply: _applyImageFilter);
 
-  ///Apply the [SubFilter] to an Image.
-  @override
-  void apply(Uint8List pixels, int width, int height) {
-    for (ImageSubFilter subFilter in subFilters) {
-      subFilter.apply(pixels, width, height);
-    }
+  static void _applyImageFilter(List<int> pixels) {
+    // Note: Subfilters will be applied when added via addSubFilter
   }
 
   void addSubFilter(ImageSubFilter subFilter) {

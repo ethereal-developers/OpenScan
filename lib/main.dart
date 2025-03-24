@@ -10,6 +10,8 @@ import 'package:openscan/l10n/l10n.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  BackgroundIsolateBinaryMessenger.ensureInitialized(
+      RootIsolateToken.instance!);
   await _initializeCameras();
   runApp(const OpenScan());
 }

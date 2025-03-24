@@ -2,7 +2,19 @@ import 'package:flutter/services.dart';
 
 class NativeAndroidUtil {
   static MethodChannel _channel =
-      new MethodChannel('com.ethereal.openscan/cropper');
+      const MethodChannel('com.ethereal.openscan/cropper');
+  static bool _isInitialized = false;
+
+  static Future<void> _ensureInitialized() async {
+    if (!_isInitialized) {
+      try {
+        await _channel.invokeMethod('ping');
+        _isInitialized = true;
+      } catch (e) {
+        print('Error initializing platform channel: $e');
+      }
+    }
+  }
 
   static String _GET_IMAGE_SIZE = "getImageSize";
   static String _DETECT_DOCUMENT = "detectDocument";
@@ -10,14 +22,17 @@ class NativeAndroidUtil {
   static String _ROTATE_IMAGE = "rotateImage";
   static String _CROP_IMAGE = "cropImage";
   static String _FIX_ROTATION = "fixRotation";
+  static String _ENHANCE_DOCUMENT = "enhanceDocument";
 
   static Future getImageSize(String path) async {
+    await _ensureInitialized();
     return _channel.invokeMethod(_GET_IMAGE_SIZE, {
       "path": path,
     });
   }
 
   static Future detectDocument(String path) async {
+    await _ensureInitialized();
     print('NativeAndroidUtil.detectDocument called with path: $path');
     try {
       print('Invoking native method through channel');
@@ -38,6 +53,7 @@ class NativeAndroidUtil {
   }
 
   static Future compress(String src, String dest, int desiredQuality) async {
+    await _ensureInitialized();
     return _channel.invokeMethod(_COMPRESS, {
       "src": src,
       "dest": dest,
@@ -46,6 +62,7 @@ class NativeAndroidUtil {
   }
 
   static Future rotate(String imgPath, int degree) async {
+    await _ensureInitialized();
     return _channel.invokeMethod(_ROTATE_IMAGE, {
       'path': imgPath,
       'degree': degree,
@@ -63,6 +80,7 @@ class NativeAndroidUtil {
       required double blY,
       required double brX,
       required double brY}) async {
+    await _ensureInitialized();
     return _channel.invokeMethod(_CROP_IMAGE, {
       "srcPath": srcPath,
       "destPath": destPath,
@@ -78,10 +96,26 @@ class NativeAndroidUtil {
   }
 
   static Future fixRotation(
-      {required String srcPath, required String destPath}) {
+      {required String srcPath, required String destPath}) async {
+    await _ensureInitialized();
     return _channel.invokeMethod(_FIX_ROTATION, {
       "srcPath": srcPath,
       "destPath": destPath,
     });
+  }
+
+  static Future<String> enhanceDocument(
+      String imagePath, String filterType) async {
+    await _ensureInitialized();
+    try {
+      final result = await _channel.invokeMethod(_ENHANCE_DOCUMENT, {
+        "imagePath": imagePath,
+        "filterType": filterType,
+      });
+      return result;
+    } catch (e) {
+      print('Error enhancing document: $e');
+      rethrow;
+    }
   }
 }

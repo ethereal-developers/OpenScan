@@ -4,13 +4,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image/image.dart' as imageLib;
 import 'package:path/path.dart';
 
 import '../../core/image_filter/filters/filters.dart';
-import '../../core/image_filter/filters/preset_filters.dart';
 import '../../logic/cubit/directory_cubit.dart';
 import '../../logic/cubit/filter_cubit.dart';
+import '../../core/services/document_scanner_service.dart';
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({
@@ -25,12 +24,11 @@ class FilterScreen extends StatefulWidget {
 }
 
 class _FilterScreenState extends State<FilterScreen> {
-  List<Filter> filters = presetFiltersList;
-  Filter _filter = presetFiltersList[0];
   late PageController _pageController;
   late String currentImagePath;
   late String filterImageName;
-
+  final DocumentScannerService _documentScanner = DocumentScannerService();
+  DocumentFilterType _selectedFilter = DocumentFilterType.adaptiveThreshold;
   bool imageReady = false;
 
   @override
@@ -58,19 +56,16 @@ class _FilterScreenState extends State<FilterScreen> {
           listener: (context, state) {},
           builder: (context, directoryState) {
             return PageView.builder(
-              physics:
-                  // enablePageScroll
-                  //       ?
-                  ClampingScrollPhysics(),
-              // : NeverScrollableScrollPhysics(),
+              physics: ClampingScrollPhysics(),
               controller: _pageController,
               itemCount: directoryState.imageCount,
               onPageChanged: (value) {
-                _imageBytes = null;
+                imageReady = false;
               },
               itemBuilder: (context, imageIndex) {
                 currentImagePath = directoryState.images![imageIndex].imgPath;
-                filterImageName = _filter.name + basename(currentImagePath);
+                filterImageName =
+                    _selectedFilter.value + basename(currentImagePath);
                 return Column(
                   mainAxisSize: MainAxisSize.max,
                   children: [
@@ -78,11 +73,10 @@ class _FilterScreenState extends State<FilterScreen> {
                       child: Padding(
                         padding: EdgeInsets.all(12.0),
                         child: BlocConsumer<FilterCubit, FilterState>(
-                          listener: (context, state) {
-                            debugPrint('Filter Cubit: ${state.cachedFilters.keys}');
-                          },
+                          listener: (context, state) {},
                           buildWhen: (previous, current) {
-                            if(!imageReady && current.cachedFilters[filterImageName] !=
+                            if (!imageReady &&
+                                current.cachedFilters[filterImageName] !=
                                     null) {
                               imageReady = true;
                               return true;
@@ -113,10 +107,8 @@ class _FilterScreenState extends State<FilterScreen> {
                       height: 100,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount: filters.length,
+                        itemCount: DocumentFilterType.values.length,
                         itemBuilder: (BuildContext context, int filterIndex) {
-                          String imagePath =
-                              directoryState.images![imageIndex].imgPath;
                           return InkWell(
                             child: Container(
                               padding: EdgeInsets.all(5.0),
@@ -124,25 +116,49 @@ class _FilterScreenState extends State<FilterScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: <Widget>[
                                   FilterThumbnail(
-                                    imagePath: imagePath,
-                                    filter: filters[filterIndex],
+                                    imagePath: currentImagePath,
+                                    filterType:
+                                        DocumentFilterType.values[filterIndex],
                                   ),
-                                  SizedBox(
-                                    height: 5.0,
-                                  ),
+                                  SizedBox(height: 5.0),
                                   Text(
-                                    filters[filterIndex].name,
+                                    DocumentFilterType
+                                        .values[filterIndex].displayName,
+                                    style: TextStyle(
+                                      color: _selectedFilter ==
+                                              DocumentFilterType
+                                                  .values[filterIndex]
+                                          ? Colors.white
+                                          : Colors.grey,
+                                    ),
                                   )
                                 ],
                               ),
                             ),
                             onTap: () {
-                              if (_filter != filters[filterIndex]) {
-                                _filter = filters[filterIndex];
-                                filterImageName =
-                                    _filter.name + basename(currentImagePath);
+                              if (_selectedFilter !=
+                                  DocumentFilterType.values[filterIndex]) {
+                                setState(() {
+                                  _selectedFilter =
+                                      DocumentFilterType.values[filterIndex];
+                                  filterImageName = _selectedFilter.value +
+                                      basename(currentImagePath);
+                                });
                                 BlocProvider.of<FilterCubit>(context)
-                                    .changeFilter(_filter);
+                                    .changeFilter(
+                                  Filter(
+                                    name: _selectedFilter.value,
+                                    apply: (image) async {
+                                      final enhancedPath =
+                                          await _documentScanner
+                                              .enhanceDocument(
+                                        currentImagePath,
+                                        _selectedFilter.value,
+                                      );
+                                      return File(enhancedPath).readAsBytes();
+                                    },
+                                  ),
+                                );
                               }
                             },
                           );
@@ -164,15 +180,15 @@ class FilterThumbnail extends StatelessWidget {
   const FilterThumbnail({
     Key? key,
     required this.imagePath,
-    required this.filter,
+    required this.filterType,
   }) : super(key: key);
 
   final String imagePath;
-  final Filter filter;
+  final DocumentFilterType filterType;
 
   @override
   Widget build(BuildContext context) {
-    String filterName = filter.name + basename(imagePath);
+    String filterName = filterType.value + basename(imagePath);
     return BlocConsumer<FilterCubit, FilterState>(
       listener: (context, state) {},
       buildWhen: (previous, current) {
@@ -182,22 +198,15 @@ class FilterThumbnail extends StatelessWidget {
       builder: (context, filterState) {
         return (filterState.cachedFilters[filterName] == null)
             ? FutureBuilder<List<int>>(
-                future: compute(applyFilter, <String, dynamic>{
-                  "filter": filter,
-                  "image": File(imagePath),
-                  "filename": basename(imagePath),
-                }),
+                future: _processImage(context),
                 builder:
                     (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
-                  debugPrint('$filterName => ${snapshot.connectionState}');
-
                   switch (snapshot.connectionState) {
                     case ConnectionState.none:
                     case ConnectionState.active:
                     case ConnectionState.waiting:
                       BlocProvider.of<FilterCubit>(context)
                           .cacheImage(filterName, null);
-
                       return CircleAvatar(
                         radius: 30,
                         backgroundColor: Theme.of(context).primaryColor,
@@ -234,36 +243,38 @@ class FilterThumbnail extends StatelessWidget {
       },
     );
   }
+
+  Future<List<int>> _processImage(BuildContext context) async {
+    try {
+      // First, get the enhanced path in the main isolate
+      final documentScanner = DocumentScannerService();
+      final enhancedPath =
+          await documentScanner.enhanceDocument(imagePath, filterType.value);
+
+      if (!await File(enhancedPath).exists()) {
+        throw Exception('Enhanced image file not found at path: $enhancedPath');
+      }
+
+      // Then, do the heavy lifting in a background isolate
+      return compute(_readAndProcessFile, enhancedPath);
+    } catch (e) {
+      debugPrint('Error processing image: $e');
+      rethrow;
+    }
+  }
 }
 
-late imageLib.Image byteImage;
-List<int>? _imageBytes;
+Future<List<int>> _readAndProcessFile(String filePath) async {
+  // First read the file
+  final bytes = await File(filePath).readAsBytes();
 
-///The global applyfilter function
-Future<List<int>> applyFilter(Map<String, dynamic> params) async {
-  Filter? filter = params["filter"];
-  File image = params["image"];
-  String filename = params["filename"];
-
-  if (_imageBytes == null) {
-    byteImage = imageLib.decodeImage(await image.readAsBytes())!;
-    _imageBytes = byteImage.getBytes();
+  // Only delete after we've successfully read the file
+  try {
+    await File(filePath).delete();
+  } catch (e) {
+    // Log the error but don't fail the operation
+    debugPrint('Failed to delete temporary file: $e');
   }
 
-  if (filter != null && filter.name != 'Original') {
-    filter.apply(_imageBytes as dynamic, byteImage.width, byteImage.height);
-  }
-
-  // imageLib.Image _image =
-  //     imageLib.Image.fromBytes(imageBytes.width, imageBytes.height, _bytes);
-
-  _imageBytes = imageLib.encodeNamedImage(filename, byteImage)!;
-
-  // PreviewScreen.previewModel.cachedFilters[
-  //     filter?.name == null ? '_' + filename : filter!.name + filename] = _bytes;
-
-  debugPrint(
-      'Caching image: ${filter?.name == null ? '_' + filename : filter!.name + filename}');
-
-  return _imageBytes!;
+  return bytes;
 }

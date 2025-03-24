@@ -290,9 +290,9 @@ class _PreviewScreenState extends State<PreviewScreen>
 
                 // debugPrint(_pageNumber.value);
                 // debugPrint(state.images![_pageNumber.value - 1]);
-                var image = imageLib.decodeImage(
-                    await File(state.images![_pageNumber.value - 1].imgPath)
-                        .readAsBytes());
+                // var image = imageLib.decodeImage(
+                //     await File(state.images![_pageNumber.value - 1].imgPath)
+                //         .readAsBytes());
                 // image = imageLib.copyResize(image!, width: 600);
 
                 Navigator.push(

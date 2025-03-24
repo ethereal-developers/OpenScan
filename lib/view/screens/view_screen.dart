@@ -26,7 +26,8 @@ class ViewScreen extends StatefulWidget {
 class _ViewScreenState extends State<ViewScreen> {
   static bool selectionEnabled = false;
   GlobalKey scaffoldKey = GlobalKey<ScaffoldMessengerState>();
-  List<Widget>? _cachedImageCards;
+  final ScrollController _scrollController = ScrollController();
+  final Map<int, Widget> _imageCardCache = {};
 
   @override
   void initState() {
@@ -36,7 +37,8 @@ class _ViewScreenState extends State<ViewScreen> {
 
   @override
   void dispose() {
-    _cachedImageCards = null;
+    _scrollController.dispose();
+    _imageCardCache.clear();
     super.dispose();
   }
 
@@ -187,6 +189,8 @@ class _ViewScreenState extends State<ViewScreen> {
                   ],
           ),
           body: SingleChildScrollView(
+            controller: _scrollController,
+            key: const PageStorageKey('view_screen_scroll'),
             padding: const EdgeInsets.all(10),
             child: BlocConsumer<DirectoryCubit, DirectoryState>(
               listener: (context, state) {},
@@ -257,12 +261,14 @@ class _ViewScreenState extends State<ViewScreen> {
   }
 
   List<Widget> _getImageCards(DirectoryState state) {
-    if (_cachedImageCards != null) {
-      return _cachedImageCards!;
-    }
+    if (state.images == null) return [];
 
-    _cachedImageCards = state.images!.map<Widget>((image) {
-      return ImageCard(
+    return state.images!.map<Widget>((image) {
+      if (_imageCardCache.containsKey(image.idx)) {
+        return _imageCardCache[image.idx]!;
+      }
+
+      final card = ImageCard(
         key: ValueKey(image.idx),
         image: image,
         onPressed: selectionEnabled
@@ -280,8 +286,9 @@ class _ViewScreenState extends State<ViewScreen> {
                 ),
         onSelect: () {},
       );
-    }).toList();
 
-    return _cachedImageCards!;
+      _imageCardCache[image.idx!] = card;
+      return card;
+    }).toList();
   }
 }

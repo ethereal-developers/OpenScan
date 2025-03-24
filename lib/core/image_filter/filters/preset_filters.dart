@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'color_filters.dart';
 import 'filters.dart';
 import 'subfilters.dart';
@@ -7,11 +5,6 @@ import 'subfilters.dart';
 // Original: No filter
 class Original extends ColorFilter {
   Original() : super(name: "Original");
-
-  @override
-  void apply(Uint8List pixels, int width, int height) {
-    // Do nothing
-  }
 }
 
 // Clarendon: adds light to lighter areas and dark to darker areas
@@ -61,7 +54,7 @@ class LarkFilter extends ColorFilter {
   }
 }
 
-// Reyes: a new vintage filter, gives your photos a “dusty” look
+// Reyes: a new vintage filter, gives your photos a "dusty" look
 class ReyesFilter extends ColorFilter {
   ReyesFilter() : super(name: "Reyes") {
     subFilters.add(new SepiaSubFilter(0.4));

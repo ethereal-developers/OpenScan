@@ -350,9 +350,7 @@ class CropScreenState {
 
   /// Updates the points in the polygon when changed manually
   void updatePolygon() {
-    if (movingPoint.name == 'none' || updatedPoint.value == null) {
-      return;
-    }
+    if (movingPoint.name == 'none' || updatedPoint.value == null) return;
 
     final position = updatedPoint.value!.globalPosition;
     final localPosition = Point<num>(
@@ -399,14 +397,14 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 't') {
+      // For top edge, move both top points vertically
       double yDisplacement = localPosition.y.toDouble() - t.y.toDouble();
-      // For top edge, move both top points horizontally to maintain box shape
       Point<num> tlTemp = Point<num>(
-        tl.x + yDisplacement,
+        tl.x,
         tl.y + yDisplacement,
       );
       Point<num> trTemp = Point<num>(
-        tr.x + yDisplacement,
+        tr.x,
         tr.y + yDisplacement,
       );
 
@@ -418,14 +416,14 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'b') {
+      // For bottom edge, move both bottom points vertically
       double yDisplacement = localPosition.y.toDouble() - b.y.toDouble();
-      // For bottom edge, move both bottom points horizontally to maintain box shape
       Point<num> blTemp = Point<num>(
-        bl.x + yDisplacement,
+        bl.x,
         bl.y + yDisplacement,
       );
       Point<num> brTemp = Point<num>(
-        br.x + yDisplacement,
+        br.x,
         br.y + yDisplacement,
       );
 
@@ -437,15 +435,15 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'l') {
+      // For left edge, move both left points horizontally
       double xDisplacement = localPosition.x.toDouble() - l.x.toDouble();
-      // For left edge, move both left points vertically to maintain box shape
       Point<num> tlTemp = Point<num>(
         tl.x + xDisplacement,
-        tl.y + xDisplacement,
+        tl.y,
       );
       Point<num> blTemp = Point<num>(
         bl.x + xDisplacement,
-        bl.y + xDisplacement,
+        bl.y,
       );
 
       if (checkPolygon(tlTemp, br, tr, blTemp)) {
@@ -456,15 +454,15 @@ class CropScreenState {
         }
       }
     } else if (movingPoint.name == 'r') {
+      // For right edge, move both right points horizontally
       double xDisplacement = localPosition.x.toDouble() - r.x.toDouble();
-      // For right edge, move both right points vertically to maintain box shape
       Point<num> trTemp = Point<num>(
         tr.x + xDisplacement,
-        tr.y + xDisplacement,
+        tr.y,
       );
       Point<num> brTemp = Point<num>(
         br.x + xDisplacement,
-        br.y + xDisplacement,
+        br.y,
       );
 
       if (checkPolygon(tl, brTemp, trTemp, bl)) {
@@ -498,37 +496,63 @@ class CropScreenState {
     // Calculate slopes before checking for points
     calculateAllSlopes();
 
+    // Calculate scaled pickup distance based on image size
+    // Use a larger base distance and scale it based on the image width
+    double scaledPickupDistance =
+        40.0 * (canvasSize!.width / 400.0); // Scale based on image width
+
+    print('Scaled pickup distance: $scaledPickupDistance');
+
+    // Calculate distances to all points for debugging
+    print('Distances to points:');
+    print(
+        'tl: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), tl.x.toDouble(), tl.y.toDouble())}');
+    print(
+        'tr: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), tr.x.toDouble(), tr.y.toDouble())}');
+    print(
+        'bl: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), bl.x.toDouble(), bl.y.toDouble())}');
+    print(
+        'br: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), br.x.toDouble(), br.y.toDouble())}');
+    print(
+        't: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), t.x.toDouble(), t.y.toDouble())}');
+    print(
+        'b: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), b.x.toDouble(), b.y.toDouble())}');
+    print(
+        'l: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), l.x.toDouble(), l.y.toDouble())}');
+    print(
+        'r: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), r.x.toDouble(), r.y.toDouble())}');
+
     if (getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(),
             tl.x.toDouble(), tl.y.toDouble()) <
-        pickupDistance) {
+        scaledPickupDistance) {
       movingPoint = MovingPoint(name: 'tl', offset: Point<num>(tl.x, tl.y));
     } else if (getDistance(localPosition.x.toDouble(),
             localPosition.y.toDouble(), tr.x.toDouble(), tr.y.toDouble()) <
-        pickupDistance) {
+        scaledPickupDistance) {
       movingPoint = MovingPoint(name: 'tr', offset: Point<num>(tr.x, tr.y));
     } else if (getDistance(localPosition.x.toDouble(),
             localPosition.y.toDouble(), bl.x.toDouble(), bl.y.toDouble()) <
-        pickupDistance) {
+        scaledPickupDistance) {
       movingPoint = MovingPoint(name: 'bl', offset: Point<num>(bl.x, bl.y));
     } else if (getDistance(localPosition.x.toDouble(),
             localPosition.y.toDouble(), br.x.toDouble(), br.y.toDouble()) <
-        pickupDistance) {
+        scaledPickupDistance) {
       movingPoint = MovingPoint(name: 'br', offset: Point<num>(br.x, br.y));
     } else if (getDistance(localPosition.x.toDouble(),
             localPosition.y.toDouble(), t.x.toDouble(), t.y.toDouble()) <
-        pickupDistance) {
+        scaledPickupDistance) {
       movingPoint = MovingPoint(name: 't', offset: Point<num>(t.x, t.y));
     } else if (getDistance(localPosition.x.toDouble(),
             localPosition.y.toDouble(), b.x.toDouble(), b.y.toDouble()) <
-        pickupDistance) {
+        scaledPickupDistance) {
       movingPoint = MovingPoint(name: 'b', offset: Point<num>(b.x, b.y));
     } else if (getDistance(localPosition.x.toDouble(),
             localPosition.y.toDouble(), l.x.toDouble(), l.y.toDouble()) <
-        pickupDistance) {
+        scaledPickupDistance) {
       movingPoint = MovingPoint(name: 'l', offset: Point<num>(l.x, l.y));
     } else if (getDistance(localPosition.x.toDouble(),
             localPosition.y.toDouble(), r.x.toDouble(), r.y.toDouble()) <
-        pickupDistance) {
+        scaledPickupDistance) {
       movingPoint = MovingPoint(name: 'r', offset: Point<num>(r.x, r.y));
     } else {
       movingPoint = MovingPoint(name: 'none', offset: Point<num>(0, 0));
@@ -540,6 +564,16 @@ class CropScreenState {
   void onPanUpdate(DragUpdateDetails details) {
     if (movingPoint.name == 'none') return;
     updatedPoint.value = details;
+
+    // Update the moving point's offset to follow the current position
+    final position = details.globalPosition;
+    final localPosition = Point<num>(
+        position.dx - canvasOffset!.dx, position.dy - canvasOffset!.dy);
+    movingPoint.offset = localPosition;
+
+    // Show magnifier and update its position
+    showMagnifier.value = true;
+
     updatePolygon(); // Update the polygon during dragging
   }
 
