@@ -464,28 +464,56 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     return false;
   }
 
-  /// Selects image in directory
-  void selectImage(ImageOS imageOS) {
-    debugPrint(imageOS.toMap().toString());
-    state.images![imageOS.idx! - 1].selected =
-        !state.images![imageOS.idx! - 1].selected;
-    emitState(state);
+  /// Enables selection mode
+  void enableSelection() {
+    emit(state.copyWith(isSelectionEnabled: true));
   }
 
-  /// Selects all images in directory
-  void selectAllImages() {
-    for (ImageOS image in state.images!) {
-      image.selected = true;
-    }
-    emitState(state);
+  /// Disables selection mode
+  void disableSelection() {
+    emit(state.copyWith(isSelectionEnabled: false));
   }
 
-  /// Deselects images in directory
+  /// Resets selection state
   void resetSelection() {
-    for (ImageOS image in state.images!) {
+    final newImages = state.images?.map((image) {
       image.selected = false;
-    }
-    emitState(state);
+      return image;
+    }).toList();
+    emit(state.copyWith(
+      images: newImages,
+      isSelectionEnabled: false,
+    ));
+  }
+
+  /// Selects all images
+  void selectAllImages() {
+    final newImages = state.images?.map((image) {
+      image.selected = true;
+      return image;
+    }).toList();
+    emit(state.copyWith(images: newImages));
+  }
+
+  /// Selects a single image
+  void selectImage(ImageOS image) {
+    final newImages = state.images?.map((img) {
+      if (img.idx == image.idx) {
+        img.selected = !img.selected;
+      }
+      return img;
+    }).toList();
+    emit(state.copyWith(images: newImages));
+  }
+
+  /// Gets the count of selected images
+  int getSelectedCount() {
+    return state.images?.where((image) => image.selected).length ?? 0;
+  }
+
+  /// Gets the list of selected images
+  List<ImageOS> getSelectedImages() {
+    return state.images?.where((image) => image.selected).toList() ?? [];
   }
 
   /// Rename the directory name

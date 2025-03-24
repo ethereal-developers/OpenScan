@@ -24,7 +24,6 @@ class ViewScreen extends StatefulWidget {
 }
 
 class _ViewScreenState extends State<ViewScreen> {
-  static bool selectionEnabled = false;
   GlobalKey scaffoldKey = GlobalKey<ScaffoldMessengerState>();
   final ScrollController _scrollController = ScrollController();
   final Map<int, Widget> _imageCardCache = {};
@@ -32,7 +31,7 @@ class _ViewScreenState extends State<ViewScreen> {
   @override
   void initState() {
     super.initState();
-    selectionEnabled = false;
+    BlocProvider.of<DirectoryCubit>(context).disableSelection();
   }
 
   @override
@@ -48,11 +47,10 @@ class _ViewScreenState extends State<ViewScreen> {
     return SafeArea(
       child: WillPopScope(
         onWillPop: () async {
-          if (selectionEnabled) {
-            setState(() {
-              selectionEnabled = false;
-              BlocProvider.of<DirectoryCubit>(context).resetSelection();
-            });
+          if (BlocProvider.of<DirectoryCubit>(context)
+              .state
+              .isSelectionEnabled) {
+            BlocProvider.of<DirectoryCubit>(context).resetSelection();
           } else {
             Navigator.pop(context);
             return true;
@@ -65,27 +63,29 @@ class _ViewScreenState extends State<ViewScreen> {
           appBar: AppBar(
             elevation: 0,
             backgroundColor: Theme.of(context).primaryColor,
-            leading: selectionEnabled
-                ? IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      size: 30,
-                    ),
-                    padding: const EdgeInsets.fromLTRB(15, 8, 0, 8),
-                    onPressed: () {
-                      BlocProvider.of<DirectoryCubit>(context).resetSelection();
-                      setState(() {
-                        selectionEnabled = false;
-                      });
-                    },
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.arrow_back_ios),
-                    padding: const EdgeInsets.fromLTRB(15, 8, 0, 8),
-                    onPressed: () {
-                      Navigator.pop(context, true);
-                    },
-                  ),
+            leading: BlocBuilder<DirectoryCubit, DirectoryState>(
+              builder: (context, state) {
+                return state.isSelectionEnabled
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 30,
+                        ),
+                        padding: const EdgeInsets.fromLTRB(15, 8, 0, 8),
+                        onPressed: () {
+                          BlocProvider.of<DirectoryCubit>(context)
+                              .resetSelection();
+                        },
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.arrow_back_ios),
+                        padding: const EdgeInsets.fromLTRB(15, 8, 0, 8),
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                      );
+              },
+            ),
             title: BlocConsumer<DirectoryCubit, DirectoryState>(
               listener: (context, state) {
                 // debugPrint('DirName updated: ${state.dirName}');
@@ -135,58 +135,72 @@ class _ViewScreenState extends State<ViewScreen> {
                 );
               },
             ),
-            actions: (selectionEnabled)
-                ? [
-                    IconGestureDetector(
-                      icon: Icon(Icons.select_all_rounded),
-                      onTap: () {
-                        debugPrint('select all');
-                        BlocProvider.of<DirectoryCubit>(context)
-                            .selectAllImages();
-                      },
-                    ),
-                    IconGestureDetector(
-                      icon: Icon(Icons.more_vert_rounded),
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          builder: (_) {
-                            return BlocProvider<DirectoryCubit>.value(
-                              value: BlocProvider.of<DirectoryCubit>(context),
-                              child: MainBottomSheet(
-                                imagesSelected: true,
-                              ),
+            actions: [
+              BlocBuilder<DirectoryCubit, DirectoryState>(
+                builder: (context, state) {
+                  if (state.isSelectionEnabled) {
+                    return Row(
+                      children: [
+                        IconGestureDetector(
+                          icon: Icon(Icons.select_all_rounded),
+                          onTap: () {
+                            debugPrint('select all');
+                            BlocProvider.of<DirectoryCubit>(context)
+                                .selectAllImages();
+                          },
+                        ),
+                        IconGestureDetector(
+                          icon: Icon(Icons.more_vert_rounded),
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              builder: (_) {
+                                return BlocProvider<DirectoryCubit>.value(
+                                  value:
+                                      BlocProvider.of<DirectoryCubit>(context),
+                                  child: MainBottomSheet(
+                                    imagesSelected: true,
+                                  ),
+                                );
+                              },
                             );
                           },
-                        );
-                      },
-                    ),
-                  ]
-                : [
-                    IconGestureDetector(
-                      icon: Icon(Icons.check_box_rounded),
-                      onTap: () {
-                        setState(() {
-                          selectionEnabled = true;
-                          debugPrint('selection Enabled');
-                        });
-                      },
-                    ),
-                    IconGestureDetector(
-                      icon: Icon(Icons.more_vert_rounded),
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          builder: (_) {
-                            return BlocProvider<DirectoryCubit>.value(
-                              value: BlocProvider.of<DirectoryCubit>(context),
-                              child: MainBottomSheet(),
+                        ),
+                      ],
+                    );
+                  } else {
+                    return Row(
+                      children: [
+                        IconGestureDetector(
+                          icon: Icon(Icons.picture_as_pdf_rounded),
+                          onTap: () {
+                            // TODO: Implement PDF export functionality
+                            debugPrint('Export as PDF');
+                          },
+                        ),
+                        IconGestureDetector(
+                          icon: Icon(Icons.more_vert_rounded),
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              builder: (_) {
+                                return BlocProvider<DirectoryCubit>.value(
+                                  value:
+                                      BlocProvider.of<DirectoryCubit>(context),
+                                  child: MainBottomSheet(
+                                    showSelectOption: true,
+                                  ),
+                                );
+                              },
                             );
                           },
-                        );
-                      },
-                    ),
-                  ],
+                        ),
+                      ],
+                    );
+                  }
+                },
+              ),
+            ],
           ),
           body: Stack(
             children: [
@@ -210,32 +224,36 @@ class _ViewScreenState extends State<ViewScreen> {
                         child: Text('No images found'),
                       );
                     }
-                    return selectionEnabled
-                        ? Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: _getImageCards(state),
-                          )
-                        : ReorderableWrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            minMainAxisCount: 2,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: _getImageCards(state),
-                            onReorder: (int oldIndex, int newIndex) {
-                              BlocProvider.of<DirectoryCubit>(context_)
-                                  .updateImageIndex(oldIndex, newIndex);
-                            },
-                            onNoReorder: (int index) {
-                              debugPrint(
-                                  '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
-                            },
-                            onReorderStarted: (int index) {
-                              debugPrint(
-                                  '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
-                            },
-                          );
+                    return BlocBuilder<DirectoryCubit, DirectoryState>(
+                      builder: (context, state) {
+                        return state.isSelectionEnabled
+                            ? Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: _getImageCards(state),
+                              )
+                            : ReorderableWrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                minMainAxisCount: 2,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: _getImageCards(state),
+                                onReorder: (int oldIndex, int newIndex) {
+                                  BlocProvider.of<DirectoryCubit>(context_)
+                                      .updateImageIndex(oldIndex, newIndex);
+                                },
+                                onNoReorder: (int index) {
+                                  debugPrint(
+                                      '${DateTime.now().toString().substring(5, 22)} reorder cancelled. index:');
+                                },
+                                onReorderStarted: (int index) {
+                                  debugPrint(
+                                      '${DateTime.now().toString().substring(5, 22)} reorder started: index:');
+                                },
+                              );
+                      },
+                    );
                   },
                 ),
               ),
@@ -309,7 +327,7 @@ class _ViewScreenState extends State<ViewScreen> {
         key: ValueKey(image.idx),
         image: image,
         onPressed: () {
-          if (selectionEnabled) {
+          if (state.isSelectionEnabled) {
             BlocProvider.of<DirectoryCubit>(context).selectImage(image);
           } else {
             Navigator.push(

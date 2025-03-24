@@ -10,6 +10,7 @@ class DirectoryState {
   final String? newName;
   final List<ImageOS>? images;
   final bool isLoading;
+  final bool isSelectionEnabled;
 
   DirectoryState({
     this.dirName,
@@ -21,6 +22,7 @@ class DirectoryState {
     this.newName,
     this.images,
     this.isLoading = false,
+    this.isSelectionEnabled = false,
   });
 
   DirectoryState copyWith({
@@ -33,6 +35,7 @@ class DirectoryState {
     String? newName,
     List<ImageOS>? images,
     bool? isLoading,
+    bool? isSelectionEnabled,
   }) {
     return DirectoryState(
       dirName: dirName ?? this.dirName,
@@ -44,6 +47,7 @@ class DirectoryState {
       newName: newName ?? this.newName,
       images: images ?? this.images,
       isLoading: isLoading ?? this.isLoading,
+      isSelectionEnabled: isSelectionEnabled ?? this.isSelectionEnabled,
     );
   }
 }

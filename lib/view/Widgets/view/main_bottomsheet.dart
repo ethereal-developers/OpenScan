@@ -9,12 +9,17 @@ import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
 import 'package:openscan/view/Widgets/view/export_bottomsheet.dart';
 import 'package:openscan/view/extensions.dart';
+import 'package:openscan/view/screens/view_screen.dart';
 
 class MainBottomSheet extends StatefulWidget {
   final bool imagesSelected;
+  final bool showSelectOption;
 
-  const MainBottomSheet({Key? key, this.imagesSelected = false})
-      : super(key: key);
+  const MainBottomSheet({
+    Key? key,
+    this.imagesSelected = false,
+    this.showSelectOption = false,
+  }) : super(key: key);
 
   @override
   State<MainBottomSheet> createState() => _MainBottomSheetState();
@@ -171,6 +176,19 @@ class _MainBottomSheetState extends State<MainBottomSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
+                  if (widget.showSelectOption)
+                    BottomSheetActivityButton(
+                      subtitle: 'Select',
+                      icon: Icon(
+                        Icons.check_box_rounded,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        BlocProvider.of<DirectoryCubit>(context)
+                            .enableSelection();
+                      },
+                    ),
                   BottomSheetActivityButton(
                     subtitle: 'Share',
                     icon: Icon(
