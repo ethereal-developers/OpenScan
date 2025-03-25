@@ -77,14 +77,10 @@ class ImageProcessMessage {
   final File image;
   final String dirPath;
   final int index;
-  final bool quickScan;
-  final bool fromGallery;
 
   ImageProcessMessage({
     required this.image,
     required this.dirPath,
     required this.index,
-    this.quickScan = false,
-    this.fromGallery = false,
   });
 }

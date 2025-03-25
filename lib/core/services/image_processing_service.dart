@@ -10,11 +10,13 @@ class ImageProcessingResult {
   final bool success;
   final String? imagePath;
   final String? error;
+  final int index;
 
   ImageProcessingResult({
     required this.success,
     this.imagePath,
     this.error,
+    required this.index,
   });
 }
 
@@ -27,6 +29,7 @@ class ImageProcessingService {
       return ImageProcessingResult(
         success: false,
         error: 'Failed to get root isolate token',
+        index: message.index,
       );
     }
 
@@ -54,55 +57,32 @@ class ImageProcessingService {
         sendPort.send(ImageProcessingResult(
           success: false,
           error: 'Source image does not exist',
+          index: message.index,
         ));
         return;
       }
 
       Directory cacheDir = await getTemporaryDirectory();
 
-      // Compress image
-      String compressedPath = await NativeAndroidUtil.compress(
+      String processedPath = await NativeAndroidUtil.postScanImageProcessing(
         message.image.path,
         cacheDir.path,
-        70,
       );
 
-      File compressedImage = File(compressedPath);
-      if (!compressedImage.existsSync()) {
+      File processedImage = File(processedPath);
+      if (!processedImage.existsSync()) {
         sendPort.send(ImageProcessingResult(
           success: false,
-          error: 'Failed to compress image',
+          error: 'Failed to process image',
+          index: message.index,
         ));
         return;
-      }
-
-      if (message.image.existsSync()) {
-        message.image.deleteSync();
-      }
-
-      // Fix rotation
-      String exifFixedPath = await NativeAndroidUtil.fixRotation(
-        srcPath: compressedImage.path,
-        destPath: cacheDir.path,
-      );
-
-      File exifFixedImage = File(exifFixedPath);
-      if (!exifFixedImage.existsSync()) {
-        sendPort.send(ImageProcessingResult(
-          success: false,
-          error: 'Failed to fix image rotation',
-        ));
-        return;
-      }
-
-      if (compressedImage.existsSync()) {
-        compressedImage.deleteSync();
       }
 
       // Save final image
       final fileOperations = FileOperations();
       File savedImage = await fileOperations.saveImage(
-        image: exifFixedImage,
+        image: processedImage,
         index: message.index,
         dirPath: message.dirPath,
       );
@@ -111,6 +91,7 @@ class ImageProcessingService {
         sendPort.send(ImageProcessingResult(
           success: false,
           error: 'Failed to save final image',
+          index: message.index,
         ));
         return;
       }
@@ -118,6 +99,7 @@ class ImageProcessingService {
       sendPort.send(ImageProcessingResult(
         success: true,
         imagePath: savedImage.path,
+        index: message.index,
       ));
     } catch (e, stackTrace) {
       print('Error processing image in isolate: $e');
@@ -125,6 +107,7 @@ class ImageProcessingService {
       sendPort.send(ImageProcessingResult(
         success: false,
         error: e.toString(),
+        index: message.index,
       ));
     }
   }

@@ -181,100 +181,79 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     debugPrint('$name size --> $kb');
   }
 
-  /// Imports image from gallery and camera and stores it in db
-  void createImage(
-    context, {
-    bool quickScan = false,
-    bool fromGallery = false,
-  }) async {
-    List<File> imageList = [];
-
-    if (fromGallery) {
-      imageList = await (fileOperations.openGallery());
-    } else {
-      File? image = await fileOperations.openCamera();
-      if (image != null) {
-        File? croppedImage = await imageCropper(
-          context,
-          image,
-        );
-        if (croppedImage != null) {
-          imageList = [croppedImage];
-        }
-      }
-    }
+  /// Imports image from gallery
+  void importImagesFromGallery(context) async {
+    List<File> imageList = await fileOperations.openGallery();
+    const batchSize = 10;
+    List<String> errors = [];
+    List<ImageOS> allValidImages = [];
 
     if (imageList.isEmpty) return;
-
-    // Set loading state to true
     emit(state.copyWith(isLoading: true));
 
-    // Pre-calculate all indices before processing
-    final startIndex = state.images!.length + 1;
-    final indices = List.generate(
-      imageList.length,
-      (index) => startIndex + index,
-    );
-
-    // Process images in batches of 5
-    List<ImageOS?> processedImages = [];
-    List<String> errors = [];
-    const batchSize = 3;
-
     try {
+      final startIndex = state.images?.length ?? 1;
+
       for (int i = 0; i < imageList.length; i += batchSize) {
         final end = (i + batchSize < imageList.length)
             ? i + batchSize
             : imageList.length;
         final batch = imageList.sublist(i, end);
 
-        // Process current batch of images
+        // Process current batch
         final batchFutures = batch.asMap().entries.map((entry) {
+          final index = startIndex + i + entry.key;
           final message = ImageProcessMessage(
             image: entry.value,
             dirPath: state.dirPath!,
-            index: indices[i + entry.key],
-            quickScan: quickScan,
-            fromGallery: fromGallery,
+            index: index,
           );
 
-          return ImageProcessingService.processImageInIsolate(message)
-              .then((result) {
-            if (result.success && result.imagePath != null) {
-              return ImageOS(
-                idx: indices[i + entry.key],
-                imgPath: result.imagePath!,
-                selected: false,
-              );
-            } else {
-              errors.add(result.error ?? 'Unknown error processing image');
-              return null;
-            }
-          });
+          return ImageProcessingService.processImageInIsolate(message);
         });
 
-        // Wait for current batch to complete
+        // Process batch and update state
         final batchResults = await Future.wait(batchFutures);
-        processedImages.addAll(batchResults);
-
-        // Update state after each batch
-        final validImages = batchResults.whereType<ImageOS>().toList()
+        final validImages = batchResults
+            .where((result) => result.success && result.imagePath != null)
+            .map((result) => ImageOS(
+                  idx: result.index,
+                  imgPath: result.imagePath!,
+                  selected: false,
+                ))
+            .toList()
           ..sort((a, b) => a.idx!.compareTo(b.idx!));
 
-        emit(state.copyWith(
-          images: List<ImageOS>.from(state.images!)..addAll(validImages),
-          imageCount: state.images!.length + validImages.length,
-          firstImgPath: state.images!.isEmpty && validImages.isNotEmpty
-              ? validImages[0].imgPath
-              : state.firstImgPath,
-          isLoading: true,
-        ));
+        // Collect errors
+        errors.addAll(batchResults
+            .where((result) => !result.success || result.imagePath == null)
+            .map((result) => result.error ?? 'Unknown error'));
+
+        // Add valid images to a temporary list instead of updating state
+        allValidImages.addAll(validImages);
       }
 
-      // Just update loading state to false
-      emit(state.copyWith(isLoading: false));
+      // update first image path
+      if (allValidImages.isNotEmpty) {
+        database.updateFirstImagePath(
+          dirPath: state.dirPath!,
+          imagePath: allValidImages[0].imgPath,
+        );
+      }
 
-      // Show error message if any images failed to process
+      // Update state once with all processed images
+      emit(state.copyWith(
+        images: List<ImageOS>.from(state.images!)..addAll(allValidImages),
+        imageCount: state.images!.length + allValidImages.length,
+        firstImgPath: allValidImages.isNotEmpty
+            ? allValidImages[0].imgPath
+            : state.firstImgPath,
+        isLoading: false, // Set to false since we're done processing
+      ));
+
+      // Clean up batch files immediately
+      await fileOperations.deleteTemporaryImages();
+
       if (errors.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -284,20 +263,91 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           ),
         );
       }
+    } catch (e) {
+      debugPrint('Error processing images: $e');
+      emit(state.copyWith(isLoading: false));
+    }
+  }
+
+  /// Creates image from camera
+  void createImage(
+    context, {
+    bool quickScan = false,
+  }) async {
+    // File? croppedImage;
+    File? image = await fileOperations.openCamera();
+    // if (image != null) {
+    //   croppedImage = await imageCropper(
+    //     context,
+    //     image,
+    //   );
+    // }
+
+    // if (croppedImage == null) return;
+    if (image == null) return;
+
+    // Set loading state to true
+    emit(state.copyWith(isLoading: true));
+
+    try {
+      // if (!croppedImage.existsSync()) {
+      if (!image.existsSync()) {
+        emit(state.copyWith(isLoading: false));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error processing image'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      Directory cacheDir = await getTemporaryDirectory();
+      String compressedPath = await NativeAndroidUtil.compress(
+        // croppedImage.path,
+        image.path,
+        cacheDir.path,
+        70,
+      );
+
+      File compressedImage = File(compressedPath);
+
+      // Show error message if any images failed to process
+      if (!compressedImage.existsSync()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to process image'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
+      // Save final image
+      final fileOperations = FileOperations();
+      await fileOperations.saveImage(
+        image: compressedImage,
+        index: state.images!.length + 1,
+        dirPath: state.dirPath!,
+      );
 
       // Clean up temporary files
       await fileOperations.deleteTemporaryImages();
+
+      // Refresh image data to update state
+      await getImageData();
+
+      emit(state.copyWith(isLoading: false));
 
       // If quick scan, start another scan
       if (quickScan) {
         return createImage(context, quickScan: quickScan);
       }
     } catch (e) {
-      debugPrint('Error processing images: $e');
+      debugPrint('Error processing image: $e');
       emit(state.copyWith(isLoading: false));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error processing images: $e'),
+          content: Text('Error processing image: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -307,38 +357,55 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   /// Calls image cropper
   void cropImage(context, ImageOS imageOS) async {
     File original = File(imageOS.imgPath);
-    debugPrint("originalllll ${imageOS.imgPath}");
+    debugPrint("Original image path: ${imageOS.imgPath}");
 
     File? result = await imageCropper(
       context,
       original,
     );
-    debugPrint("cropresultttt ${result?.path}");
+    debugPrint("Cropped image path: ${result?.path}");
 
     if (result != null && result.existsSync()) {
-      original.deleteSync();
-      result.copySync(original.path);
+      try {
+        // Delete original and copy cropped image
+        original.deleteSync();
+        result.copySync(original.path);
+
+        // Update database
+        await database.updateImagePath(
+          tableName: state.dirName!,
+          imgPath: imageOS.imgPath,
+          idx: imageOS.idx,
+        );
+
+        // Update first image path if needed
+        if (imageOS.idx == 1) {
+          await database.updateFirstImagePath(
+            imagePath: imageOS.imgPath,
+            dirPath: state.dirPath,
+          );
+        }
+
+        // Create new state with updated image
+        final updatedImages = List<ImageOS>.from(state.images!);
+        updatedImages[imageOS.idx! - 1] = imageOS;
+
+        emit(state.copyWith(
+          images: updatedImages,
+          firstImgPath: imageOS.idx == 1 ? imageOS.imgPath : state.firstImgPath,
+        ));
+
+        debugPrint('Image cropped and state updated successfully');
+      } catch (e) {
+        debugPrint('Error during image cropping: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to crop image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-    imageOS.imgPath = original.path;
-    debugPrint('Image Cropped');
-
-    database.updateImagePath(
-      tableName: state.dirName!,
-      imgPath: imageOS.imgPath,
-      idx: imageOS.idx,
-    );
-    debugPrint(imageOS.idx.toString());
-
-    state.images![imageOS.idx! - 1] = imageOS;
-
-    if (imageOS.idx == 1) {
-      database.updateFirstImagePath(
-        imagePath: imageOS.imgPath,
-        dirPath: state.dirPath,
-      );
-    }
-    debugPrint('Image paths updated');
-    emitState(state);
   }
 
   /// Deletes image and updates db

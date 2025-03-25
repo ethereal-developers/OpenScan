@@ -41,6 +41,53 @@ public class ImageUtil {
     private static final double MIN_AREA_RATIO = 0.1;
     private static final double MAX_AREA_RATIO = 0.95;
 
+    public static int getRotationAngle(int orientation) {
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                return 90;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                return 180;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                return 270;
+            default:
+                return 0;
+        }
+    }
+
+    public static String postScanImageProcessing(String src, String dest) {
+        Bitmap bitmap = null, rotatedBitmap = null;
+        try {
+            ExifInterface exif = new ExifInterface(src);
+            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+            int rotationAngle = getRotationAngle(orientation);
+
+            bitmap = BitmapFactory.decodeFile(src);
+            Matrix matrix = new Matrix();
+            matrix.setRotate(rotationAngle, (float) bitmap.getWidth() / 2, (float) bitmap.getHeight() / 2);
+            rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);            
+
+            String fileName = String.format("%s/%d.jpg", dest, System.currentTimeMillis());
+
+            try (FileOutputStream stream = new FileOutputStream(fileName)) {
+                rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 70, stream);
+                return fileName;
+            } catch (IOException e) {
+                Log.e(TAG, "Failed to save original image", e);
+                return src;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error in postScanImageProcessing: " + e.getMessage(), e);
+            return src;
+        } finally {
+            if (bitmap != null) {
+                bitmap.recycle();
+            }
+            if (rotatedBitmap != null) {
+                rotatedBitmap.recycle();
+            }
+        }
+    }
+
     public static boolean cropImage(String srcPath, String destPath, double tl_x, double tl_y, 
             double tr_x, double tr_y, double bl_x, double bl_y, double br_x, double br_y) {
         Bitmap original = BitmapFactory.decodeFile(srcPath);

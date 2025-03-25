@@ -303,10 +303,8 @@ class _ViewScreenState extends State<ViewScreen> {
               );
             },
             galleryOnPressed: () {
-              BlocProvider.of<DirectoryCubit>(context).createImage(
+              BlocProvider.of<DirectoryCubit>(context).importImagesFromGallery(
                 context,
-                quickScan: false,
-                fromGallery: true,
               );
             },
           ),

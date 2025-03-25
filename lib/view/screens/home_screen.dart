@@ -86,10 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context) => BlocProvider<DirectoryCubit>(
               create: (context) => DirectoryCubit()
                 ..createDirectory()
-                ..createImage(
-                  context,
-                  fromGallery: true,
-                ),
+                ..importImagesFromGallery(context),
               child: ViewScreen(),
             ),
             settings: RouteSettings(name: AppRouter.viewScreen),

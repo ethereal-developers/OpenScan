@@ -23,6 +23,7 @@ class NativeAndroidUtil {
   static String _CROP_IMAGE = "cropImage";
   static String _FIX_ROTATION = "fixRotation";
   static String _ENHANCE_DOCUMENT = "enhanceDocument";
+  static String _POST_SCAN_IMAGE_PROCESSING = "postScanImageProcessing";
 
   static Future getImageSize(String path) async {
     await _ensureInitialized();
@@ -115,6 +116,20 @@ class NativeAndroidUtil {
       return result;
     } catch (e) {
       print('Error enhancing document: $e');
+      rethrow;
+    }
+  }
+
+  static Future<String> postScanImageProcessing(String src, String dest) async {
+    await _ensureInitialized();
+    try {
+      final result = await _channel.invokeMethod(_POST_SCAN_IMAGE_PROCESSING, {
+        "src": src,
+        "dest": dest,
+      });
+      return result;
+    } catch (e) {
+      print('Error post-scan image processing: $e');
       rethrow;
     }
   }

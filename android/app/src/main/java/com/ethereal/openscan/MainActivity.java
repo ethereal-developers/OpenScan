@@ -72,6 +72,9 @@ public class MainActivity extends FlutterActivity {
                 case "enhanceDocument":
                     handleEnhanceDocument(call, result);
                     break;
+                case "postScanImageProcessing":
+                    handlePostScanImageProcessing(call, result);
+                    break;
                 default:
                     result.notImplemented();
             }
@@ -119,7 +122,7 @@ public class MainActivity extends FlutterActivity {
 
         ExifInterface exif = new ExifInterface(srcPath);
         int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-        int rotationAngle = getRotationAngle(orientation);
+        int rotationAngle = ImageUtil.getRotationAngle(orientation);
 
         Bitmap bitmap = BitmapFactory.decodeFile(srcPath);
         try {
@@ -135,19 +138,6 @@ public class MainActivity extends FlutterActivity {
             }
         } finally {
             bitmap.recycle();
-        }
-    }
-
-    private int getRotationAngle(int orientation) {
-        switch (orientation) {
-            case ExifInterface.ORIENTATION_ROTATE_90:
-                return 90;
-            case ExifInterface.ORIENTATION_ROTATE_180:
-                return 180;
-            case ExifInterface.ORIENTATION_ROTATE_270:
-                return 270;
-            default:
-                return 0;
         }
     }
 
@@ -239,6 +229,18 @@ public class MainActivity extends FlutterActivity {
         } catch (Exception e) {
             Log.e(TAG_NAME, "Error in enhanceDocument: " + e.getMessage(), e);
             result.error("ENHANCEMENT_ERROR", e.getMessage(), null);
+        }
+    }
+
+    private void handlePostScanImageProcessing(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+        String src = call.argument("src");
+        String dest = call.argument("dest");
+        try {
+            String processedPath = ImageUtil.postScanImageProcessing(src, dest);
+            result.success(processedPath);
+        } catch (Exception e) {
+            Log.e(TAG_NAME, "Error in postScanImageProcessing: " + e.getMessage(), e);
+            result.error("POST_SCAN_IMAGE_PROCESSING_ERROR", e.getMessage(), null);
         }
     }
 }
