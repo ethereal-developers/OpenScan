@@ -9,14 +9,8 @@ import 'package:openscan/core/models.dart';
 import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:openscan/core/services/document_scanner_service.dart';
-import 'package:openscan/core/services/image_processing_service.dart';
 
 part 'directory_state.dart';
-
-// Parameters: directoryOS, [imageOS]
-// Methods:
-//   ImageOS => addImage, deleteImage, updateImagePath, updateImageIndex, [revertReorder]
-//   DirectoryOS => updateImageCount, [updateFirstImagePath, deleteDirectory]
 
 /// Stores the image directory info
 class DirectoryCubit extends Cubit<DirectoryState> {
@@ -42,6 +36,50 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
   DatabaseHelper database = DatabaseHelper();
   FileOperations fileOperations = FileOperations();
+
+  Future<ImageOS?> processImage(File image, String dirPath, int index) async {
+    try {
+      if (!image.existsSync()) {
+        debugPrint('Source image does not exist');
+        return null;
+      }
+
+      Directory cacheDir = await getTemporaryDirectory();
+
+      String processedPath = await NativeAndroidUtil.postScanImageProcessing(
+        image.path,
+        cacheDir.path,
+      );
+
+      File processedImage = File(processedPath);
+      if (!processedImage.existsSync()) {
+        debugPrint('Failed to process image');
+        return null;
+      }
+
+      // Save final image
+      File savedImage = await fileOperations.saveImage(
+        image: processedImage,
+        index: index,
+        dirPath: dirPath,
+      );
+
+      if (!savedImage.existsSync()) {
+        debugPrint('Failed to save final image');
+        return null;
+      }
+
+      return ImageOS(
+        idx: index,
+        imgPath: savedImage.path,
+        selected: false,
+      );
+    } catch (e, stackTrace) {
+      debugPrint('Error processing image: $e');
+      debugPrint('Stack trace: $stackTrace');
+      return null;
+    }
+  }
 
   @override
   void onChange(Change<DirectoryState> change) {
@@ -184,7 +222,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   /// Imports image from gallery
   void importImagesFromGallery(context) async {
     List<File> imageList = await fileOperations.openGallery();
-    const batchSize = 10;
     List<String> errors = [];
     List<ImageOS> allValidImages = [];
 
@@ -194,44 +231,20 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     try {
       final startIndex = state.images?.length ?? 1;
 
-      for (int i = 0; i < imageList.length; i += batchSize) {
-        final end = (i + batchSize < imageList.length)
-            ? i + batchSize
-            : imageList.length;
-        final batch = imageList.sublist(i, end);
+      // Process images sequentially
+      for (var i = 0; i < imageList.length; i++) {
+        final processedImage =
+            await processImage(imageList[i], state.dirPath!, startIndex + i);
 
-        // Process current batch
-        final batchFutures = batch.asMap().entries.map((entry) {
-          final index = startIndex + i + entry.key;
-          final message = ImageProcessMessage(
-            image: entry.value,
-            dirPath: state.dirPath!,
-            index: index,
-          );
-
-          return ImageProcessingService.processImageInIsolate(message);
-        });
-
-        // Process batch and update state
-        final batchResults = await Future.wait(batchFutures);
-        final validImages = batchResults
-            .where((result) => result.success && result.imagePath != null)
-            .map((result) => ImageOS(
-                  idx: result.index,
-                  imgPath: result.imagePath!,
-                  selected: false,
-                ))
-            .toList()
-          ..sort((a, b) => a.idx!.compareTo(b.idx!));
-
-        // Collect errors
-        errors.addAll(batchResults
-            .where((result) => !result.success || result.imagePath == null)
-            .map((result) => result.error ?? 'Unknown error'));
-
-        // Add valid images to a temporary list instead of updating state
-        allValidImages.addAll(validImages);
+        if (processedImage != null) {
+          allValidImages.add(processedImage);
+        } else {
+          errors.add('Failed to process image ${i + 1}');
+        }
       }
+
+      // Sort valid images by index
+      allValidImages.sort((a, b) => a.idx!.compareTo(b.idx!));
 
       // update first image path
       if (allValidImages.isNotEmpty) {
