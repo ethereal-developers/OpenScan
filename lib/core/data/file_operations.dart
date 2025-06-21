@@ -15,6 +15,21 @@ class FileOperations {
   final String appName = 'OpenScan';
   DatabaseHelper database = DatabaseHelper();
 
+  /// Generates a clean, filesystem-safe folder name
+  /// 
+  /// Returns: Clean folder name [String]
+  String generateCleanFolderName(DateTime dateTime) {
+    // Format: OpenScan_YYYY-MM-DD_HH-MM-SS
+    String year = dateTime.year.toString();
+    String month = dateTime.month.toString().padLeft(2, '0');
+    String day = dateTime.day.toString().padLeft(2, '0');
+    String hour = dateTime.hour.toString().padLeft(2, '0');
+    String minute = dateTime.minute.toString().padLeft(2, '0');
+    String second = dateTime.second.toString().padLeft(2, '0');
+    
+    return 'OpenScan ${year}-${month}-${day}_${hour}-${minute}-${second}';
+  }
+
   /// Gets app directory path
   ///
   /// Returns: Directory path [String]
@@ -100,30 +115,34 @@ class FileOperations {
   /// Returns: Saved image [File]
   Future<File> saveImage(
       {required File image, int? index, required String dirPath}) async {
+    // Create directory if it doesn't exist on filesystem
     if (!await Directory(dirPath).exists()) {
       new Directory(dirPath).create();
+    }
+    
+    // Check if directory entry exists in database and create if it doesn't
+    var masterData = await database.getMasterData();
+    bool directoryExistsInDB = masterData.any((dir) => dir['dir_path'] == dirPath);
+    
+    if (!directoryExistsInDB) {
+      // Extract the clean folder name from the path
+      String folderName = dirPath.substring(dirPath.lastIndexOf('/') + 1);
+      DateTime now = DateTime.now();
+      
       await database.createDirectory(
         directory: DirectoryOS(
-          dirName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
+          dirName: folderName,
           dirPath: dirPath,
           imageCount: 0,
-          created: DateTime.parse(dirPath
-              .substring(dirPath.lastIndexOf('/') + 1)
-              .substring(
-                  dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
-                      1)),
-          newName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
-          lastModified: DateTime.parse(dirPath
-              .substring(dirPath.lastIndexOf('/') + 1)
-              .substring(
-                  dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
-                      1)),
+          created: now,
+          newName: folderName,
+          lastModified: now,
           firstImgPath: null,
         ),
       );
     }
 
-    File tempPic = File("$dirPath/${DateTime.now()}.jpg");
+    File tempPic = File("$dirPath/${DateTime.now().millisecondsSinceEpoch}.jpg");
     image.copySync(tempPic.path);
     image.deleteSync();
     database.createImage(

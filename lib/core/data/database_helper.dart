@@ -31,13 +31,22 @@ class DatabaseHelper {
     return await openDatabase(path, version: _dbVersion, onCreate: _onCreate);
   }
 
-  /// Remove spl characters from Directory Name
+  /// Remove special characters from Directory Name for database table naming
   getDirectoryTableName(String dirName) {
-    dirName = dirName.replaceAll('-', '');
-    dirName = dirName.replaceAll('.', '');
-    dirName = dirName.replaceAll(' ', '');
-    dirName = dirName.replaceAll(':', '');
-    _dirTableName = '"' + dirName + '"';
+    // Remove all special characters that could cause issues in SQL table names
+    dirName = dirName.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
+    
+    // Ensure the table name starts with a letter (SQL requirement)
+    if (dirName.isNotEmpty && !RegExp(r'^[a-zA-Z]').hasMatch(dirName)) {
+      dirName = 'Dir_$dirName';
+    }
+    
+    // If empty after cleaning, use a default name
+    if (dirName.isEmpty) {
+      dirName = 'OpenScanDir';
+    }
+    
+    _dirTableName = '"$dirName"';
   }
 
   // <======================= Master Table Operations =========================>
@@ -47,7 +56,7 @@ class DatabaseHelper {
     db.execute('''
       CREATE TABLE $_masterTableName(
       dir_name TEXT,
-      dir_path TEXT,
+      dir_path TEXT UNIQUE,
       created TEXT,
       image_count INTEGER,
       first_img_path TEXT,
@@ -105,12 +114,12 @@ class DatabaseHelper {
       'first_img_path': directory.firstImgPath,
       'last_modified': directory.lastModified.toString(),
       'new_name': directory.newName
-    });
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
 
     getDirectoryTableName(directory.dirName);
     debugPrint('Directory Index: $index');
     db.execute('''
-      CREATE TABLE $_dirTableName(
+      CREATE TABLE IF NOT EXISTS $_dirTableName(
       idx INTEGER,
       img_path TEXT,
       filtered_image_path TEXT)

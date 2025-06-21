@@ -121,6 +121,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<int> getDirectorySize(String dirPath) async {
+    int totalSize = 0;
+    final dir = Directory(dirPath);
+    if (await dir.exists()) {
+      await for (final file in dir.list()) {
+        if (file is File) {
+          totalSize += await file.length();
+        }
+      }
+    }
+    return totalSize;
+  }
+
   Future<List<DirectoryOS>> getMasterData() async {
     masterDirectories = [];
     masterData = await database.getMasterData();
@@ -133,6 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
       if (!alreadyExistsFlag) {
+        int dirSize = await getDirectorySize(directory['dir_path']);
         masterDirectories.add(
           DirectoryOS(
             dirName: directory['dir_name'],
@@ -142,12 +156,23 @@ class _HomeScreenState extends State<HomeScreen> {
             firstImgPath: directory['first_img_path'],
             lastModified: DateTime.parse(directory['last_modified']),
             newName: directory['new_name'],
+            size: dirSize,
           ),
         );
       }
     }
-    masterDirectories = masterDirectories.reversed.toList();
+    masterDirectories.sort((a, b) => b.lastModified!.compareTo(a.lastModified!));
     return masterDirectories;
+  }
+
+  String _formatSize(int bytes) {
+    if (bytes < 1024) {
+      return '$bytes B';
+    } else if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(2)} KB';
+    } else {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
+    }
   }
 
   void showDemo() async {
@@ -167,7 +192,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _requestPermission();
     showDemo();
-    getMasterData();
 
     // Quick Action related
     quickActions.initialize((String shortcutType) {
@@ -267,6 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Container(
                                 height: 120,
+                                width: 120,
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.only(
                                     topLeft: Radius.circular(4),
@@ -275,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Image.file(
                                     File(
                                         masterDirectories[index].firstImgPath!),
-                                    fit: BoxFit.cover,
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
                               ),
@@ -303,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       Text(
-                                        '${masterDirectories[index].imageCount} ${AppLocalizations.of(context)!.images} (700kb)',
+                                        '${masterDirectories[index].imageCount} ${masterDirectories[index].imageCount == 1 ? 'Image' : 'Images'} (${_formatSize(masterDirectories[index].size!)})',
                                         style: TextStyle(
                                           fontSize: 11,
                                           color: Colors.white54,

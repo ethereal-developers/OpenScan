@@ -107,7 +107,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   void createDirectory() async {
     Directory? appDir = await getExternalStorageDirectory();
     var now = DateTime.now();
-    var dirName = 'OpenScan $now';
+    var dirName = fileOperations.generateCleanFolderName(now);
 
     emit(DirectoryState(
       dirName: dirName,

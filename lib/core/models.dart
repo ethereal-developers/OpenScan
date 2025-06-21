@@ -9,6 +9,7 @@ class DirectoryOS {
   String? firstImgPath;
   DateTime? lastModified;
   String? newName;
+  int? size;
 
   DirectoryOS({
     required this.dirName,
@@ -18,6 +19,7 @@ class DirectoryOS {
     this.imageCount = 0,
     this.lastModified,
     this.newName,
+    this.size,
   });
 }
 
