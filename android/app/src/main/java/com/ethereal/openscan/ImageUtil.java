@@ -90,6 +90,11 @@ public class ImageUtil {
 
     public static boolean cropImage(String srcPath, String destPath, double tl_x, double tl_y, 
             double tr_x, double tr_y, double bl_x, double bl_y, double br_x, double br_y) {
+        return cropImage(srcPath, destPath, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y, false);
+    }
+
+    public static boolean cropImage(String srcPath, String destPath, double tl_x, double tl_y, 
+            double tr_x, double tr_y, double bl_x, double bl_y, double br_x, double br_y, boolean enhance) {
         Bitmap original = BitmapFactory.decodeFile(srcPath);
         if (original == null) {
             Log.e(TAG, "Failed to decode source image");
@@ -124,11 +129,17 @@ public class ImageUtil {
             // Apply perspective transform
             Imgproc.warpPerspective(mat, resultDoc, perspectiveTransform, resultDoc.size());
 
-            // Enhance the result
-            Mat enhanced = enhanceDocument(resultDoc);
+            Mat finalResult;
+            if (enhance) {
+                // Enhance the result for document processing
+                finalResult = enhanceDocument(resultDoc);
+            } else {
+                // Don't enhance the result - just use the cropped image as-is
+                finalResult = resultDoc;
+            }
 
             Bitmap cropped = Bitmap.createBitmap(maxWidth, maxHeight, Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(enhanced, cropped);
+            Utils.matToBitmap(finalResult, cropped);
 
             // Save the result
             try (FileOutputStream stream = new FileOutputStream(destPath)) {
@@ -139,7 +150,10 @@ public class ImageUtil {
                 return false;
             } finally {
                 cropped.recycle();
-                enhanced.release();
+                if (enhance && finalResult != resultDoc) {
+                    finalResult.release();
+                }
+                resultDoc.release();
             }
         } catch (Exception e) {
             Log.e(TAG, "Error during perspective crop", e);

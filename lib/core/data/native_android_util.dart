@@ -80,7 +80,8 @@ class NativeAndroidUtil {
       required double blX,
       required double blY,
       required double brX,
-      required double brY}) async {
+      required double brY,
+      bool enhance = false}) async {
     await _ensureInitialized();
     return _channel.invokeMethod(_CROP_IMAGE, {
       "srcPath": srcPath,
@@ -93,6 +94,7 @@ class NativeAndroidUtil {
       "bl_y": "$blY",
       "br_x": "$brX",
       "br_y": "$brY",
+      "enhance": enhance,
     });
   }
 

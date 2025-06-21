@@ -1,3 +1,4 @@
 {
-    "todo-tree.tree.scanMode": "open files"
+    "todo-tree.tree.scanMode": "open files",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

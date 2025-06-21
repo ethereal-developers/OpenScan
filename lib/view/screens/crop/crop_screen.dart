@@ -152,154 +152,148 @@ class _CropImageState extends State<CropImage> {
   }
 
   Widget _buildCropContent() {
-    return Container(
-      color: Theme.of(context).primaryColor,
-      child: Stack(
-        children: [
-          // Image Container
-          Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.all(16.0),
-            child: Image(
-              key: _cropScreen.imageKey,
-              image: FileImage(_cropScreen.srcImage!),
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) {
-                  // Image is loaded, now we can get its size
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _cropScreen.getSize().catchError((error) {
-                      print('Error getting size: $error');
-                      // Retry after a short delay if needed
-                      Future.delayed(const Duration(milliseconds: 500), () {
-                        _cropScreen.getSize().catchError((e) {
-                          print('Error getting size after retry: $e');
-                        });
-                      });
-                    });
-                  });
-                  return child;
-                }
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return const Center(
-                  child: Icon(
-                    Icons.error_rounded,
-                    color: Colors.red,
-                    size: 30,
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Points Container
-          ValueListenableBuilder(
-            valueListenable: _cropScreen.renderBoxReady,
-            builder: (BuildContext context, bool value, Widget? child) {
-              if (!value) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                );
-              }
-
-              return Positioned.fill(
-                child: GestureDetector(
-                  key: _cropScreen.bodyKey,
-                  onPanStart: (startDetails) {
-                    _cropScreen.calculateAllSlopes();
-                    _cropScreen.onPanStart(startDetails);
-                    if (_cropScreen.movingPoint.name != 'none') {
-                      _cropScreen.showMagnifier.value = true;
-                    }
-                  },
-                  onPanUpdate: (updateDetails) {
-                    _cropScreen.updatedPoint.value = updateDetails;
-                    _cropScreen.updatePolygon();
-                  },
-                  onPanEnd: (details) {
-                    _cropScreen.movingPoint.name = 'none';
-                    _cropScreen.movingPoint.offset = Point<num>(0, 0);
-                    _cropScreen.showMagnifier.value = false;
-                  },
-                  child: ValueListenableBuilder(
-                    valueListenable: _cropScreen.updatedPoint,
-                    builder: (context, _, __) {
-                      return CustomPaint(
-                        painter: PolygonPainter(
-                          tl: Offset(_cropScreen.tl.x.toDouble(),
-                              _cropScreen.tl.y.toDouble()),
-                          tr: Offset(_cropScreen.tr.x.toDouble(),
-                              _cropScreen.tr.y.toDouble()),
-                          bl: Offset(_cropScreen.bl.x.toDouble(),
-                              _cropScreen.bl.y.toDouble()),
-                          br: Offset(_cropScreen.br.x.toDouble(),
-                              _cropScreen.br.y.toDouble()),
-                          t: Offset(_cropScreen.t.x.toDouble(),
-                              _cropScreen.t.y.toDouble()),
-                          l: Offset(_cropScreen.l.x.toDouble(),
-                              _cropScreen.l.y.toDouble()),
-                          b: Offset(_cropScreen.b.x.toDouble(),
-                              _cropScreen.b.y.toDouble()),
-                          r: Offset(_cropScreen.r.x.toDouble(),
-                              _cropScreen.r.y.toDouble()),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // Magnifier Container
-          ValueListenableBuilder(
-            valueListenable: _cropScreen.showMagnifier,
-            builder: (context, bool showMagnifier, _) {
-              if (!showMagnifier) return const SizedBox.shrink();
-
-              return ValueListenableBuilder<DragUpdateDetails?>(
-                valueListenable: _cropScreen.updatedPoint,
-                builder: (context, DragUpdateDetails? updatedPoint, _) {
-                  if (updatedPoint == null) return const SizedBox.shrink();
-                  return Positioned(
-                    left: _cropScreen.movingPoint.offset!.x.toDouble() - 40,
-                    top: _cropScreen.movingPoint.offset!.y.toDouble() - 120,
-                    child: RawMagnifier(
-                      decoration: MagnifierDecoration(
-                        shadows: const <BoxShadow>[
-                          BoxShadow(
-                            blurRadius: 1.5,
-                            offset: Offset(0, 2),
-                            spreadRadius: 1,
-                            color: Color.fromARGB(25, 0, 0, 0),
-                          ),
-                        ],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.primary,
-                            width: .15,
-                          ),
-                        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _cropScreen.screenSize = Size(constraints.maxWidth, constraints.maxHeight);
+        return Container(
+          color: Theme.of(context).primaryColor,
+          child: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  children: [
+                    // Image Container (no padding)
+                    Center(
+                      child: Image(
+                        key: _cropScreen.imageKey,
+                        image: FileImage(_cropScreen.srcImage!),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _cropScreen.getSize().catchError((error) {
+                                print('Error getting size: $error');
+                                Future.delayed(const Duration(milliseconds: 500), () {
+                                  _cropScreen.getSize().catchError((e) {
+                                    print('Error getting size after retry: $e');
+                                  });
+                                });
+                              });
+                            });
+                            return child;
+                          }
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(
+                              Icons.error_rounded,
+                              color: Colors.red,
+                              size: 30,
+                            ),
+                          );
+                        },
                       ),
-                      size: const Size(80, 80),
-                      magnificationScale: 1.5,
-                      focalPointOffset: const Offset(0, 80),
                     ),
-                  );
-                },
-              );
-            },
+
+                    // Points Container
+                    ValueListenableBuilder(
+                      valueListenable: _cropScreen.renderBoxReady,
+                      builder: (BuildContext context, bool value, Widget? child) {
+                        if (!value || _cropScreen.displayedImageRect == null) {
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          );
+                        }
+
+                        final rect = _cropScreen.displayedImageRect!;
+                        return Positioned(
+                          left: rect.left,
+                          top: rect.top,
+                          width: rect.width,
+                          height: rect.height,
+                          child: GestureDetector(
+                            key: _cropScreen.bodyKey,
+                            behavior: HitTestBehavior.translucent,
+                            onPanStart: (startDetails) {
+                              _cropScreen.calculateAllSlopes();
+                              _cropScreen.onPanStart(startDetails);
+                              if (_cropScreen.movingPoint.name != 'none') {
+                                _cropScreen.showMagnifier.value = true;
+                              }
+                            },
+                            onPanUpdate: (updateDetails) {
+                              _cropScreen.updatedPoint.value = updateDetails;
+                              _cropScreen.updatePolygon();
+                            },
+                            onPanEnd: (details) {
+                              _cropScreen.movingPoint.name = 'none';
+                              _cropScreen.movingPoint.offset = Point<num>(0, 0);
+                              _cropScreen.showMagnifier.value = false;
+                            },
+                            child: ValueListenableBuilder(
+                              valueListenable: _cropScreen.polygonVersion,
+                              builder: (context, _, __) {
+                                return CustomPaint(
+                                  size: Size(rect.width, rect.height),
+                                  painter: PolygonPainter(
+                                    tl: Offset(_cropScreen.tl.x.toDouble(), _cropScreen.tl.y.toDouble()),
+                                    tr: Offset(_cropScreen.tr.x.toDouble(), _cropScreen.tr.y.toDouble()),
+                                    bl: Offset(_cropScreen.bl.x.toDouble(), _cropScreen.bl.y.toDouble()),
+                                    br: Offset(_cropScreen.br.x.toDouble(), _cropScreen.br.y.toDouble()),
+                                    t: Offset(_cropScreen.t.x.toDouble(), _cropScreen.t.y.toDouble()),
+                                    l: Offset(_cropScreen.l.x.toDouble(), _cropScreen.l.y.toDouble()),
+                                    b: Offset(_cropScreen.b.x.toDouble(), _cropScreen.b.y.toDouble()),
+                                    r: Offset(_cropScreen.r.x.toDouble(), _cropScreen.r.y.toDouble()),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Magnifier Container
+                    ValueListenableBuilder<Offset?>(
+                      valueListenable: _cropScreen.magnifierPosition,
+                      builder: (context, dragOffset, __) {
+                        if (dragOffset == null || _cropScreen.movingPoint.name == 'none') return const SizedBox.shrink();
+                        return Positioned(
+                          left: dragOffset.dx - 40,
+                          top: dragOffset.dy - 60,
+                          child: RawMagnifier(
+                            decoration: const MagnifierDecoration(
+                              shape: CircleBorder(
+                                side: BorderSide(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                            size: const Size(80, 80),
+                            magnificationScale: 2.0,
+                            child: Container(
+                              color: Colors.transparent,
+                              width: 1,
+                              height: 1,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -315,7 +309,7 @@ class _CropImageState extends State<CropImage> {
             icon: Icons.aspect_ratio_rounded,
             label: 'No Crop',
             onPressed: () {
-              _cropScreen.setPointsToCorner();
+              _cropScreen.setPointsToDisplayedImageRect();
               setState(() {});
             },
           ),

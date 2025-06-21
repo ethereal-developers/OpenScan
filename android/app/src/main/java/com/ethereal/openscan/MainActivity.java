@@ -152,11 +152,12 @@ public class MainActivity extends FlutterActivity {
         double bl_y = Double.parseDouble(Objects.requireNonNull(call.argument("bl_y")));
         double br_x = Double.parseDouble(Objects.requireNonNull(call.argument("br_x")));
         double br_y = Double.parseDouble(Objects.requireNonNull(call.argument("br_y")));
+        boolean enhance = call.argument("enhance") != null ? (Boolean) call.argument("enhance") : false;
 
-        Log.d(TAG_NAME, String.format("Crop points: TL(%.2f,%.2f) TR(%.2f,%.2f) BL(%.2f,%.2f) BR(%.2f,%.2f)",
-                tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y));
+        Log.d(TAG_NAME, String.format("Crop points: TL(%.2f,%.2f) TR(%.2f,%.2f) BL(%.2f,%.2f) BR(%.2f,%.2f) Enhance: %s",
+                tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y, enhance));
 
-        boolean isCropped = ImageUtil.cropImage(srcPath, destPath, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y);
+        boolean isCropped = ImageUtil.cropImage(srcPath, destPath, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y, enhance);
         result.success(isCropped);
     }
 

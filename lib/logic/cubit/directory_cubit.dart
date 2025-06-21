@@ -287,83 +287,100 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     context, {
     bool quickScan = false,
   }) async {
-    // File? croppedImage;
-    File? image = await fileOperations.openCamera();
-    // if (image != null) {
-    //   croppedImage = await imageCropper(
-    //     context,
-    //     image,
-    //   );
-    // }
-
-    // if (croppedImage == null) return;
-    if (image == null) return;
-
-    // Set loading state to true
-    emit(state.copyWith(isLoading: true));
-
+    File? croppedImage;
+    File? image;
+    File? compressedImage;
+    
     try {
-      // if (!croppedImage.existsSync()) {
-      if (!image.existsSync()) {
-        emit(state.copyWith(isLoading: false));
+      // Camera capture
+      image = await fileOperations.openCamera();
+      if (image == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error processing image'),
-            backgroundColor: Colors.red,
+          const SnackBar(
+            content: Text('Camera capture was cancelled or failed'),
+            backgroundColor: Colors.orange,
           ),
         );
         return;
       }
 
+      // Cropping
+      croppedImage = await imageCropper(
+        context,
+        image,
+      );
+      if (croppedImage == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image cropping was cancelled'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Set loading state to true
+      emit(state.copyWith(isLoading: true));
+
+      // Verify cropped image
+      if (!croppedImage.existsSync()) {
+        throw Exception('The cropped image could not be found. Please try again.');
+      }
+
+      // Compression
       Directory cacheDir = await getTemporaryDirectory();
       String compressedPath = await NativeAndroidUtil.compress(
-        // croppedImage.path,
-        image.path,
+        croppedImage.path,
         cacheDir.path,
         70,
       );
 
-      File compressedImage = File(compressedPath);
-
-      // Show error message if any images failed to process
+      compressedImage = File(compressedPath);
       if (!compressedImage.existsSync()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to process image'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        throw Exception('Failed to compress the image. Please try again.');
       }
 
       // Save final image
-      final fileOperations = FileOperations();
       await fileOperations.saveImage(
         image: compressedImage,
         index: state.images!.length + 1,
         dirPath: state.dirPath!,
       );
 
-      // Clean up temporary files
-      await fileOperations.deleteTemporaryImages();
-
       // Refresh image data to update state
       await getImageData();
 
-      emit(state.copyWith(isLoading: false));
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Image saved successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
 
       // If quick scan, start another scan
       if (quickScan) {
+        // Add a small delay to allow the user to see the success message
+        await Future.delayed(const Duration(milliseconds: 500));
         return createImage(context, quickScan: quickScan);
       }
     } catch (e) {
       debugPrint('Error processing image: $e');
-      emit(state.copyWith(isLoading: false));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error processing image: $e'),
+          content: Text('Error: ${e.toString()}'),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Try Again',
+            onPressed: () => createImage(context, quickScan: quickScan),
+          ),
         ),
       );
+    } finally {
+      // Clean up temporary files
+      await fileOperations.deleteTemporaryImages();
+      emit(state.copyWith(isLoading: false));
     }
   }
 
@@ -383,6 +400,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         // Delete original and copy cropped image
         original.deleteSync();
         result.copySync(original.path);
+
+        // Evict the old image from the cache to force a reload
+        await FileImage(original).evict();
 
         // Update database
         await database.updateImagePath(

@@ -19,6 +19,8 @@ class CropScreenState {
   final showMagnifier = ValueNotifier<bool>(false);
   final updatedPoint = ValueNotifier<DragUpdateDetails?>(null);
   final imageRendered = ValueNotifier<bool>(false);
+  final polygonVersion = ValueNotifier<int>(0);
+  final magnifierPosition = ValueNotifier<Offset?>(null);
 
   // Image properties
   File? srcImage;
@@ -62,6 +64,8 @@ class CropScreenState {
   // Slopes for point movement
   late double tSlope, bSlope, rSlope, lSlope;
 
+  Rect? displayedImageRect;
+
   Future<void> initialize(File srcImage, File destImage) async {
     try {
       status.value = CropScreenStatus.loading;
@@ -70,13 +74,13 @@ class CropScreenState {
       this.srcImage = srcImage;
       this.destImage = destImage;
 
-      // Initialize points with default values
-      initPoints();
-
       // Get image dimensions from file first
       final dimensions = await NativeAndroidUtil.getImageSize(srcImage.path);
       actualImageWidth = dimensions['width']?.toDouble() ?? 0;
       actualImageHeight = dimensions['height']?.toDouble() ?? 0;
+
+      // Initialize points with default values
+      initPoints();
 
       // Mark as ready - size will be updated when image is rendered
       status.value = CropScreenStatus.ready;
@@ -112,12 +116,30 @@ class CropScreenState {
       canvasOffset = renderBox.localToGlobal(Offset.zero,
           ancestor: bodyKey.currentContext?.findRenderObject() as RenderBox?);
 
-      verticalScaleFactor = screenSize?.height ?? 0 / size.width;
-      horizontalScaleFactor = screenSize?.width ?? 0 / size.height;
-
       // Calculate scale factors
       scaleX = actualImageWidth / size.width;
       scaleY = actualImageHeight / size.height;
+
+      // --- Calculate displayed image rect (letterboxing fix) ---
+      final Size availableSize = screenSize ?? size;
+      double widgetAspect = availableSize.width / availableSize.height;
+      double imageAspect = actualImageWidth / actualImageHeight;
+      double displayWidth, displayHeight, dx, dy;
+      if (imageAspect > widgetAspect) {
+        displayWidth = availableSize.width;
+        displayHeight = availableSize.width / imageAspect;
+        dx = 0;
+        dy = (availableSize.height - displayHeight) / 2;
+      } else {
+        displayHeight = availableSize.height;
+        displayWidth = availableSize.height * imageAspect;
+        dx = (availableSize.width - displayWidth) / 2;
+        dy = 0;
+      }
+      displayedImageRect = Rect.fromLTWH(dx, dy, displayWidth, displayHeight);
+
+      // Set initial points to displayed image rect
+      setPointsToDisplayedImageRect();
 
       // Mark render box as ready
       renderBoxReady.value = true;
@@ -138,17 +160,23 @@ class CropScreenState {
     r = Point(0, 0);
   }
 
-  void setPointsToCorner() {
-    tl = Point(canvasOffset!.dx, canvasOffset!.dy);
-    tr = Point(canvasOffset!.dx + canvasSize!.width, canvasOffset!.dy);
-    bl = Point(canvasOffset!.dx, canvasOffset!.dy + canvasSize!.height);
-    br = Point(canvasOffset!.dx + canvasSize!.width,
-        canvasOffset!.dy + canvasSize!.height);
-
-    t = Point((tl.x + tr.x) / 2, (tl.y + tr.y) / 2);
-    b = Point((bl.x + br.x) / 2, (bl.y + br.y) / 2);
-    l = Point((tl.x + bl.x) / 2, (tl.y + bl.y) / 2);
-    r = Point((tr.x + br.x) / 2, (tr.y + br.y) / 2);
+  void setPointsToDisplayedImageRect() {
+    if (displayedImageRect == null) {
+      developer.log('Cannot set points: displayedImageRect is null', name: 'CropScreenState');
+      return;
+    }
+    final rect = displayedImageRect!;
+    tl = Point(0, 0);
+    tr = Point(rect.width, 0);
+    bl = Point(0, rect.height);
+    br = Point(rect.width, rect.height);
+    t = Point(rect.width / 2, 0);
+    b = Point(rect.width / 2, rect.height);
+    l = Point(0, rect.height / 2);
+    r = Point(rect.width, rect.height / 2);
+    developer.log('Points set to displayed image rect:', name: 'CropScreenState');
+    developer.log('tl: $tl, tr: $tr, bl: $bl, br: $br', name: 'CropScreenState');
+    developer.log('t: $t, b: $b, l: $l, r: $r', name: 'CropScreenState');
   }
 
   Point<num> _convertToCanvasCoordinates(List<dynamic> point) {
@@ -188,7 +216,7 @@ class CropScreenState {
         if (autoDetectTriggered) {
           _showToast('No document detected');
         }
-        setPointsToCorner();
+        setPointsToDisplayedImageRect();
       } else {
         print('Converting points to canvas coordinates');
         // Convert detected points to canvas coordinates
@@ -220,7 +248,7 @@ class CropScreenState {
           // If area is too small (less than 10% of total area), set to corners
           if (areaRatio < 0.1) {
             print('Detected area too small, setting to corners');
-            setPointsToCorner();
+            setPointsToDisplayedImageRect();
             return;
           }
 
@@ -243,13 +271,13 @@ class CropScreenState {
           print('r: $r');
         } else {
           print('Not enough points detected: ${points.length}');
-          setPointsToCorner();
+          setPointsToDisplayedImageRect();
         }
       }
     } catch (e, stackTrace) {
       print('Error in detectDocument: $e');
       print('Stack trace: $stackTrace');
-      setPointsToCorner();
+      setPointsToDisplayedImageRect();
     }
   }
 
@@ -276,37 +304,23 @@ class CropScreenState {
     try {
       status.value = CropScreenStatus.processing;
 
-      if (srcImage == null || destImage == null) {
-        throw Exception('Source or destination image is null');
+      if (srcImage == null || destImage == null || displayedImageRect == null) {
+        throw Exception('Source, destination image, or displayedImageRect is null');
       }
 
-      // Log the values being sent to crop
-      print('Crop parameters:');
-      print('imageSize: $imageSize');
-      print('canvasSize: $canvasSize');
-      print('canvasOffset: $canvasOffset');
-      print('Points before conversion:');
-      print('tl: $tl');
-      print('tr: $tr');
-      print('bl: $bl');
-      print('br: $br');
+      // Calculate the scale factors between the displayed image and the actual image
+      final scaleX = actualImageWidth / displayedImageRect!.width;
+      final scaleY = actualImageHeight / displayedImageRect!.height;
 
-      final tlX = (imageSize!.width / canvasSize!.width) *
-          (tl.x.toDouble() - canvasOffset!.dx);
-      final tlY = (imageSize!.height / canvasSize!.height) *
-          (tl.y.toDouble() - canvasOffset!.dy);
-      final trX = (imageSize!.width / canvasSize!.width) *
-          (tr.x.toDouble() - canvasOffset!.dx);
-      final trY = (imageSize!.height / canvasSize!.height) *
-          (tr.y.toDouble() - canvasOffset!.dy);
-      final blX = (imageSize!.width / canvasSize!.width) *
-          (bl.x.toDouble() - canvasOffset!.dx);
-      final blY = (imageSize!.height / canvasSize!.height) *
-          (bl.y.toDouble() - canvasOffset!.dy);
-      final brX = (imageSize!.width / canvasSize!.width) *
-          (br.x.toDouble() - canvasOffset!.dx);
-      final brY = (imageSize!.height / canvasSize!.height) *
-          (br.y.toDouble() - canvasOffset!.dy);
+      // Convert the local cropper points to actual image pixel coordinates
+      final tlX = tl.x * scaleX;
+      final tlY = tl.y * scaleY;
+      final trX = tr.x * scaleX;
+      final trY = tr.y * scaleY;
+      final blX = bl.x * scaleX;
+      final blY = bl.y * scaleY;
+      final brX = br.x * scaleX;
+      final brY = br.y * scaleY;
 
       print('Converted crop coordinates:');
       print('tl: ($tlX, $tlY)');
@@ -352,12 +366,9 @@ class CropScreenState {
   void updatePolygon() {
     if (movingPoint.name == 'none' || updatedPoint.value == null) return;
 
-    final position = updatedPoint.value!.globalPosition;
-    final localPosition = Point<num>(
-        position.dx - canvasOffset!.dx, position.dy - canvasOffset!.dy);
+    final localPosition = Point<num>(updatedPoint.value!.localPosition.dx, updatedPoint.value!.localPosition.dy);
 
-    print(
-        'Updating polygon - Global position: $position, Local position: $localPosition');
+    print('Updating polygon - Local position: $localPosition');
     print('Moving point: ${movingPoint.name}');
 
     if (movingPoint.name == 'tl') {
@@ -365,8 +376,6 @@ class CropScreenState {
       if (checkPolygon(tlTemp, br, tr, bl)) {
         if (!checkCrossover(tlTemp, tr, bl, br, t, b, l, r)) {
           tl = tlTemp;
-          t = Point<num>((tl.x + tr.x) / 2, (tl.y + tr.y) / 2);
-          l = Point<num>((tl.x + bl.x) / 2, (tl.y + bl.y) / 2);
         }
       }
     } else if (movingPoint.name == 'tr') {
@@ -374,8 +383,6 @@ class CropScreenState {
       if (checkPolygon(tl, br, trTemp, bl)) {
         if (!checkCrossover(tl, trTemp, bl, br, t, b, l, r)) {
           tr = trTemp;
-          t = Point<num>((tl.x + tr.x) / 2, (tl.y + tr.y) / 2);
-          r = Point<num>((tr.x + br.x) / 2, (tr.y + br.y) / 2);
         }
       }
     } else if (movingPoint.name == 'bl') {
@@ -383,8 +390,6 @@ class CropScreenState {
       if (checkPolygon(tl, br, tr, blTemp)) {
         if (!checkCrossover(tl, tr, blTemp, br, t, b, l, r)) {
           bl = blTemp;
-          b = Point<num>((bl.x + br.x) / 2, (bl.y + br.y) / 2);
-          l = Point<num>((tl.x + bl.x) / 2, (tl.y + bl.y) / 2);
         }
       }
     } else if (movingPoint.name == 'br') {
@@ -392,103 +397,72 @@ class CropScreenState {
       if (checkPolygon(tl, brTemp, tr, bl)) {
         if (!checkCrossover(tl, tr, bl, brTemp, t, b, l, r)) {
           br = brTemp;
-          b = Point<num>((bl.x + br.x) / 2, (bl.y + br.y) / 2);
-          r = Point<num>((tr.x + br.x) / 2, (tr.y + br.y) / 2);
         }
       }
     } else if (movingPoint.name == 't') {
-      // For top edge, move both top points vertically
-      double yDisplacement = localPosition.y.toDouble() - t.y.toDouble();
-      Point<num> tlTemp = Point<num>(
-        tl.x,
-        tl.y + yDisplacement,
-      );
-      Point<num> trTemp = Point<num>(
-        tr.x,
-        tr.y + yDisplacement,
-      );
-
+      // Move both top corners vertically
+      double yDisplacement = (localPosition.y - t.y).toDouble();
+      Point<num> tlTemp = constraintPointToBoundary(Point<num>(tl.x, tl.y + yDisplacement));
+      Point<num> trTemp = constraintPointToBoundary(Point<num>(tr.x, tr.y + yDisplacement));
       if (checkPolygon(tlTemp, br, trTemp, bl)) {
         if (!checkCrossover(tlTemp, trTemp, bl, br, t, b, l, r)) {
           tl = tlTemp;
           tr = trTemp;
-          t = Point<num>((tl.x + tr.x) / 2, (tl.y + tr.y) / 2);
         }
       }
     } else if (movingPoint.name == 'b') {
-      // For bottom edge, move both bottom points vertically
-      double yDisplacement = localPosition.y.toDouble() - b.y.toDouble();
-      Point<num> blTemp = Point<num>(
-        bl.x,
-        bl.y + yDisplacement,
-      );
-      Point<num> brTemp = Point<num>(
-        br.x,
-        br.y + yDisplacement,
-      );
-
+      // Move both bottom corners vertically
+      double yDisplacement = (localPosition.y - b.y).toDouble();
+      Point<num> blTemp = constraintPointToBoundary(Point<num>(bl.x, bl.y + yDisplacement));
+      Point<num> brTemp = constraintPointToBoundary(Point<num>(br.x, br.y + yDisplacement));
       if (checkPolygon(tl, brTemp, tr, blTemp)) {
         if (!checkCrossover(tl, tr, blTemp, brTemp, t, b, l, r)) {
           bl = blTemp;
           br = brTemp;
-          b = Point<num>((bl.x + br.x) / 2, (bl.y + br.y) / 2);
         }
       }
     } else if (movingPoint.name == 'l') {
-      // For left edge, move both left points horizontally
-      double xDisplacement = localPosition.x.toDouble() - l.x.toDouble();
-      Point<num> tlTemp = Point<num>(
-        tl.x + xDisplacement,
-        tl.y,
-      );
-      Point<num> blTemp = Point<num>(
-        bl.x + xDisplacement,
-        bl.y,
-      );
-
+      // Move both left corners horizontally
+      double xDisplacement = (localPosition.x - l.x).toDouble();
+      Point<num> tlTemp = constraintPointToBoundary(Point<num>(tl.x + xDisplacement, tl.y));
+      Point<num> blTemp = constraintPointToBoundary(Point<num>(bl.x + xDisplacement, bl.y));
       if (checkPolygon(tlTemp, br, tr, blTemp)) {
         if (!checkCrossover(tlTemp, tr, blTemp, br, t, b, l, r)) {
           tl = tlTemp;
           bl = blTemp;
-          l = Point<num>((tl.x + bl.x) / 2, (tl.y + bl.y) / 2);
         }
       }
     } else if (movingPoint.name == 'r') {
-      // For right edge, move both right points horizontally
-      double xDisplacement = localPosition.x.toDouble() - r.x.toDouble();
-      Point<num> trTemp = Point<num>(
-        tr.x + xDisplacement,
-        tr.y,
-      );
-      Point<num> brTemp = Point<num>(
-        br.x + xDisplacement,
-        br.y,
-      );
-
+      // Move both right corners horizontally
+      double xDisplacement = (localPosition.x - r.x).toDouble();
+      Point<num> trTemp = constraintPointToBoundary(Point<num>(tr.x + xDisplacement, tr.y));
+      Point<num> brTemp = constraintPointToBoundary(Point<num>(br.x + xDisplacement, br.y));
       if (checkPolygon(tl, brTemp, trTemp, bl)) {
         if (!checkCrossover(tl, trTemp, bl, brTemp, t, b, l, r)) {
           tr = trTemp;
           br = brTemp;
-          r = Point<num>((tr.x + br.x) / 2, (tr.y + br.y) / 2);
         }
       }
     }
 
+    // Always recalculate all midpoints after any move
+    t = Point<num>((tl.x + tr.x) / 2, (tl.y + tr.y) / 2);
+    b = Point<num>((bl.x + br.x) / 2, (bl.y + br.y) / 2);
+    l = Point<num>((tl.x + bl.x) / 2, (tl.y + bl.y) / 2);
+    r = Point<num>((tr.x + br.x) / 2, (tr.y + br.y) / 2);
+
     print('Updated points:');
     print('tl: $tl, tr: $tr, bl: $bl, br: $br');
     print('t: $t, b: $b, l: $l, r: $r');
+    polygonVersion.value++;
   }
 
   /// Gets the current moving point
   void onPanStart(DragStartDetails details) {
-    if (canvasOffset == null || canvasSize == null) return;
-
-    final position = details.globalPosition;
-    final localPosition = Point<num>(
-        position.dx - canvasOffset!.dx, position.dy - canvasOffset!.dy);
-
+    final localPosition = Point<num>(details.localPosition.dx, details.localPosition.dy);
+    magnifierPosition.value = details.localPosition;
     print(
-        'Pan start - Global position: $position, Local position: $localPosition');
+        'Pan start - Global position: ${details.globalPosition}, Local position: $localPosition');
     print('Current points:');
     print('tl: $tl, tr: $tr, bl: $bl, br: $br');
     print('t: $t, b: $b, l: $l, r: $r');
@@ -498,8 +472,7 @@ class CropScreenState {
 
     // Calculate scaled pickup distance based on image size
     // Use a larger base distance and scale it based on the image width
-    double scaledPickupDistance =
-        40.0 * (canvasSize!.width / 400.0); // Scale based on image width
+    double scaledPickupDistance = 100.0;
 
     print('Scaled pickup distance: $scaledPickupDistance');
 
@@ -559,38 +532,34 @@ class CropScreenState {
     }
 
     print('Selected moving point: ${movingPoint.name}');
+
+    // Only show magnifier if a point is selected
+    if (movingPoint.name != 'none') {
+      magnifierPosition.value = details.localPosition;
+    }
   }
 
   void onPanUpdate(DragUpdateDetails details) {
     if (movingPoint.name == 'none') return;
     updatedPoint.value = details;
-
-    // Update the moving point's offset to follow the current position
-    final position = details.globalPosition;
-    final localPosition = Point<num>(
-        position.dx - canvasOffset!.dx, position.dy - canvasOffset!.dy);
+    final localPosition = Point<num>(details.localPosition.dx, details.localPosition.dy);
     movingPoint.offset = localPosition;
-
-    // Show magnifier and update its position
+    // Only update magnifier if a point is being dragged
+    if (movingPoint.name != 'none') {
+      magnifierPosition.value = details.localPosition;
+    }
     showMagnifier.value = true;
-
-    updatePolygon(); // Update the polygon during dragging
+    updatePolygon();
+    polygonVersion.value++;
   }
 
   void onPanEnd(DragEndDetails details) {
     if (movingPoint.name == 'none') return;
-
-    // Update the polygon one last time with the final position
     updatePolygon();
-
-    // Reset the moving point state
     movingPoint = MovingPoint(name: 'none', offset: Point<num>(0, 0));
-
-    // Clear the updated point
     updatedPoint.value = null;
-
-    // Hide the magnifier
     showMagnifier.value = false;
+    magnifierPosition.value = null;
   }
 
   /// Calculates displacement of point wrt to slope
@@ -663,10 +632,10 @@ class CropScreenState {
   ///
   /// Returns: Corrected Point [Point]
   Point<num> constraintPointToBoundary(Point<num> point) {
-    double topBoundary = canvasOffset!.dy;
-    double bottomBoundary = canvasOffset!.dy + canvasSize!.height;
-    double leftBoundary = canvasOffset!.dx;
-    double rightBoundary = canvasOffset!.dx + canvasSize!.width;
+    double topBoundary = 0;
+    double bottomBoundary = displayedImageRect?.height ?? canvasSize!.height;
+    double leftBoundary = 0;
+    double rightBoundary = displayedImageRect?.width ?? canvasSize!.width;
 
     return Point<num>(
       point.x.clamp(leftBoundary, rightBoundary),
