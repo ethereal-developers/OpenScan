@@ -44,82 +44,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   pushView({String? scanType, DirectoryOS? masterDirectory}) {
-    switch (scanType) {
-      case 'Normal Scan':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BlocProvider<DirectoryCubit>(
-              create: (context) => DirectoryCubit()
-                ..createDirectory()
-                ..createImage(context),
-              child: ViewScreen(),
-            ),
-            settings: RouteSettings(name: AppRouter.viewScreen),
-          ),
-        ).whenComplete(() {
-          homeRefresh();
-        });
-        break;
-      case 'Quick Scan':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BlocProvider<DirectoryCubit>(
-              create: (context) => DirectoryCubit()
-                ..createDirectory()
-                ..createImage(
-                  context,
-                  quickScan: true,
-                ),
-              child: ViewScreen(),
-            ),
-            settings: RouteSettings(name: AppRouter.viewScreen),
-          ),
-        ).whenComplete(() {
-          homeRefresh();
-        });
-        break;
-      case 'Import from Gallery':
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BlocProvider<DirectoryCubit>(
-              create: (context) => DirectoryCubit()
-                ..createDirectory()
-                ..importImagesFromGallery(context),
-              child: ViewScreen(),
-            ),
-            settings: RouteSettings(name: AppRouter.viewScreen),
-          ),
-        ).whenComplete(() {
-          homeRefresh();
-        });
-        break;
-      default:
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BlocProvider<DirectoryCubit>(
-              create: (context) => DirectoryCubit(
-                dirName: masterDirectory!.dirName,
-                created: masterDirectory.created,
-                dirPath: masterDirectory.dirPath,
-                firstImgPath: masterDirectory.firstImgPath,
-                imageCount: masterDirectory.imageCount,
-                lastModified: masterDirectory.lastModified,
-                newName: masterDirectory.newName,
-                images: <ImageOS>[],
-              )..getImageData(),
-              lazy: false,
-              child: ViewScreen(),
-            ),
-            settings: RouteSettings(name: AppRouter.viewScreen),
-          ),
-        ).whenComplete(() {
-          homeRefresh();
-        });
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BlocProvider<DirectoryCubit>(
+          create: (context) {
+            final cubit = DirectoryCubit();
+            if (masterDirectory != null) {
+              cubit.loadDirectory(masterDirectory);
+            } else {
+              cubit.createDirectory();
+            }
+            return cubit;
+          },
+          child: ViewScreen(initialScanType: scanType),
+        ),
+        settings: RouteSettings(name: AppRouter.viewScreen),
+      ),
+    ).whenComplete(() {
+      homeRefresh();
+    });
   }
 
   Future<int> getDirectorySize(String dirPath) async {

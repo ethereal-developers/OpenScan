@@ -105,7 +105,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Creates directory while importing images
-  void createDirectory() async {
+  Future<void> createDirectory() async {
     Directory? appDir = await getExternalStorageDirectory();
     var now = DateTime.now();
     var dirName = fileOperations.generateCleanFolderName(now);
@@ -281,14 +281,11 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }
 
   /// Creates image from camera
-  void createImage(
-    context, {
-    bool quickScan = false,
-  }) async {
+  Future<bool> createImage(BuildContext context) async {
     File? croppedImage;
     File? image;
     File? compressedImage;
-    
+
     try {
       // Camera capture
       image = await fileOperations.openCamera();
@@ -297,7 +294,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           context,
           message: 'Camera capture was cancelled or failed',
         );
-        return;
+        return false;
       }
 
       // Cropping
@@ -310,7 +307,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           context,
           message: 'Image cropping was cancelled',
         );
-        return;
+        return false;
       }
 
       // Set loading state to true
@@ -349,27 +346,26 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         context,
         message: 'Image saved successfully',
       );
-
-      // If quick scan, start another scan
-      if (quickScan) {
-        // Add a small delay to allow the user to see the success message
-        await Future.delayed(const Duration(milliseconds: 500));
-        return createImage(context, quickScan: quickScan);
-      }
+      return true;
     } catch (e) {
       debugPrint('Error processing image: $e');
       HoveringSnackBarHelper.showError(
         context,
-        message: 'Error: ${e.toString()}',
-        action: SnackBarAction(
-          label: 'Try Again',
-          onPressed: () => createImage(context, quickScan: quickScan),
-        ),
+        message: e is Exception ? e.toString() : 'An unexpected error occurred.',
       );
+      return false;
     } finally {
-      // Clean up temporary files
-      await fileOperations.deleteTemporaryImages();
       emit(state.copyWith(isLoading: false));
+      // Clean up temp files
+      if (image != null && await image.exists()) {
+        await image.delete();
+      }
+      if (croppedImage != null && await croppedImage.exists()) {
+        await croppedImage.delete();
+      }
+      if (compressedImage != null && await compressedImage.exists()) {
+        await compressedImage.delete();
+      }
     }
   }
 
@@ -634,5 +630,19 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         debugPrint('Error updating image filter: $e');
       }
     }
+  }
+
+  void loadDirectory(DirectoryOS directory) {
+    emit(state.copyWith(
+      dirName: directory.dirName,
+      dirPath: directory.dirPath,
+      created: directory.created,
+      imageCount: directory.imageCount,
+      firstImgPath: directory.firstImgPath,
+      lastModified: directory.lastModified,
+      newName: directory.newName,
+      images: <ImageOS>[],
+    ));
+    getImageData();
   }
 }

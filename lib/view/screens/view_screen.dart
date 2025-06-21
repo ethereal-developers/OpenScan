@@ -11,22 +11,56 @@ import 'package:openscan/view/screens/preview_screen.dart';
 import 'package:reorderables/reorderables.dart';
 
 class ViewScreen extends StatefulWidget {
-  final bool quickScan;
-  final bool fromGallery;
+  final String? initialScanType;
 
-  ViewScreen({
-    this.quickScan = false,
-    this.fromGallery = false,
-  });
+  ViewScreen({this.initialScanType});
 
   @override
   _ViewScreenState createState() => _ViewScreenState();
 }
 
 class _ViewScreenState extends State<ViewScreen> {
+  bool _initialScanDone = false;
   GlobalKey scaffoldKey = GlobalKey<ScaffoldMessengerState>();
   final ScrollController _scrollController = ScrollController();
   final Map<int, Widget> _imageCardCache = {};
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialScanDone) {
+      _initialScanDone = true;
+      _handleInitialScan();
+    }
+  }
+
+  void _handleInitialScan() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cubit = BlocProvider.of<DirectoryCubit>(context);
+      switch (widget.initialScanType) {
+        case 'Normal Scan':
+          cubit.createImage(context);
+          break;
+        case 'Quick Scan':
+          _startQuickScanLoop();
+          break;
+        case 'Import from Gallery':
+          cubit.importImagesFromGallery(context);
+          break;
+      }
+    });
+  }
+
+  Future<void> _startQuickScanLoop() async {
+    bool keepScanning = true;
+    while (keepScanning && mounted) {
+      keepScanning = await BlocProvider.of<DirectoryCubit>(context).createImage(context);
+      if (keepScanning && mounted) {
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -293,14 +327,10 @@ class _ViewScreenState extends State<ViewScreen> {
             normalScanOnPressed: () {
               BlocProvider.of<DirectoryCubit>(context).createImage(
                 context,
-                quickScan: false,
               );
             },
             quickScanOnPressed: () {
-              BlocProvider.of<DirectoryCubit>(context).createImage(
-                context,
-                quickScan: true,
-              );
+              _startQuickScanLoop();
             },
             galleryOnPressed: () {
               BlocProvider.of<DirectoryCubit>(context).importImagesFromGallery(
