@@ -7,6 +7,7 @@ import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/view/screens/crop/crop_screen.dart';
+import 'package:openscan/view/Widgets/hovering_snackbar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:openscan/core/services/document_scanner_service.dart';
 
@@ -268,12 +269,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       await fileOperations.deleteTemporaryImages();
 
       if (errors.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Failed to process ${errors.length} images: ${errors.join(", ")}'),
-            backgroundColor: Colors.red,
-          ),
+        HoveringSnackBarHelper.showError(
+          context,
+          message: 'Failed to process ${errors.length} images: ${errors.join(", ")}',
         );
       }
     } catch (e) {
@@ -295,11 +293,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       // Camera capture
       image = await fileOperations.openCamera();
       if (image == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Camera capture was cancelled or failed'),
-            backgroundColor: Colors.orange,
-          ),
+        HoveringSnackBarHelper.showWarning(
+          context,
+          message: 'Camera capture was cancelled or failed',
         );
         return;
       }
@@ -310,11 +306,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         image,
       );
       if (croppedImage == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Image cropping was cancelled'),
-            backgroundColor: Colors.orange,
-          ),
+        HoveringSnackBarHelper.showWarning(
+          context,
+          message: 'Image cropping was cancelled',
         );
         return;
       }
@@ -351,11 +345,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       await getImageData();
 
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Image saved successfully'),
-          backgroundColor: Colors.green,
-        ),
+      HoveringSnackBarHelper.showSuccess(
+        context,
+        message: 'Image saved successfully',
       );
 
       // If quick scan, start another scan
@@ -366,15 +358,12 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       }
     } catch (e) {
       debugPrint('Error processing image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'Try Again',
-            onPressed: () => createImage(context, quickScan: quickScan),
-          ),
+      HoveringSnackBarHelper.showError(
+        context,
+        message: 'Error: ${e.toString()}',
+        action: SnackBarAction(
+          label: 'Try Again',
+          onPressed: () => createImage(context, quickScan: quickScan),
         ),
       );
     } finally {
@@ -431,11 +420,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         debugPrint('Image cropped and state updated successfully');
       } catch (e) {
         debugPrint('Error during image cropping: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to crop image: $e'),
-            backgroundColor: Colors.red,
-          ),
+        HoveringSnackBarHelper.showError(
+          context,
+          message: 'Failed to crop image: $e',
         );
       }
     }

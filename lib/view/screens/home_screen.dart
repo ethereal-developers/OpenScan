@@ -11,6 +11,7 @@ import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/FAB.dart';
 import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/Widgets/drawer.dart';
+import 'package:openscan/view/Widgets/hovering_snackbar.dart';
 import 'package:openscan/view/screens/view_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:quick_actions/quick_actions.dart';
@@ -430,25 +431,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                               Navigator.pop(context);
 
                                               if (savedPath != null) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                        'PDF saved successfully at: $savedPath'),
-                                                    backgroundColor:
-                                                        Colors.green,
-                                                    duration:
-                                                        Duration(seconds: 5),
-                                                  ),
+                                                HoveringSnackBarHelper.showSuccess(
+                                                  context,
+                                                  message: 'PDF saved successfully at: $savedPath',
+                                                  duration: Duration(seconds: 5),
                                                 );
                                               } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                        'Failed to save PDF'),
-                                                    backgroundColor: Colors.red,
-                                                  ),
+                                                HoveringSnackBarHelper.showError(
+                                                  context,
+                                                  message: 'Failed to save PDF',
                                                 );
                                               }
                                             },

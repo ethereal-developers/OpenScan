@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' show Point;
+import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:openscan/core/data/native_android_util.dart';
+import 'package:openscan/view/Widgets/hovering_snackbar.dart';
 
 Future<File?> imageCropper(
   BuildContext context,
@@ -330,11 +333,9 @@ class _CropImageState extends State<CropImage> {
                 if (success) {
                   Navigator.pop(context, _cropScreen.destImage);
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(AppLocalizations.of(context)!.cropFailed),
-                      backgroundColor: Colors.red,
-                    ),
+                  HoveringSnackBarHelper.showError(
+                    context,
+                    message: AppLocalizations.of(context)!.cropFailed,
                   );
                 }
               }
