@@ -459,83 +459,47 @@ class CropScreenState {
 
   /// Gets the current moving point
   void onPanStart(DragStartDetails details) {
-    final localPosition = Point<num>(details.localPosition.dx, details.localPosition.dy);
-    magnifierPosition.value = details.localPosition;
-    print(
-        'Pan start - Global position: ${details.globalPosition}, Local position: $localPosition');
-    print('Current points:');
-    print('tl: $tl, tr: $tr, bl: $bl, br: $br');
-    print('t: $t, b: $b, l: $l, r: $r');
+    final Offset tapPosition = details.localPosition;
+    String closestPoint = "none";
+    double minDistance = double.infinity;
 
-    // Calculate slopes before checking for points
-    calculateAllSlopes();
+    final points = {
+      'tl': tl, 'tr': tr, 'bl': bl, 'br': br,
+      't': t, 'l': l, 'b': b, 'r': r,
+    };
 
-    // Calculate scaled pickup distance based on image size
-    // Use a larger base distance and scale it based on the image width
-    double scaledPickupDistance = 100.0;
-
-    print('Scaled pickup distance: $scaledPickupDistance');
-
-    // Calculate distances to all points for debugging
-    print('Distances to points:');
-    print(
-        'tl: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), tl.x.toDouble(), tl.y.toDouble())}');
-    print(
-        'tr: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), tr.x.toDouble(), tr.y.toDouble())}');
-    print(
-        'bl: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), bl.x.toDouble(), bl.y.toDouble())}');
-    print(
-        'br: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), br.x.toDouble(), br.y.toDouble())}');
-    print(
-        't: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), t.x.toDouble(), t.y.toDouble())}');
-    print(
-        'b: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), b.x.toDouble(), b.y.toDouble())}');
-    print(
-        'l: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), l.x.toDouble(), l.y.toDouble())}');
-    print(
-        'r: ${getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(), r.x.toDouble(), r.y.toDouble())}');
-
-    if (getDistance(localPosition.x.toDouble(), localPosition.y.toDouble(),
-            tl.x.toDouble(), tl.y.toDouble()) <
-        scaledPickupDistance) {
-      movingPoint = MovingPoint(name: 'tl', offset: Point<num>(tl.x, tl.y));
-    } else if (getDistance(localPosition.x.toDouble(),
-            localPosition.y.toDouble(), tr.x.toDouble(), tr.y.toDouble()) <
-        scaledPickupDistance) {
-      movingPoint = MovingPoint(name: 'tr', offset: Point<num>(tr.x, tr.y));
-    } else if (getDistance(localPosition.x.toDouble(),
-            localPosition.y.toDouble(), bl.x.toDouble(), bl.y.toDouble()) <
-        scaledPickupDistance) {
-      movingPoint = MovingPoint(name: 'bl', offset: Point<num>(bl.x, bl.y));
-    } else if (getDistance(localPosition.x.toDouble(),
-            localPosition.y.toDouble(), br.x.toDouble(), br.y.toDouble()) <
-        scaledPickupDistance) {
-      movingPoint = MovingPoint(name: 'br', offset: Point<num>(br.x, br.y));
-    } else if (getDistance(localPosition.x.toDouble(),
-            localPosition.y.toDouble(), t.x.toDouble(), t.y.toDouble()) <
-        scaledPickupDistance) {
-      movingPoint = MovingPoint(name: 't', offset: Point<num>(t.x, t.y));
-    } else if (getDistance(localPosition.x.toDouble(),
-            localPosition.y.toDouble(), b.x.toDouble(), b.y.toDouble()) <
-        scaledPickupDistance) {
-      movingPoint = MovingPoint(name: 'b', offset: Point<num>(b.x, b.y));
-    } else if (getDistance(localPosition.x.toDouble(),
-            localPosition.y.toDouble(), l.x.toDouble(), l.y.toDouble()) <
-        scaledPickupDistance) {
-      movingPoint = MovingPoint(name: 'l', offset: Point<num>(l.x, l.y));
-    } else if (getDistance(localPosition.x.toDouble(),
-            localPosition.y.toDouble(), r.x.toDouble(), r.y.toDouble()) <
-        scaledPickupDistance) {
-      movingPoint = MovingPoint(name: 'r', offset: Point<num>(r.x, r.y));
-    } else {
-      movingPoint = MovingPoint(name: 'none', offset: Point<num>(0, 0));
+    for (var entry in points.entries) {
+      final point = entry.value;
+      final distance = (tapPosition - Offset(point.x.toDouble(), point.y.toDouble())).distance;
+      if (distance < minDistance && distance < pickupDistance) {
+        minDistance = distance;
+        closestPoint = entry.key;
+      }
     }
 
-    print('Selected moving point: ${movingPoint.name}');
+    movingPoint.name = closestPoint;
+  }
 
-    // Only show magnifier if a point is selected
-    if (movingPoint.name != 'none') {
-      magnifierPosition.value = details.localPosition;
+  Offset getMovingPointOffset() {
+    switch (movingPoint.name) {
+      case 'tl':
+        return Offset(tl.x.toDouble(), tl.y.toDouble());
+      case 'tr':
+        return Offset(tr.x.toDouble(), tr.y.toDouble());
+      case 'bl':
+        return Offset(bl.x.toDouble(), bl.y.toDouble());
+      case 'br':
+        return Offset(br.x.toDouble(), br.y.toDouble());
+      case 't':
+        return Offset(t.x.toDouble(), t.y.toDouble());
+      case 'l':
+        return Offset(l.x.toDouble(), l.y.toDouble());
+      case 'b':
+        return Offset(b.x.toDouble(), b.y.toDouble());
+      case 'r':
+        return Offset(r.x.toDouble(), r.y.toDouble());
+      default:
+        return Offset.zero;
     }
   }
 

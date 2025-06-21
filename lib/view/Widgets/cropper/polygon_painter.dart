@@ -18,18 +18,18 @@ class PolygonPainter extends CustomPainter {
   });
 
   Paint dotInnerShade = Paint()
-    ..color = AppTheme.secondaryColor.withOpacity(0.2)
+    ..color = AppTheme.secondaryColor.withValues(alpha: 0.2)
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.fill;
 
   Paint dotOutline = Paint()
-    ..color = AppTheme.secondaryColor.withOpacity(0.9)
+    ..color = AppTheme.secondaryColor.withValues(alpha: 0.9)
     ..strokeWidth = 1.5
     ..strokeCap = StrokeCap.round
     ..style = PaintingStyle.stroke;
 
   Paint linesConnectingDots = Paint()
-    ..color = AppTheme.secondaryColor.withOpacity(0.8)
+    ..color = AppTheme.secondaryColor.withValues(alpha: 0.8)
     ..strokeWidth = 1.7
     ..strokeCap = StrokeCap.round;
 

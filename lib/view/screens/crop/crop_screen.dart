@@ -169,7 +169,7 @@ class _CropImageState extends State<CropImage> {
                     Center(
             child: Image(
               key: _cropScreen.imageKey,
-              image: FileImage(_cropScreen.srcImage!),
+              image: FileImage(_cropScreen.srcImage!, scale: 1.0),
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -228,16 +228,23 @@ class _CropImageState extends State<CropImage> {
                     _cropScreen.onPanStart(startDetails);
                     if (_cropScreen.movingPoint.name != 'none') {
                       _cropScreen.showMagnifier.value = true;
+                      final pointOffsetInCanvas = _cropScreen.getMovingPointOffset();
+                      final canvasOffset = _cropScreen.displayedImageRect!.topLeft;
+                      _cropScreen.magnifierPosition.value = pointOffsetInCanvas + canvasOffset;
                     }
                   },
                   onPanUpdate: (updateDetails) {
                     _cropScreen.updatedPoint.value = updateDetails;
                     _cropScreen.updatePolygon();
+                    final pointOffsetInCanvas = _cropScreen.getMovingPointOffset();
+                    final canvasOffset = _cropScreen.displayedImageRect!.topLeft;
+                    _cropScreen.magnifierPosition.value = pointOffsetInCanvas + canvasOffset;
                   },
                   onPanEnd: (details) {
                     _cropScreen.movingPoint.name = 'none';
                     _cropScreen.movingPoint.offset = Point<num>(0, 0);
                     _cropScreen.showMagnifier.value = false;
+                    _cropScreen.magnifierPosition.value = null;
                   },
                   child: ValueListenableBuilder(
                               valueListenable: _cropScreen.polygonVersion,
@@ -263,36 +270,47 @@ class _CropImageState extends State<CropImage> {
           ),
 
           // Magnifier Container
-                    ValueListenableBuilder<Offset?>(
-                      valueListenable: _cropScreen.magnifierPosition,
-                      builder: (context, dragOffset, __) {
-                        if (dragOffset == null || _cropScreen.movingPoint.name == 'none') return const SizedBox.shrink();
-                  return Positioned(
-                          left: dragOffset.dx - 40,
-                          top: dragOffset.dy - 60,
-                    child: RawMagnifier(
-                            decoration: const MagnifierDecoration(
-                              shape: CircleBorder(
-                          side: BorderSide(
-                                  color: Colors.white,
-                                  width: 2,
-                          ),
-                        ),
-                      ),
-                      size: const Size(80, 80),
-                            magnificationScale: 2.0,
-                            child: Container(
-                              color: Colors.transparent,
-                              width: 1,
-                              height: 1,
-                            ),
-                    ),
-                  );
-                },
-                    ),
-                  ],
+          ValueListenableBuilder<Offset?>(
+            valueListenable: _cropScreen.magnifierPosition,
+            builder: (context, dragOffset, __) {
+              if (dragOffset == null || _cropScreen.movingPoint.name == 'none') {
+                return const SizedBox.shrink();
+              }
+
+              const magnifierSize = 80.0;
+              const verticalOffset = 30.0; // Doubled the space between magnifier and point
+
+              // Determine horizontal offset based on which side the point is on
+              double horizontalOffset = 0.0;
+              if (_cropScreen.movingPoint.name != null) {
+                final pointName = _cropScreen.movingPoint.name!;
+                if (pointName.contains('r') || pointName == 'tr' || pointName == 'br') {
+                  // Right-side points: offset magnifier to the left
+                  horizontalOffset = -20.0;
+                } else if (pointName.contains('l') || pointName == 'tl' || pointName == 'bl') {
+                  // Left-side points: offset magnifier to the right
+                  horizontalOffset = 20.0;
+                }
+              }
+
+              return Positioned(
+                left: dragOffset.dx - (magnifierSize / 2) + horizontalOffset,
+                top: dragOffset.dy - magnifierSize - verticalOffset,
+                child: RawMagnifier(
+                  size: const Size(magnifierSize, magnifierSize),
+                  decoration: const MagnifierDecoration(
+                    shape: CircleBorder(),
+                  ),
+                  magnificationScale: 2,
+                  focalPointOffset:
+                      Offset(-horizontalOffset, magnifierSize / 2 + verticalOffset),
                 ),
+              );
+            },
           ),
+        ],
+      ),
+    ),
         ],
       ),
         );
