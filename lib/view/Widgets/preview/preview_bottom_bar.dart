@@ -135,7 +135,10 @@ class _PreviewScreenBottomBarState extends State<PreviewScreenBottomBar>
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               BottomButton(
-                icon: const Icon(Icons.crop_rounded),
+                icon: const Icon(
+                  Icons.crop_rounded,
+                  color: Colors.white,
+                ),
                 text: 'Crop',
                 onPressed: widget.cropOnPressed,
               ),
@@ -151,12 +154,18 @@ class _PreviewScreenBottomBarState extends State<PreviewScreenBottomBar>
                           ),
                         ),
                       )
-                    : const Icon(Icons.rotate_right_rounded),
+                    : const Icon(
+                        Icons.rotate_right_rounded,
+                        color: Colors.white,
+                      ),
                 text: 'Rotate',
                 onPressed: _isRotating ? null : _rotateCurrent,
               ),
               BottomButton(
-                icon: const Icon(Icons.photo_filter_rounded),
+                icon: const Icon(
+                  Icons.photo_filter_rounded,
+                  color: Colors.white,
+                ),
                 text: 'Filters',
                 onPressed: widget.filterOnPressed,
               ),
