@@ -25,9 +25,9 @@ class PreviewScreen extends StatefulWidget {
 class _PreviewScreenState extends State<PreviewScreen>
     with SingleTickerProviderStateMixin {
   late ValueNotifier<int> _pageNumber;
-  late int _currentPageIndex;
+  // late int _currentPageIndex;
   late TapDownDetails _doubleTapDetails;
-  TransformationController _transformationController =
+  final TransformationController _transformationController =
       TransformationController();
   bool enablePageScroll = true;
   late AnimationController animationController;
@@ -35,7 +35,7 @@ class _PreviewScreenState extends State<PreviewScreen>
       AlwaysStoppedAnimation(Matrix4.identity());
   bool isAppBarVisible = true;
   imageLib.Image? imageBytes;
-  Widget loader = Center(child: CircularProgressIndicator());
+  Widget loader = const Center(child: CircularProgressIndicator());
   late PageController pageController;
   bool _isZoomed = false;
 
@@ -53,6 +53,7 @@ class _PreviewScreenState extends State<PreviewScreen>
           .animate(animationController);
 
       await animationController.forward();
+      if (!mounted) return;
       setState(() {
         _isZoomed = true;
         enablePageScroll = false;
@@ -67,6 +68,7 @@ class _PreviewScreenState extends State<PreviewScreen>
           .animate(animationController);
 
       await animationController.forward();
+      if (!mounted) return;
       setState(() {
         _isZoomed = false;
         enablePageScroll = true;
@@ -112,7 +114,7 @@ class _PreviewScreenState extends State<PreviewScreen>
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
+    final Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
         extendBody: true,
@@ -132,10 +134,8 @@ class _PreviewScreenState extends State<PreviewScreen>
                   controller: pageController,
                   itemCount: state.imageCount,
                   itemBuilder: (context, index) {
-                    GlobalKey imageKey = GlobalKey();
-
                     if (index >= state.images!.length) {
-                      return Center(
+                      return const Center(
                         child: CircularProgressIndicator(
                           color: Colors.white,
                         ),
@@ -163,17 +163,20 @@ class _PreviewScreenState extends State<PreviewScreen>
                               tag: 'hero-image-${index + 1}',
                               child: Image.file(
                                 File(state.images![index].imgPath),
-                                key: imageKey,
-                                frameBuilder: (BuildContext context,
-                                    Widget child,
-                                    int? frame,
-                                    bool wasSynchronouslyLoaded) {
+                                frameBuilder: (
+                                  BuildContext context,
+                                  Widget child,
+                                  int? frame,
+                                  bool wasSynchronouslyLoaded,
+                                ) {
                                   if (wasSynchronouslyLoaded) {
                                     return child;
                                   }
                                   return AnimatedOpacity(
                                     opacity: frame == null ? 0 : 1,
-                                    duration: const Duration(milliseconds: 200),
+                                    duration: const Duration(
+                                      milliseconds: 200,
+                                    ),
                                     curve: Curves.easeOut,
                                     child: child,
                                   );
@@ -195,7 +198,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                   },
                 ),
                 AnimatedContainer(
-                  duration: Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 200),
                   height: isAppBarVisible ? 60.0 : 0.0,
                   child: AppBar(
                     elevation: 0,
@@ -214,7 +217,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                             children: [
                               Text(
                                 state.dirName!,
-                                style: TextStyle().appBarStyle,
+                                style: const TextStyle().appBarStyle,
                               ),
                             ],
                           ),
@@ -222,8 +225,8 @@ class _PreviewScreenState extends State<PreviewScreen>
                       },
                     ),
                     leading: IconButton(
-                      icon: Icon(Icons.arrow_back_ios),
-                      padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
+                      icon: const Icon(Icons.arrow_back_ios),
+                      padding: const EdgeInsets.fromLTRB(15, 8, 0, 8),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -235,107 +238,114 @@ class _PreviewScreenState extends State<PreviewScreen>
         bottomNavigationBar: BlocConsumer<DirectoryCubit, DirectoryState>(
           listener: (context, state) {},
           builder: (context, state) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(vertical: 4),
-                  color: Theme.of(context).primaryColor.withOpacity(0.3),
-                  child: Center(
-                    child: Text(
-                      '${_pageNumber.value}/${state.imageCount}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.8),
+            return SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    child: Center(
+                      child: Text(
+                        '${_pageNumber.value}/${state.imageCount}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                PreviewScreenBottomBar(
-                  isAppBarVisible: isAppBarVisible,
-                  currentPage: _pageNumber.value - 1,
-                  cropOnPressed: () {
-                    BlocProvider.of<DirectoryCubit>(context).cropImage(
-                      context,
-                      state.images![pageController.page!.round()],
-                    );
-                  },
-                  deleteOnPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) {
-                        return DeleteDialog(
-                          deleteOnPressed: () async {
-                            bool directoryDeleted =
-                                await BlocProvider.of<DirectoryCubit>(context)
-                                    .deleteImage(
-                              context,
-                              imageToDelete:
-                                  state.images![pageController.page!.toInt()],
-                            );
-                            Navigator.pop(context);
-                            if (directoryDeleted) {
-                              Navigator.popUntil(context,
-                                  ModalRoute.withName(AppRouter.homeScreen));
-                              // Navigator.pop(context);
-                              // Navigator.pop(context);
-                            }
+                  PreviewScreenBottomBar(
+                    isAppBarVisible: isAppBarVisible,
+                    currentPage: _pageNumber.value - 1,
+                    cropOnPressed: () {
+                      BlocProvider.of<DirectoryCubit>(context).cropImage(
+                        context,
+                        state.images![pageController.page!.round()],
+                      );
+                    },
+                    deleteOnPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) {
+                          return DeleteDialog(
+                            deleteOnPressed: () async {
+                              final directoryDeleted =
+                                  await BlocProvider.of<DirectoryCubit>(
+                                context,
+                              ).deleteImage(
+                                context,
+                                imageToDelete:
+                                    state.images![pageController.page!.toInt()],
+                              );
+                              Navigator.pop(context);
+                              if (directoryDeleted) {
+                                Navigator.popUntil(
+                                  context,
+                                  ModalRoute.withName(
+                                    AppRouter.homeScreen,
+                                  ),
+                                );
+                              }
 
-                            setState(() {
-                              if (state.imageCount + 1 == _pageNumber.value) {
-                                _pageNumber.value =
-                                    pageController.page!.toInt();
-                              } else
-                                _pageNumber.value =
-                                    pageController.page!.toInt() + 1;
+                              setState(() {
+                                if (state.imageCount + 1 == _pageNumber.value) {
+                                  _pageNumber.value =
+                                      pageController.page!.toInt();
+                                } else {
+                                  _pageNumber.value =
+                                      pageController.page!.toInt() + 1;
+                                }
+                                debugPrint(
+                                    'Controller Page: ${pageController.page} : ${state.imageCount} : ${_pageNumber.value}');
+                              });
+                            },
+                          );
+                        },
+                      );
+                    },
+                    filterOnPressed: () async {
+                      if (!isAppBarVisible) {
+                        setState(() {
+                          isAppBarVisible = true;
+                        });
+                      }
 
-                              debugPrint(
-                                  'Controller Page: ${pageController.page} : ${state.imageCount} : ${_pageNumber.value}');
-                            });
-                            // pageIndex = _pageController!.page!.toInt() + 1;
-                          },
-                        );
-                      },
-                    );
-                  },
-                  filterOnPressed: () async {
-                    if (!isAppBarVisible) {
-                      setState(() {
-                        isAppBarVisible = true;
-                      });
-                    }
+                      // debugPrint(_pageNumber.value);
+                      // debugPrint(state.images![_pageNumber.value - 1]);
+                      // var image = imageLib.decodeImage(
+                      //     await File(state.images![_pageNumber.value - 1].imgPath)
+                      //         .readAsBytes());
+                      // image = imageLib.copyResize(image!, width: 600);
 
-                    // debugPrint(_pageNumber.value);
-                    // debugPrint(state.images![_pageNumber.value - 1]);
-                    // var image = imageLib.decodeImage(
-                    //     await File(state.images![_pageNumber.value - 1].imgPath)
-                    //         .readAsBytes());
-                    // image = imageLib.copyResize(image!, width: 600);
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MultiBlocProvider(
-                          providers: [
-                            BlocProvider<DirectoryCubit>.value(
-                              value: BlocProvider.of<DirectoryCubit>(context),
-                            ),
-                            BlocProvider(
-                              create: (context) => FilterCubit(
-                                selectedFilter: presetFiltersList[0],
-                                cachedFilters: {},
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MultiBlocProvider(
+                            providers: [
+                              BlocProvider<DirectoryCubit>.value(
+                                value: BlocProvider.of<DirectoryCubit>(
+                                  context,
+                                ),
                               ),
+                              BlocProvider(
+                                create: (context) => FilterCubit(
+                                  selectedFilter: presetFiltersList[0],
+                                  cachedFilters: {},
+                                ),
+                              ),
+                            ],
+                            child: FilterScreen(
+                              pageIndex: pageController.page!.round(),
                             ),
-                          ],
-                          child: FilterScreen(
-                            pageIndex: pageController.page!.round(),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             );
           },
         ),

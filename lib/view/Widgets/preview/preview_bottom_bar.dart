@@ -1,9 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/core/data/database_helper.dart';
-import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 class PreviewScreenBottomBar extends StatefulWidget {
@@ -17,127 +18,158 @@ class PreviewScreenBottomBar extends StatefulWidget {
   }) : super(key: key);
 
   final bool isAppBarVisible;
-  final Function()? cropOnPressed;
-  final Function()? deleteOnPressed;
-  final Function()? filterOnPressed;
+  final VoidCallback? cropOnPressed;
+  final VoidCallback? deleteOnPressed;
+  final VoidCallback? filterOnPressed;
   final int currentPage;
 
   @override
   State<PreviewScreenBottomBar> createState() => _PreviewScreenBottomBarState();
 }
 
-class _PreviewScreenBottomBarState extends State<PreviewScreenBottomBar> {
+class _PreviewScreenBottomBarState extends State<PreviewScreenBottomBar>
+    with SingleTickerProviderStateMixin {
   bool _isRotating = false;
   final DatabaseHelper _database = DatabaseHelper();
-  final ValueNotifier<int> _pageNumber = ValueNotifier<int>(1);
+
+  late final AnimationController _controller;
+  late final Animation<double> _sizeFactor;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _sizeFactor = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+
+    if (widget.isAppBarVisible) {
+      _controller.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PreviewScreenBottomBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isAppBarVisible != widget.isAppBarVisible) {
+      if (widget.isAppBarVisible) {
+        _controller.forward();
+      } else {
+        _controller.reverse();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _rotateCurrent() async {
+    if (_isRotating) return;
+    setState(() => _isRotating = true);
+
+    try {
+      final state = context.read<DirectoryCubit>().state;
+      final currentIndex = state.images!.indexWhere(
+        (img) => img.imgPath == state.images![widget.currentPage].imgPath,
+      );
+      if (currentIndex == -1) return;
+
+      final imagePath = state.images![currentIndex].imgPath;
+      final directory = await getTemporaryDirectory();
+      final rotatedImagePath =
+          '${directory.path}/rotated_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      // Rotate original in place.
+      await NativeAndroidUtil.rotate(imagePath, 90);
+
+      // Copy rotated content to a new temp path for your app's state.
+      await File(imagePath).copy(rotatedImagePath);
+
+      // Update in-memory state and DB.
+      state.images![currentIndex] =
+          state.images![currentIndex].copyWith(imgPath: rotatedImagePath);
+
+      await _database.updateImagePath(
+        tableName: state.dirName!,
+        imgPath: rotatedImagePath,
+        idx: state.images![currentIndex].idx!,
+      );
+
+      if (currentIndex == 0) {
+        await _database.updateFirstImagePath(
+          dirPath: state.dirPath!,
+          imagePath: rotatedImagePath,
+        );
+      }
+
+      // Remove old file.
+      await File(imagePath).delete();
+
+      // Refresh UI.
+      context.read<DirectoryCubit>().emitState(state);
+    } finally {
+      if (mounted) setState(() => _isRotating = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      height: widget.isAppBarVisible ? 100.0 : 0.0,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                BottomButton(
-                  icon: const Icon(Icons.crop_rounded),
-                  text: 'Crop',
-                  onPressed: widget.cropOnPressed,
-                ),
-                BottomButton(
-                  icon: _isRotating
-                      ? SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+    return ClipRect(
+      child: SizeTransition(
+        sizeFactor: _sizeFactor,
+        axisAlignment: -1.0,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 8.0,
+            vertical: 8.0,
+          ),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              BottomButton(
+                icon: const Icon(Icons.crop_rounded),
+                text: 'Crop',
+                onPressed: widget.cropOnPressed,
+              ),
+              BottomButton(
+                icon: _isRotating
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
                           ),
-                        )
-                      : const Icon(Icons.rotate_right_rounded),
-                  text: 'Rotate',
-                  onPressed: _isRotating
-                      ? null
-                      : () async {
-                          setState(() {
-                            _isRotating = true;
-                          });
-
-                          try {
-                            final state = context.read<DirectoryCubit>().state;
-                            final currentIndex = state.images!.indexWhere(
-                                (img) =>
-                                    img.imgPath ==
-                                    state.images![widget.currentPage].imgPath);
-                            if (currentIndex != -1) {
-                              final imagePath =
-                                  state.images![currentIndex].imgPath;
-                              final directory = await getTemporaryDirectory();
-                              final rotatedImagePath =
-                                  '${directory.path}/rotated_${DateTime.now().millisecondsSinceEpoch}.jpg';
-
-                              // Rotate the image
-                              await NativeAndroidUtil.rotate(imagePath, 90);
-
-                              // Create a new file with the rotated image
-                              await File(imagePath).copy(rotatedImagePath);
-
-                              // Update the image path in state
-                              state.images![currentIndex] =
-                                  state.images![currentIndex].copyWith(
-                                imgPath: rotatedImagePath,
-                              );
-
-                              // Update the database with the new image path
-                              await _database.updateImagePath(
-                                tableName: state.dirName!,
-                                imgPath: rotatedImagePath,
-                                idx: state.images![currentIndex].idx!,
-                              );
-
-                              // Update the master directory's firstImgPath if this is the first image
-                              if (currentIndex == 0) {
-                                await _database.updateFirstImagePath(
-                                  dirPath: state.dirPath!,
-                                  imagePath: rotatedImagePath,
-                                );
-                              }
-
-                              // Delete the old file
-                              await File(imagePath).delete();
-
-                              // Refresh the image by triggering a rebuild
-                              context.read<DirectoryCubit>().emitState(state);
-                            }
-                          } finally {
-                            setState(() {
-                              _isRotating = false;
-                            });
-                          }
-                        },
+                        ),
+                      )
+                    : const Icon(Icons.rotate_right_rounded),
+                text: 'Rotate',
+                onPressed: _isRotating ? null : _rotateCurrent,
+              ),
+              BottomButton(
+                icon: const Icon(Icons.photo_filter_rounded),
+                text: 'Filters',
+                onPressed: widget.filterOnPressed,
+              ),
+              BottomButton(
+                icon: const Icon(
+                  Icons.delete_rounded,
+                  color: Colors.redAccent,
                 ),
-                BottomButton(
-                  icon: const Icon(Icons.photo_filter_rounded),
-                  text: 'Filters',
-                  onPressed: widget.filterOnPressed,
-                ),
-                BottomButton(
-                  icon: const Icon(
-                    Icons.delete_rounded,
-                    color: Colors.redAccent,
-                  ),
-                  text: 'Delete',
-                  onPressed: widget.deleteOnPressed,
-                ),
-              ],
-            );
-          },
+                text: 'Delete',
+                onPressed: widget.deleteOnPressed,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -154,35 +186,33 @@ class BottomButton extends StatelessWidget {
 
   final Widget icon;
   final String text;
-  final Function()? onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialButton(
-      height: 40,
-      minWidth: 40,
-      padding: EdgeInsets.zero,
-      elevation: 0,
-      highlightElevation: 0,
-      color: Colors.transparent,
-      splashColor: Colors.transparent,
+    // No fixed height; use a comfortable minimum that fits icon+label.
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white,
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(64, 48),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
-            height: 24,
-            child: icon,
-          ),
+          SizedBox(height: 24, child: Center(child: icon)),
           const SizedBox(height: 4),
           Text(
             text,
-            style: const TextStyle(fontSize: 13),
+            style: const TextStyle(fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
         ],
       ),
-      onPressed: onPressed,
     );
   }
 }
