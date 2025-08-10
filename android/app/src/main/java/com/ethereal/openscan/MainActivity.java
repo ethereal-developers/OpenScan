@@ -3,8 +3,10 @@ package com.ethereal.openscan;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.media.ExifInterface;
 import android.util.Log;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 
@@ -34,11 +36,14 @@ public class MainActivity extends FlutterActivity {
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
         GeneratedPluginRegistrant.registerWith(flutterEngine);
-        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
-                .setMethodCallHandler(this::handleMethodCall);
+        new MethodChannel(
+                flutterEngine.getDartExecutor().getBinaryMessenger(),
+                CHANNEL
+        ).setMethodCallHandler(this::handleMethodCall);
     }
 
-    private void handleMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    private void handleMethodCall(@NonNull MethodCall call,
+                                  @NonNull MethodChannel.Result result) {
         Log.d(TAG_NAME, "Method called: " + call.method);
         if (!isOpenCVInitialized) {
             Log.d(TAG_NAME, "OpenCV not initialized, initializing...");
@@ -75,6 +80,9 @@ public class MainActivity extends FlutterActivity {
                 case "postScanImageProcessing":
                     handlePostScanImageProcessing(call, result);
                     break;
+                case "setGestureExclusionRects":
+                    handleSetGestureExclusionRects(call, result);
+                    break;
                 default:
                     result.notImplemented();
             }
@@ -98,7 +106,9 @@ public class MainActivity extends FlutterActivity {
         }
     }
 
-    private void handleCompress(@NonNull MethodCall call, @NonNull MethodChannel.Result result) throws IOException {
+    private void handleCompress(@NonNull MethodCall call,
+                                @NonNull MethodChannel.Result result)
+            throws IOException {
         int desiredQuality = call.argument("desiredQuality");
         String path = call.argument("src");
         String savePath = call.argument("dest");
@@ -107,7 +117,8 @@ public class MainActivity extends FlutterActivity {
         try (FileOutputStream outStream = new FileOutputStream(fileName)) {
             Bitmap bitmap = BitmapFactory.decodeFile(path);
             try {
-                bitmap.compress(Bitmap.CompressFormat.JPEG, desiredQuality, outStream);
+                bitmap.compress(Bitmap.CompressFormat.JPEG,
+                        desiredQuality, outStream);
                 result.success(fileName);
             } finally {
                 bitmap.recycle();
@@ -115,21 +126,36 @@ public class MainActivity extends FlutterActivity {
         }
     }
 
-    private void handleFixRotation(@NonNull MethodCall call, @NonNull MethodChannel.Result result) throws IOException {
+    private void handleFixRotation(@NonNull MethodCall call,
+                                   @NonNull MethodChannel.Result result)
+            throws IOException {
         String srcPath = call.argument("srcPath");
         String destPath = call.argument("destPath");
         String fileName = String.format("%s/%d.jpg", destPath, System.currentTimeMillis());
 
         ExifInterface exif = new ExifInterface(srcPath);
-        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+        int orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+        );
         int rotationAngle = ImageUtil.getRotationAngle(orientation);
 
         Bitmap bitmap = BitmapFactory.decodeFile(srcPath);
         try {
             Matrix matrix = new Matrix();
-            matrix.setRotate(rotationAngle, (float) bitmap.getWidth() / 2, (float) bitmap.getHeight() / 2);
-            Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-            
+            matrix.setRotate((float) rotationAngle,
+                    (float) bitmap.getWidth() / 2,
+                    (float) bitmap.getHeight() / 2);
+            Bitmap rotatedBitmap = Bitmap.createBitmap(
+                    bitmap,
+                    0,
+                    0,
+                    bitmap.getWidth(),
+                    bitmap.getHeight(),
+                    matrix,
+                    true
+            );
+
             try (FileOutputStream stream = new FileOutputStream(fileName)) {
                 rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
                 result.success(fileName);
@@ -141,45 +167,85 @@ public class MainActivity extends FlutterActivity {
         }
     }
 
-    private void handleCropImage(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    private void handleCropImage(@NonNull MethodCall call,
+                                 @NonNull MethodChannel.Result result) {
         String srcPath = call.argument("srcPath");
         String destPath = call.argument("destPath");
-        double tl_x = Double.parseDouble(Objects.requireNonNull(call.argument("tl_x")));
-        double tl_y = Double.parseDouble(Objects.requireNonNull(call.argument("tl_y")));
-        double tr_x = Double.parseDouble(Objects.requireNonNull(call.argument("tr_x")));
-        double tr_y = Double.parseDouble(Objects.requireNonNull(call.argument("tr_y")));
-        double bl_x = Double.parseDouble(Objects.requireNonNull(call.argument("bl_x")));
-        double bl_y = Double.parseDouble(Objects.requireNonNull(call.argument("bl_y")));
-        double br_x = Double.parseDouble(Objects.requireNonNull(call.argument("br_x")));
-        double br_y = Double.parseDouble(Objects.requireNonNull(call.argument("br_y")));
-        boolean enhance = call.argument("enhance") != null ? (Boolean) call.argument("enhance") : false;
+        double tl_x = Double.parseDouble(
+                Objects.requireNonNull(call.argument("tl_x"))
+        );
+        double tl_y = Double.parseDouble(
+                Objects.requireNonNull(call.argument("tl_y"))
+        );
+        double tr_x = Double.parseDouble(
+                Objects.requireNonNull(call.argument("tr_x"))
+        );
+        double tr_y = Double.parseDouble(
+                Objects.requireNonNull(call.argument("tr_y"))
+        );
+        double bl_x = Double.parseDouble(
+                Objects.requireNonNull(call.argument("bl_x"))
+        );
+        double bl_y = Double.parseDouble(
+                Objects.requireNonNull(call.argument("bl_y"))
+        );
+        double br_x = Double.parseDouble(
+                Objects.requireNonNull(call.argument("br_x"))
+        );
+        double br_y = Double.parseDouble(
+                Objects.requireNonNull(call.argument("br_y"))
+        );
+        boolean enhance = call.argument("enhance") != null
+                ? (Boolean) call.argument("enhance") : false;
 
-        Log.d(TAG_NAME, String.format("Crop points: TL(%.2f,%.2f) TR(%.2f,%.2f) BL(%.2f,%.2f) BR(%.2f,%.2f) Enhance: %s",
-                tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y, enhance));
+        Log.d(
+                TAG_NAME,
+                String.format(
+                        "Crop points: TL(%.2f,%.2f) TR(%.2f,%.2f) "
+                                + "BL(%.2f,%.2f) BR(%.2f,%.2f) Enhance: %s",
+                        tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y,
+                        enhance
+                )
+        );
 
-        boolean isCropped = ImageUtil.cropImage(srcPath, destPath, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y, enhance);
+        boolean isCropped = ImageUtil.cropImage(
+                srcPath,
+                destPath,
+                tl_x,
+                tl_y,
+                tr_x,
+                tr_y,
+                bl_x,
+                bl_y,
+                br_x,
+                br_y,
+                enhance
+        );
         result.success(isCropped);
     }
 
-    private void handleGetImageSize(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    private void handleGetImageSize(@NonNull MethodCall call,
+                                    @NonNull MethodChannel.Result result) {
         String path = call.argument("path");
         Map<String, Integer> imageSizeMap = ImageUtil.getImageSize(path);
         result.success(imageSizeMap);
     }
 
-    private void handleRotateImage(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    private void handleRotateImage(@NonNull MethodCall call,
+                                   @NonNull MethodChannel.Result result) {
         String path = call.argument("path");
         int degree = Objects.requireNonNull(call.argument("degree"));
         boolean isRotated = ImageUtil.rotateImage(path, degree);
         result.success(isRotated);
     }
 
-    private void handleDetectDocument(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    private void handleDetectDocument(@NonNull MethodCall call,
+                                      @NonNull MethodChannel.Result result) {
         Log.d(TAG_NAME, "detectDocument method called");
         try {
             String imagePath = call.argument("path");
             Log.d(TAG_NAME, "Image path: " + imagePath);
-            
+
             if (imagePath == null) {
                 Log.e(TAG_NAME, "Image path is null");
                 result.error("INVALID_PATH", "Image path is null", null);
@@ -188,14 +254,22 @@ public class MainActivity extends FlutterActivity {
 
             File imageFile = new File(imagePath);
             if (!imageFile.exists()) {
-                Log.e(TAG_NAME, "Image file does not exist: " + imagePath);
-                result.error("FILE_NOT_FOUND", "Image file does not exist", null);
+                Log.e(TAG_NAME,
+                        "Image file does not exist: " + imagePath);
+                result.error("FILE_NOT_FOUND",
+                        "Image file does not exist", null);
                 return;
             }
 
             Log.d(TAG_NAME, "Starting document detection process");
             Corners corners = ImageUtil.detectDocument(imagePath);
-            Log.d(TAG_NAME, "Document detection completed. Found " + (corners != null ? corners.getCorners().size() : 0) + " corners");
+            Log.d(
+                    TAG_NAME,
+                    "Document detection completed. Found "
+                            + (corners != null
+                            ? corners.getCorners().size() : 0)
+                            + " corners"
+            );
 
             if (corners == null) {
                 Log.w(TAG_NAME, "No corners detected");
@@ -210,25 +284,33 @@ public class MainActivity extends FlutterActivity {
             Log.d(TAG_NAME, "Returning detected points: " + points);
             result.success(points);
         } catch (Exception e) {
-            Log.e(TAG_NAME, "Error in detectDocument: " + e.getMessage(), e);
+            Log.e(TAG_NAME,
+                    "Error in detectDocument: " + e.getMessage(), e);
             result.error("DETECTION_ERROR", e.getMessage(), null);
         }
     }
 
-    private void handleEnhanceDocument(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+    private void handleEnhanceDocument(@NonNull MethodCall call,
+                                       @NonNull MethodChannel.Result result) {
         String imagePath = call.argument("imagePath");
         String filterType = call.argument("filterType");
-        
+
         if (imagePath == null || filterType == null) {
-            result.error("INVALID_ARGUMENTS", "Image path and filter type are required", null);
+            result.error(
+                    "INVALID_ARGUMENTS",
+                    "Image path and filter type are required",
+                    null
+            );
             return;
         }
 
         try {
-            String enhancedPath = ImageUtil.enhanceDocument(imagePath, filterType);
+            String enhancedPath =
+                    ImageUtil.enhanceDocument(imagePath, filterType);
             result.success(enhancedPath);
         } catch (Exception e) {
-            Log.e(TAG_NAME, "Error in enhanceDocument: " + e.getMessage(), e);
+            Log.e(TAG_NAME,
+                    "Error in enhanceDocument: " + e.getMessage(), e);
             result.error("ENHANCEMENT_ERROR", e.getMessage(), null);
         }
     }
@@ -243,5 +325,34 @@ public class MainActivity extends FlutterActivity {
             Log.e(TAG_NAME, "Error in postScanImageProcessing: " + e.getMessage(), e);
             result.error("POST_SCAN_IMAGE_PROCESSING_ERROR", e.getMessage(), null);
         }
+    }
+
+    private void handleSetGestureExclusionRects(@NonNull MethodCall call,
+                                                @NonNull MethodChannel.Result result) {
+        if (android.os.Build.VERSION.SDK_INT
+                < android.os.Build.VERSION_CODES.Q) {
+            // Not supported; silently succeed.
+            result.success(null);
+            return;
+        }
+
+        List<Map<String, Number>> rectsArg = call.argument("rects");
+        if (rectsArg == null) {
+            result.success(null);
+            return;
+        }
+
+        List<Rect> rects = new ArrayList<>();
+        for (Map<String, Number> map : rectsArg) {
+            int left = map.get("left").intValue();
+            int top = map.get("top").intValue();
+            int right = map.get("right").intValue();
+            int bottom = map.get("bottom").intValue();
+            rects.add(new Rect(left, top, right, bottom));
+        }
+
+        View rootView = getWindow().getDecorView();
+        rootView.setSystemGestureExclusionRects(rects);
+        result.success(null);
     }
 }

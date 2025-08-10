@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/services.dart';
 
 class NativeAndroidUtil {
@@ -24,6 +26,7 @@ class NativeAndroidUtil {
   static String _FIX_ROTATION = "fixRotation";
   static String _ENHANCE_DOCUMENT = "enhanceDocument";
   static String _POST_SCAN_IMAGE_PROCESSING = "postScanImageProcessing";
+  static String _SET_GESTURE_EXCLUSION_RECTS = "setGestureExclusionRects";
 
   static Future getImageSize(String path) async {
     await _ensureInitialized();
@@ -53,7 +56,11 @@ class NativeAndroidUtil {
     }
   }
 
-  static Future compress(String src, String dest, int desiredQuality) async {
+  static Future compress(
+    String src,
+    String dest,
+    int desiredQuality,
+  ) async {
     await _ensureInitialized();
     return _channel.invokeMethod(_COMPRESS, {
       "src": src,
@@ -70,18 +77,19 @@ class NativeAndroidUtil {
     });
   }
 
-  static Future cropImage(
-      {required String srcPath,
-      required String destPath,
-      required double tlX,
-      required double tlY,
-      required double trX,
-      required double trY,
-      required double blX,
-      required double blY,
-      required double brX,
-      required double brY,
-      bool enhance = false}) async {
+  static Future cropImage({
+    required String srcPath,
+    required String destPath,
+    required double tlX,
+    required double tlY,
+    required double trX,
+    required double trY,
+    required double blX,
+    required double blY,
+    required double brX,
+    required double brY,
+    bool enhance = false,
+  }) async {
     await _ensureInitialized();
     return _channel.invokeMethod(_CROP_IMAGE, {
       "srcPath": srcPath,
@@ -98,8 +106,10 @@ class NativeAndroidUtil {
     });
   }
 
-  static Future fixRotation(
-      {required String srcPath, required String destPath}) async {
+  static Future fixRotation({
+    required String srcPath,
+    required String destPath,
+  }) async {
     await _ensureInitialized();
     return _channel.invokeMethod(_FIX_ROTATION, {
       "srcPath": srcPath,
@@ -108,7 +118,9 @@ class NativeAndroidUtil {
   }
 
   static Future<String> enhanceDocument(
-      String imagePath, String filterType) async {
+    String imagePath,
+    String filterType,
+  ) async {
     await _ensureInitialized();
     try {
       final result = await _channel.invokeMethod(_ENHANCE_DOCUMENT, {
@@ -122,7 +134,10 @@ class NativeAndroidUtil {
     }
   }
 
-  static Future<String> postScanImageProcessing(String src, String dest) async {
+  static Future<String> postScanImageProcessing(
+    String src,
+    String dest,
+  ) async {
     await _ensureInitialized();
     try {
       final result = await _channel.invokeMethod(_POST_SCAN_IMAGE_PROCESSING, {
@@ -133,6 +148,34 @@ class NativeAndroidUtil {
     } catch (e) {
       print('Error post-scan image processing: $e');
       rethrow;
+    }
+  }
+
+  // NEW: Set Android system gesture exclusion rects (Android 10+).
+  // Use physical pixels in the root view coordinate space.
+  static Future<void> setGestureExclusionRects(
+    List<Rect> rects,
+  ) async {
+    if (!Platform.isAndroid) return;
+    await _ensureInitialized();
+
+    final payload = rects
+        .map((r) => {
+              'left': r.left.round(),
+              'top': r.top.round(),
+              'right': r.right.round(),
+              'bottom': r.bottom.round(),
+            })
+        .toList();
+
+    try {
+      await _channel.invokeMethod(
+        _SET_GESTURE_EXCLUSION_RECTS,
+        {'rects': payload},
+      );
+    } catch (e) {
+      // Ignore if not supported on device/OS
+      print('setGestureExclusionRects error: $e');
     }
   }
 }

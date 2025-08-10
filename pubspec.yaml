@@ -42,6 +42,7 @@ dependencies:
   sqflite:
   url_launcher:
   vector_math: 
+  android_gesture_exclusion:
 
 dev_dependencies:
   flutter_test:
