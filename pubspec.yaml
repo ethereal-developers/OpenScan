@@ -32,8 +32,7 @@ dependencies:
   image:
   image_picker:
   intl:
-  multi_image_picker:
-  open_filex:
+  open_filex: ^4.7.0
   path:
   path_provider:
   pdf:
@@ -41,7 +40,7 @@ dependencies:
   quick_actions:
   reorderables:
   sensors_plus:
-  share_extend:
+  share_plus:
   shared_preferences:
   simple_animated_icon:
   sqflite:
