@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/view/extensions.dart';
 // import 'package:flutter_neumorphic/flutter_neumorphic.dart' as neumorphic;
 import 'package:url_launcher/url_launcher.dart';

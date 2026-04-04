@@ -53,7 +53,7 @@ class _ViewScreenState extends State<ViewScreen> {
         },
         child: Scaffold(
           key: scaffoldKey,
-          backgroundColor: Theme.of(context).colorScheme.background,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           appBar: AppBar(
             elevation: 0,
             backgroundColor: Theme.of(context).primaryColor,

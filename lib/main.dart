@@ -1,11 +1,11 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/core/theme/appTheme.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/l10n/l10n.dart';
 
 void main() async {
