@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
 import 'package:vector_math/vector_math.dart' as vector;
@@ -348,11 +348,11 @@ class _CropImageState extends State<CropImage> {
             builder: (context, bool _imageRendered, _) {
               return MaterialButton(
                 onPressed: _imageRendered
-                    ? () {
+                    ? () async {
                         setState(() {
                           cropLoading = true;
                         });
-                        _cropScreen.crop();
+                        await _cropScreen.crop();
                         setState(() {
                           cropLoading = false;
                         });

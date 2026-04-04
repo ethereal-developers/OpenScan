@@ -25,8 +25,6 @@ class CropScreenState {
   Size imageSizeNative = Size(600.0, 600.0);
   late double tSlope, bSlope, rSlope, lSlope;
 
-  int errorOffset = 92;
-
   /// Scales image up or down while rotating
   bool scaleImage = false;
 
@@ -122,7 +120,7 @@ class CropScreenState {
   updatePolygon() {
     debugPrint('Updated Point (local) => ${updatedPoint.value.localPosition}');
     debugPrint(
-        'Updated Point (global) => ${updatedPoint.value.globalPosition}');
+        'Updated Point (global) => ${updatedPoint.value.localPosition}');
     debugPrint('TL => $tl');
     debugPrint('TR => $tr');
     debugPrint('BL => $bl');
@@ -130,9 +128,9 @@ class CropScreenState {
 
     if (movingPoint.name == 'tl') {
       Offset tlTemp =
-          constraintPointToBoundary(updatedPoint.value.globalPosition);
+          constraintPointToBoundary(updatedPoint.value.localPosition);
 
-      // localToGlobal(updatedPoint.value.globalPosition)
+      // localToGlobal(updatedPoint.value.localPosition)
       if (checkPolygon(tlTemp, br, tr, bl)) {
         if (!checkCrossover(tlTemp, tr, bl, br, t, b, l, r)) {
           tl = tlTemp;
@@ -143,7 +141,7 @@ class CropScreenState {
       }
     } else if (movingPoint.name == 'tr') {
       Offset trTemp =
-          constraintPointToBoundary(updatedPoint.value.globalPosition);
+          constraintPointToBoundary(updatedPoint.value.localPosition);
       if (checkPolygon(tl, br, trTemp, bl)) {
         if (!checkCrossover(tl, trTemp, bl, br, t, b, l, r)) {
           tr = trTemp;
@@ -154,7 +152,7 @@ class CropScreenState {
       }
     } else if (movingPoint.name == 'bl') {
       Offset blTemp =
-          constraintPointToBoundary(updatedPoint.value.globalPosition);
+          constraintPointToBoundary(updatedPoint.value.localPosition);
       if (checkPolygon(tl, br, tr, blTemp)) {
         if (!checkCrossover(tl, tr, blTemp, br, t, b, l, r)) {
           bl = blTemp;
@@ -165,7 +163,7 @@ class CropScreenState {
       }
     } else if (movingPoint.name == 'br') {
       Offset brTemp =
-          constraintPointToBoundary(updatedPoint.value.globalPosition);
+          constraintPointToBoundary(updatedPoint.value.localPosition);
       if (checkPolygon(tl, brTemp, tr, bl)) {
         if (!checkCrossover(tl, tr, bl, brTemp, t, b, l, r)) {
           br = brTemp;
@@ -176,7 +174,7 @@ class CropScreenState {
       }
     } else if (movingPoint.name == 't') {
       double yDisplacement =
-          constraintPointToBoundary(updatedPoint.value.globalPosition).dy -
+          constraintPointToBoundary(updatedPoint.value.localPosition).dy -
               t.dy;
 
       Offset tlTemp = updatePoint(tl, bl, yDisplacement, 'x', lSlope);
@@ -197,7 +195,7 @@ class CropScreenState {
       }
     } else if (movingPoint.name == 'b') {
       double yDisplacement =
-          constraintPointToBoundary(updatedPoint.value.globalPosition).dy -
+          constraintPointToBoundary(updatedPoint.value.localPosition).dy -
               b.dy;
 
       Offset blTemp = updatePoint(bl, tl, yDisplacement, 'x', lSlope);
@@ -218,7 +216,7 @@ class CropScreenState {
       }
     } else if (movingPoint.name == 'l') {
       double xDisplacement =
-          constraintPointToBoundary(updatedPoint.value.globalPosition).dx -
+          constraintPointToBoundary(updatedPoint.value.localPosition).dx -
               l.dx;
 
       Offset tlTemp = updatePoint(tl, tr, xDisplacement, 'y', tSlope);
@@ -239,7 +237,7 @@ class CropScreenState {
       }
     } else if (movingPoint.name == 'r') {
       double xDisplacement =
-          constraintPointToBoundary(updatedPoint.value.globalPosition).dx -
+          constraintPointToBoundary(updatedPoint.value.localPosition).dx -
               r.dx;
 
       Offset trTemp = updatePoint(tr, tl, xDisplacement, 'y', tSlope);
@@ -280,16 +278,19 @@ class CropScreenState {
 
   /// Crops and returns the image
   crop() async {
+    final scaleX = imageSize!.width / canvasSize.width;
+    final scaleY = imageSize!.height / canvasSize.height;
+
     bool result = await NativeAndroidUtil.cropImage(
       path: imageFile!.path,
-      tlX: (imageSize!.width / canvasSize.width) * tl.dx,
-      tlY: (imageSize!.height / canvasSize.height) * tl.dy,
-      trX: (imageSize!.width / canvasSize.width) * tr.dx,
-      trY: (imageSize!.height / canvasSize.height) * tr.dy,
-      blX: (imageSize!.width / canvasSize.width) * bl.dx,
-      blY: (imageSize!.height / canvasSize.height) * bl.dy,
-      brX: (imageSize!.width / canvasSize.width) * br.dx,
-      brY: (imageSize!.height / canvasSize.height) * br.dy,
+      tlX: scaleX * (tl.dx - canvasOffset.dx),
+      tlY: scaleY * (tl.dy - canvasOffset.dy),
+      trX: scaleX * (tr.dx - canvasOffset.dx),
+      trY: scaleY * (tr.dy - canvasOffset.dy),
+      blX: scaleX * (bl.dx - canvasOffset.dx),
+      blY: scaleY * (bl.dy - canvasOffset.dy),
+      brX: scaleX * (br.dx - canvasOffset.dx),
+      brY: scaleY * (br.dy - canvasOffset.dy),
     );
 
     debugPrint('cropper: ${imageFile!.path}');
@@ -297,40 +298,34 @@ class CropScreenState {
 
   /// Gets the current moving point
   getMovingPoint(DragStartDetails startDetails) {
-    if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, tl.dx, tl.dy + errorOffset) <
-        pickupDistance)
+    final pos = startDetails.localPosition;
+    if (getDistance(pos.dx, pos.dy, tl.dx, tl.dy) < pickupDistance) {
       movingPoint.name = 'tl';
-    else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, tr.dx, tr.dy + errorOffset) <
-        pickupDistance)
+      movingPoint.offset = tl;
+    } else if (getDistance(pos.dx, pos.dy, tr.dx, tr.dy) < pickupDistance) {
       movingPoint.name = 'tr';
-    else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, bl.dx, bl.dy + errorOffset) <
-        pickupDistance)
+      movingPoint.offset = tr;
+    } else if (getDistance(pos.dx, pos.dy, bl.dx, bl.dy) < pickupDistance) {
       movingPoint.name = 'bl';
-    else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, br.dx, br.dy + errorOffset) <
-        pickupDistance)
+      movingPoint.offset = bl;
+    } else if (getDistance(pos.dx, pos.dy, br.dx, br.dy) < pickupDistance) {
       movingPoint.name = 'br';
-    else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, t.dx, t.dy + errorOffset) <
-        pickupDistance)
+      movingPoint.offset = br;
+    } else if (getDistance(pos.dx, pos.dy, t.dx, t.dy) < pickupDistance) {
       movingPoint.name = 't';
-    else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, b.dx, b.dy + errorOffset) <
-        pickupDistance)
+      movingPoint.offset = t;
+    } else if (getDistance(pos.dx, pos.dy, b.dx, b.dy) < pickupDistance) {
       movingPoint.name = 'b';
-    else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, l.dx, l.dy + errorOffset) <
-        pickupDistance)
+      movingPoint.offset = b;
+    } else if (getDistance(pos.dx, pos.dy, l.dx, l.dy) < pickupDistance) {
       movingPoint.name = 'l';
-    else if (getDistance(startDetails.globalPosition.dx,
-            startDetails.globalPosition.dy, r.dx, r.dy + errorOffset) <
-        pickupDistance)
+      movingPoint.offset = l;
+    } else if (getDistance(pos.dx, pos.dy, r.dx, r.dy) < pickupDistance) {
       movingPoint.name = 'r';
-    else
+      movingPoint.offset = r;
+    } else {
       movingPoint.name = 'none';
+    }
   }
 
   /// Calculates displacement of point wrt to slope
@@ -349,10 +344,10 @@ class CropScreenState {
   ) {
     if (updateAxis == 'x') {
       double x1 = p2.dx - ((p2.dy - p1.dy + displacement) / slope);
-      p1 = Offset(x1, p1.dy + displacement + errorOffset);
+      p1 = Offset(x1, p1.dy + displacement);
     } else if (updateAxis == 'y') {
       double y1 = p2.dy - ((p2.dx - p1.dx + displacement) * slope);
-      p1 = Offset(p1.dx + displacement, y1 + errorOffset);
+      p1 = Offset(p1.dx + displacement, y1);
     }
     p1 = constraintPointToBoundary(p1);
     return p1;
@@ -400,12 +395,8 @@ class CropScreenState {
   ///
   /// Returns: Corrected Point [Offset]
   Offset constraintPointToBoundary(Offset point) {
-    // double topBoundary = 0;
-    // double bottomBoundary = canvasSize.height;
-    // double leftBoundary = 0;
-    // double rightBoundary = canvasSize.width;
-    double topBoundary = canvasOffset.dy + errorOffset;
-    double bottomBoundary = canvasOffset.dy + errorOffset + canvasSize.height;
+    double topBoundary = canvasOffset.dy;
+    double bottomBoundary = canvasOffset.dy + canvasSize.height;
     double leftBoundary = canvasOffset.dx;
     double rightBoundary = canvasOffset.dx + canvasSize.width;
 
@@ -417,7 +408,6 @@ class CropScreenState {
     point = Offset(
         point.dx, (point.dy > bottomBoundary) ? bottomBoundary : point.dy);
 
-    point = Offset(point.dx, point.dy - errorOffset);
     return point;
   }
 
@@ -451,7 +441,6 @@ class CropScreenState {
     imageSize =
         Size(decodedImage.width.toDouble(), decodedImage.height.toDouble());
     aspectRatio = imageSize!.width / imageSize!.height;
-    getRenderedBoxSize();
     debugPrint(
         'Orginal Image=> ${imageSize!.width} / ${imageSize!.height} = $aspectRatio');
   }
