@@ -348,11 +348,11 @@ class _CropImageState extends State<CropImage> {
             builder: (context, bool _imageRendered, _) {
               return MaterialButton(
                 onPressed: _imageRendered
-                    ? () {
+                    ? () async {
                         setState(() {
                           cropLoading = true;
                         });
-                        _cropScreen.crop();
+                        await _cropScreen.crop();
                         setState(() {
                           cropLoading = false;
                         });
