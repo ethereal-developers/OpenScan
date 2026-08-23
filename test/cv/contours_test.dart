@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -96,6 +97,90 @@ void main() {
         }
       }
       expect(findDocumentQuad(mask, width, height), isNull);
+    });
+  });
+
+  group('bestCornerAssignment', () {
+    test('re-labels an unordered point set to match the closest reference slot',
+        () {
+      const reference = Quad(
+        topLeft: Pt(10, 10),
+        topRight: Pt(90, 10),
+        bottomRight: Pt(90, 90),
+        bottomLeft: Pt(10, 90),
+      );
+      // Same 4 points, deliberately shuffled and slightly perturbed, so
+      // naive index-order assignment would be wrong.
+      final shuffled = const [
+        Pt(91, 91), // near bottomRight
+        Pt(9, 9), // near topLeft
+        Pt(9, 91), // near bottomLeft
+        Pt(91, 9), // near topRight
+      ];
+
+      final result = bestCornerAssignment(shuffled, reference);
+
+      expect(result.quad.topLeft, const Pt(9, 9));
+      expect(result.quad.topRight, const Pt(91, 9));
+      expect(result.quad.bottomRight, const Pt(91, 91));
+      expect(result.quad.bottomLeft, const Pt(9, 91));
+      expect(result.totalDistance, closeTo(4 * sqrt(2), 0.01));
+    });
+  });
+
+  group('findDocumentQuad with previousQuad biasing', () {
+    /// Builds a mask with two disjoint filled rectangles: a larger one
+    /// near the top-left (found first, since components are tried largest
+    /// -> smallest) and a smaller one near the bottom-right, both well
+    /// past the 5% area-ratio floor for a 200x200 mask (2000px).
+    Uint8List _twoRectangleMask(int width, int height) {
+      final mask = Uint8List(width * height);
+      void fill(int x0, int y0, int x1, int y1) {
+        for (int y = y0; y < y1; y++) {
+          for (int x = x0; x < x1; x++) {
+            mask[y * width + x] = 1;
+          }
+        }
+      }
+
+      fill(10, 10, 90, 60); // larger: 80x50 = 4000px
+      fill(120, 120, 175, 165); // smaller: 55x45 = 2475px
+      return mask;
+    }
+
+    test('without previousQuad, returns the first (largest) valid candidate',
+        () {
+      const width = 200, height = 200;
+      final mask = _twoRectangleMask(width, height);
+
+      final quad = findDocumentQuad(mask, width, height);
+
+      expect(quad, isNotNull);
+      // The larger top-left rectangle should win.
+      expect(quad!.topLeft.x, lessThan(100));
+      expect(quad.topLeft.y, lessThan(100));
+    });
+
+    test('with previousQuad near the smaller rectangle, that one is chosen',
+        () {
+      const width = 200, height = 200;
+      final mask = _twoRectangleMask(width, height);
+
+      const previousQuad = Quad(
+        topLeft: Pt(120, 120),
+        topRight: Pt(174, 120),
+        bottomRight: Pt(174, 164),
+        bottomLeft: Pt(120, 164),
+      );
+
+      final quad = findDocumentQuad(mask, width, height,
+          previousQuad: previousQuad);
+
+      expect(quad, isNotNull);
+      // The smaller bottom-right rectangle should now win, since it's the
+      // valid candidate closest to previousQuad.
+      expect(quad!.topLeft.x, greaterThan(100));
+      expect(quad.topLeft.y, greaterThan(100));
     });
   });
 }

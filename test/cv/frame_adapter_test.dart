@@ -1,8 +1,10 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:camera_platform_interface/camera_platform_interface.dart'
     show ImageFormatGroup;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:openscan/core/cv/document_detector.dart';
 import 'package:openscan/core/cv/frame_adapter.dart';
 
 /// Builds a Y-plane buffer with a deliberate row stride larger than the
@@ -124,6 +126,79 @@ void main() {
       // Pure red -> luminance = round(0.2126 * 255) = 54.
       final expected = (0.2126 * 255).round();
       expect(gray!.every((v) => v == expected), isTrue);
+    });
+  });
+
+  group('grayscaleFromFrame box-average downsampling', () {
+    test('reduces variance vs. nearest-neighbor on noisy input', () {
+      const srcW = 64, srcH = 64, bytesPerRow = 64;
+      final random = Random(42);
+      final yPlane = _buildPaddedYPlane(
+        width: srcW,
+        height: srcH,
+        bytesPerRow: bytesPerRow,
+        // Uncorrelated per-pixel noise around a mid-gray baseline —
+        // averaging a neighborhood should measurably reduce the spread of
+        // the downsampled values relative to picking one raw sample each.
+        valueAt: (x, y) => 128 + (random.nextInt(41) - 20),
+      );
+
+      final gray = grayscaleFromFrame(
+        yPlaneOrBgraBytes: yPlane,
+        bytesPerRow: bytesPerRow,
+        width: srcW,
+        height: srcH,
+        format: ImageFormatGroup.yuv420,
+        targetLongEdge: 16,
+      );
+      expect(gray, isNotNull);
+
+      const dstW = 16, dstH = 16;
+      final nearestNeighbor = Uint8List(dstW * dstH);
+      for (int y = 0; y < dstH; y++) {
+        final sy = (y * srcH / dstH).floor().clamp(0, srcH - 1);
+        for (int x = 0; x < dstW; x++) {
+          final sx = (x * srcW / dstW).floor().clamp(0, srcW - 1);
+          nearestNeighbor[y * dstW + x] = yPlane[sy * bytesPerRow + sx];
+        }
+      }
+
+      double variance(Uint8List data) {
+        final mean = data.reduce((a, b) => a + b) / data.length;
+        final sumSq =
+            data.fold<double>(0, (s, v) => s + pow(v - mean, 2).toDouble());
+        return sumSq / data.length;
+      }
+
+      expect(variance(gray!), lessThan(variance(nearestNeighbor)));
+    });
+
+    test('still detects a document-shaped step edge after downsampling', () {
+      const srcW = 640, srcH = 480, bytesPerRow = 640;
+      final yPlane = _buildPaddedYPlane(
+        width: srcW,
+        height: srcH,
+        bytesPerRow: bytesPerRow,
+        valueAt: (x, y) =>
+            (x >= 100 && x < 540 && y >= 80 && y < 400) ? 230 : 20,
+      );
+
+      final gray = grayscaleFromFrame(
+        yPlaneOrBgraBytes: yPlane,
+        bytesPerRow: bytesPerRow,
+        width: srcW,
+        height: srcH,
+        format: ImageFormatGroup.yuv420,
+        targetLongEdge: 320,
+      );
+      expect(gray, isNotNull);
+
+      const dstW = 320, dstH = 240; // 640x480 scaled to targetLongEdge=320
+      final quad = detectQuadFromGrayscale(gray!, dstW, dstH);
+
+      expect(quad, isNotNull,
+          reason: 'box-averaged downsample should not blur the step edge '
+              'away entirely');
     });
   });
 

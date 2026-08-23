@@ -168,9 +168,12 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     if (fromGallery) {
       imageList = await (fileOperations.openGallery());
     } else if (liveScan) {
-      File? image = await captureWithLiveScan(context);
-      if (image != null) {
-        imageList = [await imageCropper(context, image)];
+      List<File>? images = await captureWithLiveScan(context);
+      if (images != null && images.isNotEmpty) {
+        imageList = [];
+        for (File image in images) {
+          imageList.add(await imageCropper(context, image));
+        }
       }
     } else {
       File? image = await fileOperations.openCamera();
@@ -201,12 +204,18 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         }
 
         emitState(state);
-
-        await fileOperations.deleteTemporaryImages();
-        if (quickScan) {
-          return createImage(context, quickScan: quickScan);
-        }
       }
+    }
+
+    // Run once after every image in this call's imageList has been copied
+    // to permanent storage, not per-image inside the loop above: it wipes
+    // the whole OS temp/cache directory, which is also where
+    // still-unprocessed images in a multi-image imageList (batch live-scan,
+    // multi-select gallery import) live until their turn in the loop —
+    // deleting it mid-loop silently drops every image after the first.
+    await fileOperations.deleteTemporaryImages();
+    if (quickScan) {
+      return createImage(context, quickScan: quickScan);
     }
   }
 

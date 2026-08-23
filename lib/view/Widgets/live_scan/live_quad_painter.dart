@@ -10,29 +10,33 @@ import 'package:openscan/core/theme/appTheme.dart';
 class LiveQuadPainter extends CustomPainter {
   final List<Offset>? points; // [topLeft, topRight, bottomRight, bottomLeft]
 
-  LiveQuadPainter({required this.points});
+  /// Whether auto-capture is about to fire (document held stable long
+  /// enough), used to give the overlay a distinct "capturing soon" look.
+  final bool isImminent;
 
-  final Paint _fill = Paint()
-    ..color = AppTheme.secondaryColor.withValues(alpha: 0.15)
-    ..style = PaintingStyle.fill;
-
-  final Paint _stroke = Paint()
-    ..color = AppTheme.secondaryColor.withValues(alpha: 0.9)
-    ..strokeWidth = 3.0
-    ..strokeJoin = StrokeJoin.round
-    ..style = PaintingStyle.stroke;
+  LiveQuadPainter({required this.points, this.isImminent = false});
 
   @override
   void paint(Canvas canvas, Size size) {
     final pts = points;
     if (pts == null || pts.length != 4) return;
 
+    final color = isImminent ? Colors.greenAccent : AppTheme.secondaryColor;
+    final fill = Paint()
+      ..color = color.withValues(alpha: 0.15)
+      ..style = PaintingStyle.fill;
+    final stroke = Paint()
+      ..color = color.withValues(alpha: 0.9)
+      ..strokeWidth = isImminent ? 5.0 : 3.0
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
     final path = Path()..addPolygon(pts, true);
-    canvas.drawPath(path, _fill);
-    canvas.drawPath(path, _stroke);
+    canvas.drawPath(path, fill);
+    canvas.drawPath(path, stroke);
   }
 
   @override
   bool shouldRepaint(covariant LiveQuadPainter oldDelegate) =>
-      oldDelegate.points != points;
+      oldDelegate.points != points || oldDelegate.isImminent != isImminent;
 }

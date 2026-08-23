@@ -26,12 +26,24 @@ class _FrameResult {
 /// Worker isolate entry point. Runs the same pure detection pipeline as
 /// the one-shot file-based detector (`detectQuadFromGrayscale`), just fed
 /// pre-downsampled grayscale frames instead of a decoded photo.
+///
+/// Keeps the last successfully detected quad in local closure state (raw
+/// sensor-space, pre-rotation/normalization — the coordinate system this
+/// isolate's own `detectQuadFromGrayscale` calls operate in) and feeds it
+/// back in as `previousQuad` on the next frame, so the epsilon-sweep
+/// candidate selection can bias toward whatever was last seen instead of
+/// picking the first candidate that happens to pass. This is local,
+/// isolate-only state — it never crosses the isolate boundary, so the
+/// `_FrameRequest`/`_FrameResult` message protocol is unchanged.
 void _liveDetectionIsolateEntry(SendPort mainSendPort) {
   final workerReceivePort = ReceivePort();
   mainSendPort.send(workerReceivePort.sendPort);
+  Quad? previousQuad;
   workerReceivePort.listen((message) {
     final req = message as _FrameRequest;
-    final quad = detectQuadFromGrayscale(req.gray, req.width, req.height);
+    final quad = detectQuadFromGrayscale(req.gray, req.width, req.height,
+        previousQuad: previousQuad);
+    if (quad != null) previousQuad = quad;
     mainSendPort.send(_FrameResult(req.requestId, quad));
   });
 }

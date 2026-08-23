@@ -6,17 +6,22 @@ import 'package:flutter/material.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/cv/frame_adapter.dart';
 import 'package:openscan/view/Widgets/live_scan/live_quad_painter.dart';
+import 'package:openscan/view/screens/live_scan/auto_capture_detector.dart';
 import 'package:openscan/view/screens/live_scan/live_scan_controller.dart';
+import 'package:openscan/view/screens/live_scan/quad_smoother.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Pushes the live-scan route and resolves with the captured photo, or
-/// null if the user backed out without capturing — mirrors
-/// `imageCropper()`'s existing pop-with-value contract in
-/// `crop_screen.dart`. The captured photo is NOT pre-cropped: it goes
-/// through the same unchanged crop screen as every other capture flow,
-/// which reruns detection fresh at full resolution. The live overlay is
-/// guidance-only.
-Future<File?> captureWithLiveScan(BuildContext context) async {
+const _kAutoCapturePrefKey = 'liveScanAutoCaptureEnabled';
+
+/// Pushes the live-scan route and resolves with the captured photos (one
+/// per page, in capture order), or null if the user backed out without
+/// capturing anything — mirrors `imageCropper()`'s existing pop-with-value
+/// contract in `crop_screen.dart`. The captured photos are NOT pre-cropped:
+/// each goes through the same unchanged crop screen as every other capture
+/// flow, which reruns detection fresh at full resolution. The live overlay
+/// is guidance-only.
+Future<List<File>?> captureWithLiveScan(BuildContext context) async {
   // Callers (directory_cubit.dart's createImage) can invoke this
   // synchronously from within a BlocProvider's create: callback, which
   // runs during the new route's initial build — pushing another route
@@ -24,9 +29,9 @@ Future<File?> captureWithLiveScan(BuildContext context) async {
   // called during build"). Deferring to the next frame, the same fix
   // already used for a similar build-time-side-effect issue in
   // crop_screen.dart, avoids the re-entrant Navigator.push.
-  final completer = Completer<File?>();
+  final completer = Completer<List<File>?>();
   WidgetsBinding.instance.addPostFrameCallback((_) async {
-    final result = await Navigator.push<File?>(
+    final result = await Navigator.push<List<File>?>(
       context,
       MaterialPageRoute(builder: (context) => LiveScanScreen()),
     );
@@ -43,6 +48,8 @@ class LiveScanScreen extends StatefulWidget {
 class _LiveScanScreenState extends State<LiveScanScreen>
     with WidgetsBindingObserver {
   final LiveScanController _liveScanController = LiveScanController();
+  final QuadSmoother _quadSmoother = QuadSmoother();
+  late final AutoCaptureDetector _autoCaptureDetector;
 
   CameraController? _cameraController;
   Future<void>? _initializeFuture;
@@ -51,14 +58,37 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   bool _permissionDenied = false;
   bool _cameraError = false;
 
+  // Batch capture: pages accumulated in this live-scan session so far.
+  // Plain State fields — untouched by the camera controller being
+  // disposed/recreated across app-lifecycle pause/resume, and the
+  // underlying photo files are already persisted to disk by
+  // takePicture(), so this survives a background/resume cycle.
+  final List<File> _capturedFiles = [];
+
+  bool _autoCaptureEnabled = true;
+  bool _autoCaptureImminent = false;
+  bool _torchOn = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _autoCaptureDetector = AutoCaptureDetector(
+      onStable: _onAutoCaptureStable,
+      onImminentChanged: (imminent) {
+        if (mounted) setState(() => _autoCaptureImminent = imminent);
+      },
+    );
+    _liveScanController.latestQuad.addListener(_onLatestQuadChanged);
+    _quadSmoother.smoothedQuad.addListener(_onSmoothedQuadChanged);
     _initializeFuture = _initialize();
   }
 
   Future<void> _initialize() async {
+    final prefs = await SharedPreferences.getInstance();
+    _autoCaptureEnabled = prefs.getBool(_kAutoCapturePrefKey) ?? true;
+    _autoCaptureDetector.enabled = _autoCaptureEnabled;
+
     if (!await Permission.camera.isGranted) {
       final status = await Permission.camera.request();
       if (!status.isGranted) {
@@ -135,6 +165,23 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     _liveScanController.submitFrame(gray, w, h);
   }
 
+  void _onLatestQuadChanged() {
+    // Raw per-frame detections are noisy (see quad_smoother.dart's doc
+    // comment) — route them through QuadSmoother first; the painter and
+    // AutoCaptureDetector both consume its smoothed output instead of this
+    // raw value directly.
+    _quadSmoother.onRawQuad(_liveScanController.latestQuad.value);
+  }
+
+  void _onSmoothedQuadChanged() {
+    _autoCaptureDetector.onQuadUpdate(_quadSmoother.smoothedQuad.value);
+  }
+
+  void _onAutoCaptureStable() {
+    if (_capturing) return;
+    _onCapturePressed();
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Handle `resumed` first and unconditionally: by the time it fires,
@@ -172,6 +219,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       controller.stopImageStream();
     }
     controller.dispose();
+    // The torch dies with the disposed controller; a fresh controller on
+    // resume always starts with flash off, so reset the flag here rather
+    // than silently relighting it without the user re-tapping.
+    _torchOn = false;
     // Rebuild immediately so no widget keeps referencing the disposed
     // controller — without this, the stale CameraPreview from the last
     // build stays on screen until something else triggers a rebuild,
@@ -187,13 +238,53 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     try {
       await controller.stopImageStream();
       final shot = await controller.takePicture();
+      _capturedFiles.add(File(shot.path));
+      _autoCaptureDetector.notifyCaptured();
+      // A new document after this one shouldn't inherit the outgoing
+      // one's filter velocity/lag.
+      _quadSmoother.reset();
       if (!mounted) return;
-      Navigator.pop(context, File(shot.path));
+      await controller.startImageStream(_onFrame);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _capturing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Couldn't capture — please try again.")),
+      );
+    } finally {
+      if (mounted) setState(() => _capturing = false);
+    }
+  }
+
+  void _onDonePressed() {
+    Navigator.pop(
+      context,
+      _capturedFiles.isEmpty ? null : List<File>.from(_capturedFiles),
+    );
+  }
+
+  void _onUndoLastPressed() {
+    if (_capturedFiles.isEmpty) return;
+    setState(() => _capturedFiles.removeLast());
+  }
+
+  Future<void> _toggleAutoCapture() async {
+    setState(() => _autoCaptureEnabled = !_autoCaptureEnabled);
+    _autoCaptureDetector.enabled = _autoCaptureEnabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kAutoCapturePrefKey, _autoCaptureEnabled);
+  }
+
+  Future<void> _toggleTorch() async {
+    final controller = _cameraController;
+    if (controller == null) return;
+    final newMode = _torchOn ? FlashMode.off : FlashMode.torch;
+    try {
+      await controller.setFlashMode(newMode);
+      if (mounted) setState(() => _torchOn = !_torchOn);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Torch isn't available on this device.")),
       );
     }
   }
@@ -201,6 +292,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _liveScanController.latestQuad.removeListener(_onLatestQuadChanged);
+    _quadSmoother.smoothedQuad.removeListener(_onSmoothedQuadChanged);
     // _onCapturePressed already stops the stream before takePicture(); a
     // second stopImageStream() call throws CameraException since the
     // plugin doesn't allow stopping an already-stopped stream.
@@ -224,6 +317,28 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             icon: Icon(Icons.arrow_back_ios),
             onPressed: () => Navigator.pop(context, null),
           ),
+          actions: [
+            IconButton(
+              tooltip: _autoCaptureEnabled
+                  ? 'Auto-capture on'
+                  : 'Auto-capture off',
+              icon: Icon(
+                _autoCaptureEnabled
+                    ? Icons.auto_awesome
+                    : Icons.auto_awesome_outlined,
+                color: Colors.white,
+              ),
+              onPressed: _toggleAutoCapture,
+            ),
+            IconButton(
+              tooltip: _torchOn ? 'Torch on' : 'Torch off',
+              icon: Icon(
+                _torchOn ? Icons.flash_on : Icons.flash_off,
+                color: Colors.white,
+              ),
+              onPressed: _cameraController != null ? _toggleTorch : null,
+            ),
+          ],
         ),
         body: _permissionDenied
             ? _buildMessage('Camera permission is required for live scan.')
@@ -255,7 +370,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                         builder: (context, constraints) {
                           final size = constraints.biggest;
                           return ValueListenableBuilder(
-                            valueListenable: _liveScanController.latestQuad,
+                            valueListenable: _quadSmoother.smoothedQuad,
                             builder: (context, quad, _) {
                               if (quad == null) return const SizedBox.shrink();
                               return CustomPaint(
@@ -264,6 +379,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                                       .map((p) => Offset(
                                           p.x * size.width, p.y * size.height))
                                       .toList(),
+                                  isImminent: _autoCaptureImminent,
                                 ),
                               );
                             },
@@ -278,15 +394,58 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           child: Container(
             color: Colors.black,
             height: 90,
-            child: Center(
-              child: _capturing
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : IconButton(
-                      iconSize: 64,
-                      icon: const Icon(Icons.camera, color: Colors.white),
-                      onPressed:
-                          _cameraController != null ? _onCapturePressed : null,
-                    ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        tooltip: 'Undo last capture',
+                        icon: const Icon(Icons.undo, color: Colors.white),
+                        onPressed: _capturedFiles.isEmpty
+                            ? null
+                            : _onUndoLastPressed,
+                      ),
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Colors.white24,
+                        child: Text(
+                          '${_capturedFiles.length}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _capturing
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : GestureDetector(
+                        onLongPress: _toggleAutoCapture,
+                        child: IconButton(
+                          iconSize: 64,
+                          icon: const Icon(Icons.camera, color: Colors.white),
+                          onPressed: _cameraController != null
+                              ? _onCapturePressed
+                              : null,
+                        ),
+                      ),
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: _onDonePressed,
+                        child: const Text(
+                          'Done',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),

@@ -60,9 +60,17 @@ Uint8List? grayscaleFromFrame({
 }
 
 /// The Y (luma) plane of a YUV420 frame is already grayscale — no color
-/// conversion needed, just stride-aware nearest-neighbor downsampling.
-/// [bytesPerRow] may be larger than [width] due to platform padding, so
-/// every row must be indexed by its actual stride, never by [width].
+/// conversion needed. Downsamples via a fixed 3x3 box average centered on
+/// each destination pixel's nearest source pixel, rather than a single
+/// nearest-neighbor sample: at live-scan's ~6x reduction ratio (e.g.
+/// 1920x1080 -> ~320x180), nearest-neighbor sampling discards ~97% of the
+/// source pixels and aliases per-pixel sensor noise straight into the
+/// downsampled image, which then varies frame-to-frame independent of any
+/// real scene change and feeds directly into Sobel/Otsu downstream —
+/// averaging a small neighborhood suppresses that noise for a bounded,
+/// fixed per-pixel cost (9 reads instead of 1). [bytesPerRow] may be
+/// larger than [width] due to platform padding, so every row must be
+/// indexed by its actual stride, never by [width].
 Uint8List _downsampleYPlane(
   Uint8List yPlane,
   int bytesPerRow,
@@ -73,11 +81,20 @@ Uint8List _downsampleYPlane(
 ) {
   final dst = Uint8List(dstW * dstH);
   for (int y = 0; y < dstH; y++) {
-    final sy = (y * srcH / dstH).floor().clamp(0, srcH - 1);
-    final rowOffset = sy * bytesPerRow;
+    final sy0 = (y * srcH / dstH).floor().clamp(0, srcH - 1);
     for (int x = 0; x < dstW; x++) {
-      final sx = (x * srcW / dstW).floor().clamp(0, srcW - 1);
-      dst[y * dstW + x] = yPlane[rowOffset + sx];
+      final sx0 = (x * srcW / dstW).floor().clamp(0, srcW - 1);
+      int sum = 0, count = 0;
+      for (int dy = -1; dy <= 1; dy++) {
+        final sy = (sy0 + dy).clamp(0, srcH - 1);
+        final rowOffset = sy * bytesPerRow;
+        for (int dx = -1; dx <= 1; dx++) {
+          final sx = (sx0 + dx).clamp(0, srcW - 1);
+          sum += yPlane[rowOffset + sx];
+          count++;
+        }
+      }
+      dst[y * dstW + x] = (sum / count).round();
     }
   }
   return dst;
@@ -85,7 +102,12 @@ Uint8List _downsampleYPlane(
 
 /// Converts BGRA8888 (iOS) to grayscale using the same luminance weights
 /// as [edge_detection.dart]'s `rgbaToGrayscale`, with byte order swapped
-/// and stride-aware indexing (bytesPerRow may exceed width*4).
+/// and stride-aware indexing (bytesPerRow may exceed width*4). Same 3x3
+/// box-average downsampling rationale as [_downsampleYPlane] above —
+/// averaged in linear-luma space (compute grayscale per source tap, then
+/// average) rather than averaging raw B/G/R bytes first, so the result is
+/// identical in spirit to averaging N independently-converted grayscale
+/// samples.
 Uint8List _downsampleBgra(
   Uint8List bgra,
   int bytesPerRow,
@@ -96,14 +118,23 @@ Uint8List _downsampleBgra(
 ) {
   final dst = Uint8List(dstW * dstH);
   for (int y = 0; y < dstH; y++) {
-    final sy = (y * srcH / dstH).floor().clamp(0, srcH - 1);
-    final rowOffset = sy * bytesPerRow;
+    final sy0 = (y * srcH / dstH).floor().clamp(0, srcH - 1);
     for (int x = 0; x < dstW; x++) {
-      final sx = (x * srcW / dstW).floor().clamp(0, srcW - 1);
-      final srcIdx = rowOffset + sx * 4;
-      final b = bgra[srcIdx], g = bgra[srcIdx + 1], r = bgra[srcIdx + 2];
-      dst[y * dstW + x] =
-          (0.2126 * r + 0.7152 * g + 0.0722 * b).round().clamp(0, 255);
+      final sx0 = (x * srcW / dstW).floor().clamp(0, srcW - 1);
+      double sum = 0;
+      int count = 0;
+      for (int dy = -1; dy <= 1; dy++) {
+        final sy = (sy0 + dy).clamp(0, srcH - 1);
+        final rowOffset = sy * bytesPerRow;
+        for (int dx = -1; dx <= 1; dx++) {
+          final sx = (sx0 + dx).clamp(0, srcW - 1);
+          final srcIdx = rowOffset + sx * 4;
+          final b = bgra[srcIdx], g = bgra[srcIdx + 1], r = bgra[srcIdx + 2];
+          sum += 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          count++;
+        }
+      }
+      dst[y * dstW + x] = (sum / count).round().clamp(0, 255);
     }
   }
   return dst;
