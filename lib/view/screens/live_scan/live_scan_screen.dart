@@ -418,8 +418,16 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         .clamp(_minExposureOffset, _maxExposureOffset);
     if (target == _currentExposureOffset) return;
     try {
-      final applied = await controller.setExposureOffset(target);
-      if (mounted) setState(() => _currentExposureOffset = applied);
+      // Not the return value: on Android, camera_android_camerax's
+      // setExposureOffset returns the raw exposure-compensation index
+      // (an integer step count) rather than the EV offset its own
+      // doc comment promises, so trusting it here corrupts
+      // _currentExposureOffset by a factor of ~1/stepSize and makes
+      // the offset run away upward regardless of which button was
+      // pressed. `target` is already the exact step-aligned EV value
+      // we asked the camera to apply, so use that instead.
+      await controller.setExposureOffset(target);
+      if (mounted) setState(() => _currentExposureOffset = target);
     } catch (_) {}
   }
 
