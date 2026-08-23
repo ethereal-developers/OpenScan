@@ -9,18 +9,22 @@ import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
 import 'package:vector_math/vector_math.dart' as vector;
 
-Future<File> imageCropper(BuildContext context, File image) async {
-  File? croppedImage;
-
-  await Navigator.push(
+/// Pushes the crop screen for [image].
+///
+/// Returns the cropped file (the same path — the crop is written in
+/// place), or null if the user backed out without cropping. Callers that
+/// want "unchanged image" semantics on cancel can fall back to [image]
+/// themselves; callers re-cropping an existing page use the null to leave
+/// that page alone.
+Future<File?> imageCropper(BuildContext context, File image) async {
+  return await Navigator.push<File?>(
     context,
     MaterialPageRoute(
       builder: (context) => CropImage(
         file: image,
       ),
     ),
-  ).then((value) => croppedImage = value);
-  return croppedImage ?? image;
+  );
 }
 
 class CropImage extends StatefulWidget {

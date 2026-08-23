@@ -113,6 +113,7 @@ class DatabaseHelper {
       CREATE TABLE $_dirTableName(
       idx INTEGER,
       img_path TEXT,
+      orig_img_path TEXT,
       filtered_image_path TEXT)
       ''');
   }
@@ -122,6 +123,7 @@ class DatabaseHelper {
   /// Returns: Image records [List]
   Future getImageData(String tableName) async {
     Database db = await instance.database;
+    await addOrigImageColumn(tableName);
     getDirectoryTableName(tableName);
     List<Map<String, dynamic>> data =
         await db.query(_dirTableName, orderBy: 'idx');
@@ -133,15 +135,23 @@ class DatabaseHelper {
 
   /// Updates image path in Directory table
   ///
+  /// Pass [origPath] to also record the uncropped original the image was
+  /// derived from; omitting it leaves whatever original is already stored
+  /// untouched, so a re-crop can keep pointing at the same original.
+  ///
   /// Returns: Records updated [int]
   Future<int> updateImagePath(
-      {required String tableName, String? imgPath, int? idx}) async {
+      {required String tableName,
+      String? imgPath,
+      String? origPath,
+      int? idx}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
     return await db.update(
         _dirTableName,
         {
           'img_path': imgPath,
+          if (origPath != null) 'orig_img_path': origPath,
         },
         where: 'idx == ?',
         whereArgs: [idx]);
@@ -161,6 +171,23 @@ class DatabaseHelper {
         },
         where: 'img_path == ?',
         whereArgs: [imgPath]);
+  }
+
+  /// Adds the uncropped-original column to directory tables created before
+  /// originals were retained. Rows in those tables keep a null
+  /// `orig_img_path`, which callers read as "no original kept — crop from
+  /// the stored image itself".
+  Future addOrigImageColumn(String tableName) async {
+    Database db = await instance.database;
+    getDirectoryTableName(tableName);
+
+    List tableData = await db.rawQuery('PRAGMA table_info($_dirTableName);');
+    bool columnAvailable =
+        tableData.any((column) => column['name'] == 'orig_img_path');
+    if (!columnAvailable) {
+      await db
+          .execute('ALTER TABLE $_dirTableName ADD COLUMN orig_img_path TEXT;');
+    }
   }
 
   /// Add filtered image path column to old directory
@@ -189,10 +216,14 @@ class DatabaseHelper {
   Future createImage(
       {required ImageOS image, required String tableName}) async {
     Database db = await instance.database;
+    // Directory tables created by older versions have no orig_img_path
+    // column; inserting one into them would throw.
+    await addOrigImageColumn(tableName);
     getDirectoryTableName(tableName);
     int index = await db.insert(_dirTableName, {
       'idx': image.idx,
       'img_path': image.imgPath,
+      'orig_img_path': image.origPath,
       // 'shouldCompress': image.shouldCompress,
     });
     debugPrint('Image Index: $index');

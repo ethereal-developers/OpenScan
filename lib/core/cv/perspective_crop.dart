@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 
+import 'contours.dart';
 import 'models/detection_result.dart';
 import 'models/point.dart';
 import 'models/quad.dart';
@@ -26,7 +27,58 @@ Future<CropResult> cropImageIsolateEntry(Map<String, dynamic> params) async {
     if (decoded == null) {
       return const CropFailure('Could not decode image');
     }
+    return await _cropDecoded(decoded, quad, path);
+  } catch (e) {
+    return CropFailure(e.toString());
+  }
+}
 
+/// Same warp as [cropImageIsolateEntry], but takes the quad in fractional
+/// [0,1] coordinates of a *portrait* frame — the space the live-scan
+/// overlay works in (see `rotateQuadForPortrait`) — and scales it onto the
+/// captured photo's real pixel dimensions here, where the image is decoded
+/// anyway. Lets the live-scan flow reuse the corners the user already
+/// agreed with on the preview without the UI layer needing to know the
+/// still photo's resolution.
+///
+/// If the photo decodes landscape while the overlay quad is portrait, the
+/// quad is rotated back into the photo's orientation rather than being
+/// stretched across the wrong axes.
+Future<CropResult> cropImageNormalizedIsolateEntry(
+    Map<String, dynamic> params) async {
+  final String path = params['path'] as String;
+  final Quad quad = params['quad'] as Quad;
+
+  try {
+    final bytes = await File(path).readAsBytes();
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) {
+      return const CropFailure('Could not decode image');
+    }
+
+    var normalized = quad;
+    if (decoded.width > decoded.height) {
+      // Inverse of rotateQuadForPortrait's fixed 90-degree rotation, in
+      // normalized space: portrait (x, y) came from sensor (y, 1 - x).
+      normalized = sortCorners(
+        normalized.points.map((p) => Pt(p.y, 1 - p.x)).toList(),
+      );
+    }
+
+    return await _cropDecoded(
+      decoded,
+      normalized.scaled(decoded.width.toDouble(), decoded.height.toDouble()),
+      path,
+    );
+  } catch (e) {
+    return CropFailure(e.toString());
+  }
+}
+
+/// Warps [quad] (in [decoded]'s own pixel coordinates) into an upright
+/// rectangle and writes the result to [path].
+Future<CropResult> _cropDecoded(img.Image decoded, Quad quad, String path) async {
+  try {
     final srcWidth = decoded.width;
     final srcHeight = decoded.height;
     final srcRgba = decoded.getBytes(order: img.ChannelOrder.rgba);

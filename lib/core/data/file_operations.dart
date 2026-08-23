@@ -89,9 +89,17 @@ class FileOperations {
 
   /// Saves image in directory and database
   ///
-  /// Returns: Saved image [File]
-  Future<File> saveImage(
-      {required File image, int? index, required String dirPath}) async {
+  /// [original] is the uncropped capture [image] was produced from. It is
+  /// stored next to the page (prefixed `orig_`) and recorded in the
+  /// database so a later re-crop can start from the full original rather
+  /// than from the already-cropped page. Pass null to keep no original.
+  ///
+  /// Returns: Saved image record [ImageOS], carrying both stored paths
+  Future<ImageOS> saveImage(
+      {required File image,
+      File? original,
+      int? index,
+      required String dirPath}) async {
     if (!await Directory(dirPath).exists()) {
       new Directory(dirPath).create();
       await database.createDirectory(
@@ -115,19 +123,34 @@ class FileOperations {
       );
     }
 
-    File tempPic = File("$dirPath/${DateTime.now()}.jpg");
-    image.copy(tempPic.path);
+    String stamp = DateTime.now().toString();
+    File tempPic = File("$dirPath/$stamp.jpg");
+    await image.copy(tempPic.path);
+
+    // Always a separate file, even when it's byte-identical to the page
+    // (an uncropped gallery import): cropping rewrites the page in place,
+    // so an original sharing its path would be destroyed by the first
+    // re-crop — the exact thing keeping originals is meant to prevent.
+    String? origPath;
+    if (original != null && original.existsSync()) {
+      origPath = "$dirPath/orig_$stamp.jpg";
+      await original.copy(origPath);
+    }
+
+    ImageOS saved = ImageOS(
+      imgPath: tempPic.path,
+      origPath: origPath,
+      idx: index,
+    );
+
     database.createImage(
-      image: ImageOS(
-        imgPath: tempPic.path,
-        idx: index,
-      ),
+      image: saved,
       tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
     );
     if (index == 1) {
       database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
     }
-    return tempPic;
+    return saved;
   }
 
   /// Delete the temporary files created by the image_picker package

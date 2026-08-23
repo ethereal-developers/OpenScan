@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/cv/frame_adapter.dart';
+import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/view/Widgets/live_scan/live_quad_painter.dart';
 import 'package:openscan/view/screens/live_scan/auto_capture_detector.dart';
 import 'package:openscan/view/screens/live_scan/live_scan_controller.dart';
@@ -14,14 +15,33 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _kAutoCapturePrefKey = 'liveScanAutoCaptureEnabled';
 
-/// Pushes the live-scan route and resolves with the captured photos (one
-/// per page, in capture order), or null if the user backed out without
+/// One page captured in a live-scan session: the full-resolution photo,
+/// plus the document boundary that was on screen at the moment of capture
+/// (fractional [0,1] portrait-overlay coordinates — see
+/// `rotateQuadForPortrait`), or null if nothing was detected then.
+///
+/// [autoMode] records whether auto-capture was on for this shot. Auto-mode
+/// pages are cropped to [quad] without ever showing the crop screen: the
+/// user already agreed to those edges by letting the auto-capture fire on
+/// them. Manual shots still go through the crop screen, which reruns
+/// detection fresh at full resolution.
+class LiveCapture {
+  final File file;
+  final Quad? quad;
+  final bool autoMode;
+
+  const LiveCapture({required this.file, this.quad, required this.autoMode});
+
+  /// True when this page can be cropped straight to [quad] with no crop
+  /// screen in between.
+  bool get canAutoCrop => autoMode && quad != null;
+}
+
+/// Pushes the live-scan route and resolves with the captured pages (one
+/// per photo, in capture order), or null if the user backed out without
 /// capturing anything — mirrors `imageCropper()`'s existing pop-with-value
-/// contract in `crop_screen.dart`. The captured photos are NOT pre-cropped:
-/// each goes through the same unchanged crop screen as every other capture
-/// flow, which reruns detection fresh at full resolution. The live overlay
-/// is guidance-only.
-Future<List<File>?> captureWithLiveScan(BuildContext context) async {
+/// contract in `crop_screen.dart`.
+Future<List<LiveCapture>?> captureWithLiveScan(BuildContext context) async {
   // Callers (directory_cubit.dart's createImage) can invoke this
   // synchronously from within a BlocProvider's create: callback, which
   // runs during the new route's initial build — pushing another route
@@ -29,9 +49,9 @@ Future<List<File>?> captureWithLiveScan(BuildContext context) async {
   // called during build"). Deferring to the next frame, the same fix
   // already used for a similar build-time-side-effect issue in
   // crop_screen.dart, avoids the re-entrant Navigator.push.
-  final completer = Completer<List<File>?>();
+  final completer = Completer<List<LiveCapture>?>();
   WidgetsBinding.instance.addPostFrameCallback((_) async {
-    final result = await Navigator.push<List<File>?>(
+    final result = await Navigator.push<List<LiveCapture>?>(
       context,
       MaterialPageRoute(builder: (context) => LiveScanScreen()),
     );
@@ -63,7 +83,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   // disposed/recreated across app-lifecycle pause/resume, and the
   // underlying photo files are already persisted to disk by
   // takePicture(), so this survives a background/resume cycle.
-  final List<File> _capturedFiles = [];
+  final List<LiveCapture> _capturedFiles = [];
 
   bool _autoCaptureEnabled = true;
   bool _autoCaptureImminent = false;
@@ -281,11 +301,30 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   Future<void> _onCapturePressed() async {
     final controller = _cameraController;
     if (controller == null || _capturing) return;
+    // Snapshot the overlay's current quad before anything else: this is
+    // the boundary the user is looking at as the shutter fires, and it's
+    // what the page gets cropped to in auto mode. Taken up front because
+    // the smoother is reset (and the stream stopped) further down.
+    //
+    // Only for the back camera: `rotateQuadForPortrait` maps sensor space
+    // to overlay space for a back camera's fixed 90-degree mount, so the
+    // front camera's overlay — mirrored, and mounted the other way — can't
+    // be projected back onto its still photo. Those pages keep their null
+    // quad and go through the crop screen instead of being cropped to a
+    // boundary that doesn't correspond to the photo.
+    final quadAtCapture = _lensDirection == CameraLensDirection.back
+        ? _quadSmoother.smoothedQuad.value
+        : null;
+    final autoMode = _autoCaptureEnabled;
     setState(() => _capturing = true);
     try {
       await controller.stopImageStream();
       final shot = await controller.takePicture();
-      _capturedFiles.add(File(shot.path));
+      _capturedFiles.add(LiveCapture(
+        file: File(shot.path),
+        quad: quadAtCapture,
+        autoMode: autoMode,
+      ));
       _autoCaptureDetector.notifyCaptured();
       // A new document after this one shouldn't inherit the outgoing
       // one's filter velocity/lag.
@@ -305,7 +344,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   void _onDonePressed() {
     Navigator.pop(
       context,
-      _capturedFiles.isEmpty ? null : List<File>.from(_capturedFiles),
+      _capturedFiles.isEmpty ? null : List<LiveCapture>.from(_capturedFiles),
     );
   }
 
