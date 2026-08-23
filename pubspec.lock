@@ -60,36 +60,35 @@ packages:
   camera:
     dependency: "direct main"
     description:
-      path: "packages/camera/camera"
-      ref: master
-      resolved-ref: ec2041f82584303d640fc7a3bc4ae31ebd76bc8e
-      url: "https://github.com/camsim99/plugins.git"
-    source: git
-    version: "0.10.0+4"
-  camera_android:
-    dependency: transitive
-    description:
-      name: camera_android
-      sha256: "997f19dbdb1bb0e40bdb87265c7e550abea657fe3c4ba3720f81e97b6d4b64dd"
+      name: camera
+      sha256: "558230d6ce6ccea856b32d390db7e7b557adf4d9320aa614481bd3f2f608953f"
       url: "https://pub.dev"
     source: hosted
-    version: "0.10.10+1"
+    version: "0.12.0+2"
+  camera_android_camerax:
+    dependency: transitive
+    description:
+      name: camera_android_camerax
+      sha256: "47aa7c2963ceb8db4fc3dfbba0f9195da3741f3d11e80f0e29472d46bf4c2e66"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.4+6"
   camera_avfoundation:
     dependency: transitive
     description:
       name: camera_avfoundation
-      sha256: ba48b65a3a97004276ede882e6b838d9667642ff462c95a8bb57ca8a82b6bd25
+      sha256: "866e9cd8370f8055d005c0413937a52dc1d7a472687f0ee3ce02392955aababa"
       url: "https://pub.dev"
     source: hosted
-    version: "0.9.18+11"
+    version: "0.10.2"
   camera_platform_interface:
     dependency: "direct main"
     description:
       name: camera_platform_interface
-      sha256: "953e7baed3a7c8fae92f7200afeb2be503ff1a17c3b4e4ed7b76f008c2810a31"
+      sha256: "4524ca6eb4176b066864036ad4fe02c3e4863e63b77eadc21a5bf56824f43498"
       url: "https://pub.dev"
     source: hosted
-    version: "2.9.0"
+    version: "2.13.1"
   camera_web:
     dependency: transitive
     description:
@@ -654,14 +653,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.6"
-  quiver:
-    dependency: transitive
-    description:
-      name: quiver
-      sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
   reorderables:
     dependency: "direct main"
     description:
@@ -988,5 +979,5 @@ packages:
     source: hosted
     version: "6.5.0"
 sdks:
-  dart: ">=3.11.0-0 <4.0.0"
-  flutter: ">=3.27.0"
+  dart: ">=3.12.0 <4.0.0"
+  flutter: ">=3.44.0"
