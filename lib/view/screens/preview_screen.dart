@@ -93,6 +93,47 @@ class _PreviewScreenState extends State<PreviewScreen>
     )..addListener(() {
         _transformationController.value = _matrixAnimation.value;
       });
+    _transformationController.addListener(_handleTransformationChanged);
+  }
+
+  @override
+  void dispose() {
+    _transformationController.removeListener(_handleTransformationChanged);
+    _transformationController.dispose();
+    animationController.dispose();
+    pageController.dispose();
+    _pageNumber.dispose();
+    super.dispose();
+  }
+
+  // Re-enables page swiping as soon as the image is back to its unzoomed
+  // scale, instead of only checking once when a pinch gesture ends - which
+  // left swipe-to-next-image permanently broken after any zoom-in/zoom-out.
+  void _handleTransformationChanged() {
+    final scale = _transformationController.value.getMaxScaleOnAxis();
+    final shouldEnablePageScroll = scale <= 1.01;
+    if (shouldEnablePageScroll != enablePageScroll) {
+      setState(() {
+        enablePageScroll = shouldEnablePageScroll;
+      });
+    }
+  }
+
+  // A pinch-out gesture rarely lands on exactly scale 1.0 - it's easy to
+  // stop at, say, 1.08x without noticing. Snap the rest of the way back to
+  // identity whenever the user ends a gesture "nearly" unzoomed, so a pinch
+  // out reliably restores swiping the same way double-tap does.
+  Future<void> _snapToIdentityIfNearlyUnzoomed() async {
+    final scale = _transformationController.value.getMaxScaleOnAxis();
+    if (scale > 1.0 && scale <= 1.15) {
+      _matrixAnimation = Matrix4Tween(
+        begin: _transformationController.value,
+        end: Matrix4.identity(),
+      ).chain(CurveTween(curve: Curves.decelerate)).animate(animationController);
+
+      animationController.value = 0;
+      await animationController.forward();
+    }
   }
 
   @override
@@ -131,13 +172,8 @@ class _PreviewScreenState extends State<PreviewScreen>
                       },
                       child: InteractiveViewer(
                         transformationController: _transformationController,
-                        onInteractionEnd: (scaleEndDetails) {
-                          if (_transformationController.value.getColumn(0) !=
-                              Matrix4.identity().getColumn(0)) {
-                            setState(() {
-                              enablePageScroll = false;
-                            });
-                          }
+                        onInteractionEnd: (details) {
+                          _snapToIdentityIfNearlyUnzoomed();
                         },
                         maxScale: 5,
                         child: Container(

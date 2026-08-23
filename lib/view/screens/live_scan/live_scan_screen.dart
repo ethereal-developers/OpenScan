@@ -69,6 +69,24 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   bool _autoCaptureImminent = false;
   bool _torchOn = false;
 
+  CameraLensDirection _lensDirection = CameraLensDirection.back;
+
+  double _minZoom = 1.0;
+  double _maxZoom = 1.0;
+  double _currentZoom = 1.0;
+  double _baseZoomOnGestureStart = 1.0;
+  bool _isZooming = false; // pauses auto-capture during an active pinch
+
+  Offset? _focusPointNormalized; // null = reticle hidden
+  Timer? _focusHideTimer;
+  bool _focusSupported = true;
+  bool _exposureSupported = true;
+
+  double _minExposureOffset = 0.0;
+  double _maxExposureOffset = 0.0;
+  double _exposureStepSize = 0.0;
+  double _currentExposureOffset = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -106,14 +124,14 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// device) surfaces a graceful error instead of stranding the user on
   /// an infinite spinner.
   Future<void> _initializeCamera() async {
-    final backCamera = Globals.cameras.firstWhere(
-      (c) => c.lensDirection == CameraLensDirection.back,
+    final camera = Globals.cameras.firstWhere(
+      (c) => c.lensDirection == _lensDirection,
       orElse: () => Globals.cameras.first,
     );
 
     for (int attempt = 0; attempt < 2; attempt++) {
       final controller = CameraController(
-        backCamera,
+        camera,
         ResolutionPreset.high,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.yuv420,
@@ -125,6 +143,18 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           return;
         }
         _cameraController = controller;
+        try {
+          _minZoom = await controller.getMinZoomLevel();
+          _maxZoom = await controller.getMaxZoomLevel();
+          _currentZoom = _minZoom;
+          _minExposureOffset = await controller.getMinExposureOffset();
+          _maxExposureOffset = await controller.getMaxExposureOffset();
+          _exposureStepSize = await controller.getExposureOffsetStepSize();
+          _currentExposureOffset = 0.0;
+        } catch (_) {
+          _minZoom = _maxZoom = 1.0;
+          _minExposureOffset = _maxExposureOffset = _exposureStepSize = 0.0;
+        }
         await controller.startImageStream(_onFrame);
         setState(() {});
         return;
@@ -174,6 +204,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   }
 
   void _onSmoothedQuadChanged() {
+    if (_isZooming) return;
     _autoCaptureDetector.onQuadUpdate(_quadSmoother.smoothedQuad.value);
   }
 
@@ -223,6 +254,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     // resume always starts with flash off, so reset the flag here rather
     // than silently relighting it without the user re-tapping.
     _torchOn = false;
+    _currentZoom = 1.0;
+    _currentExposureOffset = 0.0;
+    _focusPointNormalized = null;
+    _focusHideTimer?.cancel();
     // Rebuild immediately so no widget keeps referencing the disposed
     // controller — without this, the stale CameraPreview from the last
     // build stays on screen until something else triggers a rebuild,
@@ -289,8 +324,108 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     }
   }
 
+  Future<void> _switchCamera() async {
+    if (Globals.cameras.length < 2 || _capturing) return;
+    final targetDirection = _lensDirection == CameraLensDirection.back
+        ? CameraLensDirection.front
+        : CameraLensDirection.back;
+    if (!Globals.cameras.any((c) => c.lensDirection == targetDirection)) {
+      return;
+    }
+
+    final controller = _cameraController;
+    setState(() => _cameraController = null);
+    if (controller != null) {
+      if (controller.value.isStreamingImages) {
+        await controller.stopImageStream();
+      }
+      await controller.dispose();
+    }
+
+    _lensDirection = targetDirection;
+    _torchOn = false;
+    _currentZoom = 1.0;
+    _currentExposureOffset = 0.0;
+    _focusPointNormalized = null;
+    _focusHideTimer?.cancel();
+    _focusSupported = true;
+    _exposureSupported = true;
+
+    await _initializeCamera();
+  }
+
+  void _onScaleStart(ScaleStartDetails details) {
+    _baseZoomOnGestureStart = _currentZoom;
+  }
+
+  Future<void> _onScaleUpdate(ScaleUpdateDetails details) async {
+    final controller = _cameraController;
+    if (controller == null || _maxZoom <= _minZoom) return;
+    if (!_isZooming) setState(() => _isZooming = true);
+    final target =
+        (_baseZoomOnGestureStart * details.scale).clamp(_minZoom, _maxZoom);
+    if ((target - _currentZoom).abs() < 0.01) return;
+    try {
+      await controller.setZoomLevel(target);
+      if (mounted) setState(() => _currentZoom = target);
+    } catch (_) {}
+  }
+
+  void _onScaleEnd(ScaleEndDetails details) {
+    if (mounted) setState(() => _isZooming = false);
+  }
+
+  Future<void> _onTapToFocus(TapUpDetails details, Size previewSize) async {
+    final controller = _cameraController;
+    if (controller == null ||
+        previewSize.width == 0 ||
+        previewSize.height == 0) {
+      return;
+    }
+    final normalized = Offset(
+      (details.localPosition.dx / previewSize.width).clamp(0.0, 1.0),
+      (details.localPosition.dy / previewSize.height).clamp(0.0, 1.0),
+    );
+
+    _focusHideTimer?.cancel();
+    setState(() => _focusPointNormalized = normalized);
+    _focusHideTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _focusPointNormalized = null);
+    });
+
+    if (_focusSupported) {
+      try {
+        await controller.setFocusMode(FocusMode.auto);
+        await controller.setFocusPoint(normalized);
+      } catch (_) {
+        _focusSupported = false;
+      }
+    }
+    if (_exposureSupported) {
+      try {
+        await controller.setExposureMode(ExposureMode.auto);
+        await controller.setExposurePoint(normalized);
+      } catch (_) {
+        _exposureSupported = false;
+      }
+    }
+  }
+
+  Future<void> _adjustExposure(double delta) async {
+    final controller = _cameraController;
+    if (controller == null || _exposureStepSize <= 0) return;
+    final target = (_currentExposureOffset + delta)
+        .clamp(_minExposureOffset, _maxExposureOffset);
+    if (target == _currentExposureOffset) return;
+    try {
+      final applied = await controller.setExposureOffset(target);
+      if (mounted) setState(() => _currentExposureOffset = applied);
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
+    _focusHideTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _liveScanController.latestQuad.removeListener(_onLatestQuadChanged);
     _quadSmoother.smoothedQuad.removeListener(_onSmoothedQuadChanged);
@@ -336,7 +471,20 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                 _torchOn ? Icons.flash_on : Icons.flash_off,
                 color: Colors.white,
               ),
-              onPressed: _cameraController != null ? _toggleTorch : null,
+              onPressed: (_cameraController != null &&
+                      _lensDirection == CameraLensDirection.back)
+                  ? _toggleTorch
+                  : null,
+            ),
+            IconButton(
+              tooltip: _lensDirection == CameraLensDirection.back
+                  ? 'Switch to front camera'
+                  : 'Switch to back camera',
+              icon: const Icon(Icons.cameraswitch, color: Colors.white),
+              onPressed:
+                  (_cameraController != null && Globals.cameras.length > 1)
+                      ? _switchCamera
+                      : null,
             ),
           ],
         ),
@@ -363,30 +511,169 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                   // rotateQuadForPortrait's normalized output already
                   // targets, with no separate rotation/measurement needed
                   // here.
-                  return Center(
-                    child: CameraPreview(
-                      controller,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final size = constraints.biggest;
-                          return ValueListenableBuilder(
-                            valueListenable: _quadSmoother.smoothedQuad,
-                            builder: (context, quad, _) {
-                              if (quad == null) return const SizedBox.shrink();
-                              return CustomPaint(
-                                painter: LiveQuadPainter(
-                                  points: quad.points
-                                      .map((p) => Offset(
-                                          p.x * size.width, p.y * size.height))
-                                      .toList(),
-                                  isImminent: _autoCaptureImminent,
+                  return LayoutBuilder(
+                    builder: (context, outerConstraints) {
+                      final previewSize = outerConstraints.biggest;
+                      return GestureDetector(
+                        onScaleStart: _onScaleStart,
+                        onScaleUpdate: _onScaleUpdate,
+                        onScaleEnd: _onScaleEnd,
+                        onTapUp: (details) =>
+                            _onTapToFocus(details, previewSize),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Center(
+                              child: CameraPreview(
+                                controller,
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final size = constraints.biggest;
+                                    return ValueListenableBuilder(
+                                      valueListenable:
+                                          _quadSmoother.smoothedQuad,
+                                      builder: (context, quad, _) {
+                                        if (quad == null) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return CustomPaint(
+                                          painter: LiveQuadPainter(
+                                            points: quad.points
+                                                .map((p) => Offset(
+                                                    p.x * size.width,
+                                                    p.y * size.height))
+                                                .toList(),
+                                            isImminent: _autoCaptureImminent,
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
                                 ),
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    ),
+                              ),
+                            ),
+                            if (_maxZoom > _minZoom)
+                              Positioned(
+                                bottom: 16,
+                                left: 0,
+                                right: 0,
+                                child: Center(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Text(
+                                      '${_currentZoom.toStringAsFixed(1)}x',
+                                      style: const TextStyle(
+                                          color: Colors.white, fontSize: 14),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (_focusPointNormalized != null)
+                              Positioned(
+                                left: _focusPointNormalized!.dx *
+                                        previewSize.width -
+                                    32,
+                                top: _focusPointNormalized!.dy *
+                                        previewSize.height -
+                                    32,
+                                child: IgnorePointer(
+                                  child: TweenAnimationBuilder<double>(
+                                    key: ValueKey(_focusPointNormalized),
+                                    tween: Tween(begin: 1.4, end: 1.0),
+                                    duration:
+                                        const Duration(milliseconds: 220),
+                                    curve: Curves.easeOut,
+                                    builder: (context, scale, child) =>
+                                        Transform.scale(
+                                      scale: scale,
+                                      child: Opacity(
+                                        opacity:
+                                            (2.0 - scale).clamp(0.0, 1.0),
+                                        child: child,
+                                      ),
+                                    ),
+                                    child: Container(
+                                      width: 64,
+                                      height: 64,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
+                                          width: 2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (_exposureStepSize > 0)
+                              Positioned(
+                                bottom: 16,
+                                right: 16,
+                                // Absorb taps on this panel so they don't
+                                // fall through to the preview's
+                                // GestureDetector below — otherwise a tap
+                                // that misses an IconButton's hit target
+                                // (the container background, the padding,
+                                // the EV label) is read as a tap-to-focus
+                                // at this corner, which re-points
+                                // auto-exposure metering there and fights
+                                // the manual offset, making exposure creep
+                                // upward regardless of which button was
+                                // pressed.
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {},
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.add,
+                                              color: Colors.white, size: 20),
+                                          onPressed: _currentExposureOffset >=
+                                                  _maxExposureOffset
+                                              ? null
+                                              : () => _adjustExposure(
+                                                  _exposureStepSize),
+                                        ),
+                                        Text(
+                                          _currentExposureOffset == 0
+                                              ? 'EV'
+                                              : '${_currentExposureOffset > 0 ? '+' : ''}${_currentExposureOffset.toStringAsFixed(1)}',
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.remove,
+                                              color: Colors.white, size: 20),
+                                          onPressed: _currentExposureOffset <=
+                                                  _minExposureOffset
+                                              ? null
+                                              : () => _adjustExposure(
+                                                  -_exposureStepSize),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
                   );
                 },
               ),
