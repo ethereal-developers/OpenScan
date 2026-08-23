@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:openscan/core/cv/compress.dart';
 import 'package:openscan/core/data/database_helper.dart';
-import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/core/models.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -91,7 +91,6 @@ class FileOperations {
         imageFiles.add(File(image.path));
       }
     }
-    debugPrint(imageFiles as String?);
     return imageFiles;
   }
 
@@ -230,8 +229,11 @@ class FileOperations {
 
     try {
       for (ImageOS image in images) {
-        path = await NativeAndroidUtil.compress(
-            image.imgPath, cacheDir.path, desiredQuality);
+        path = await compute(compressImageIsolateEntry, {
+          'src': image.imgPath,
+          'dest': cacheDir.path,
+          'quality': desiredQuality,
+        });
         tempImages.add(ImageOS(imgPath: path));
       }
       images = tempImages;

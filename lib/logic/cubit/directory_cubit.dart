@@ -1,10 +1,11 @@
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:openscan/core/cv/compress.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/file_operations.dart';
-import 'package:openscan/core/data/native_android_util.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:path_provider/path_provider.dart';
@@ -176,8 +177,11 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     for (File image in imageList) {
       Directory cacheDir = await getTemporaryDirectory();
 
-      String imgPath =
-          await NativeAndroidUtil.compress(image.path, cacheDir.path, 90);
+      String imgPath = await compute(compressImageIsolateEntry, {
+        'src': image.path,
+        'dest': cacheDir.path,
+        'quality': 90,
+      });
 
       File compressedImage = File(imgPath);
 

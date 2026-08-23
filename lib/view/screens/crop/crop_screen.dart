@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:openscan/core/cv/models/detection_result.dart';
 import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
@@ -34,12 +35,28 @@ class _CropImageState extends State<CropImage> {
   CropScreenState _cropScreen = CropScreenState();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool cropLoading = false;
+  bool _showNotFoundBanner = true;
 
   @override
   initState() {
     super.initState();
     _cropScreen.imageFile = widget.file;
-    _cropScreen.detectDocument();
+
+    /// Runs detection, then waits for the next frame (so the image is
+    /// guaranteed to be laid out) before computing canvas geometry and
+    /// initial points exactly once — replacing the old pattern of doing
+    /// this inside the widget's build() callback on every rebuild.
+    _cropScreen.detectDocument().then((_) {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _cropScreen.getRenderedBoxSize();
+          _cropScreen.initPoints();
+        });
+      });
+    });
+
     _cropScreen.canvasSize = Size(0, 0);
     _cropScreen.rotationAngle = 0;
     _cropScreen.originalCanvasSize = Size(0, 0);
@@ -169,45 +186,80 @@ class _CropImageState extends State<CropImage> {
                           ),
                   ),
                   ValueListenableBuilder(
-                    valueListenable: _cropScreen.detectionCompleted,
-                    builder: (context, _documentDetected, _) {
-                      if (_cropScreen.detectionCompleted.value) {
-                        /// This snippet is crucial, but idk how it works
-                        _cropScreen.getRenderedBoxSize();
-                        _cropScreen.initPoints();
+                    valueListenable: _cropScreen.detectionState,
+                    builder: (context, CropDetectionState state, _) {
+                      if (state == CropDetectionState.loading) {
+                        return Positioned.fill(
+                          child: Container(
+                            color:
+                                Theme.of(context).primaryColor.withOpacity(0.7),
+                            child: Center(
+                              child:
+                                  CircularProgressIndicator(color: Colors.white),
+                            ),
+                          ),
+                        );
                       }
-                      return _cropScreen.detectionCompleted.value
-                          ? _cropScreen.imageRendered.value
-                              ? Positioned.fill(
-                                  child: ValueListenableBuilder(
-                                      valueListenable: _cropScreen.updatedPoint,
-                                      builder: (context, _updatedPoint, _) {
-                                        return CustomPaint(
-                                          painter: PolygonPainter(
-                                            tl: _cropScreen.tl,
-                                            tr: _cropScreen.tr,
-                                            bl: _cropScreen.bl,
-                                            br: _cropScreen.br,
-                                            t: _cropScreen.t,
-                                            l: _cropScreen.l,
-                                            b: _cropScreen.b,
-                                            r: _cropScreen.r,
+
+                      if (!_cropScreen.imageRendered.value) return Container();
+
+                      return Positioned.fill(
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: ValueListenableBuilder(
+                                  valueListenable: _cropScreen.updatedPoint,
+                                  builder: (context, _updatedPoint, _) {
+                                    return CustomPaint(
+                                      painter: PolygonPainter(
+                                        tl: _cropScreen.tl,
+                                        tr: _cropScreen.tr,
+                                        bl: _cropScreen.bl,
+                                        br: _cropScreen.br,
+                                        t: _cropScreen.t,
+                                        l: _cropScreen.l,
+                                        b: _cropScreen.b,
+                                        r: _cropScreen.r,
+                                      ),
+                                    );
+                                  }),
+                            ),
+                            if (state == CropDetectionState.notFound &&
+                                _showNotFoundBanner)
+                              Positioned(
+                                top: 12,
+                                left: 12,
+                                right: 12,
+                                child: Material(
+                                  color: Colors.black.withOpacity(0.75),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            "Couldn't auto-detect the document — adjust the corners manually.",
+                                            style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12),
                                           ),
-                                        );
-                                      }),
-                                )
-                              : Container()
-                          : Positioned.fill(
-                              child: Container(
-                                color: Theme.of(context)
-                                    .primaryColor
-                                    .withOpacity(0.7),
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                      color: Colors.white),
+                                        ),
+                                        IconButton(
+                                          icon: Icon(Icons.close,
+                                              color: Colors.white, size: 18),
+                                          onPressed: () => setState(() =>
+                                              _showNotFoundBanner = false),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            );
+                          ],
+                        ),
+                      );
                     },
                   ),
                   ValueListenableBuilder(
@@ -352,11 +404,20 @@ class _CropImageState extends State<CropImage> {
                         setState(() {
                           cropLoading = true;
                         });
-                        await _cropScreen.crop();
+                        final result = await _cropScreen.crop();
                         setState(() {
                           cropLoading = false;
                         });
-                        Navigator.pop(context, _cropScreen.imageFile);
+                        if (result is CropSuccess) {
+                          Navigator.pop(context, _cropScreen.imageFile);
+                        } else if (result is CropFailure) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  "Couldn't crop the image — please try again."),
+                            ),
+                          );
+                        }
                       }
                     : () {},
                 color: _imageRendered || !cropLoading

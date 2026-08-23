@@ -29,6 +29,7 @@
 .pub-cache/
 .pub/
 /build/
+android/build/
 
 # Web related
 lib/generated_plugin_registrant.dart
@@ -47,5 +48,9 @@ key.properties
 android/app/key.jks
 local.properties
 .vscode
+
+# Eclipse Buildship IDE metadata (machine-local paths, regenerated on sync)
+android/.project
+android/.settings/
 
 .claude

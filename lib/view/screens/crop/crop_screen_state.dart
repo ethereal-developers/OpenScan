@@ -1,15 +1,27 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:openscan/core/data/native_android_util.dart';
+import 'package:openscan/core/cv/document_detector.dart';
+import 'package:openscan/core/cv/models/detection_result.dart';
+import 'package:openscan/core/cv/models/point.dart';
+import 'package:openscan/core/cv/models/quad.dart';
+import 'package:openscan/core/cv/perspective_crop.dart';
+
+/// UI-facing detection state: loading while the isolate is running,
+/// detected once a quad was found, notFound when detection completed
+/// without finding a suitable quad OR threw/timed out (both cases fall
+/// back to the same "adjust manually" UI rather than spinning forever).
+enum CropDetectionState { loading, detected, notFound }
 
 class CropScreenState {
   GlobalKey imageKey = GlobalKey();
   GlobalKey bodyKey = GlobalKey();
   File? imageFile;
   Size? imageSize;
-  List detectedPointsData = [];
+  Quad? detectedQuad;
   late Size canvasSize;
   late Size screenSize;
   bool isLoading = false;
@@ -46,22 +58,42 @@ class CropScreenState {
   /// Notifies canvas when canvas image has rendered
   ValueNotifier<bool> imageRendered = ValueNotifier(false);
 
-  /// Notifies canvas when edge detection is completed
-  late ValueNotifier<bool> detectionCompleted = ValueNotifier(false);
+  /// Notifies canvas of the current detection state (loading / detected /
+  /// notFound) so the UI always has a terminal state to render instead of
+  /// spinning forever on a native exception.
+  ValueNotifier<CropDetectionState> detectionState =
+      ValueNotifier(CropDetectionState.loading);
 
   /// Notifies polygon when points are moved
   ValueNotifier<DragUpdateDetails> updatedPoint =
       ValueNotifier(DragUpdateDetails(globalPosition: Offset.zero));
 
-  /// Edges of document is detected and plotted on canvas
-  detectDocument() async {
+  /// Detects the document boundary (pure-Dart, off the UI thread) and
+  /// plots it on the canvas. Never leaves [detectionState] stuck on
+  /// [CropDetectionState.loading]: any exception or timeout resolves to
+  /// [CropDetectionState.notFound] so the user can still crop manually.
+  Future<void> detectDocument() async {
     await getSize();
 
-    detectedPointsData =
-        await NativeAndroidUtil.detectDocument(imageFile!.path);
-    debugPrint('Points => $detectedPointsData');
+    try {
+      final result = await compute(detectDocumentIsolateEntry, imageFile!.path)
+          .timeout(const Duration(seconds: 8));
 
-    detectionCompleted.value = true;
+      if (result is DetectionSuccess) {
+        detectedQuad = result.quad;
+        detectionState.value = CropDetectionState.detected;
+      } else {
+        if (result is DetectionFailure) {
+          debugPrint('Document detection failed: ${result.message}');
+        }
+        detectedQuad = null;
+        detectionState.value = CropDetectionState.notFound;
+      }
+    } catch (e) {
+      debugPrint('Document detection error: $e');
+      detectedQuad = null;
+      detectionState.value = CropDetectionState.notFound;
+    }
   }
 
   /// Sets detected points on canvas
@@ -78,29 +110,19 @@ class CropScreenState {
           canvasOffset.dy + canvasSize.height);
     }
 
-    if (detectedPointsData.isNotEmpty) {
+    /// Maps a detector point (in original-image pixel coordinates) to
+    /// canvas coordinates.
+    Offset toCanvas(Pt p) => Offset(
+          (p.x / imageSize!.width) * canvasSize.width + canvasOffset.dx,
+          (p.y / imageSize!.height) * canvasSize.height + canvasOffset.dy,
+        );
+
+    if (detectedQuad != null) {
       /// Setting corner points to detected location
-      /// PointsData: [br,tr,tl,bl]: (width, height)
-      tl = Offset(
-          (detectedPointsData[0][0] / imageSize!.width) * canvasSize.width +
-              canvasOffset.dx,
-          (detectedPointsData[0][1] / imageSize!.height) * canvasSize.height +
-              canvasOffset.dy);
-      tr = Offset(
-          (detectedPointsData[1][0] / imageSize!.width) * canvasSize.width +
-              canvasOffset.dx,
-          (detectedPointsData[1][1] / imageSize!.height) * canvasSize.height +
-              canvasOffset.dy);
-      br = Offset(
-          (detectedPointsData[2][0] / imageSize!.width) * canvasSize.width +
-              canvasOffset.dx,
-          (detectedPointsData[2][1] / imageSize!.height) * canvasSize.height +
-              canvasOffset.dy);
-      bl = Offset(
-          (detectedPointsData[3][0] / imageSize!.width) * canvasSize.width +
-              canvasOffset.dx,
-          (detectedPointsData[3][1] / imageSize!.height) * canvasSize.height +
-              canvasOffset.dy);
+      tl = toCanvas(detectedQuad!.topLeft);
+      tr = toCanvas(detectedQuad!.topRight);
+      br = toCanvas(detectedQuad!.bottomRight);
+      bl = toCanvas(detectedQuad!.bottomLeft);
 
       polygonArea = areaOfQuadrilateral(tl, tr, bl, br);
       canvasArea = canvasSize.width * canvasSize.height;
@@ -276,24 +298,36 @@ class CropScreenState {
         l.dy;
   }
 
-  /// Crops and returns the image
-  crop() async {
+  /// Crops the image to the current quad (pure-Dart, off the UI thread).
+  /// Returns the [CropResult] so the caller can distinguish success from
+  /// failure instead of the old code that discarded a `bool` result.
+  Future<CropResult> crop() async {
     final scaleX = imageSize!.width / canvasSize.width;
     final scaleY = imageSize!.height / canvasSize.height;
 
-    bool result = await NativeAndroidUtil.cropImage(
-      path: imageFile!.path,
-      tlX: scaleX * (tl.dx - canvasOffset.dx),
-      tlY: scaleY * (tl.dy - canvasOffset.dy),
-      trX: scaleX * (tr.dx - canvasOffset.dx),
-      trY: scaleY * (tr.dy - canvasOffset.dy),
-      blX: scaleX * (bl.dx - canvasOffset.dx),
-      blY: scaleY * (bl.dy - canvasOffset.dy),
-      brX: scaleX * (br.dx - canvasOffset.dx),
-      brY: scaleY * (br.dy - canvasOffset.dy),
+    Pt scalePoint(Offset p) => Pt(
+          scaleX * (p.dx - canvasOffset.dx),
+          scaleY * (p.dy - canvasOffset.dy),
+        );
+
+    final quad = Quad(
+      topLeft: scalePoint(tl),
+      topRight: scalePoint(tr),
+      bottomRight: scalePoint(br),
+      bottomLeft: scalePoint(bl),
     );
 
-    debugPrint('cropper: ${imageFile!.path}');
+    try {
+      final result = await compute(cropImageIsolateEntry, {
+        'path': imageFile!.path,
+        'quad': quad,
+      }).timeout(const Duration(seconds: 15));
+      debugPrint('cropper: ${imageFile!.path} => $result');
+      return result;
+    } catch (e) {
+      debugPrint('Crop error: $e');
+      return CropFailure(e.toString());
+    }
   }
 
   /// Gets the current moving point

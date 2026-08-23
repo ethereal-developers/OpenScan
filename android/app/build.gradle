@@ -75,5 +75,4 @@ flutter {
 }
 
 dependencies {
-    implementation 'org.opencv:opencv:4.9.0'
 }
