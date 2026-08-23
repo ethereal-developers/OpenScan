@@ -131,8 +131,7 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
                           }
                         }
                         if (widget.save) {
-                          String? fileNameWithPath;
-                          fileNameWithPath = await fileOperations.saveToDevice(
+                          await fileOperations.saveToDevice(
                             context: context,
                             fileName: fileName,
                             images: state.images!,
@@ -141,18 +140,10 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
                           );
                           Navigator.pop(context);
                           Navigator.pop(context);
-
-                          String displayText;
-                          (fileNameWithPath != null)
-                              ? displayText = "PDF Saved at\n"
-                              : displayText =
-                                  "Failed to generate pdf. Try Again.";
-                          // Fluttertoast.showToast(msg: displayText);
                         }
                       } else if (exportType == 'Image') {
                         if (widget.share) {
-                          // TODO: Get images path list
-                          // ShareExtend.shareMultiple(,'file',);
+                          // TODO: Share images
                           Navigator.pop(context);
                           Navigator.pop(context);
                         }
@@ -170,6 +161,5 @@ class _ExportBottomSheetState extends State<ExportBottomSheet> {
         );
       },
     );
-    //TODO: Close parent bottomsheet
   }
 }

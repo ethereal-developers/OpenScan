@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image/image.dart' as imageLib;
 import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/core/image_filter/filters/preset_filters.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
@@ -25,7 +24,6 @@ class PreviewScreen extends StatefulWidget {
 class _PreviewScreenState extends State<PreviewScreen>
     with SingleTickerProviderStateMixin {
   late ValueNotifier<int> _pageNumber;
-  late int _currentPageIndex;
   late TapDownDetails _doubleTapDetails;
   TransformationController _transformationController =
       TransformationController();
@@ -34,12 +32,10 @@ class _PreviewScreenState extends State<PreviewScreen>
   Animation<Matrix4> _matrixAnimation =
       AlwaysStoppedAnimation(Matrix4.identity());
   bool isAppBarVisible = true;
-  imageLib.Image? imageBytes;
   Widget loader = Center(child: CircularProgressIndicator());
   late PageController pageController;
 
   void doubleTapImageZoom() async {
-    //TODO: Generalize method
     debugPrint(
         (_transformationController.value == Matrix4.identity()).toString());
 
@@ -49,7 +45,7 @@ class _PreviewScreenState extends State<PreviewScreen>
       _matrixAnimation = Matrix4Tween(
               begin: Matrix4.identity(),
               end: Matrix4.translationValues(-position.dx, -position.dy, 0)
-                ..scale(2.0))
+                ..scaleByDouble(2.0, 2.0, 2.0, 1.0))
           .chain(CurveTween(curve: Curves.decelerate))
           .animate(animationController);
 
@@ -89,7 +85,6 @@ class _PreviewScreenState extends State<PreviewScreen>
   @override
   void initState() {
     super.initState();
-    // _currentPageIndex = widget.initialIndex!;
     pageController = PageController(initialPage: widget.initialIndex!);
     _pageNumber = ValueNotifier(widget.initialIndex! + 1);
     animationController = AnimationController(
@@ -121,14 +116,6 @@ class _PreviewScreenState extends State<PreviewScreen>
                   itemCount: state.imageCount,
                   itemBuilder: (context, index) {
                     GlobalKey imageKey = GlobalKey();
-                    // _currentPageIndex = index;
-
-                    // TODO: Apply Future builder
-                    // imageBytes = PreviewScreen.previewModel
-                    //     .getImageBytes(state.images![index].imgPath);
-                    // imageBytes!.getBytes();
-                    // imageLib.decodeImage(imageBytes!.getBytes());
-                    // imageBytes = imageLib.decodeImage(imageBytes!.getBytes());
 
                     return GestureDetector(
                       onDoubleTapDown: (details) {
@@ -141,20 +128,6 @@ class _PreviewScreenState extends State<PreviewScreen>
                         setState(() {
                           isAppBarVisible = !isAppBarVisible;
                         });
-                        // showModalBottomSheet(
-                        //   context: context,
-                        //   barrierColor: Colors.transparent,
-                        //   backgroundColor:
-                        //       Theme.of(context).primaryColor.withOpacity(0.5),
-                        //   builder: (_) {
-                        //     return BlocProvider<DirectoryCubit>.value(
-                        //       value: BlocProvider.of<DirectoryCubit>(context),
-                        //       child: PreviewBottomBar(
-                        //         pageIndex: pageIndex!,
-                        //       ),
-                        //     );
-                        //   },
-                        // );
                       },
                       child: InteractiveViewer(
                         transformationController: _transformationController,
@@ -209,7 +182,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                     elevation: 0,
                     centerTitle: true,
                     backgroundColor:
-                        Theme.of(context).primaryColor.withOpacity(0.5),
+                        Theme.of(context).primaryColor.withValues(alpha: 0.5),
                     title: BlocConsumer<DirectoryCubit, DirectoryState>(
                       listener: (context, state) {},
                       builder: (context, state) {
@@ -249,7 +222,7 @@ class _PreviewScreenState extends State<PreviewScreen>
                           color: Theme.of(context)
                               .colorScheme
                               .primary
-                              .withOpacity(0.5),
+                              .withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         // TODO: [Bug] Fix Page Index- wrong when image is deleted
@@ -319,13 +292,6 @@ class _PreviewScreenState extends State<PreviewScreen>
                     isAppBarVisible = true;
                   });
                 }
-
-                // debugPrint(_pageNumber.value);
-                // debugPrint(state.images![_pageNumber.value - 1]);
-                var image = imageLib.decodeImage(
-                    await File(state.images![_pageNumber.value - 1].imgPath)
-                        .readAsBytes());
-                // image = imageLib.copyResize(image!, width: 600);
 
                 Navigator.push(
                   context,

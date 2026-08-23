@@ -21,7 +21,7 @@ class ImageCard extends StatelessWidget {
       children: [
         MaterialButton(
           elevation: 0,
-          color: Colors.black.withOpacity(0.2),
+          color: Colors.black.withValues(alpha: 0.2),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           onPressed: onPressed,
           child: Container(
@@ -47,7 +47,7 @@ class ImageCard extends StatelessWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .secondary
-                        .withOpacity(0.3),
+                        .withValues(alpha: 0.3),
                   ),
                 ),
               )
@@ -60,7 +60,7 @@ class ImageCard extends StatelessWidget {
           right: 10,
           child: CircleAvatar(
             backgroundColor:
-                Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+                Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
             radius: 13,
             child: Text(
               image!.idx.toString(),

@@ -49,13 +49,6 @@ class FileOperations {
     }
 
     // TODO: Pick custom directory
-    // Directory newDirectory = await DirectoryPicker.pick(
-    //     allowFolderCreation: true,
-    //     context: context,
-    //     rootDirectory: directory,
-    //     shape: RoundedRectangleBorder(
-    //         borderRadius: BorderRadius.all(Radius.circular(10))));
-
     return directory!;
   }
 

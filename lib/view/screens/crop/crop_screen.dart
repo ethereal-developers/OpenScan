@@ -76,11 +76,8 @@ class _CropImageState extends State<CropImage> {
     debugPrint(
         'Screen size=> ${_cropScreen.screenSize.width} / ${_cropScreen.screenSize.height}');
     return SafeArea(
-      child: WillPopScope(
-        onWillPop: () async {
-          // Navigator.pop(context, null);
-          return true;
-        },
+      child: PopScope(
+        canPop: true,
         child: Scaffold(
           backgroundColor: Theme.of(context).primaryColor,
           key: _scaffoldKey,
@@ -192,7 +189,7 @@ class _CropImageState extends State<CropImage> {
                         return Positioned.fill(
                           child: Container(
                             color:
-                                Theme.of(context).primaryColor.withOpacity(0.7),
+                                Theme.of(context).primaryColor.withValues(alpha: 0.7),
                             child: Center(
                               child:
                                   CircularProgressIndicator(color: Colors.white),
@@ -231,7 +228,7 @@ class _CropImageState extends State<CropImage> {
                                 left: 12,
                                 right: 12,
                                 child: Material(
-                                  color: Colors.black.withOpacity(0.75),
+                                  color: Colors.black.withValues(alpha: 0.75),
                                   borderRadius: BorderRadius.circular(8),
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
@@ -422,11 +419,11 @@ class _CropImageState extends State<CropImage> {
                     : () {},
                 color: _imageRendered || !cropLoading
                     ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+                    : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
                 splashColor: Colors.transparent,
                 disabledColor:
-                    Theme.of(context).colorScheme.secondary.withOpacity(0.5),
-                disabledTextColor: Colors.white.withOpacity(0.5),
+                    Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                disabledTextColor: Colors.white.withValues(alpha: 0.5),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -435,7 +432,7 @@ class _CropImageState extends State<CropImage> {
                       style: TextStyle(
                         color: _imageRendered || !cropLoading
                             ? Colors.white
-                            : Colors.white.withOpacity(0.5),
+                            : Colors.white.withValues(alpha: 0.5),
                         fontSize: 18,
                       ),
                     ),
@@ -443,7 +440,7 @@ class _CropImageState extends State<CropImage> {
                       Icons.arrow_forward_ios_rounded,
                       color: _imageRendered || !cropLoading
                           ? Colors.white
-                          : Colors.white.withOpacity(0.5),
+                          : Colors.white.withValues(alpha: 0.5),
                     )
                   ],
                 ),

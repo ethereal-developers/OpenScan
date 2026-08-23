@@ -46,7 +46,7 @@ class _FilterScreenState extends State<FilterScreen> {
         appBar: AppBar(
           elevation: 0,
           centerTitle: true,
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.5),
+          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios),
             padding: EdgeInsets.fromLTRB(15, 8, 0, 8),

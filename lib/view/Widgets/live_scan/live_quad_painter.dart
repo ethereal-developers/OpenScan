@@ -13,11 +13,11 @@ class LiveQuadPainter extends CustomPainter {
   LiveQuadPainter({required this.points});
 
   final Paint _fill = Paint()
-    ..color = AppTheme.secondaryColor.withOpacity(0.15)
+    ..color = AppTheme.secondaryColor.withValues(alpha: 0.15)
     ..style = PaintingStyle.fill;
 
   final Paint _stroke = Paint()
-    ..color = AppTheme.secondaryColor.withOpacity(0.9)
+    ..color = AppTheme.secondaryColor.withValues(alpha: 0.9)
     ..strokeWidth = 3.0
     ..strokeJoin = StrokeJoin.round
     ..style = PaintingStyle.stroke;

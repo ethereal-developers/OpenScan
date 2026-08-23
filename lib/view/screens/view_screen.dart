@@ -37,19 +37,14 @@ class _ViewScreenState extends State<ViewScreen> {
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
     return SafeArea(
-      child: WillPopScope(
-        onWillPop: () async {
-          if (selectionEnabled) {
-            setState(() {
-              selectionEnabled = false;
-              BlocProvider.of<DirectoryCubit>(context).resetSelection();
-              selectionEnabled = false;
-            });
-          } else {
-            Navigator.pop(context);
-            return true;
-          }
-          return false;
+      child: PopScope(
+        canPop: !selectionEnabled,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          setState(() {
+            selectionEnabled = false;
+            BlocProvider.of<DirectoryCubit>(context).resetSelection();
+          });
         },
         child: Scaffold(
           key: scaffoldKey,

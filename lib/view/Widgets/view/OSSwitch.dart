@@ -57,7 +57,7 @@ class _OSSwitchState extends State<OSSwitch> {
                 borderRadius: getBorderRadius(index),
                 border: Border.all(
                   color:
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+                      Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
                 ),
                 color: (selectedIndex == widget.options[index])
                     ? Theme.of(context).colorScheme.secondary

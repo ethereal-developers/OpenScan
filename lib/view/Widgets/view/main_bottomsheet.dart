@@ -23,9 +23,6 @@ class MainBottomSheet extends StatefulWidget {
 class _MainBottomSheetState extends State<MainBottomSheet> {
   @override
   Widget build(BuildContext context) {
-    // FileOperations fileOperations = FileOperations();
-    // String selectedFileName;
-    int imageQuality = 3;
     Size size = MediaQuery.of(context).size;
 
     return BottomSheet(

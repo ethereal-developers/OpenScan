@@ -13,7 +13,7 @@ class CustomPopupMenuButton extends StatelessWidget {
 
     return PopupMenuButton<String>(
       onSelected: onSelected,
-      color: Theme.of(context).primaryColor.withOpacity(0.95),
+      color: Theme.of(context).primaryColor.withValues(alpha: 0.95),
       elevation: 30,
       offset: Offset.fromDirection(20, 20),
       icon: Icon(Icons.more_vert_rounded),

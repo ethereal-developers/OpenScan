@@ -22,7 +22,7 @@ class PreviewScreenBottomBar extends StatelessWidget {
       duration: Duration(milliseconds: 200),
       height: isAppBarVisible ? 60.0 : 0.0,
       child: Container(
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [

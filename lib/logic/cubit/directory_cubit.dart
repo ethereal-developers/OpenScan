@@ -1,9 +1,7 @@
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:openscan/core/cv/compress.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
@@ -182,21 +180,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
 
     for (File image in imageList) {
-      Directory cacheDir = await getTemporaryDirectory();
-
-      String imgPath = await compute(compressImageIsolateEntry, {
-        'src': image.path,
-        'dest': cacheDir.path,
-        'quality': 90,
-      });
-
-      File compressedImage = File(imgPath);
-
       if (image.existsSync()) {
-        // getImageSize('Original', image);
-        // getImageSize('Compressed', compressedImage);
-        // debugPrint('Image = ${Image.file(compressedImage).width}');
-
         File savedImage = await fileOperations.saveImage(
           image: image,
           index: state.images!.length + 1,
