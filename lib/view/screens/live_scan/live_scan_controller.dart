@@ -64,6 +64,16 @@ class LiveScanController {
   /// most recent processed frame.
   final ValueNotifier<Quad?> latestQuad = ValueNotifier(null);
 
+  /// Round-trip latency (submitFrame -> result received) of the most
+  /// recently completed detection, in milliseconds. Only one frame is
+  /// ever in flight at a time (submitFrame no-ops while `isBusy`), so a
+  /// single stopwatch is enough to time it. Exists to make the live-scan
+  /// pipeline's real-world per-frame cost directly observable — e.g. for
+  /// the p50-latency profiling check described in the project's
+  /// implementation plan — without needing external instrumentation.
+  final ValueNotifier<int?> lastLatencyMs = ValueNotifier(null);
+  final Stopwatch _frameStopwatch = Stopwatch();
+
   /// Sensor-native dimensions of the frames currently being submitted,
   /// needed to rotate quad points into portrait space. Set on the first
   /// call to [submitFrame] and assumed constant for the session.
@@ -91,6 +101,8 @@ class LiveScanController {
     }
     if (message is _FrameResult) {
       _isDetecting = false;
+      _frameStopwatch.stop();
+      lastLatencyMs.value = _frameStopwatch.elapsedMilliseconds;
       if (message.requestId < _lastHandledRequestId) return;
       _lastHandledRequestId = message.requestId;
       final quad = message.quad;
@@ -110,6 +122,9 @@ class LiveScanController {
     _frameWidth = width;
     _frameHeight = height;
     _isDetecting = true;
+    _frameStopwatch
+      ..reset()
+      ..start();
     port.send(_FrameRequest(_nextRequestId++, gray, width, height));
   }
 

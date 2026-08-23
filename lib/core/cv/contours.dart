@@ -25,9 +25,9 @@ Quad? findDocumentQuad(Uint8List mask, int width, int height) {
           ? hull
           : _simplifyClosedPolygon(hull, epsilonFactor);
       if (simplified.length == 4 && _isConvex(simplified)) {
-        final area = _polygonArea(simplified);
-        if (area / (width * height) > 0.05) {
-          return sortCorners(simplified);
+        final quad = sortCorners(simplified);
+        if (isPlausibleQuad(quad, width, height)) {
+          return quad;
         }
       }
     }
@@ -205,6 +205,58 @@ double _polygonArea(List<Pt> pts) {
     area += a.x * b.y - b.x * a.y;
   }
   return area.abs() / 2;
+}
+
+/// Minimum quad area as a fraction of the frame it was detected in.
+/// Rejects noise-sized detections that happen to form a valid convex
+/// quadrilateral but are too small to plausibly be the document.
+const double kMinQuadAreaRatio = 0.05;
+
+/// Minimum interior angle, in degrees, considered legal for a document
+/// corner. A real document photographed at even a steep angle still has
+/// four corners nowhere near collinear; a quad with an angle below this
+/// (or, symmetrically, above `180 - kMinQuadAngleDegrees`) has one corner
+/// that has effectively collapsed onto its neighbors — a sliver or
+/// near-triangle, not a usable crop target.
+const double kMinQuadAngleDegrees = 15.0;
+
+/// Rejects degenerate quads before they're ever returned as a detection
+/// result: too small relative to the frame, or so thin/sliver-shaped
+/// that a corner has collapsed (near-triangular). Used by
+/// [findDocumentQuad] itself, and public so any quad — e.g. one that's
+/// been scaled or otherwise transformed after detection — can be
+/// re-validated with the same rule.
+bool isPlausibleQuad(Quad quad, int width, int height) {
+  final pts = quad.points;
+
+  final area = _polygonArea(pts);
+  if (width <= 0 || height <= 0) return false;
+  if (area / (width * height) < kMinQuadAreaRatio) return false;
+
+  for (int i = 0; i < pts.length; i++) {
+    final a = pts[(i - 1 + pts.length) % pts.length];
+    final b = pts[i];
+    final c = pts[(i + 1) % pts.length];
+    final angle = _angleAtVertexDegrees(a, b, c);
+    if (angle < kMinQuadAngleDegrees || angle > 180 - kMinQuadAngleDegrees) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/// Interior angle at vertex [b], in degrees, formed by rays b->a and
+/// b->c. Returns 0 if either ray has zero length (two corners coincide),
+/// which callers should treat as maximally degenerate.
+double _angleAtVertexDegrees(Pt a, Pt b, Pt c) {
+  final abx = a.x - b.x, aby = a.y - b.y;
+  final cbx = c.x - b.x, cby = c.y - b.y;
+  final magAB = sqrt(abx * abx + aby * aby);
+  final magCB = sqrt(cbx * cbx + cby * cby);
+  if (magAB == 0 || magCB == 0) return 0;
+  final cosAngle =
+      ((abx * cbx + aby * cby) / (magAB * magCB)).clamp(-1.0, 1.0);
+  return acos(cosAngle) * 180 / pi;
 }
 
 /// Canonical corner order: top-left / top-right / bottom-right /
