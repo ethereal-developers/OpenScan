@@ -71,16 +71,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     await _initializeCamera();
   }
 
-  /// Opens the camera with a timeout + one retry. On this device, reopening
-  /// a CameraController shortly after disposing the previous one (e.g. on
-  /// app resume) can race the platform's camera2 session teardown and hang
-  /// initialize() forever waiting for an onOpened callback that never
-  /// arrives (observed on-device via logcat: an onClosed event for the
-  /// stale session lands on the new open attempt instead) — a known rough
-  /// edge of the stale camera plugin fork this app is pinned to. Retrying
-  /// once after a longer delay recovers in the common case; if it still
-  /// fails, surface an error instead of leaving the user on an infinite
-  /// spinner.
+  /// Opens the camera with a timeout + one retry, so a slow or failed
+  /// camera open (low light, hardware contention, a genuinely flaky
+  /// device) surfaces a graceful error instead of stranding the user on
+  /// an infinite spinner.
   Future<void> _initializeCamera() async {
     final backCamera = Globals.cameras.firstWhere(
       (c) => c.lensDirection == CameraLensDirection.back,
@@ -105,11 +99,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         setState(() {});
         return;
       } catch (e) {
-        // Don't await dispose() here: when initialize() hung, the native
-        // camera plugin's platform channel is itself wedged processing
-        // that stuck open() call, so a dispose() call queued behind it
-        // would hang just as long, defeating the retry. Let it resolve
-        // in the background instead.
+        // Don't await dispose() here: if initialize() hung rather than
+        // throwing outright, the platform channel may still be busy with
+        // that call, and awaiting dispose() on it would block the retry
+        // just as long. Let it resolve in the background instead.
         // ignore: unawaited_futures
         controller.dispose();
         if (attempt == 0) {
@@ -144,40 +137,47 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Handle `resumed` first and unconditionally: by the time it fires,
+    // _cameraController is always null (the pause/hidden path below just
+    // disposed it), so a shared "return if controller == null" guard at
+    // the top of this method — as this used to have — would make the
+    // resume branch dead code. Bug found via on-device logging: the
+    // resume path never ran at all, not a native-plugin race as first
+    // suspected.
+    if (state == AppLifecycleState.resumed) {
+      if (_cameraController == null && !_permissionDenied && !_cameraError) {
+        // The just-disposed controller's camera2 session doesn't always
+        // finish releasing the device before this fires — opening a new
+        // CameraController immediately can race the platform's device
+        // close. A short delay avoids that race.
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted &&
+              _cameraController == null &&
+              !_permissionDenied &&
+              !_cameraError) {
+            _initializeCamera();
+          }
+        });
+      }
+      return;
+    }
+
+    // inactive/hidden/paused (Flutter delivers all three while
+    // backgrounding, in that order): release the camera. Safe to call
+    // more than once across that sequence — controller is null after the
+    // first dispose, so later calls just return.
     final controller = _cameraController;
     if (controller == null || !controller.value.isInitialized) return;
-
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused) {
-      if (controller.value.isStreamingImages) {
-        controller.stopImageStream();
-      }
-      controller.dispose();
-      // Rebuild immediately so no widget keeps referencing the disposed
-      // controller — without this, the stale CameraPreview from the last
-      // build stays on screen until something else triggers a rebuild,
-      // which throws "buildPreview() was called on a disposed
-      // CameraController" on resume.
-      if (mounted) setState(() => _cameraController = null);
-    } else if (state == AppLifecycleState.resumed &&
-        _cameraController == null &&
-        !_permissionDenied) {
-      // The just-disposed controller's camera2 session doesn't always
-      // finish releasing the device before this fires — opening a new
-      // CameraController immediately can race the platform's device
-      // close and hang forever waiting for an onOpened callback that
-      // never comes (observed on-device via logcat: an "onClosed" event
-      // arrives for the new open attempt instead). A short delay avoids
-      // the race.
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted &&
-            _cameraController == null &&
-            !_permissionDenied &&
-            !_cameraError) {
-          _initializeCamera();
-        }
-      });
+    if (controller.value.isStreamingImages) {
+      controller.stopImageStream();
     }
+    controller.dispose();
+    // Rebuild immediately so no widget keeps referencing the disposed
+    // controller — without this, the stale CameraPreview from the last
+    // build stays on screen until something else triggers a rebuild,
+    // which throws "buildPreview() was called on a disposed
+    // CameraController" on resume.
+    if (mounted) setState(() => _cameraController = null);
   }
 
   Future<void> _onCapturePressed() async {
