@@ -15,6 +15,10 @@
     "@import_from_gallery": {
         "description": "3-as típusú szkennelés"
     },
+    "live_scan": "Élő szkennelés",
+    "@live_scan": {
+        "description": "4-es típusú szkennelés"
+    },
     "refresh": "Húzza le a frissítéshez",
     "@refresh": {
         "description": "Frissítés buboréksúgója"

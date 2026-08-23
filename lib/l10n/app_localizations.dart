@@ -126,6 +126,12 @@ abstract class AppLocalizations {
   /// **'Import from Gallery'**
   String get import_from_gallery;
 
+  /// Scan-type 4
+  ///
+  /// In en, this message translates to:
+  /// **'Live Scan'**
+  String get live_scan;
+
   /// Refresh tool tip
   ///
   /// In en, this message translates to:

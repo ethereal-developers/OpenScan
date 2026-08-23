@@ -7,6 +7,7 @@ import 'package:image/image.dart' as img;
 import 'contours.dart';
 import 'edge_detection.dart';
 import 'models/detection_result.dart';
+import 'models/quad.dart';
 
 /// Longest edge (px) that detection runs at. Keeps the pure-Dart edge/
 /// contour pipeline fast on full-resolution camera photos; the resulting
@@ -45,13 +46,7 @@ Future<DetectionResult> detectDocumentIsolateEntry(String path) async {
     );
 
     final gray = rgbaToGrayscale(rgba, workWidth, workHeight);
-    final blurred = gaussianBlur3(gray, workWidth, workHeight);
-    final magnitude = sobelMagnitude(blurred, workWidth, workHeight);
-    final t = otsuThreshold(magnitude);
-    final binary = threshold(magnitude, t);
-    final dilated = dilate(binary, workWidth, workHeight, 4);
-
-    final quad = findDocumentQuad(dilated, workWidth, workHeight);
+    final quad = detectQuadFromGrayscale(gray, workWidth, workHeight);
     if (quad == null) {
       return DetectionNotFound(originalWidth, originalHeight);
     }
@@ -66,6 +61,19 @@ Future<DetectionResult> detectDocumentIsolateEntry(String path) async {
   } catch (e) {
     return DetectionFailure(e.toString());
   }
+}
+
+/// Runs the grayscale->blur->sobel->otsu->dilate->quad pipeline on an
+/// already-grayscale buffer. Pure function, no I/O — shared by the
+/// file-based one-shot entry point above and the live-scan persistent
+/// isolate, so the edge/contour logic only exists in one place.
+Quad? detectQuadFromGrayscale(Uint8List gray, int width, int height) {
+  final blurred = gaussianBlur3(gray, width, height);
+  final magnitude = sobelMagnitude(blurred, width, height);
+  final t = otsuThreshold(magnitude);
+  final binary = threshold(magnitude, t);
+  final dilated = dilate(binary, width, height, 4);
+  return findDocumentQuad(dilated, width, height);
 }
 
 /// Nearest-neighbor downsample of an RGBA buffer (stride 4).

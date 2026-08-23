@@ -27,7 +27,7 @@ Quad? findDocumentQuad(Uint8List mask, int width, int height) {
       if (simplified.length == 4 && _isConvex(simplified)) {
         final area = _polygonArea(simplified);
         if (area / (width * height) > 0.05) {
-          return _sortCorners(simplified);
+          return sortCorners(simplified);
         }
       }
     }
@@ -211,7 +211,7 @@ double _polygonArea(List<Pt> pts) {
 /// bottom-left, via the classic sum/difference sort (same math OpenCV's
 /// `Imgproc`-based `sortPoints` used, but defined exactly once and shared
 /// by every consumer instead of being re-implemented per platform).
-Quad _sortCorners(List<Pt> pts) {
+Quad sortCorners(List<Pt> pts) {
   final bySum = List<Pt>.from(pts)
     ..sort((a, b) => (a.x + a.y).compareTo(b.x + b.y));
   final byDiff = List<Pt>.from(pts)

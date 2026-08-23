@@ -8,6 +8,7 @@ import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/view/screens/crop/crop_screen.dart';
+import 'package:openscan/view/screens/live_scan/live_scan_screen.dart';
 import 'package:path_provider/path_provider.dart';
 
 part 'directory_state.dart';
@@ -162,11 +163,17 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     context, {
     bool quickScan = false,
     bool fromGallery = false,
+    bool liveScan = false,
   }) async {
     List<File> imageList = [];
 
     if (fromGallery) {
       imageList = await (fileOperations.openGallery());
+    } else if (liveScan) {
+      File? image = await captureWithLiveScan(context);
+      if (image != null) {
+        imageList = [await imageCropper(context, image)];
+      }
     } else {
       File? image = await fileOperations.openCamera();
       if (image != null) {

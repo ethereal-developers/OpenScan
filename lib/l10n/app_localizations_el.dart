@@ -21,6 +21,9 @@ class AppLocalizationsEl extends AppLocalizations {
   String get import_from_gallery => 'Εισαγωγή από έκθεση';
 
   @override
+  String get live_scan => 'Ζωντανή σάρωση';
+
+  @override
   String get refresh => 'Σύρετε κάτω για ανανέωση';
 
   @override

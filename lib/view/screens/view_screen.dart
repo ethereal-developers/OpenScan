@@ -238,6 +238,13 @@ class _ViewScreenState extends State<ViewScreen> {
                 fromGallery: true,
               );
             },
+            liveScanOnPressed: () {
+              BlocProvider.of<DirectoryCubit>(context).createImage(
+                context,
+                quickScan: false,
+                liveScan: true,
+              );
+            },
           ),
         ),
       ),

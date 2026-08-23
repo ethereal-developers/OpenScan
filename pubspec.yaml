@@ -18,6 +18,7 @@ dependencies:
      url: https://github.com/camsim99/plugins.git
      path: packages/camera/camera
      ref: master
+  camera_platform_interface: ^2.9.0
   cupertino_icons:
   exif:
   flutter:

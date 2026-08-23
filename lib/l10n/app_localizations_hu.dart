@@ -21,6 +21,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get import_from_gallery => 'Importálás a Galériából';
 
   @override
+  String get live_scan => 'Élő szkennelés';
+
+  @override
   String get refresh => 'Húzza le a frissítéshez';
 
   @override

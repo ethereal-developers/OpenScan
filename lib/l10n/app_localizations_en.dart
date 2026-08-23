@@ -21,6 +21,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get import_from_gallery => 'Import from Gallery';
 
   @override
+  String get live_scan => 'Live Scan';
+
+  @override
   String get refresh => 'Drag down to refresh';
 
   @override

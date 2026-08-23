@@ -81,6 +81,25 @@ class _HomeScreenState extends State<HomeScreen> {
           homeRefresh();
         });
         break;
+      case 'Live Scan':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BlocProvider<DirectoryCubit>(
+              create: (context) => DirectoryCubit()
+                ..createDirectory()
+                ..createImage(
+                  context,
+                  liveScan: true,
+                ),
+              child: ViewScreen(),
+            ),
+            settings: RouteSettings(name: AppRouter.viewScreen),
+          ),
+        ).whenComplete(() {
+          homeRefresh();
+        });
+        break;
       case 'Import from Gallery':
         Navigator.push(
           context,
@@ -380,6 +399,9 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         galleryOnPressed: () {
           pushView(scanType: 'Import from Gallery');
+        },
+        liveScanOnPressed: () {
+          pushView(scanType: 'Live Scan');
         },
       ),
     );

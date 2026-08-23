@@ -13,7 +13,11 @@
     },
     "import_from_gallery": "Import from Gallery",
     "@import_from_gallery": {
-        "description": "Scan-type 3" 
+        "description": "Scan-type 3"
+    },
+    "live_scan": "Live Scan",
+    "@live_scan": {
+        "description": "Scan-type 4"
     },
     "refresh": "Drag down to refresh",
     "@refresh": {

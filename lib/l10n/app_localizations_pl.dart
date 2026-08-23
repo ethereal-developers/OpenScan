@@ -21,6 +21,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get import_from_gallery => 'Import z Galerii';
 
   @override
+  String get live_scan => 'Skanowanie na żywo';
+
+  @override
   String get refresh => 'Przeciągnij w dół, aby odświeżyć';
 
   @override

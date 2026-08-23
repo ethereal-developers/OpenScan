@@ -7,6 +7,7 @@ class FAB extends StatefulWidget {
   final void Function()? normalScanOnPressed;
   final void Function()? quickScanOnPressed;
   final void Function()? galleryOnPressed;
+  final void Function()? liveScanOnPressed;
   final void Function()? dialOpen;
   final void Function()? dialClose;
 
@@ -15,6 +16,7 @@ class FAB extends StatefulWidget {
     this.normalScanOnPressed,
     this.quickScanOnPressed,
     this.galleryOnPressed,
+    this.liveScanOnPressed,
     this.dialOpen,
     this.dialClose,
   });
@@ -102,6 +104,18 @@ class _FABState extends State<FAB> with TickerProviderStateMixin {
           labelStyle: TextStyle(
               fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
           onTap: widget.galleryOnPressed,
+        ),
+        SpeedDialChild(
+          child: Icon(
+            Icons.center_focus_strong_rounded,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          backgroundColor: Colors.white,
+          label: AppLocalizations.of(context)!.live_scan,
+          labelBackgroundColor: Colors.white,
+          labelStyle: TextStyle(
+              fontSize: 18.0, color: Theme.of(context).colorScheme.primary),
+          onTap: widget.liveScanOnPressed,
         ),
       ],
     );

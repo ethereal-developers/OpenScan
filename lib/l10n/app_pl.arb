@@ -13,7 +13,11 @@
     },
     "import_from_gallery": "Import z Galerii",
     "@import_from_gallery": {
-        "description": "Typ skanowania 3" 
+        "description": "Typ skanowania 3"
+    },
+    "live_scan": "Skanowanie na żywo",
+    "@live_scan": {
+        "description": "Typ skanowania 4"
     },
     "refresh": "Przeciągnij w dół, aby odświeżyć",
     "@refresh": {
