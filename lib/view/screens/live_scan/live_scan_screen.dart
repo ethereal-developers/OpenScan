@@ -73,9 +73,16 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
   double _minZoom = 1.0;
   double _maxZoom = 1.0;
-  double _currentZoom = 1.0;
-  double _baseZoomOnGestureStart = 1.0;
-  bool _isZooming = false; // pauses auto-capture during an active pinch
+  // A ValueNotifier rather than a plain field: a pinch updates this dozens
+  // of times a second, and driving it through setState would rebuild the
+  // whole Scaffold — AppBar, FutureBuilder, CameraPreview and all — on
+  // every gesture tick just to repaint one small text label.
+  final ValueNotifier<double> _currentZoom = ValueNotifier(1.0);
+  bool _isZooming = false; // pauses detection/auto-capture during a drag
+  double? _pendingZoomTarget;
+  static const _kZoomCallInterval = Duration(milliseconds: 60);
+  DateTime _lastZoomCallAt = DateTime.fromMillisecondsSinceEpoch(0);
+  Timer? _zoomThrottleTimer;
 
   Offset? _focusPointNormalized; // null = reticle hidden
   Timer? _focusHideTimer;
@@ -146,7 +153,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         try {
           _minZoom = await controller.getMinZoomLevel();
           _maxZoom = await controller.getMaxZoomLevel();
-          _currentZoom = _minZoom;
+          _currentZoom.value = _minZoom;
           _minExposureOffset = await controller.getMinExposureOffset();
           _maxExposureOffset = await controller.getMaxExposureOffset();
           _exposureStepSize = await controller.getExposureOffsetStepSize();
@@ -177,6 +184,11 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   void _onFrame(CameraImage image) {
     if (++_frameCounter % 3 != 0) return;
     if (_liveScanController.isBusy) return;
+    // Detection is the heaviest work this screen does per frame, and its
+    // result is meaningless mid-pinch anyway (the framing is changing
+    // under it). Skipping it frees the CPU for the gesture, which is what
+    // makes the zoom feel like it's tracking the fingers.
+    if (_isZooming) return;
 
     final gray = grayscaleFromFrame(
       yPlaneOrBgraBytes: image.planes[0].bytes,
@@ -254,7 +266,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     // resume always starts with flash off, so reset the flag here rather
     // than silently relighting it without the user re-tapping.
     _torchOn = false;
-    _currentZoom = 1.0;
+    _currentZoom.value = 1.0;
     _currentExposureOffset = 0.0;
     _focusPointNormalized = null;
     _focusHideTimer?.cancel();
@@ -344,7 +356,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
     _lensDirection = targetDirection;
     _torchOn = false;
-    _currentZoom = 1.0;
+    _currentZoom.value = 1.0;
     _currentExposureOffset = 0.0;
     _focusPointNormalized = null;
     _focusHideTimer?.cancel();
@@ -354,25 +366,72 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     await _initializeCamera();
   }
 
-  void _onScaleStart(ScaleStartDetails details) {
-    _baseZoomOnGestureStart = _currentZoom;
-  }
-
-  Future<void> _onScaleUpdate(ScaleUpdateDetails details) async {
+  void _onZoomSliderChanged(double value) {
     final controller = _cameraController;
     if (controller == null || _maxZoom <= _minZoom) return;
-    if (!_isZooming) setState(() => _isZooming = true);
-    final target =
-        (_baseZoomOnGestureStart * details.scale).clamp(_minZoom, _maxZoom);
-    if ((target - _currentZoom).abs() < 0.01) return;
-    try {
-      await controller.setZoomLevel(target);
-      if (mounted) setState(() => _currentZoom = target);
-    } catch (_) {}
+    final target = value.clamp(_minZoom, _maxZoom);
+    // Move the slider thumb and label immediately, without waiting on the
+    // camera round-trip below: dragging fires this dozens of times a
+    // second, and a thumb that only advances once each setZoomLevel
+    // resolves visibly trails the finger.
+    _isZooming = true; // plain assignment: nothing in build() reads this
+    _currentZoom.value = target;
+    // Coalesce the actual hardware calls: only one is ever in flight,
+    // always chasing the latest target rather than replaying every
+    // intermediate value from a burst of drag updates.
+    _requestZoomLevel(controller, target);
   }
 
-  void _onScaleEnd(ScaleEndDetails details) {
-    if (mounted) setState(() => _isZooming = false);
+  /// Issues zoom changes to the camera on a fixed interval, without
+  /// waiting for the previous one to complete.
+  ///
+  /// Measured on a moto g71 (camera_android_camerax): a single
+  /// `setZoomLevel` future takes ~370ms to resolve, because it only
+  /// completes once CameraX has actually applied the zoom ratio to a
+  /// capture request. Chaining calls — awaiting one before issuing the
+  /// next — therefore caps the preview at ~3 zoom steps per second no
+  /// matter how fast the slider moves, which is what made dragging feel
+  /// so laggy. Superseding an in-flight zoom with a newer ratio is fine:
+  /// CameraX cancels the older request (its future completes with an
+  /// error we deliberately swallow below) and applies the latest.
+  void _requestZoomLevel(CameraController controller, double target) {
+    _pendingZoomTarget = target;
+    final sinceLast = DateTime.now().difference(_lastZoomCallAt);
+    if (sinceLast >= _kZoomCallInterval) {
+      _issuePendingZoom(controller);
+      return;
+    }
+    // Too soon — let the already-scheduled flush pick up this newer
+    // target, or schedule one for the remainder of the interval.
+    _zoomThrottleTimer ??= Timer(_kZoomCallInterval - sinceLast, () {
+      _zoomThrottleTimer = null;
+      final current = _cameraController;
+      if (current != null) _issuePendingZoom(current);
+    });
+  }
+
+  void _issuePendingZoom(CameraController controller) {
+    final target = _pendingZoomTarget;
+    if (target == null) return;
+    _pendingZoomTarget = null;
+    _lastZoomCallAt = DateTime.now();
+    // Deliberately not awaited: see _requestZoomLevel's doc comment.
+    // A superseded call rejects, which is expected, not an error worth
+    // surfacing.
+    unawaited(controller.setZoomLevel(target).catchError((_) {}));
+  }
+
+  void _onZoomSliderChangeEnd(double value) {
+    _isZooming = false;
+    // The throttle may have dropped the last few updates of the drag —
+    // make sure the camera ends up at exactly where the thumb was
+    // released rather than one interval behind it.
+    final controller = _cameraController;
+    if (controller != null && _pendingZoomTarget != null) {
+      _zoomThrottleTimer?.cancel();
+      _zoomThrottleTimer = null;
+      _issuePendingZoom(controller);
+    }
   }
 
   Future<void> _onTapToFocus(TapUpDetails details, Size previewSize) async {
@@ -434,6 +493,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   @override
   void dispose() {
     _focusHideTimer?.cancel();
+    _zoomThrottleTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _liveScanController.latestQuad.removeListener(_onLatestQuadChanged);
     _quadSmoother.smoothedQuad.removeListener(_onSmoothedQuadChanged);
@@ -444,6 +504,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       _cameraController?.stopImageStream();
     }
     _cameraController?.dispose();
+    _currentZoom.dispose();
     _liveScanController.dispose();
     super.dispose();
   }
@@ -523,9 +584,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                     builder: (context, outerConstraints) {
                       final previewSize = outerConstraints.biggest;
                       return GestureDetector(
-                        onScaleStart: _onScaleStart,
-                        onScaleUpdate: _onScaleUpdate,
-                        onScaleEnd: _onScaleEnd,
                         onTapUp: (details) =>
                             _onTapToFocus(details, previewSize),
                         child: Stack(
@@ -563,20 +621,66 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                             if (_maxZoom > _minZoom)
                               Positioned(
                                 bottom: 16,
-                                left: 0,
-                                right: 0,
-                                child: Center(
+                                left: 16,
+                                // Clear of the exposure panel in the
+                                // bottom-right corner.
+                                right: 72,
+                                // Absorb taps so a miss on the slider
+                                // track isn't read as a tap-to-focus by
+                                // the preview's GestureDetector below —
+                                // the same guard the exposure panel uses.
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {},
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 4),
+                                        horizontal: 12),
                                     decoration: BoxDecoration(
                                       color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(20),
                                     ),
-                                    child: Text(
-                                      '${_currentZoom.toStringAsFixed(1)}x',
-                                      style: const TextStyle(
-                                          color: Colors.white, fontSize: 14),
+                                    child: ValueListenableBuilder<double>(
+                                      valueListenable: _currentZoom,
+                                      builder: (context, zoom, _) => Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 38,
+                                            child: Text(
+                                              '${zoom.toStringAsFixed(1)}x',
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 14),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: SliderTheme(
+                                              data: SliderTheme.of(context)
+                                                  .copyWith(
+                                                trackHeight: 2,
+                                                overlayShape:
+                                                    const RoundSliderOverlayShape(
+                                                        overlayRadius: 16),
+                                                thumbShape:
+                                                    const RoundSliderThumbShape(
+                                                        enabledThumbRadius: 8),
+                                                activeTrackColor: Colors.white,
+                                                inactiveTrackColor:
+                                                    Colors.white30,
+                                                thumbColor: Colors.white,
+                                              ),
+                                              child: Slider(
+                                                min: _minZoom,
+                                                max: _maxZoom,
+                                                value: zoom.clamp(
+                                                    _minZoom, _maxZoom),
+                                                onChanged: _onZoomSliderChanged,
+                                                onChangeEnd:
+                                                    _onZoomSliderChangeEnd,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
