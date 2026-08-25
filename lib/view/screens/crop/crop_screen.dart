@@ -43,7 +43,6 @@ class _CropImageState extends State<CropImage> {
   CropScreenState _cropScreen = CropScreenState();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool cropLoading = false;
-  bool _showNotFoundBanner = true;
 
   @override
   initState() {
@@ -225,42 +224,6 @@ class _CropImageState extends State<CropImage> {
                                     );
                                   }),
                             ),
-                            if (state == CropDetectionState.notFound &&
-                                _showNotFoundBanner)
-                              Positioned(
-                                top: 12,
-                                left: 12,
-                                right: 12,
-                                child: Material(
-                                  color: context.os.warning
-                                      .withValues(alpha: 0.16),
-                                  borderRadius:
-                                      BorderRadius.circular(OSRadius.card),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            "Couldn't detect edges automatically — adjust the corners below.",
-                                            style: OSTypography.caption
-                                                .copyWith(
-                                                    color: OSColors
-                                                        .chromeOnBackground),
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: Icon(Icons.close,
-                                              color: Colors.white, size: 18),
-                                          onPressed: () => setState(() =>
-                                              _showNotFoundBanner = false),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       );
