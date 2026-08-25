@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:openscan/core/cv/compress.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/core/theme/os_colors.dart';
@@ -53,33 +55,6 @@ extension on ExportQuality {
         return 100;
     }
   }
-
-  /// Rough multiplier against the pages' current on-disk size, used only
-  /// for the "~N MB" hint next to each option.
-  double get sizeFactor {
-    switch (this) {
-      case ExportQuality.low:
-        return 0.25;
-      case ExportQuality.medium:
-        return 0.5;
-      case ExportQuality.high:
-        return 1.0;
-      case ExportQuality.extreme:
-        return 1.6;
-    }
-  }
-
-  /// [FileOperations.saveToDevice]'s three-step quality scale.
-  int get legacyQuality {
-    switch (this) {
-      case ExportQuality.low:
-        return 1;
-      case ExportQuality.medium:
-        return 2;
-      default:
-        return 3;
-    }
-  }
 }
 
 extension on ExportPageSize {
@@ -126,12 +101,101 @@ class _ExportSheetState extends State<ExportSheet> {
   ExportQuality _quality = ExportQuality.high;
   ExportPageSize _pageSize = ExportPageSize.a4;
 
+  /// Bytes each encoding costs for one representative page, measured by
+  /// actually encoding it — see [_measureSizes]. Null until that finishes.
+  Map<String, int>? _measured;
+  bool _measuring = true;
+
   _Stage _stage = _Stage.idle;
   int _progressPage = 0;
   String? _resultPath;
   int _resultCount = 0;
   String? _resultSize;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Deferred a frame: _pages needs the cubit, which is read from context.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureSizes());
+  }
+
+  /// Quotes export sizes from a real encode rather than a guessed
+  /// multiplier: one representative page is encoded at every quality the
+  /// sheet offers, and the ratio it comes out at is applied to what the
+  /// whole selection currently weighs on disk.
+  ///
+  /// One page rather than all of them because the estimate only has to be
+  /// good to the nearest tenth of a megabyte, and pages of one document
+  /// compress alike — scanning a 40-page document four times over to
+  /// label four chips would cost more than the export itself.
+  Future<void> _measureSizes() async {
+    if (!mounted) return;
+    final pages = _pages(context.read<DirectoryCubit>().state);
+    final sample = _representativePage(pages);
+    if (sample == null) {
+      if (mounted) setState(() => _measuring = false);
+      return;
+    }
+    try {
+      final sizes = await compute(measureEncodedSizesIsolateEntry, {
+        'src': sample,
+        'qualities': [
+          for (final quality in ExportQuality.values) quality.encodeQuality
+        ],
+        'includePng': true,
+      });
+      if (!mounted) return;
+      setState(() {
+        _measured = sizes;
+        _measuring = false;
+      });
+    } catch (e) {
+      debugPrint('Could not measure export sizes: $e');
+      if (mounted) setState(() => _measuring = false);
+    }
+  }
+
+  /// The median-sized page of the selection: a busy photo page or a nearly
+  /// blank one would both skew an estimate meant to describe the document.
+  String? _representativePage(List<ImageOS> pages) {
+    final existing = [
+      for (final page in pages)
+        if (File(page.imgPath).existsSync()) page.imgPath,
+    ];
+    if (existing.isEmpty) return null;
+    existing.sort((a, b) => File(a).lengthSync().compareTo(File(b).lengthSync()));
+    return existing[existing.length ~/ 2];
+  }
+
+  /// What this selection is expected to weigh, exported as [format] at
+  /// [quality]. Null while the measurement is still running.
+  int? _estimatedBytes(
+      List<ImageOS> pages, ExportFormat format, ExportQuality quality) {
+    final measured = _measured;
+    final sourceBytes = measured?['source'];
+    if (measured == null || sourceBytes == null || sourceBytes == 0) return null;
+    final encoded = format == ExportFormat.png
+        ? measured['png']
+        : measured['jpg:${quality.encodeQuality}'];
+    if (encoded == null) return null;
+
+    final total = (_sourceBytes(pages) * encoded / sourceBytes).round();
+    // A PDF wraps the same JPEG bytes in page objects and a font-free
+    // catalogue: a couple of KB in total, and about 1KB per page.
+    return format == ExportFormat.pdf ? total + 2048 + pages.length * 1024 : total;
+  }
+
+  /// The label under a quality chip: a measured size, an em dash where
+  /// quality has no effect, or a placeholder while measuring.
+  String _sizeHint(List<ImageOS> pages, ExportQuality quality) {
+    // PNG is lossless, so its size does not move with the quality control
+    // and a per-quality number would be a lie.
+    if (_format == ExportFormat.png) return '—';
+    if (_measuring) return '…';
+    final bytes = _estimatedBytes(pages, _format, quality);
+    return bytes == null ? '—' : '~${_formatBytes(bytes)}';
+  }
 
   List<ImageOS> _pages(DirectoryState state) {
     final images = state.images ?? const <ImageOS>[];
@@ -205,6 +269,7 @@ class _ExportSheetState extends State<ExportSheet> {
                 fileName: name,
                 images: pages,
                 pageFormat: _pageSize.format,
+                quality: _quality.encodeQuality,
                 imagesSelected: false,
               )
             : await fileOperations.saveToDevice(
@@ -212,7 +277,7 @@ class _ExportSheetState extends State<ExportSheet> {
                 fileName: name,
                 images: pages,
                 pageFormat: _pageSize.format,
-                quality: _quality.legacyQuality,
+                quality: _quality.encodeQuality,
               );
         if (path == null) throw StateError('PDF could not be written');
         written = [path];
@@ -283,7 +348,7 @@ class _ExportSheetState extends State<ExportSheet> {
   Widget _idle(DirectoryState state) {
     final os = context.os;
     final pages = _pages(state);
-    final estimate = _sourceBytes(pages);
+    final estimate = _estimatedBytes(pages, _format, _quality);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -314,11 +379,7 @@ class _ExportSheetState extends State<ExportSheet> {
               Expanded(
                 child: _QualityOption(
                   label: quality.label,
-                  // PNG is lossless, so its size does not move with the
-                  // quality control and the hint would be a lie.
-                  hint: _format == ExportFormat.png
-                      ? '—'
-                      : '~${_formatBytes(estimate * quality.sizeFactor)}',
+                  hint: _sizeHint(pages, quality),
                   selected: _quality == quality,
                   onTap: () => setState(() => _quality = quality),
                 ),
@@ -341,6 +402,14 @@ class _ExportSheetState extends State<ExportSheet> {
         _MetaRow(
           label: widget.imagesSelected ? 'Selected pages' : 'All pages',
           value: pages.length == 1 ? '1 page' : '${pages.length} pages',
+        ),
+        _MetaRow(
+          label: 'Estimated size',
+          value: _measuring
+              ? 'Measuring…'
+              : estimate == null
+                  ? '—'
+                  : '~${_formatBytes(estimate)}',
         ),
         const SizedBox(height: OSSpace.sm),
         Container(

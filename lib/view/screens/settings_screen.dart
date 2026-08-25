@@ -179,7 +179,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               label: 'Keep original image',
               description:
                   'Keeps the uncropped photo so a page can be re-cropped '
-                  'from the full capture.',
+                  'from the full capture. Roughly doubles the space a '
+                  'document uses.',
               value: settings.keepOriginal,
               onChanged: settings.setKeepOriginal,
             ),

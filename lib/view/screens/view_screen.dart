@@ -212,7 +212,7 @@ class _ViewScreenState extends State<ViewScreen> {
     final date = state.lastModified ?? state.created;
     final pages = state.imageCount == 1 ? '1 page' : '${state.imageCount} pages';
     final subtitle = state.imageCount > 1
-        ? '$pages · drag to reorder'
+        ? '$pages · hold a page to reorder'
         : date == null
             ? pages
             : '$pages · ${_months[date.month - 1]} ${date.day}';
@@ -329,17 +329,6 @@ class _ViewScreenState extends State<ViewScreen> {
                   );
                 }
               },
-              onLongPress: () {
-                if (_selectionMode) return;
-                setState(() => _selectionMode = true);
-                BlocProvider.of<DirectoryCubit>(context).selectImage(image);
-              },
-            ),
-          if (!_selectionMode)
-            _AddPageTile(
-              key: const ValueKey('add-page'),
-              width: tileWidth,
-              onTap: _addPages,
             ),
         ];
 
@@ -353,13 +342,6 @@ class _ViewScreenState extends State<ViewScreen> {
                   needsLongPressDraggable: true,
                   children: tiles,
                   onReorder: (oldIndex, newIndex) {
-                    // The trailing "+" tile is part of the wrap but is not
-                    // a page: a drop onto or from it would shift indices
-                    // the cubit knows nothing about.
-                    if (oldIndex >= images.length ||
-                        newIndex >= images.length) {
-                      return;
-                    }
                     BlocProvider.of<DirectoryCubit>(context)
                         .updateImageIndex(oldIndex, newIndex);
                   },
@@ -441,14 +423,12 @@ class _PageTile extends StatelessWidget {
     required this.width,
     required this.selectionMode,
     required this.onTap,
-    required this.onLongPress,
   }) : super(key: key);
 
   final ImageOS image;
   final double width;
   final bool selectionMode;
   final VoidCallback onTap;
-  final VoidCallback onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -457,7 +437,6 @@ class _PageTile extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      onLongPress: onLongPress,
       child: SizedBox(
         width: width,
         height: width * 4 / 3,
@@ -527,35 +506,6 @@ class _PageTile extends StatelessWidget {
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The dashed "+" cell that ends the grid.
-class _AddPageTile extends StatelessWidget {
-  const _AddPageTile({Key? key, required this.width, required this.onTap})
-      : super(key: key);
-
-  final double width;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final os = context.os;
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        width: width,
-        height: width * 4 / 3,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: os.surfaceContainer,
-            borderRadius: BorderRadius.circular(OSRadius.chip + 1),
-            border: Border.all(color: os.outline, width: 1.5),
-          ),
-          child: Icon(Icons.add_rounded, color: os.onSurfaceVariant),
         ),
       ),
     );

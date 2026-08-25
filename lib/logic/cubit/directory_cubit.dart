@@ -189,30 +189,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       List<LiveCapture>? captures = await captureWithLiveScan(context);
       if (captures != null) {
         for (LiveCapture capture in captures) {
-          debugPrint('Live capture: autoMode=${capture.autoMode} '
-              'quad=${capture.quad != null} -> '
-              '${capture.canAutoCrop ? "auto-crop" : "crop screen"}');
-          if (capture.canAutoCrop) {
-            // Auto mode: crop straight to the edges the user already
-            // agreed with on the live preview and go on to the document,
-            // instead of reopening the crop screen for every page.
-            final original = await _copyAsideOriginal(capture.file);
-            final result = await _cropToLiveQuad(capture.file, capture.quad!);
-            imageList.add(_PendingImage(
-              // A failed warp leaves the capture untouched on disk, so the
-              // page falls back to the uncropped photo rather than being
-              // dropped.
-              image: capture.file,
-              original: result is CropSuccess ? original : capture.file,
-            ));
-          } else {
-            final original = await _copyAsideOriginal(capture.file);
-            final cropped = await imageCropper(context, capture.file);
-            imageList.add(_PendingImage(
-              image: cropped ?? capture.file,
-              original: cropped == null ? capture.file : original,
-            ));
-          }
+          imageList.add(await _prepareCapture(context, capture));
         }
       }
     } else {
@@ -228,39 +205,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
 
     for (_PendingImage pending in imageList) {
-      File image = pending.image;
-      if (image.existsSync()) {
-        ImageOS savedImage = await fileOperations.saveImage(
-          image: image,
-          original: pending.original,
-          index: state.images!.length + 1,
-          dirPath: state.dirPath!,
-        );
-        debugPrint('Saved ${savedImage.imgPath}');
-
-        ImageOS tempImage = ImageOS(
-          idx: state.imageCount + 1,
-          imgPath: savedImage.imgPath,
-          origPath: savedImage.origPath,
-        );
-
-        // A default filter is only useful if new pages actually arrive
-        // carrying it; applying it here (rather than at export time) keeps
-        // the page on disk and the thumbnail in the grid in agreement.
-        final defaultFilter = AppSettings.instance.defaultFilter;
-        if (defaultFilter != null) {
-          await _applyFilter(tempImage, documentFilterByName(defaultFilter));
-        }
-        debugPrint(tempImage.idx.toString());
-        state.images!.add(tempImage);
-        state.imageCount = state.images!.length;
-
-        if (state.imageCount == 1) {
-          state.firstImgPath = savedImage.imgPath;
-        }
-
-        emitState(state);
-      }
+      await _storePending(pending);
     }
 
     // Run once after every image in this call's imageList has been copied
@@ -273,6 +218,149 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     if (quickScan) {
       return createImage(context, quickScan: quickScan);
     }
+  }
+
+  /// Copies one prepared capture into the document as a new last page.
+  Future<void> _storePending(_PendingImage pending) async {
+    File image = pending.image;
+    if (!image.existsSync()) return;
+
+    ImageOS savedImage = await fileOperations.saveImage(
+      image: image,
+      original: pending.original,
+      index: state.images!.length + 1,
+      dirPath: state.dirPath!,
+    );
+    debugPrint('Saved ${savedImage.imgPath}');
+
+    ImageOS tempImage = ImageOS(
+      idx: state.imageCount + 1,
+      imgPath: savedImage.imgPath,
+      origPath: savedImage.origPath,
+    );
+
+    // A default filter is only useful if new pages actually arrive
+    // carrying it; applying it here (rather than at export time) keeps
+    // the page on disk and the thumbnail in the grid in agreement.
+    final defaultFilter = AppSettings.instance.defaultFilter;
+    if (defaultFilter != null) {
+      await _applyFilter(tempImage, documentFilterByName(defaultFilter));
+    }
+    debugPrint(tempImage.idx.toString());
+    state.images!.add(tempImage);
+    state.imageCount = state.images!.length;
+
+    if (state.imageCount == 1) {
+      state.firstImgPath = savedImage.imgPath;
+    }
+
+    emitState(state);
+  }
+
+  /// Turns one live-scan capture into the page to store, paired with the
+  /// uncropped image it came from.
+  ///
+  /// Auto-mode pages are cropped straight to the edges the user already
+  /// agreed with on the live preview; everything else goes through the
+  /// crop screen.
+  Future<_PendingImage> _prepareCapture(context, LiveCapture capture) async {
+    debugPrint('Live capture: autoMode=${capture.autoMode} '
+        'quad=${capture.quad != null} -> '
+        '${capture.canAutoCrop ? "auto-crop" : "crop screen"}');
+    final original = await _copyAsideOriginal(capture.file);
+    if (capture.canAutoCrop) {
+      final result = await _cropToLiveQuad(capture.file, capture.quad!);
+      return _PendingImage(
+        // A failed warp leaves the capture untouched on disk, so the page
+        // falls back to the uncropped photo rather than being dropped.
+        image: capture.file,
+        original: result is CropSuccess ? original : capture.file,
+      );
+    }
+    final cropped = await imageCropper(context, capture.file);
+    return _PendingImage(
+      image: cropped ?? capture.file,
+      original: cropped == null ? capture.file : original,
+    );
+  }
+
+  /// Re-scans a single page: the capture *replaces* [imageOS] in place —
+  /// same position in the document, same database row — rather than being
+  /// appended as an extra page. Re-scanning is how you redo a page that
+  /// came out badly, so leaving the bad one behind would mean deleting it
+  /// by hand after every single re-scan.
+  ///
+  /// If the session captured more than one page (the camera stays open for
+  /// batches), the first replaces [imageOS] and the rest are appended, so
+  /// nothing the user actually shot is thrown away.
+  Future<void> rescanImage(context, ImageOS imageOS) async {
+    final captures = await captureWithLiveScan(context);
+    if (captures == null || captures.isEmpty) return;
+
+    final replacement = await _prepareCapture(context, captures.first);
+    if (replacement.image.existsSync()) {
+      final String dir =
+          imageOS.imgPath.substring(0, imageOS.imgPath.lastIndexOf("/"));
+      final String stamp = DateTime.now().toString();
+
+      final File page = File('$dir/$stamp.jpg');
+      await fileOperations.storeNormalized(
+          source: replacement.image, destination: page);
+
+      String? origPath;
+      final original = replacement.original;
+      if (original != null && original.existsSync()) {
+        origPath = '$dir/orig_$stamp.jpg';
+        await fileOperations.storeNormalized(
+          source: original,
+          destination: File(origPath),
+          asOriginal: true,
+        );
+      }
+
+      // Every file the old page owned describes an image that is no longer
+      // in the document: drop the page, its uncropped original and its
+      // unfiltered copy before pointing the record at the new capture.
+      _deleteImageFiles(imageOS);
+
+      imageOS.imgPath = page.path;
+      imageOS.origPath = origPath;
+
+      await database.updateImagePath(
+        tableName: state.dirName!,
+        imgPath: imageOS.imgPath,
+        origPath: imageOS.origPath,
+        clearFilter: true,
+        // The replaced page's original has just been deleted: if this
+        // capture kept none of its own, the column has to be emptied
+        // rather than left pointing at that dead file.
+        clearOriginal: true,
+        idx: imageOS.idx,
+      );
+
+      // A re-scan is a fresh page, so it picks up the default filter the
+      // same way a newly captured one does.
+      final defaultFilter = AppSettings.instance.defaultFilter;
+      if (defaultFilter != null) {
+        await _applyFilter(imageOS, documentFilterByName(defaultFilter));
+      }
+
+      state.images![imageOS.idx! - 1] = imageOS;
+      if (imageOS.idx == 1) {
+        database.updateFirstImagePath(
+          imagePath: imageOS.imgPath,
+          dirPath: state.dirPath,
+        );
+        state.firstImgPath = imageOS.imgPath;
+      }
+      emitState(state);
+    }
+
+    for (final capture in captures.skip(1)) {
+      await _storePending(await _prepareCapture(context, capture));
+    }
+
+    await fileOperations.deleteTemporaryImages();
   }
 
   /// Calls image cropper
@@ -306,13 +394,19 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       // Promote the *unfiltered* version, so a page that was filtered
       // before it was ever cropped doesn't end up with the filter baked
       // into its permanent original.
-      File(imageOS.filterSourcePath).copySync(promoted.path);
+      await fileOperations.storeNormalized(
+        source: File(imageOS.filterSourcePath),
+        destination: promoted,
+        asOriginal: true,
+      );
       imageOS.origPath = promoted.path;
     }
 
-    // Creating new imagePath for cropped image
+    // Creating new imagePath for cropped image. Normalized on the way in,
+    // exactly like a fresh capture: the crop screen hands back a
+    // full-quality warp, which is an intermediate, not a page.
     File temp = File('$dir/$stamp.jpg');
-    image.copySync(temp.path);
+    await fileOperations.storeNormalized(source: image, destination: temp);
     if (workingCopy.existsSync()) workingCopy.deleteSync();
     File(imageOS.imgPath).deleteSync();
     imageOS.imgPath = temp.path;

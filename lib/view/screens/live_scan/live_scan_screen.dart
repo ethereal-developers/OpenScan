@@ -655,31 +655,21 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                 : Stack(
                     fit: StackFit.expand,
                     children: [
-                      _preview(accent),
-                      // Bottom scrim: the controls sit over live video, so
-                      // they need their own ground to stay legible against
-                      // a bright page.
-                      IgnorePointer(
-                        child: Align(
-                          alignment: Alignment.bottomCenter,
-                          child: Container(
-                            height: _controlsExpanded ? 300 : 210,
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Color(0x000A0908),
-                                  Color(0xB30A0908),
-                                ],
-                              ),
-                            ),
-                          ),
+                      // The viewfinder is a bounded box with the controls
+                      // laid out around it, rather than one full-bleed
+                      // feed with buttons floating on top: nothing the
+                      // camera sees ends up underneath a button.
+                      SafeArea(
+                        child: Column(
+                          children: [
+                            _topChrome(),
+                            if (_controlsExpanded)
+                              _expandedControls(accent, onAccent),
+                            Expanded(child: _previewBox(accent, onAccent)),
+                            _bottomChrome(accent, onAccent),
+                          ],
                         ),
                       ),
-                      _topChrome(),
-                      _statusOverlay(accent, onAccent),
-                      _bottomChrome(accent, onAccent),
                       if (_flashing)
                         IgnorePointer(
                           child: Container(
@@ -693,7 +683,24 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
   // <========================= Preview =========================>
 
-  Widget _preview(Color accent) {
+  /// The viewfinder itself: a rounded, bounded box that owns the feed, the
+  /// detection overlay, the status line and the zoom rail — and nothing
+  /// else. Every button lives outside it.
+  Widget _previewBox(Color accent, Color onAccent) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: OSSpace.md, vertical: OSSpace.xs),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(OSRadius.card),
+        child: Container(
+          color: const Color(0xFF0A0908),
+          child: _preview(accent, onAccent),
+        ),
+      ),
+    );
+  }
+
+  Widget _preview(Color accent, Color onAccent) {
     return FutureBuilder<void>(
       future: _initializeFuture,
       builder: (context, snapshot) {
@@ -707,84 +714,84 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         // texture — so an overlay passed there sits in exactly the
         // "portrait" coordinate space rotateQuadForPortrait's normalized
         // output already targets, with no separate rotation here.
-        return LayoutBuilder(
-          builder: (context, outerConstraints) {
-            final previewSize = outerConstraints.biggest;
-            return GestureDetector(
-              onTapUp: (details) => _onTapToFocus(details, previewSize),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Center(
-                    child: CameraPreview(
-                      controller,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final size = constraints.biggest;
-                          return Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              if (_gridVisible)
-                                IgnorePointer(
-                                  child: CustomPaint(
-                                      painter: const _ThirdsGridPainter()),
-                                ),
-                              ValueListenableBuilder(
-                                valueListenable: _quadSmoother.smoothedQuad,
-                                builder: (context, quad, _) {
-                                  if (quad == null) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return CustomPaint(
-                                    painter: LiveQuadPainter(
-                                      accent: accent,
-                                      points: quad.points
-                                          .map((p) => Offset(p.x * size.width,
-                                              p.y * size.height))
-                                          .toList(),
-                                      isImminent: _autoCaptureImminent,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
+        // Everything that has to line up with what the camera sees — the
+        // quad, the focus reticle, tap-to-focus coordinates — lives inside
+        // CameraPreview's child slot, which is sized to the preview
+        // texture itself. Inside a letterboxing box that is no longer the
+        // same rectangle as the box, so measuring against the box would
+        // put the reticle where the user didn't tap.
+        return Center(
+          child: CameraPreview(
+            controller,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final size = constraints.biggest;
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapUp: (details) => _onTapToFocus(details, size),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (_gridVisible)
+                        IgnorePointer(
+                          child: CustomPaint(
+                              painter: const _ThirdsGridPainter()),
+                        ),
+                      ValueListenableBuilder(
+                        valueListenable: _quadSmoother.smoothedQuad,
+                        builder: (context, quad, _) {
+                          if (quad == null) {
+                            return const SizedBox.shrink();
+                          }
+                          return CustomPaint(
+                            painter: LiveQuadPainter(
+                              accent: accent,
+                              points: quad.points
+                                  .map((p) => Offset(
+                                      p.x * size.width, p.y * size.height))
+                                  .toList(),
+                              isImminent: _autoCaptureImminent,
+                            ),
                           );
                         },
                       ),
-                    ),
-                  ),
-                  if (_focusPointNormalized != null)
-                    Positioned(
-                      left: _focusPointNormalized!.dx * previewSize.width - 32,
-                      top: _focusPointNormalized!.dy * previewSize.height - 32,
-                      child: IgnorePointer(
-                        child: TweenAnimationBuilder<double>(
-                          key: ValueKey(_focusPointNormalized),
-                          tween: Tween(begin: 1.4, end: 1.0),
-                          duration: const Duration(milliseconds: 220),
-                          curve: Curves.easeOut,
-                          builder: (context, scale, child) => Transform.scale(
-                            scale: scale,
-                            child: Opacity(
-                              opacity: (2.0 - scale).clamp(0.0, 1.0),
-                              child: child,
-                            ),
-                          ),
-                          child: Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: accent, width: 2),
+                      if (_focusPointNormalized != null)
+                        Positioned(
+                          left: _focusPointNormalized!.dx * size.width - 32,
+                          top: _focusPointNormalized!.dy * size.height - 32,
+                          child: IgnorePointer(
+                            child: TweenAnimationBuilder<double>(
+                              key: ValueKey(_focusPointNormalized),
+                              tween: Tween(begin: 1.4, end: 1.0),
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeOut,
+                              builder: (context, scale, child) =>
+                                  Transform.scale(
+                                scale: scale,
+                                child: Opacity(
+                                  opacity: (2.0 - scale).clamp(0.0, 1.0),
+                                  child: child,
+                                ),
+                              ),
+                              child: Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: accent, width: 2),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
+                      _statusOverlay(accent, onAccent),
+                      if (_maxZoom > _minZoom) _zoomSlider(),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
         );
       },
     );
@@ -795,44 +802,39 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   Widget _topChrome() {
     final canTorch = _cameraController != null &&
         _lensDirection == CameraLensDirection.back;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: OSSpace.md, vertical: OSSpace.xs),
-        child: Row(
-          children: [
-            _ChromeButton(
-              icon: _torchOn
-                  ? Icons.flash_on_rounded
-                  : Icons.flash_off_rounded,
-              tooltip: _torchOn ? 'Torch on' : 'Torch off',
-              // The torch is the fix for the low-light warning, so it
-              // adopts the warning colour while that banner is up.
-              highlight: _torchOn || _lowLight,
-              highlightColor: _lowLight && !_torchOn ? context.os.warning : null,
-              onPressed: canTorch ? _toggleTorch : null,
-            ),
-            const Spacer(),
-            _ChromeButton(
-              icon: Icons.cameraswitch_rounded,
-              tooltip: 'Switch camera',
-              onPressed:
-                  (_cameraController != null && Globals.cameras.length > 1)
-                      ? _switchCamera
-                      : null,
-            ),
-            const SizedBox(width: OSSpace.xs),
-            _ChromeButton(
-              icon: _controlsExpanded
-                  ? Icons.expand_less_rounded
-                  : Icons.expand_more_rounded,
-              tooltip: 'More controls',
-              highlight: _controlsExpanded,
-              onPressed: () =>
-                  setState(() => _controlsExpanded = !_controlsExpanded),
-            ),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: OSSpace.md, vertical: OSSpace.xs),
+      child: Row(
+        children: [
+          _ChromeButton(
+            icon: _torchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+            tooltip: _torchOn ? 'Torch on' : 'Torch off',
+            // The torch is the fix for the low-light warning, so it
+            // adopts the warning colour while that banner is up.
+            highlight: _torchOn || _lowLight,
+            highlightColor: _lowLight && !_torchOn ? context.os.warning : null,
+            onPressed: canTorch ? _toggleTorch : null,
+          ),
+          const Spacer(),
+          _ChromeButton(
+            icon: Icons.cameraswitch_rounded,
+            tooltip: 'Switch camera',
+            onPressed: (_cameraController != null && Globals.cameras.length > 1)
+                ? _switchCamera
+                : null,
+          ),
+          const SizedBox(width: OSSpace.xs),
+          _ChromeButton(
+            icon: _controlsExpanded
+                ? Icons.expand_less_rounded
+                : Icons.expand_more_rounded,
+            tooltip: 'More controls',
+            highlight: _controlsExpanded,
+            onPressed: () =>
+                setState(() => _controlsExpanded = !_controlsExpanded),
+          ),
+        ],
       ),
     );
   }
@@ -840,9 +842,9 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// The detection state, spelled out in words as well as colour: the quad
   /// turning accent is never the only signal that a page was found.
   Widget _statusOverlay(Color accent, Color onAccent) {
-    return SafeArea(
+    return IgnorePointer(
       child: Padding(
-        padding: const EdgeInsets.only(top: 52),
+        padding: const EdgeInsets.only(top: OSSpace.sm),
         child: Align(
           alignment: Alignment.topCenter,
           child: Column(
@@ -913,69 +915,86 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
+  /// The one row of controls under the viewfinder: gallery on the left of
+  /// the shutter, done on its right, with the auto-capture state spelled
+  /// out above them.
   Widget _bottomChrome(Color accent, Color onAccent) {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_maxZoom > _minZoom) _zoomSlider(),
-            if (_controlsExpanded) _expandedControls(accent, onAccent),
-            // The session chip gets its own row above the shutter: sharing
-            // one row with three fixed-width controls left it fighting the
-            // shutter for space on a 1080px-wide screen.
-            if (_capturedFiles.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: OSSpace.md),
-                child: _sessionChip(accent),
-              ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: OSSpace.md, vertical: OSSpace.xs),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: _ChromeButton(
-                        icon: Icons.grid_3x3_rounded,
-                        tooltip: 'Composition grid',
-                        highlight: _gridVisible,
-                        onPressed: () =>
-                            setState(() => _gridVisible = !_gridVisible),
-                      ),
-                    ),
-                  ),
-                  _shutter(accent),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: _ChromeButton(
-                        icon: Icons.photo_library_rounded,
-                        tooltip: 'Import from gallery',
-                        onPressed: _onImportPressed,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: OSSpace.md, vertical: OSSpace.xs),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _autoCaptureImminent
+                ? 'HOLD STILL…'
+                : 'AUTO · ${_autoCaptureEnabled ? 'ON' : 'OFF'}',
+            style: OSTypography.caption.copyWith(
+              fontWeight: FontWeight.w700,
+              color: _autoCaptureImminent
+                  ? OSColors.chromeOnBackground
+                  : _autoCaptureEnabled
+                      ? accent
+                      : OSColors.chromeMuted,
             ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: OSSpace.xs),
-              child: Text(
-                _autoCaptureImminent
-                    ? 'HOLD STILL…'
-                    : 'AUTO · ${_autoCaptureEnabled ? 'ON' : 'OFF'}',
-                style: OSTypography.caption.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: _autoCaptureImminent
-                      ? OSColors.chromeOnBackground
-                      : _autoCaptureEnabled
-                          ? accent
-                          : OSColors.chromeMuted,
+          ),
+          const SizedBox(height: OSSpace.xs),
+          Row(
+            children: [
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _ChromeButton(
+                    icon: Icons.photo_library_rounded,
+                    tooltip: 'Import from gallery',
+                    onPressed: _onImportPressed,
+                  ),
                 ),
               ),
+              _shutter(accent),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _doneButton(accent, onAccent),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The session's exit, carrying its page count: nothing captured yet
+  /// means nothing to finish, so it sits inert rather than disappearing
+  /// and shifting the row around the shutter.
+  Widget _doneButton(Color accent, Color onAccent) {
+    final count = _capturedFiles.length;
+    final enabled = count > 0;
+    return GestureDetector(
+      onTap: enabled ? _onDonePressed : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: OSSpace.sm, vertical: OSSpace.xs + 2),
+        decoration: BoxDecoration(
+          color: enabled ? accent : OSColors.chromeControl,
+          borderRadius: BorderRadius.circular(OSRadius.pill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              enabled ? 'Done · $count' : 'Done',
+              style: OSTypography.caption.copyWith(
+                fontWeight: FontWeight.w700,
+                color: enabled ? onAccent : OSColors.chromeMuted,
+              ),
+            ),
+            const SizedBox(width: OSSpace.xxs),
+            Icon(
+              Icons.check_rounded,
+              size: 16,
+              color: enabled ? onAccent : OSColors.chromeMuted,
             ),
           ],
         ),
@@ -1030,56 +1049,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
-  /// "You have N pages, go look at them" — the session's exit, rather than
-  /// a separate Done button that would mean the same thing twice.
-  Widget _sessionChip(Color accent) {
-    if (_capturedFiles.isEmpty) return const SizedBox.shrink();
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: GestureDetector(
-        onTap: _onDonePressed,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(6, 6, 10, 6),
-          decoration: BoxDecoration(
-            color: OSColors.chromeScrim,
-            borderRadius: BorderRadius.circular(OSRadius.pill),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(OSRadius.chip),
-                child: Image.file(
-                  _capturedFiles.last.file,
-                  height: 30,
-                  width: 30,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    height: 30,
-                    width: 30,
-                    color: OSColors.chromeControl,
-                  ),
-                ),
-              ),
-              const SizedBox(width: OSSpace.xs),
-              Flexible(
-                child: Text(
-                  '${_capturedFiles.length} · Done ›',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: OSTypography.caption.copyWith(
-                    color: OSColors.chromeOnBackground,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   /// Everything that isn't needed on every shot, one tap behind the caret.
   Widget _expandedControls(Color accent, Color onAccent) {
     return SizedBox(
@@ -1088,6 +1057,17 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: OSSpace.md),
         children: [
+          Padding(
+            padding: const EdgeInsets.only(right: OSSpace.xs),
+            child: Center(
+              child: _ChromeButton(
+                icon: Icons.grid_3x3_rounded,
+                tooltip: 'Composition grid',
+                highlight: _gridVisible,
+                onPressed: () => setState(() => _gridVisible = !_gridVisible),
+              ),
+            ),
+          ),
           if (_exposureStepSize > 0)
             Container(
               margin: const EdgeInsets.only(right: OSSpace.xs),
@@ -1150,55 +1130,65 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
+  /// A vertical rail down the right edge of the viewfinder: up is closer.
+  /// Compact on purpose — it sits over the feed, so it takes a strip
+  /// rather than a whole row.
   Widget _zoomSlider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: OSSpace.md, vertical: OSSpace.xxs),
-      // Absorb taps so a miss on the slider track isn't read as a
-      // tap-to-focus by the preview's GestureDetector below.
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {},
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: OSSpace.sm),
-          decoration: BoxDecoration(
-            color: OSColors.chromeScrim,
-            borderRadius: BorderRadius.circular(OSRadius.pill),
-          ),
-          child: ValueListenableBuilder<double>(
-            valueListenable: _currentZoom,
-            builder: (context, zoom, _) => Row(
-              children: [
-                SizedBox(
-                  width: 38,
-                  child: Text(
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: OSSpace.xs, vertical: OSSpace.md),
+        // Absorb taps so a miss on the slider track isn't read as a
+        // tap-to-focus by the preview's GestureDetector below.
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {},
+          child: Container(
+            width: 40,
+            padding: const EdgeInsets.symmetric(vertical: OSSpace.xs),
+            decoration: BoxDecoration(
+              color: OSColors.chromeScrim,
+              borderRadius: BorderRadius.circular(OSRadius.pill),
+            ),
+            child: ValueListenableBuilder<double>(
+              valueListenable: _currentZoom,
+              builder: (context, zoom, _) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 40,
+                    height: 160,
+                    child: RotatedBox(
+                      quarterTurns: 3,
+                      child: SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 2,
+                          overlayShape:
+                              const RoundSliderOverlayShape(overlayRadius: 12),
+                          thumbShape:
+                              const RoundSliderThumbShape(enabledThumbRadius: 6),
+                          activeTrackColor: Colors.white,
+                          inactiveTrackColor: Colors.white30,
+                          thumbColor: Colors.white,
+                        ),
+                        child: Slider(
+                          min: _minZoom,
+                          max: _maxZoom,
+                          value: zoom.clamp(_minZoom, _maxZoom),
+                          onChanged: _onZoomSliderChanged,
+                          onChangeEnd: _onZoomSliderChangeEnd,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Text(
                     '${zoom.toStringAsFixed(1)}x',
                     style: OSTypography.caption
                         .copyWith(color: OSColors.chromeOnBackground),
                   ),
-                ),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 2,
-                      overlayShape:
-                          const RoundSliderOverlayShape(overlayRadius: 16),
-                      thumbShape:
-                          const RoundSliderThumbShape(enabledThumbRadius: 8),
-                      activeTrackColor: Colors.white,
-                      inactiveTrackColor: Colors.white30,
-                      thumbColor: Colors.white,
-                    ),
-                    child: Slider(
-                      min: _minZoom,
-                      max: _maxZoom,
-                      value: zoom.clamp(_minZoom, _maxZoom),
-                      onChanged: _onZoomSliderChanged,
-                      onChangeEnd: _onZoomSliderChangeEnd,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -1299,11 +1289,11 @@ class _ChromeButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         child: SizedBox(
-          height: 40,
-          width: 40,
+          height: 48,
+          width: 48,
           child: Icon(
             icon,
-            size: 20,
+            size: 26,
             color: highlight
                 ? Theme.of(context).colorScheme.onPrimary
                 : enabled

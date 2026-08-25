@@ -254,14 +254,16 @@ class _PreviewScreenState extends State<PreviewScreen>
                       );
                     },
                     rescanOnPressed: () {
-                      // Re-scan adds a fresh capture rather than
-                      // overwriting this page — the page it supersedes
-                      // stays until the user deletes it deliberately.
+                      // Replaces this page with the new capture, in place:
+                      // re-scan is how a bad page gets redone, so the old
+                      // one goes rather than piling up next to it.
                       // Deliberately does not pop first: the camera route
                       // is pushed from this context, which a pop would
                       // have already torn down.
-                      BlocProvider.of<DirectoryCubit>(context)
-                          .createImage(context, liveScan: true);
+                      BlocProvider.of<DirectoryCubit>(context).rescanImage(
+                        context,
+                        state.images![_currentIndex],
+                      );
                     },
                   ),
                 ),

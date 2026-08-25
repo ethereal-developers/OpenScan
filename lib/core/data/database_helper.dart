@@ -147,6 +147,7 @@ class DatabaseHelper {
       String? unfilteredPath,
       String? filterName,
       bool clearFilter = false,
+      bool clearOriginal = false,
       int? idx}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
@@ -154,7 +155,10 @@ class DatabaseHelper {
         _dirTableName,
         {
           'img_path': imgPath,
-          if (origPath != null) 'orig_img_path': origPath,
+          // clearOriginal distinguishes "no original for this page" from
+          // "leave whatever original is on record alone" — without it a
+          // page whose original is gone keeps pointing at a deleted file.
+          if (origPath != null || clearOriginal) 'orig_img_path': origPath,
           if (clearFilter || unfilteredPath != null)
             'unfiltered_img_path': unfilteredPath,
           if (clearFilter || filterName != null) 'filter_name': filterName,

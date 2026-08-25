@@ -45,7 +45,7 @@ class AppSettings extends ChangeNotifier {
   OSAccentFamily _accent = OSAccents.ember;
   bool _autoCapture = true;
   bool _captureSound = true;
-  bool _keepOriginal = true;
+  bool _keepOriginal = false;
   String? _defaultFilter;
   LibrarySort _sort = LibrarySort.lastModified;
 
@@ -71,7 +71,10 @@ class AppSettings extends ChangeNotifier {
     // Settings as well as behind the camera's long-press.
     _autoCapture = prefs.getBool(_kAutoCapture) ?? true;
     _captureSound = prefs.getBool(_kCaptureSound) ?? true;
-    _keepOriginal = prefs.getBool(_kKeepOriginal) ?? true;
+    // Off by default: a kept original roughly doubles what a document
+    // costs on disk, to buy a re-crop from the full capture that most
+    // pages never need.
+    _keepOriginal = prefs.getBool(_kKeepOriginal) ?? false;
     _defaultFilter = prefs.getString(_kDefaultFilter);
     _sort = LibrarySort.values.firstWhere(
       (s) => s.name == prefs.getString(_kSort),

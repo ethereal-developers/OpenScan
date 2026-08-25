@@ -265,7 +265,6 @@ class _HomeScreenState extends State<HomeScreen> {
         context: context,
         fileName: _sanitize(_titleOf(doc)),
         images: images,
-        quality: 3,
       );
       if (path != null) exported++;
     }

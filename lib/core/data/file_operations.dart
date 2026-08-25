@@ -127,7 +127,12 @@ class FileOperations {
 
     String stamp = DateTime.now().toString();
     File tempPic = File("$dirPath/$stamp.jpg");
-    await image.copy(tempPic.path);
+    await _copyNormalized(
+      source: image,
+      destination: tempPic,
+      maxEdge: kStoredPageMaxEdge,
+      quality: kStoredPageQuality,
+    );
 
     // Always a separate file, even when it's byte-identical to the page
     // (an uncropped gallery import): cropping rewrites the page in place,
@@ -136,7 +141,12 @@ class FileOperations {
     String? origPath;
     if (original != null && original.existsSync()) {
       origPath = "$dirPath/orig_$stamp.jpg";
-      await original.copy(origPath);
+      await _copyNormalized(
+        source: original,
+        destination: File(origPath),
+        maxEdge: kStoredOriginalMaxEdge,
+        quality: kStoredOriginalQuality,
+      );
     }
 
     ImageOS saved = ImageOS(
@@ -153,6 +163,48 @@ class FileOperations {
       database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
     }
     return saved;
+  }
+
+  /// Copies [source] into permanent storage the same way [saveImage] does
+  /// — downscaled to page size and re-encoded — for the paths that write a
+  /// page file directly rather than going through [saveImage] (re-crop,
+  /// re-scan).
+  Future<void> storeNormalized({
+    required File source,
+    required File destination,
+    bool asOriginal = false,
+  }) =>
+      _copyNormalized(
+        source: source,
+        destination: destination,
+        maxEdge: asOriginal ? kStoredOriginalMaxEdge : kStoredPageMaxEdge,
+        quality: asOriginal ? kStoredOriginalQuality : kStoredPageQuality,
+      );
+
+  /// Copies [source] to [destination], downscaled and re-encoded on the
+  /// way so what lands in storage is a page-sized JPEG rather than a
+  /// full-resolution camera or gallery photo.
+  ///
+  /// Falls back to a plain copy if the image can't be decoded or re-encoded
+  /// — an oversized page is worth far more than no page at all.
+  Future<void> _copyNormalized({
+    required File source,
+    required File destination,
+    required int maxEdge,
+    required int quality,
+  }) async {
+    try {
+      await compute(normalizeImageIsolateEntry, {
+        'src': source.path,
+        'dest': destination.path,
+        'maxEdge': maxEdge,
+        'quality': quality,
+      });
+      if (destination.existsSync() && destination.lengthSync() > 0) return;
+    } catch (e) {
+      debugPrint("Couldn't normalize ${source.path}: $e");
+    }
+    await source.copy(destination.path);
   }
 
   /// Delete the temporary files created by the image_picker package
@@ -215,19 +267,19 @@ class FileOperations {
 
   /// Saves PDF to Internal storage
   ///
+  /// [quality] is a JPEG quality (0-100) every page is re-encoded at on
+  /// the way into the document — the same number the export sheet quotes
+  /// a size for.
+  ///
   /// Returns: FileName with Path [String]
   Future<String?> saveToDevice(
       {BuildContext? context,
       required String fileName,
       required List<ImageOS> images,
       PdfPageFormat pageFormat = PdfPageFormat.a4,
-      int? quality}) async {
-    String? fileNameWithPath;
+      int quality = 100}) async {
     Directory? selectedDirectory;
     Directory openscanDir = Directory("/storage/emulated/0/Documents/OpenScan");
-    int desiredQuality = 100;
-    List<ImageOS> tempImages = [];
-    String path;
 
     try {
       if (!openscanDir.existsSync()) {
@@ -240,42 +292,44 @@ class FileOperations {
       selectedDirectory = await pickDirectory(context, selectedDirectory);
     }
 
-    if (quality == 1) {
-      desiredQuality = 60;
-    } else if (quality == 2) {
-      desiredQuality = 80;
-    } else {
-      desiredQuality = 100;
-    }
-
-    Directory cacheDir = await getTemporaryDirectory();
-
-    try {
-      for (ImageOS image in images) {
-        path = await compute(compressImageIsolateEntry, {
-          'src': image.imgPath,
-          'dest': cacheDir.path,
-          'quality': desiredQuality,
-        });
-        tempImages.add(ImageOS(imgPath: path));
-      }
-      images = tempImages;
-    } catch (e) {
-      print(e);
-    }
-
     // TODO: remove await and display toast
-    fileNameWithPath = await compute(createPdf, {
+    return await compute(createPdf, {
       'selectedDirectory': selectedDirectory,
       'fileName': fileName,
-      'images': images,
+      'images': await _compressedForPdf(images, quality),
       'pageFormat': pageFormat,
     });
+  }
 
-    return fileNameWithPath;
+  /// Re-encodes every page at [quality] into the cache directory, and
+  /// hands back records pointing at those copies.
+  ///
+  /// Falls back to the pages themselves if anything goes wrong: a
+  /// full-size PDF beats no PDF.
+  Future<List<ImageOS>> _compressedForPdf(
+      List<ImageOS> images, int quality) async {
+    Directory cacheDir = await getTemporaryDirectory();
+    List<ImageOS> compressed = [];
+    try {
+      for (ImageOS image in images) {
+        final path = await compute(compressImageIsolateEntry, {
+          'src': image.imgPath,
+          'dest': cacheDir.path,
+          'quality': quality,
+        });
+        compressed.add(ImageOS(imgPath: path));
+      }
+      return compressed;
+    } catch (e) {
+      print(e);
+      return images;
+    }
   }
 
   /// Saves PDF to App directory
+  ///
+  /// The share path: same [quality] treatment as [saveToDevice], so a
+  /// shared PDF and a saved one are the same file.
   ///
   /// Returns: FileName with Path [String]
   Future<String?> saveToAppDirectory(
@@ -283,28 +337,21 @@ class FileOperations {
       String? fileName,
       required List<ImageOS> images,
       PdfPageFormat pageFormat = PdfPageFormat.a4,
+      int quality = 100,
       required bool imagesSelected}) async {
-    String? fileNameWithPath;
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
-    List<File> imageFiles = [];
+    List<ImageOS> selected = [
+      for (final image in images)
+        if (image.selected || !imagesSelected) image,
+    ];
 
-    // TODO: Export selected images
-    for (ImageOS image in images) {
-      if (image.selected || !imagesSelected) {
-        imageFiles.add(File(image.imgPath));
-      }
-    }
-
-    fileNameWithPath = await compute(createPdf, {
+    return await compute(createPdf, {
       'selectedDirectory': selectedDirectory,
       'fileName': fileName,
-      'images': imageFiles.isEmpty
-          ? images
-          : [for (final file in imageFiles) ImageOS(imgPath: file.path)],
+      'images':
+          await _compressedForPdf(selected.isEmpty ? images : selected, quality),
       'pageFormat': pageFormat,
     });
-
-    return fileNameWithPath;
   }
 
   /// Writes each page out as a standalone image file rather than a PDF.

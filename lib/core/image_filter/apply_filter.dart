@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
+import 'package:openscan/core/cv/compress.dart';
 
 import 'filters/document_filters.dart';
 import 'filters/filters.dart';
@@ -43,7 +44,10 @@ Uint8List filterEncodedImage(Filter filter, Uint8List encoded, {int? maxEdge}) {
     numChannels: 4,
     order: img.ChannelOrder.rgba,
   );
-  return img.encodeJpg(filtered, quality: 95);
+  // The same quality a page is stored at (see kStoredPageQuality): a
+  // filtered page is still just a page, and encoding it richer than the
+  // capture it came from buys nothing but bytes.
+  return img.encodeJpg(filtered, quality: kStoredPageQuality);
 }
 
 /// Entry point designed to be run via `compute()`: filters the JPEG at
