@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/l10n/app_localizations.dart';
+import 'package:flutter/services.dart';
+import 'package:openscan/core/theme/os_colors.dart';
+import 'package:openscan/core/theme/os_tokens.dart';
+import 'package:openscan/core/theme/os_typography.dart';
 import 'package:openscan/view/Widgets/demo/slide_dots.dart';
 import 'package:openscan/view/Widgets/demo/slide_item.dart';
-import 'package:openscan/view/extensions.dart';
+import 'package:permission_handler/permission_handler.dart';
 
+/// Onboarding. Fixed dark, like the camera it hands off into, and only as
+/// long as it needs to be: two things worth knowing, then the permission
+/// the app cannot work without.
 class DemoScreen extends StatefulWidget {
   DemoScreen({this.showSkip = true});
 
+  /// False when the tutorial is opened deliberately from Settings rather
+  /// than on first launch — there is nothing to skip, only to go back from,
+  /// and it must not ask for camera permission again at the end.
   final bool? showSkip;
 
   @override
@@ -14,122 +23,102 @@ class DemoScreen extends StatefulWidget {
 }
 
 class _DemoScreenState extends State<DemoScreen> {
+  final PageController _controller = PageController();
   int _currentPage = 0;
-  bool isDone = false;
 
-  _onPageChanged(int index) {
-    setState(() {
-      _currentPage = index;
-      if (index == slideList.length - 1) {
-        setState(() {
-          isDone = true;
-        });
-      } else {
-        setState(() {
-          isDone = false;
-        });
-      }
-    });
+  bool get _onLastSlide => _currentPage == slideList.length - 1;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _next() {
+    if (_onLastSlide) {
+      _finish();
+      return;
+    }
+    _controller.nextPage(
+      duration: OSMotion.standard,
+      curve: OSMotion.emphasizedDecel,
+    );
+  }
+
+  Future<void> _finish() async {
+    if (widget.showSkip!) await Permission.camera.request();
+    if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      appBar: AppBar(
-        elevation: 0,
-        centerTitle: true,
-        backgroundColor: Theme.of(context).primaryColor,
-        leading: (!widget.showSkip!)
-            ? IconButton(
-                icon: Icon(Icons.arrow_back_ios),
-                padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
-                onPressed: () => Navigator.pop(context),
-              )
-            : null,
-        title: Text(
-          AppLocalizations.of(context)!.tutorial_title,
-          style: TextStyle().appBarStyle,
-        ),
-        actions: widget.showSkip!
-            ? <Widget>[
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 4, 10, 0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Center(
-                          child: Text(
-                            (isDone)
-                                ? AppLocalizations.of(context)!.done
-                                : AppLocalizations.of(context)!.skip,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontSize: 17,
-                              fontWeight: (isDone)
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                        (isDone)
-                            ? Container(
-                                width: 15,
-                              )
-                            : Icon(
-                                Icons.arrow_forward_ios,
-                                size: 17,
-                                color: Theme.of(context).colorScheme.secondary,
-                              )
-                      ],
-                    ),
-                  ),
-                )
-              ]
-            : null,
+    final accent = Theme.of(context).colorScheme.primary;
+    final onAccent = Theme.of(context).colorScheme.onPrimary;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: OSColors.chromeBackground,
+        systemNavigationBarIconBrightness: Brightness.light,
       ),
-      body: Container(
-        color: Theme.of(context).primaryColor,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      child: Scaffold(
+        backgroundColor: OSColors.chromeBackground,
+        body: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: widget.showSkip!
+                    ? TextButton(
+                        onPressed: _finish,
+                        child: Text('Skip',
+                            style: OSTypography.label
+                                .copyWith(color: OSColors.chromeMuted)),
+                      )
+                    : IconButton(
+                        alignment: Alignment.centerLeft,
+                        icon: const Icon(Icons.arrow_back_rounded,
+                            color: OSColors.chromeOnBackground),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+              ),
               Expanded(
-                child: Stack(
-                  alignment: AlignmentDirectional.bottomCenter,
-                  children: <Widget>[
-                    PageView.builder(
-                      scrollDirection: Axis.horizontal,
-                      onPageChanged: _onPageChanged,
-                      itemCount: slideList.length,
-                      itemBuilder: (ctx, i) {
-                        return SlideItem(i);
-                      },
+                child: PageView.builder(
+                  controller: _controller,
+                  itemCount: slideList.length,
+                  onPageChanged: (index) =>
+                      setState(() => _currentPage = index),
+                  itemBuilder: (context, index) => SlideItem(index),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (int i = 0; i < slideList.length; i++)
+                    SlideDots(i == _currentPage),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    OSSpace.xl, OSSpace.lg, OSSpace.xl, OSSpace.xl),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: accent,
+                      foregroundColor: onAccent,
+                      minimumSize: const Size(0, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(OSRadius.card),
+                      ),
                     ),
-                    Stack(
-                      alignment: AlignmentDirectional.topStart,
-                      children: <Widget>[
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              for (int i = 0; i < slideList.length; i++)
-                                (i == _currentPage)
-                                    ? SlideDots(true)
-                                    : SlideDots(false)
-                            ],
-                          ),
-                        )
-                      ],
-                    )
-                  ],
+                    onPressed: _next,
+                    child: Text(_onLastSlide
+                        ? (widget.showSkip! ? 'Allow camera access' : 'Done')
+                        : 'Next'),
+                  ),
                 ),
               ),
             ],

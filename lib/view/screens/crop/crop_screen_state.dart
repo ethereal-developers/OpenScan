@@ -138,6 +138,22 @@ class CropScreenState {
     r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
   }
 
+  /// Snaps the quad back to the full image, for the crop screen's "No
+  /// crop" action. Distinct from [initPoints], which re-applies whatever
+  /// the detector found.
+  void resetPointsToCorners() {
+    tl = Offset(canvasOffset.dx, canvasOffset.dy);
+    tr = Offset(canvasOffset.dx + canvasSize.width, canvasOffset.dy);
+    bl = Offset(canvasOffset.dx, canvasOffset.dy + canvasSize.height);
+    br = Offset(
+        canvasOffset.dx + canvasSize.width, canvasOffset.dy + canvasSize.height);
+
+    t = Offset((tl.dx + tr.dx) / 2, (tl.dy + tr.dy) / 2);
+    b = Offset((bl.dx + br.dx) / 2, (bl.dy + br.dy) / 2);
+    l = Offset((tl.dx + bl.dx) / 2, (tl.dy + bl.dy) / 2);
+    r = Offset((tr.dx + br.dx) / 2, (tr.dy + br.dy) / 2);
+  }
+
   /// Updates the points in the polygon when changed manually
   updatePolygon() {
     debugPrint('Updated Point (local) => ${updatedPoint.value.localPosition}');

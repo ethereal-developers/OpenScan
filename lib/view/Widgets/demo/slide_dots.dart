@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:openscan/core/theme/os_colors.dart';
+import 'package:openscan/core/theme/os_tokens.dart';
 
+/// Progress dots. The active dot both grows and takes the accent, so the
+/// position reads without relying on colour alone.
 class SlideDots extends StatelessWidget {
   final bool isActive;
 
@@ -8,14 +12,16 @@ class SlideDots extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: Duration(milliseconds: 150),
-      margin: const EdgeInsets.symmetric(horizontal: 10),
-      height: isActive ? 12 : 8,
-      width: isActive ? 12 : 8,
+      duration: OSMotion.selection,
+      curve: OSMotion.standardCurve,
+      margin: const EdgeInsets.symmetric(horizontal: OSSpace.xxs),
+      height: 8,
+      width: isActive ? 22 : 8,
       decoration: BoxDecoration(
-        color:
-            isActive ? Theme.of(context).colorScheme.secondary : Colors.black,
-        borderRadius: BorderRadius.all(Radius.circular(10)),
+        color: isActive
+            ? Theme.of(context).colorScheme.primary
+            : OSColors.chromeControl,
+        borderRadius: BorderRadius.circular(4),
       ),
     );
   }

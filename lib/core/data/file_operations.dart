@@ -3,11 +3,13 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:openscan/core/cv/compress.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/models.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class FileOperations {
@@ -177,6 +179,9 @@ class FileOperations {
     Directory selectedDirectory = params['selectedDirectory'];
     List<ImageOS> images = params['images'];
     String fileName = params['fileName'];
+    // Page size is a user-visible export choice, so it is passed in
+    // rather than left to the pdf package's A4 default.
+    PdfPageFormat pageFormat = params['pageFormat'] ?? PdfPageFormat.a4;
 
     try {
       String fileNameWithPath = "${selectedDirectory.path}/$fileName.pdf";
@@ -189,6 +194,7 @@ class FileOperations {
 
         doc.addPage(
           pw.Page(
+            pageFormat: pageFormat,
             build: (pw.Context context) {
               return pw.Center(
                 child: pw.Image(image),
@@ -214,6 +220,7 @@ class FileOperations {
       {BuildContext? context,
       required String fileName,
       required List<ImageOS> images,
+      PdfPageFormat pageFormat = PdfPageFormat.a4,
       int? quality}) async {
     String? fileNameWithPath;
     Directory? selectedDirectory;
@@ -262,6 +269,7 @@ class FileOperations {
       'selectedDirectory': selectedDirectory,
       'fileName': fileName,
       'images': images,
+      'pageFormat': pageFormat,
     });
 
     return fileNameWithPath;
@@ -274,6 +282,7 @@ class FileOperations {
       {BuildContext? context,
       String? fileName,
       required List<ImageOS> images,
+      PdfPageFormat pageFormat = PdfPageFormat.a4,
       required bool imagesSelected}) async {
     String? fileNameWithPath;
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
@@ -289,9 +298,81 @@ class FileOperations {
     fileNameWithPath = await compute(createPdf, {
       'selectedDirectory': selectedDirectory,
       'fileName': fileName,
-      'images': images,
+      'images': imageFiles.isEmpty
+          ? images
+          : [for (final file in imageFiles) ImageOS(imgPath: file.path)],
+      'pageFormat': pageFormat,
     });
 
     return fileNameWithPath;
   }
+
+  /// Writes each page out as a standalone image file rather than a PDF.
+  ///
+  /// Returns the paths written, newest export first cleared of any partial
+  /// results — an export that throws half way leaves nothing behind for the
+  /// share sheet to pick up.
+  Future<List<String>> exportImages({
+    required List<ImageOS> images,
+    required Directory directory,
+    required String baseName,
+    required String format,
+    required int quality,
+  }) async {
+    return await compute(exportImagesIsolateEntry, {
+      'sources': [for (final image in images) image.imgPath],
+      'dest': directory.path,
+      'baseName': baseName,
+      'format': format,
+      'quality': quality,
+    });
+  }
+
+  /// The directory image exports land in: the same visible OpenScan folder
+  /// PDFs use, falling back to app storage where that is not writable.
+  Future<Directory> exportDirectory({BuildContext? context}) async {
+    Directory openscanDir = Directory("/storage/emulated/0/Documents/OpenScan");
+    try {
+      if (!openscanDir.existsSync()) openscanDir.createSync(recursive: true);
+      return openscanDir;
+    } catch (e) {
+      debugPrint('Falling back to app storage for export: $e');
+      return await getApplicationDocumentsDirectory();
+    }
+  }
+}
+
+/// Entry point designed to be run via `compute()`. Re-encodes each source
+/// image into `<dest>/<baseName>_<n>.<format>` and returns the paths.
+Future<List<String>> exportImagesIsolateEntry(
+    Map<String, dynamic> params) async {
+  final List<String> sources = List<String>.from(params['sources'] as List);
+  final String dest = params['dest'] as String;
+  final String baseName = params['baseName'] as String;
+  final String format = params['format'] as String;
+  final int quality = params['quality'] as int;
+
+  final written = <String>[];
+  try {
+    for (int i = 0; i < sources.length; i++) {
+      final decoded = img.decodeImage(await File(sources[i]).readAsBytes());
+      if (decoded == null) throw StateError('Could not decode ${sources[i]}');
+
+      final suffix = sources.length == 1 ? '' : '_${i + 1}';
+      final path = '$dest/$baseName$suffix.$format';
+      final bytes = format == 'png'
+          ? img.encodePng(decoded)
+          // PNG is lossless, so the quality control only reaches JPEG.
+          : img.encodeJpg(decoded, quality: quality);
+      await File(path).writeAsBytes(bytes, flush: true);
+      written.add(path);
+    }
+  } catch (e) {
+    for (final path in written) {
+      final file = File(path);
+      if (file.existsSync()) file.deleteSync();
+    }
+    rethrow;
+  }
+  return written;
 }

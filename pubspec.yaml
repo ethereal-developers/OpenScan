@@ -22,9 +22,7 @@ dependencies:
   # flutter_neumorphic: ^3.1.0
   flutter_localizations:
     sdk: flutter
-  flutter_speed_dial:
   # fluttertoast: ^8.0.8
-  focused_menu:
   image:
   image_picker:
   intl:
@@ -38,7 +36,6 @@ dependencies:
   sensors_plus:
   share_plus:
   shared_preferences:
-  simple_animated_icon:
   sqflite:
   url_launcher:
   vector_math: 

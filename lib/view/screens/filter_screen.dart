@@ -8,6 +8,10 @@ import 'package:openscan/core/image_filter/apply_filter.dart';
 import 'package:openscan/core/image_filter/filters/document_filters.dart';
 import 'package:openscan/core/image_filter/filters/filters.dart';
 import 'package:openscan/core/models.dart';
+import 'package:openscan/core/theme/appTheme.dart';
+import 'package:openscan/core/theme/os_colors.dart';
+import 'package:openscan/core/theme/os_tokens.dart';
+import 'package:openscan/core/theme/os_typography.dart';
 import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/loading.dart';
@@ -59,6 +63,11 @@ class _FilterScreenState extends State<FilterScreen> {
   late final PageController _pageController;
   late int _pageIndex;
   late Filter _selected;
+
+  /// Whether Done applies the chosen mode to every page rather than just
+  /// this one. A visible switch rather than a hidden overflow item: it
+  /// changes what the primary action does, so it has to be on screen.
+  bool _applyToAll = false;
 
   /// Decoded, downscaled copies of each page's unfiltered source, keyed by
   /// `'<source path>|<max edge>'`. Filtering works off these rather than
@@ -205,103 +214,124 @@ class _FilterScreenState extends State<FilterScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: AppBar(
-          elevation: 0,
-          centerTitle: true,
-          title: Text(l10n.filters),
-          backgroundColor: Theme.of(
-            context,
-          ).primaryColor.withValues(alpha: 0.5),
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios),
-            padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
-            onPressed: () => Navigator.pop(context),
+    // Fixed-dark chrome, like the preview: a full-bleed scan being colour
+    // corrected is the wrong place to introduce a warm-white frame.
+    return Scaffold(
+      backgroundColor: OSColors.chromeBackground,
+      appBar: AppBar(
+        backgroundColor: OSColors.chromeBackground,
+        foregroundColor: OSColors.chromeOnBackground,
+        systemOverlayStyle: AppTheme.chromeOverlayStyle,
+        leading: IconButton(
+          icon: const Icon(Icons.close_rounded,
+              color: OSColors.chromeOnBackground),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
+        title: Text(
+          l10n.filters,
+          style:
+              OSTypography.subtitle.copyWith(color: OSColors.chromeOnBackground),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => _confirm(allPages: _applyToAll),
+            child: Text(
+              l10n.done,
+              style: OSTypography.label.copyWith(
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
-          actions: [
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded),
-              onSelected: (_) => _confirm(allPages: true),
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'all',
-                  child: Text(l10n.apply_to_all_pages),
-                ),
-              ],
-            ),
-            IconButton(
-              icon: Icon(Icons.check_rounded),
-              onPressed: () => _confirm(allPages: false),
-            ),
-          ],
-        ),
-        body: BlocBuilder<DirectoryCubit, DirectoryState>(
-          builder: (context, directoryState) {
-            final images = directoryState.images ?? const <ImageOS>[];
-            if (images.isEmpty) return const SizedBox.shrink();
+          const SizedBox(width: OSSpace.xs),
+        ],
+      ),
+      body: BlocBuilder<DirectoryCubit, DirectoryState>(
+        builder: (context, directoryState) {
+          final images = directoryState.images ?? const <ImageOS>[];
+          if (images.isEmpty) return const SizedBox.shrink();
 
-            return PageView.builder(
-              physics: ClampingScrollPhysics(),
-              controller: _pageController,
-              itemCount: images.length,
-              onPageChanged: (index) {
-                setState(() {
-                  _pageIndex = index;
-                  // Open each page on the filter it is already carrying.
-                  _selected = documentFilterByName(images[index].filterName);
-                });
-              },
-              itemBuilder: (context, index) {
-                final sourcePath = images[index].filterSourcePath;
-                return Column(
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.all(12.0),
-                        child: _FilteredImage(
-                          bytes:
-                              _results[_key(
-                                sourcePath,
-                                _selected,
-                                _previewMaxEdge,
-                              )],
+          return PageView.builder(
+            physics: const ClampingScrollPhysics(),
+            controller: _pageController,
+            itemCount: images.length,
+            onPageChanged: (index) {
+              setState(() {
+                _pageIndex = index;
+                // Open each page on the filter it is already carrying.
+                _selected = documentFilterByName(images[index].filterName);
+              });
+            },
+            itemBuilder: (context, index) {
+              final sourcePath = images[index].filterSourcePath;
+              return Column(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(OSSpace.sm),
+                      child: _FilteredImage(
+                        bytes: _results[
+                            _key(sourcePath, _selected, _previewMaxEdge)],
+                        onMissing: () =>
+                            _request(sourcePath, _selected, _previewMaxEdge),
+                      ),
+                    ),
+                  ),
+                  _applyToAllRow(images.length),
+                  SizedBox(
+                    height: 108,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: OSSpace.xs, vertical: OSSpace.xs),
+                      itemCount: documentFiltersList.length,
+                      itemBuilder: (context, filterIndex) {
+                        final filter = documentFiltersList[filterIndex];
+                        return _FilterChip(
+                          label: filterLabel(context, filter),
+                          selected: filter.name == _selected.name,
+                          bytes: _results[
+                              _key(sourcePath, filter, _thumbnailMaxEdge)],
                           onMissing: () =>
-                              _request(sourcePath, _selected, _previewMaxEdge),
-                        ),
-                      ),
+                              _request(sourcePath, filter, _thumbnailMaxEdge),
+                          onTap: () => setState(() => _selected = filter),
+                        );
+                      },
                     ),
-                    SizedBox(
-                      height: 110,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                        itemCount: documentFiltersList.length,
-                        itemBuilder: (context, filterIndex) {
-                          final filter = documentFiltersList[filterIndex];
-                          return _FilterChip(
-                            label: filterLabel(context, filter),
-                            selected: filter.name == _selected.name,
-                            bytes:
-                                _results[_key(
-                                  sourcePath,
-                                  filter,
-                                  _thumbnailMaxEdge,
-                                )],
-                            onMissing: () =>
-                                _request(sourcePath, filter, _thumbnailMaxEdge),
-                            onTap: () => setState(() => _selected = filter),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _applyToAllRow(int pageCount) {
+    if (pageCount < 2) return const SizedBox.shrink();
+    final accent = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: OSSpace.md, vertical: OSSpace.xxs),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Apply to all $pageCount pages',
+              style: OSTypography.body
+                  .copyWith(color: OSColors.chromeOnBackground),
+            ),
+          ),
+          Switch(
+            value: _applyToAll,
+            activeThumbColor: Theme.of(context).colorScheme.onPrimary,
+            activeTrackColor: accent,
+            inactiveTrackColor: OSColors.chromeControl,
+            onChanged: (value) => setState(() => _applyToAll = value),
+          ),
+        ],
       ),
     );
   }
@@ -322,9 +352,16 @@ class _FilteredImage extends StatelessWidget {
       // Requesting during build is safe: the request is de-duplicated and
       // only ever calls setState from a later frame.
       onMissing();
-      return Center(child: CircularProgressIndicator(color: Colors.white));
+      return Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      );
     }
-    return Image.memory(bytes, fit: BoxFit.contain, gaplessPlayback: true);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(OSRadius.card),
+      child: Image.memory(bytes, fit: BoxFit.contain, gaplessPlayback: true),
+    );
   }
 }
 
@@ -348,46 +385,49 @@ class _FilterChip extends StatelessWidget {
     final bytes = this.bytes;
     if (bytes == null) onMissing();
 
-    final accent = Theme.of(context).colorScheme.secondary;
-    return InkWell(
+    final accent = Theme.of(context).colorScheme.primary;
+    return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 92,
-        padding: EdgeInsets.all(6.0),
+        width: 84,
+        padding: const EdgeInsets.symmetric(horizontal: OSSpace.xxs),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              height: 60,
-              width: 60,
+              height: 62,
+              width: 62,
               decoration: BoxDecoration(
+                color: OSColors.chromeControl,
                 border: Border.all(
                   color: selected ? accent : Colors.transparent,
                   width: 2,
                 ),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(OSRadius.chip),
               ),
               clipBehavior: Clip.antiAlias,
               child: bytes == null
                   ? Center(
                       child: SizedBox(
-                        height: 20,
-                        width: 20,
+                        height: 18,
+                        width: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: OSColors.chromeMuted,
                         ),
                       ),
                     )
                   : Image.memory(bytes, fit: BoxFit.cover),
             ),
-            SizedBox(height: 5.0),
+            const SizedBox(height: OSSpace.xxs + 2),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+              style: OSTypography.caption.copyWith(
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color:
+                    selected ? accent : OSColors.chromeMuted,
               ),
             ),
           ],

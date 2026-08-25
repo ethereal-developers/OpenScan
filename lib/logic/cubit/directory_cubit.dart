@@ -12,6 +12,7 @@ import 'package:openscan/core/image_filter/apply_filter.dart';
 import 'package:openscan/core/image_filter/filters/document_filters.dart';
 import 'package:openscan/core/image_filter/filters/filters.dart';
 import 'package:openscan/core/models.dart';
+import 'package:openscan/core/settings/app_settings.dart';
 import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:openscan/view/screens/live_scan/live_scan_screen.dart';
 import 'package:path_provider/path_provider.dart';
@@ -242,6 +243,14 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           imgPath: savedImage.imgPath,
           origPath: savedImage.origPath,
         );
+
+        // A default filter is only useful if new pages actually arrive
+        // carrying it; applying it here (rather than at export time) keeps
+        // the page on disk and the thumbnail in the grid in agreement.
+        final defaultFilter = AppSettings.instance.defaultFilter;
+        if (defaultFilter != null) {
+          await _applyFilter(tempImage, documentFilterByName(defaultFilter));
+        }
         debugPrint(tempImage.idx.toString());
         state.images!.add(tempImage);
         state.imageCount = state.images!.length;
@@ -617,6 +626,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   /// Returns null (and the caller stores no original) if the copy fails —
   /// losing the original is worth far less than losing the page.
   Future<File?> _copyAsideOriginal(File capture) async {
+    // Opting out of keeping originals halves the storage a document costs,
+    // at the price of re-crops working off the already-cropped page.
+    if (!AppSettings.instance.keepOriginal) return null;
     try {
       Directory cacheDir = await getTemporaryDirectory();
       File copy = File(

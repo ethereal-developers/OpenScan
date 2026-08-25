@@ -251,14 +251,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.22"
-  flutter_speed_dial:
-    dependency: "direct main"
-    description:
-      name: flutter_speed_dial
-      sha256: "698a037274a66dbae8697c265440e6acb6ab6cae9ac5f95c749e7944d8f28d41"
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.0.0"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -269,14 +261,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  focused_menu:
-    dependency: "direct main"
-    description:
-      name: focused_menu
-      sha256: bd06bf580a8573e100571a1d9bc27c2200a38681de30eeda96246df1eac06749
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.5"
   http:
     dependency: transitive
     description:
@@ -749,14 +733,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.1"
-  simple_animated_icon:
-    dependency: "direct main"
-    description:
-      name: simple_animated_icon
-      sha256: "1e7fbcdffb8bfc90a96bc37348a95bcc8894d619fb4c1a43e45e4cc65be44e2d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
   sky_engine:
     dependency: transitive
     description: flutter

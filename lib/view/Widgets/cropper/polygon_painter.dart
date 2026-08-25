@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/core/theme/appTheme.dart';
 
 class PolygonPainter extends CustomPainter {
   final Offset? tl, tr, bl, br, t, l, r, b;
   final double cornerDotRadius = 10.0;
   final double centerDotRadius = 8.0;
 
+  /// The accent to draw the quad in. Passed in rather than read from a
+  /// constant so the crop overlay follows the user's chosen accent colour.
+  final Color accent;
+
   PolygonPainter({
+    required this.accent,
     this.tl,
     this.tr,
     this.bl,
@@ -15,23 +19,23 @@ class PolygonPainter extends CustomPainter {
     this.l,
     this.r,
     this.b,
-  });
+  })  : dotInnerShade = Paint()
+          ..color = accent.withValues(alpha: 0.2)
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.fill,
+        dotOutline = Paint()
+          ..color = accent.withValues(alpha: 0.9)
+          ..strokeWidth = 1.5
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.stroke,
+        linesConnectingDots = Paint()
+          ..color = accent.withValues(alpha: 0.8)
+          ..strokeWidth = 1.7
+          ..strokeCap = StrokeCap.round;
 
-  Paint dotInnerShade = Paint()
-    ..color = AppTheme.secondaryColor.withValues(alpha: 0.2)
-    ..strokeCap = StrokeCap.round
-    ..style = PaintingStyle.fill;
-
-  Paint dotOutline = Paint()
-    ..color = AppTheme.secondaryColor.withValues(alpha: 0.9)
-    ..strokeWidth = 1.5
-    ..strokeCap = StrokeCap.round
-    ..style = PaintingStyle.stroke;
-
-  Paint linesConnectingDots = Paint()
-    ..color = AppTheme.secondaryColor.withValues(alpha: 0.8)
-    ..strokeWidth = 1.7
-    ..strokeCap = StrokeCap.round;
+  final Paint dotInnerShade;
+  final Paint dotOutline;
+  final Paint linesConnectingDots;
 
   @override
   void paint(Canvas canvas, Size size) {

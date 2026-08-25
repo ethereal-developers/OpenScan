@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:openscan/core/theme/appTheme.dart';
 
 /// Read-only guidance overlay for the live-scan preview: paints a stroked
 /// quad wherever the detector currently thinks the document edges are, or
@@ -14,14 +13,22 @@ class LiveQuadPainter extends CustomPainter {
   /// enough), used to give the overlay a distinct "capturing soon" look.
   final bool isImminent;
 
-  LiveQuadPainter({required this.points, this.isImminent = false});
+  /// The accent the resting quad is stroked in, so the overlay follows the
+  /// user's chosen accent rather than a fixed brand orange.
+  final Color accent;
+
+  LiveQuadPainter({
+    required this.points,
+    required this.accent,
+    this.isImminent = false,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final pts = points;
     if (pts == null || pts.length != 4) return;
 
-    final color = isImminent ? Colors.greenAccent : AppTheme.secondaryColor;
+    final color = isImminent ? Colors.greenAccent : accent;
     final fill = Paint()
       ..color = color.withValues(alpha: 0.15)
       ..style = PaintingStyle.fill;

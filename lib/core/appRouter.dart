@@ -4,6 +4,7 @@ import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:openscan/view/screens/demo_screen.dart';
 import 'package:openscan/view/screens/home_screen.dart';
 import 'package:openscan/view/screens/preview_screen.dart';
+import 'package:openscan/view/screens/settings_screen.dart';
 import 'package:openscan/view/screens/view_screen.dart';
 
 class AppRouter {
@@ -12,6 +13,7 @@ class AppRouter {
   static const String demoScreen = 'DemoScreen';
   static const String homeScreen = 'HomeScreen';
   static const String previewScreen = 'PreviewScreen';
+  static const String settingsScreen = 'SettingsScreen';
   static const String viewScreen = 'ViewScreen';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -40,6 +42,11 @@ class AppRouter {
         return MaterialPageRoute(
           settings: const RouteSettings(name: previewScreen),
           builder: (_) => PreviewScreen(),
+        );
+      case settingsScreen:
+        return MaterialPageRoute(
+          settings: const RouteSettings(name: settingsScreen),
+          builder: (_) => const SettingsScreen(),
         );
       case viewScreen:
         return MaterialPageRoute(

@@ -1,74 +1,101 @@
 import 'package:flutter/material.dart';
+import 'package:openscan/core/theme/os_colors.dart';
+import 'package:openscan/core/theme/os_tokens.dart';
+import 'package:openscan/core/theme/os_typography.dart';
 
+/// The page preview's action row. Fixed-dark in both themes, like the
+/// viewfinder: a full-bleed scan is already the highest-contrast context
+/// on screen, so the chrome around it doesn't retheme.
 class PreviewScreenBottomBar extends StatelessWidget {
   const PreviewScreenBottomBar({
     Key? key,
+    required this.visible,
     required this.cropOnPressed,
-    required this.moreOnPressed,
     required this.deleteOnPressed,
     required this.filterOnPressed,
-    required this.isAppBarVisible,
+    required this.rescanOnPressed,
   }) : super(key: key);
 
-  final bool isAppBarVisible;
-  final Function()? cropOnPressed;
-  final Function()? moreOnPressed;
-  final Function()? deleteOnPressed;
-  final Function()? filterOnPressed;
+  final bool visible;
+  final VoidCallback? cropOnPressed;
+  final VoidCallback? deleteOnPressed;
+  final VoidCallback? filterOnPressed;
+  final VoidCallback? rescanOnPressed;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 200),
-      height: isAppBarVisible ? 60.0 : 0.0,
-      child: Container(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            BottomButton(
-              icon: Icon(Icons.crop_rounded),
-              onPressed: cropOnPressed,
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedOpacity(
+        opacity: visible ? 1 : 0,
+        duration: OSMotion.selection,
+        child: Container(
+          color: OSColors.chromeScrim,
+          padding: const EdgeInsets.only(top: OSSpace.xs, bottom: OSSpace.xs),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _PreviewAction(
+                  icon: Icons.crop_rounded,
+                  label: 'Crop',
+                  onPressed: cropOnPressed,
+                ),
+                _PreviewAction(
+                  icon: Icons.delete_outline_rounded,
+                  label: 'Delete',
+                  onPressed: deleteOnPressed,
+                ),
+                _PreviewAction(
+                  icon: Icons.tune_rounded,
+                  label: 'Filter',
+                  onPressed: filterOnPressed,
+                ),
+                _PreviewAction(
+                  icon: Icons.photo_camera_rounded,
+                  label: 'Re-scan',
+                  onPressed: rescanOnPressed,
+                ),
+              ],
             ),
-            BottomButton(
-              icon: Icon(Icons.delete_rounded),
-              onPressed: deleteOnPressed,
-            ),
-            BottomButton(
-              icon: Icon(Icons.photo_filter_rounded),
-              onPressed: filterOnPressed,
-            ),
-            BottomButton(
-              icon: Icon(Icons.more_vert_rounded),
-              onPressed: moreOnPressed,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class BottomButton extends StatelessWidget {
-  const BottomButton({
-    Key? key,
-    required this.onPressed,
+class _PreviewAction extends StatelessWidget {
+  const _PreviewAction({
     required this.icon,
-  }) : super(key: key);
+    required this.label,
+    required this.onPressed,
+  });
 
-  final Icon icon;
-  final Function()? onPressed;
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialButton(
-      height: 50,
-      elevation: 0,
-      highlightElevation: 0,
-      color: Colors.transparent,
-      splashColor: Colors.transparent,
-      child: icon,
-      onPressed: onPressed,
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(OSRadius.card),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 64, minHeight: 56),
+        padding: const EdgeInsets.symmetric(vertical: OSSpace.xs),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: OSColors.chromeOnBackground, size: 22),
+            const SizedBox(height: OSSpace.xxs),
+            Text(label,
+                style: OSTypography.caption
+                    .copyWith(color: OSColors.chromeOnBackground)),
+          ],
+        ),
+      ),
     );
   }
 }

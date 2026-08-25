@@ -4,6 +4,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:openscan/core/cv/models/detection_result.dart';
+import 'package:openscan/core/theme/appTheme.dart';
+import 'package:openscan/core/theme/os_colors.dart';
+import 'package:openscan/core/theme/os_tokens.dart';
+import 'package:openscan/core/theme/os_typography.dart';
 import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
@@ -83,36 +87,29 @@ class _CropImageState extends State<CropImage> {
       child: PopScope(
         canPop: true,
         child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
+          // Fixed-dark chrome, like the viewfinder this screen follows on
+          // from: the captured page is the brightest thing on screen and
+          // shouldn't sit inside a warm-white frame.
+          backgroundColor: OSColors.chromeBackground,
           key: _scaffoldKey,
           appBar: AppBar(
             title: Text(
-              AppLocalizations.of(context)!.crop,
-              // style: TextStyle().appBarStyle,
+              'Adjust edges',
+              style: OSTypography.subtitle
+                  .copyWith(color: OSColors.chromeOnBackground),
             ),
             centerTitle: true,
             elevation: 0.0,
-            backgroundColor: Theme.of(context).primaryColor,
+            backgroundColor: OSColors.chromeBackground,
+            systemOverlayStyle: AppTheme.chromeOverlayStyle,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios),
-              padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
+              icon: Icon(Icons.close_rounded,
+                  color: OSColors.chromeOnBackground),
               onPressed: () {
                 Navigator.pop(context, null);
               },
             ),
-            actions: [
-              MaterialButton(
-                child: Icon(Icons.document_scanner_rounded),
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                onPressed: () {
-                  setState(() {
-                    _cropScreen.initPoints();
-                    debugPrint('TL: ${_cropScreen.tl}');
-                  });
-                },
-              )
-            ],
+            actions: [nextAction()],
           ),
           body: GestureDetector(
             key: _cropScreen.bodyKey,
@@ -134,7 +131,7 @@ class _CropImageState extends State<CropImage> {
             child: Container(
               // width: _cropScreen.screenSize.width,
               // height: _cropScreen.screenSize.height,
-              color: Theme.of(context).primaryColor,
+              color: OSColors.chromeBackground,
               child: Stack(
                 children: [
                   Container(
@@ -192,8 +189,8 @@ class _CropImageState extends State<CropImage> {
                       if (state == CropDetectionState.loading) {
                         return Positioned.fill(
                           child: Container(
-                            color:
-                                Theme.of(context).primaryColor.withValues(alpha: 0.7),
+                            color: OSColors.chromeBackground
+                                .withValues(alpha: 0.7),
                             child: Center(
                               child:
                                   CircularProgressIndicator(color: Colors.white),
@@ -213,6 +210,9 @@ class _CropImageState extends State<CropImage> {
                                   builder: (context, _updatedPoint, _) {
                                     return CustomPaint(
                                       painter: PolygonPainter(
+                                        accent: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                         tl: _cropScreen.tl,
                                         tr: _cropScreen.tr,
                                         bl: _cropScreen.bl,
@@ -232,8 +232,10 @@ class _CropImageState extends State<CropImage> {
                                 left: 12,
                                 right: 12,
                                 child: Material(
-                                  color: Colors.black.withValues(alpha: 0.75),
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: context.os.warning
+                                      .withValues(alpha: 0.16),
+                                  borderRadius:
+                                      BorderRadius.circular(OSRadius.card),
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 12, vertical: 8),
@@ -241,10 +243,11 @@ class _CropImageState extends State<CropImage> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            "Couldn't auto-detect the document — adjust the corners manually.",
-                                            style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12),
+                                            "Couldn't detect edges automatically — adjust the corners below.",
+                                            style: OSTypography.caption
+                                                .copyWith(
+                                                    color: OSColors
+                                                        .chromeOnBackground),
                                           ),
                                         ),
                                         IconButton(
@@ -312,146 +315,135 @@ class _CropImageState extends State<CropImage> {
     );
   }
 
+  /// The primary action, in the app bar rather than the bottom row: the
+  /// row below is for adjusting the quad, and Next is the thing you press
+  /// when you are done adjusting it.
+  Widget nextAction() {
+    return ValueListenableBuilder(
+      valueListenable: _cropScreen.imageRendered,
+      builder: (context, bool imageRendered, _) {
+        final enabled = imageRendered && !cropLoading;
+        return TextButton(
+          onPressed: enabled ? _cropAndPop : null,
+          child: Text(
+            AppLocalizations.of(context)!.next,
+            style: OSTypography.label.copyWith(
+              fontWeight: FontWeight.w700,
+              color: enabled
+                  ? Theme.of(context).colorScheme.primary
+                  : OSColors.chromeMuted,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _cropAndPop() async {
+    setState(() => cropLoading = true);
+    final result = await _cropScreen.crop();
+    if (!mounted) return;
+    setState(() => cropLoading = false);
+
+    if (result is CropSuccess) {
+      Navigator.pop(context, _cropScreen.imageFile);
+    } else if (result is CropFailure) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Couldn't crop the image — please try again.")),
+      );
+    }
+  }
+
+  /// Rotates the page a quarter turn, keeping the polygon canvas in step.
+  void _rotate() {
+    setState(() {
+      _cropScreen.rotationAngle =
+          (_cropScreen.rotationAngle + pi / 2) % (2 * pi);
+      debugPrint(
+          'rotationAngle => ${vector.degrees(_cropScreen.rotationAngle)}');
+
+      /// Scaling image before rotation- solves Transform.rotate issue
+      _cropScreen.scaleImage = _cropScreen.rotationAngle % pi == pi / 2;
+
+      /// Updates canvas size to be passed to PolygonBuilder
+      _cropScreen.canvasSize = _cropScreen.scaleImage
+          ? Size(_cropScreen.canvasSize.height * _cropScreen.aspectRatio,
+              _cropScreen.canvasSize.width * _cropScreen.aspectRatio)
+          : _cropScreen.imageBox.size;
+    });
+  }
+
   Widget bottomBar() {
     return Container(
-      color: Theme.of(context).primaryColor,
-      width: MediaQuery.of(context).size.width,
-      height: 50,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: <Widget>[
-          MaterialButton(
-            elevation: 0,
-            highlightElevation: 0,
-            color: Colors.transparent,
-            splashColor: Colors.transparent,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.rotate_left_rounded),
-                Text(
-                  'Rotate Left',
-                  style: TextStyle(fontSize: 9),
-                )
-              ],
-            ),
-            onPressed: () async {
-              setState(() {
-                /// Subtracting 90* from image rotation
-                _cropScreen.rotationAngle =
-                    (_cropScreen.rotationAngle - pi / 2) % (2 * pi);
-                debugPrint('rotationAngle => ${_cropScreen.rotationAngle}');
-
-                /// Scaling image before rotation- solves Transform.rotate issue
-                _cropScreen.scaleImage =
-                    _cropScreen.rotationAngle % pi == pi / 2;
-                debugPrint(_cropScreen.scaleImage.toString());
-
-                /// Updates canvas size that is passed to PolygonBuilder
-                _cropScreen.canvasSize = _cropScreen.scaleImage
-                    ? Size(
-                        _cropScreen.canvasSize.height * _cropScreen.aspectRatio,
-                        _cropScreen.canvasSize.width * _cropScreen.aspectRatio)
-                    : _cropScreen.imageBox.size;
-                debugPrint(_cropScreen.canvasSize.toString());
-                debugPrint('TL: ${_cropScreen.tl}');
-              });
-            },
+      color: OSColors.chromeBackground,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: OSSpace.sm, vertical: OSSpace.sm),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              _CropAction(
+                icon: Icons.auto_awesome_rounded,
+                label: 'Automatic crop',
+                accent: true,
+                onPressed: () => setState(_cropScreen.initPoints),
+              ),
+              _CropAction(
+                icon: Icons.crop_free_rounded,
+                label: 'No crop',
+                onPressed: () => setState(_cropScreen.resetPointsToCorners),
+              ),
+              _CropAction(
+                icon: Icons.rotate_right_rounded,
+                label: 'Rotate',
+                onPressed: _rotate,
+              ),
+            ],
           ),
-          MaterialButton(
-            elevation: 0,
-            highlightElevation: 0,
-            color: Colors.transparent,
-            splashColor: Colors.transparent,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.rotate_right_rounded),
-                Text(
-                  'Rotate Right',
-                  style: TextStyle(fontSize: 9),
-                )
-              ],
-            ),
-            onPressed: () async {
-              setState(() {
-                /// Adding 90* to image rotation
-                _cropScreen.rotationAngle =
-                    (_cropScreen.rotationAngle + pi / 2) % (2 * pi);
-                debugPrint(
-                    'rotationAngle => ${vector.degrees(_cropScreen.rotationAngle)}');
+        ),
+      ),
+    );
+  }
+}
 
-                /// Scaling image before rotation- solves Transform.rotate issue
-                _cropScreen.scaleImage =
-                    _cropScreen.rotationAngle % pi == pi / 2;
-                debugPrint(_cropScreen.scaleImage.toString());
+/// One control in the crop screen's action row.
+class _CropAction extends StatelessWidget {
+  const _CropAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.accent = false,
+  });
 
-                /// Updates canvas size to be passed to PolygonBuilder
-                _cropScreen.canvasSize = _cropScreen.scaleImage
-                    ? Size(
-                        _cropScreen.canvasSize.height * _cropScreen.aspectRatio,
-                        _cropScreen.canvasSize.width * _cropScreen.aspectRatio)
-                    : _cropScreen.imageBox.size;
-                debugPrint(_cropScreen.canvasSize.toString());
-              });
-            },
-          ),
-          ValueListenableBuilder(
-            valueListenable: _cropScreen.imageRendered,
-            builder: (context, bool _imageRendered, _) {
-              return MaterialButton(
-                onPressed: _imageRendered
-                    ? () async {
-                        setState(() {
-                          cropLoading = true;
-                        });
-                        final result = await _cropScreen.crop();
-                        setState(() {
-                          cropLoading = false;
-                        });
-                        if (result is CropSuccess) {
-                          Navigator.pop(context, _cropScreen.imageFile);
-                        } else if (result is CropFailure) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  "Couldn't crop the image — please try again."),
-                            ),
-                          );
-                        }
-                      }
-                    : () {},
-                color: _imageRendered || !cropLoading
-                    ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                splashColor: Colors.transparent,
-                disabledColor:
-                    Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                disabledTextColor: Colors.white.withValues(alpha: 0.5),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context)!.next,
-                      style: TextStyle(
-                        color: _imageRendered || !cropLoading
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.5),
-                        fontSize: 18,
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: _imageRendered || !cropLoading
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.5),
-                    )
-                  ],
-                ),
-              );
-            },
-          )
-        ],
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  /// Marks the suggested action, so "Automatic crop" reads as the one to
+  /// reach for when the corners have been dragged somewhere wrong.
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        accent ? Theme.of(context).colorScheme.primary : OSColors.chromeOnBackground;
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(OSRadius.card),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 88, minHeight: 48),
+        padding: const EdgeInsets.symmetric(
+            horizontal: OSSpace.sm, vertical: OSSpace.xs),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: OSSpace.xs),
+            Text(label, style: OSTypography.caption.copyWith(color: color)),
+          ],
+        ),
       ),
     );
   }

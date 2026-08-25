@@ -3,8 +3,14 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/cv/frame_adapter.dart';
+import 'package:openscan/core/data/file_operations.dart';
+import 'package:openscan/core/settings/app_settings.dart';
+import 'package:openscan/core/theme/os_colors.dart';
+import 'package:openscan/core/theme/os_tokens.dart';
+import 'package:openscan/core/theme/os_typography.dart';
 import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/view/Widgets/live_scan/live_quad_painter.dart';
 import 'package:openscan/view/screens/live_scan/auto_capture_detector.dart';
@@ -89,6 +95,25 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   bool _autoCaptureImminent = false;
   bool _torchOn = false;
 
+  /// True while the scene is too dark for detection to be reliable. Derived
+  /// from the same grayscale buffer detection already runs on, so it costs
+  /// a sampled pass over a 320px frame rather than a second pipeline.
+  bool _lowLight = false;
+  static const int _kLowLightThreshold = 55;
+
+  /// Whether the secondary control row (EV, grid, auto-capture) is showing.
+  /// The resting camera is shutter + torch + switch + zoom and nothing
+  /// else; everything rarer lives one tap behind the caret.
+  bool _controlsExpanded = false;
+
+  /// Rule-of-thirds guides over the preview. Off by default — the resting
+  /// viewfinder shows the document boundary and nothing else.
+  bool _gridVisible = false;
+
+  /// Shows the white shutter flash for one frame's worth of time after a
+  /// capture, so a photo taken in auto mode is visibly acknowledged.
+  bool _flashing = false;
+
   CameraLensDirection _lensDirection = CameraLensDirection.back;
 
   double _minZoom = 1.0;
@@ -132,6 +157,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   Future<void> _initialize() async {
     final prefs = await SharedPreferences.getInstance();
     _autoCaptureEnabled = prefs.getBool(_kAutoCapturePrefKey) ?? true;
+    // Same preference the Settings screen writes — the camera's long-press
+    // and the settings row are two doors onto one switch.
     _autoCaptureDetector.enabled = _autoCaptureEnabled;
 
     if (!await Permission.camera.isGranted) {
@@ -219,12 +246,34 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       targetLongEdge: kLiveDetectionMaxDimension,
     );
     if (gray == null) return;
+    _updateLowLight(gray);
 
     final scale = kLiveDetectionMaxDimension /
         (image.width > image.height ? image.width : image.height);
     final w = scale < 1.0 ? (image.width * scale).round() : image.width;
     final h = scale < 1.0 ? (image.height * scale).round() : image.height;
     _liveScanController.submitFrame(gray, w, h);
+  }
+
+  /// Averages every 16th sample of the downsampled frame; enough to tell a
+  /// dim room from a lit one without walking the whole buffer.
+  void _updateLowLight(Uint8List gray) {
+    if (gray.isEmpty) return;
+    var sum = 0;
+    var count = 0;
+    for (var i = 0; i < gray.length; i += 16) {
+      sum += gray[i];
+      count++;
+    }
+    final mean = sum / count;
+    // Hysteresis: without a dead band the banner flickers on and off as
+    // the auto-exposure hunts around the threshold.
+    final lowLight = _lowLight
+        ? mean < _kLowLightThreshold + 8
+        : mean < _kLowLightThreshold;
+    if (lowLight != _lowLight && mounted) {
+      setState(() => _lowLight = lowLight);
+    }
   }
 
   void _onLatestQuadChanged() {
@@ -316,9 +365,22 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         ? _quadSmoother.smoothedQuad.value
         : null;
     final autoMode = _autoCaptureEnabled;
-    setState(() => _capturing = true);
+    setState(() {
+      _capturing = true;
+      _flashing = true;
+    });
+    // 90ms white flash, per the motion spec — long enough to register as
+    // "that was taken", short enough not to hide the next framing.
+    Future.delayed(const Duration(milliseconds: 90), () {
+      if (mounted) setState(() => _flashing = false);
+    });
     try {
       await controller.stopImageStream();
+      if (AppSettings.instance.captureSound) {
+        // The plugin has no shutter-sound hook, so this is the system's
+        // own click — audible confirmation without bundling an asset.
+        SystemSound.play(SystemSoundType.click);
+      }
       final shot = await controller.takePicture();
       _capturedFiles.add(LiveCapture(
         file: File(shot.path),
@@ -353,11 +415,31 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     setState(() => _capturedFiles.removeLast());
   }
 
+  /// Imports pages from the gallery without leaving the session: picked
+  /// images join [_capturedFiles] with no quad, so they go through the crop
+  /// screen exactly like a manual shot does.
+  Future<void> _onImportPressed() async {
+    try {
+      final picked = await FileOperations().openGallery();
+      if (picked.isEmpty || !mounted) return;
+      setState(() {
+        for (final file in picked) {
+          _capturedFiles.add(LiveCapture(file: file, autoMode: false));
+        }
+      });
+    } catch (e) {
+      debugPrint('Gallery import from camera failed: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't open the gallery.")),
+      );
+    }
+  }
+
   Future<void> _toggleAutoCapture() async {
     setState(() => _autoCaptureEnabled = !_autoCaptureEnabled);
     _autoCaptureDetector.enabled = _autoCaptureEnabled;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kAutoCapturePrefKey, _autoCaptureEnabled);
+    await AppSettings.instance.setAutoCapture(_autoCaptureEnabled);
   }
 
   Future<void> _toggleTorch() async {
@@ -550,337 +632,570 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    final accent = Theme.of(context).colorScheme.primary;
+    final onAccent = Theme.of(context).colorScheme.onPrimary;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: OSColors.chromeBackground,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
       child: Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.black,
-          elevation: 0.0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios),
-            onPressed: () => Navigator.pop(context, null),
-          ),
-          actions: [
-            IconButton(
-              tooltip: _autoCaptureEnabled
-                  ? 'Auto-capture on'
-                  : 'Auto-capture off',
-              icon: Icon(
-                _autoCaptureEnabled
-                    ? Icons.auto_awesome
-                    : Icons.auto_awesome_outlined,
-                color: Colors.white,
+        // The viewfinder is fixed-dark in both app themes: it is already
+        // the darkest, highest-contrast context there is.
+        backgroundColor: OSColors.chromeBackground,
+        body: _permissionDenied
+            ? _permissionDeniedState(accent, onAccent)
+            : _cameraError
+                ? _buildMessage(
+                    "Couldn't start the camera — please go back and try again.")
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _preview(accent),
+                      // Bottom scrim: the controls sit over live video, so
+                      // they need their own ground to stay legible against
+                      // a bright page.
+                      IgnorePointer(
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Container(
+                            height: _controlsExpanded ? 300 : 210,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Color(0x000A0908),
+                                  Color(0xB30A0908),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      _topChrome(),
+                      _statusOverlay(accent, onAccent),
+                      _bottomChrome(accent, onAccent),
+                      if (_flashing)
+                        IgnorePointer(
+                          child: Container(
+                              color: Colors.white.withValues(alpha: 0.85)),
+                        ),
+                    ],
+                  ),
+      ),
+    );
+  }
+
+  // <========================= Preview =========================>
+
+  Widget _preview(Color accent) {
+    return FutureBuilder<void>(
+      future: _initializeFuture,
+      builder: (context, snapshot) {
+        final controller = _cameraController;
+        if (controller == null || !controller.value.isInitialized) {
+          return Center(child: CircularProgressIndicator(color: accent));
+        }
+        // CameraPreview lays itself out in its own internal AspectRatio +
+        // (on Android) RotatedBox for the device's current orientation, and
+        // offers a `child` slot sized identically to the rotated preview
+        // texture — so an overlay passed there sits in exactly the
+        // "portrait" coordinate space rotateQuadForPortrait's normalized
+        // output already targets, with no separate rotation here.
+        return LayoutBuilder(
+          builder: (context, outerConstraints) {
+            final previewSize = outerConstraints.biggest;
+            return GestureDetector(
+              onTapUp: (details) => _onTapToFocus(details, previewSize),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Center(
+                    child: CameraPreview(
+                      controller,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final size = constraints.biggest;
+                          return Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (_gridVisible)
+                                IgnorePointer(
+                                  child: CustomPaint(
+                                      painter: const _ThirdsGridPainter()),
+                                ),
+                              ValueListenableBuilder(
+                                valueListenable: _quadSmoother.smoothedQuad,
+                                builder: (context, quad, _) {
+                                  if (quad == null) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return CustomPaint(
+                                    painter: LiveQuadPainter(
+                                      accent: accent,
+                                      points: quad.points
+                                          .map((p) => Offset(p.x * size.width,
+                                              p.y * size.height))
+                                          .toList(),
+                                      isImminent: _autoCaptureImminent,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  if (_focusPointNormalized != null)
+                    Positioned(
+                      left: _focusPointNormalized!.dx * previewSize.width - 32,
+                      top: _focusPointNormalized!.dy * previewSize.height - 32,
+                      child: IgnorePointer(
+                        child: TweenAnimationBuilder<double>(
+                          key: ValueKey(_focusPointNormalized),
+                          tween: Tween(begin: 1.4, end: 1.0),
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOut,
+                          builder: (context, scale, child) => Transform.scale(
+                            scale: scale,
+                            child: Opacity(
+                              opacity: (2.0 - scale).clamp(0.0, 1.0),
+                              child: child,
+                            ),
+                          ),
+                          child: Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: accent, width: 2),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-              onPressed: _toggleAutoCapture,
-            ),
-            IconButton(
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // <========================= Chrome =========================>
+
+  Widget _topChrome() {
+    final canTorch = _cameraController != null &&
+        _lensDirection == CameraLensDirection.back;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: OSSpace.md, vertical: OSSpace.xs),
+        child: Row(
+          children: [
+            _ChromeButton(
+              icon: _torchOn
+                  ? Icons.flash_on_rounded
+                  : Icons.flash_off_rounded,
               tooltip: _torchOn ? 'Torch on' : 'Torch off',
-              icon: Icon(
-                _torchOn ? Icons.flash_on : Icons.flash_off,
-                color: Colors.white,
-              ),
-              onPressed: (_cameraController != null &&
-                      _lensDirection == CameraLensDirection.back)
-                  ? _toggleTorch
-                  : null,
+              // The torch is the fix for the low-light warning, so it
+              // adopts the warning colour while that banner is up.
+              highlight: _torchOn || _lowLight,
+              highlightColor: _lowLight && !_torchOn ? context.os.warning : null,
+              onPressed: canTorch ? _toggleTorch : null,
             ),
-            IconButton(
-              tooltip: _lensDirection == CameraLensDirection.back
-                  ? 'Switch to front camera'
-                  : 'Switch to back camera',
-              icon: const Icon(Icons.cameraswitch, color: Colors.white),
+            const Spacer(),
+            _ChromeButton(
+              icon: Icons.cameraswitch_rounded,
+              tooltip: 'Switch camera',
               onPressed:
                   (_cameraController != null && Globals.cameras.length > 1)
                       ? _switchCamera
                       : null,
             ),
+            const SizedBox(width: OSSpace.xs),
+            _ChromeButton(
+              icon: _controlsExpanded
+                  ? Icons.expand_less_rounded
+                  : Icons.expand_more_rounded,
+              tooltip: 'More controls',
+              highlight: _controlsExpanded,
+              onPressed: () =>
+                  setState(() => _controlsExpanded = !_controlsExpanded),
+            ),
           ],
         ),
-        body: _permissionDenied
-            ? _buildMessage('Camera permission is required for live scan.')
-            : _cameraError
-                ? _buildMessage(
-                    "Couldn't start the camera — please go back and try again.")
-                : FutureBuilder<void>(
-                future: _initializeFuture,
-                builder: (context, snapshot) {
-                  final controller = _cameraController;
-                  if (controller == null || !controller.value.isInitialized) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
+  }
+
+  /// The detection state, spelled out in words as well as colour: the quad
+  /// turning accent is never the only signal that a page was found.
+  Widget _statusOverlay(Color accent, Color onAccent) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 52),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_lowLight)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: OSSpace.md),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: OSSpace.sm, vertical: OSSpace.xs),
+                  decoration: BoxDecoration(
+                    color: context.os.warning.withValues(alpha: 0.16),
+                    border: Border.all(color: context.os.warning),
+                    borderRadius: BorderRadius.circular(OSRadius.card),
+                  ),
+                  child: Text(
+                    'Low light — hold steady or turn on flash',
+                    style: OSTypography.caption.copyWith(
+                      color: context.os.warning,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: OSSpace.xs),
+              ValueListenableBuilder(
+                valueListenable: _quadSmoother.smoothedQuad,
+                builder: (context, quad, _) {
+                  if (quad == null) {
+                    return Text(
+                      'Looking for a document…',
+                      style: OSTypography.caption.copyWith(
+                        color: OSColors.chromeOnBackground,
+                        fontWeight: FontWeight.w600,
+                        shadows: const [
+                          Shadow(blurRadius: 4, color: Color(0x990A0908)),
+                        ],
+                      ),
                     );
                   }
-                  // CameraPreview lays itself out in its own internal
-                  // AspectRatio + (on Android) RotatedBox for the device's
-                  // current orientation, and offers a `child` slot that's
-                  // sized identically to the rotated preview texture — so
-                  // an overlay passed there sits in exactly the same
-                  // "portrait" coordinate space that
-                  // rotateQuadForPortrait's normalized output already
-                  // targets, with no separate rotation/measurement needed
-                  // here.
-                  return LayoutBuilder(
-                    builder: (context, outerConstraints) {
-                      final previewSize = outerConstraints.biggest;
-                      return GestureDetector(
-                        onTapUp: (details) =>
-                            _onTapToFocus(details, previewSize),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Center(
-                              child: CameraPreview(
-                                controller,
-                                child: LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    final size = constraints.biggest;
-                                    return ValueListenableBuilder(
-                                      valueListenable:
-                                          _quadSmoother.smoothedQuad,
-                                      builder: (context, quad, _) {
-                                        if (quad == null) {
-                                          return const SizedBox.shrink();
-                                        }
-                                        return CustomPaint(
-                                          painter: LiveQuadPainter(
-                                            points: quad.points
-                                                .map((p) => Offset(
-                                                    p.x * size.width,
-                                                    p.y * size.height))
-                                                .toList(),
-                                            isImminent: _autoCaptureImminent,
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                            if (_maxZoom > _minZoom)
-                              Positioned(
-                                bottom: 16,
-                                left: 16,
-                                // Clear of the exposure panel in the
-                                // bottom-right corner.
-                                right: 72,
-                                // Absorb taps so a miss on the slider
-                                // track isn't read as a tap-to-focus by
-                                // the preview's GestureDetector below —
-                                // the same guard the exposure panel uses.
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {},
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: ValueListenableBuilder<double>(
-                                      valueListenable: _currentZoom,
-                                      builder: (context, zoom, _) => Row(
-                                        children: [
-                                          SizedBox(
-                                            width: 38,
-                                            child: Text(
-                                              '${zoom.toStringAsFixed(1)}x',
-                                              style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 14),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: SliderTheme(
-                                              data: SliderTheme.of(context)
-                                                  .copyWith(
-                                                trackHeight: 2,
-                                                overlayShape:
-                                                    const RoundSliderOverlayShape(
-                                                        overlayRadius: 16),
-                                                thumbShape:
-                                                    const RoundSliderThumbShape(
-                                                        enabledThumbRadius: 8),
-                                                activeTrackColor: Colors.white,
-                                                inactiveTrackColor:
-                                                    Colors.white30,
-                                                thumbColor: Colors.white,
-                                              ),
-                                              child: Slider(
-                                                min: _minZoom,
-                                                max: _maxZoom,
-                                                value: zoom.clamp(
-                                                    _minZoom, _maxZoom),
-                                                onChanged: _onZoomSliderChanged,
-                                                onChangeEnd:
-                                                    _onZoomSliderChangeEnd,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            if (_focusPointNormalized != null)
-                              Positioned(
-                                left: _focusPointNormalized!.dx *
-                                        previewSize.width -
-                                    32,
-                                top: _focusPointNormalized!.dy *
-                                        previewSize.height -
-                                    32,
-                                child: IgnorePointer(
-                                  child: TweenAnimationBuilder<double>(
-                                    key: ValueKey(_focusPointNormalized),
-                                    tween: Tween(begin: 1.4, end: 1.0),
-                                    duration:
-                                        const Duration(milliseconds: 220),
-                                    curve: Curves.easeOut,
-                                    builder: (context, scale, child) =>
-                                        Transform.scale(
-                                      scale: scale,
-                                      child: Opacity(
-                                        opacity:
-                                            (2.0 - scale).clamp(0.0, 1.0),
-                                        child: child,
-                                      ),
-                                    ),
-                                    child: Container(
-                                      width: 64,
-                                      height: 64,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .secondary,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            if (_exposureStepSize > 0)
-                              Positioned(
-                                bottom: 16,
-                                right: 16,
-                                // Absorb taps on this panel so they don't
-                                // fall through to the preview's
-                                // GestureDetector below — otherwise a tap
-                                // that misses an IconButton's hit target
-                                // (the container background, the padding,
-                                // the EV label) is read as a tap-to-focus
-                                // at this corner, which re-points
-                                // auto-exposure metering there and fights
-                                // the manual offset, making exposure creep
-                                // upward regardless of which button was
-                                // pressed.
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {},
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.add,
-                                              color: Colors.white, size: 20),
-                                          onPressed: _currentExposureOffset >=
-                                                  _maxExposureOffset
-                                              ? null
-                                              : () => _adjustExposure(
-                                                  _exposureStepSize),
-                                        ),
-                                        Text(
-                                          _currentExposureOffset == 0
-                                              ? 'EV'
-                                              : '${_currentExposureOffset > 0 ? '+' : ''}${_currentExposureOffset.toStringAsFixed(1)}',
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 11),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.remove,
-                                              color: Colors.white, size: 20),
-                                          onPressed: _currentExposureOffset <=
-                                                  _minExposureOffset
-                                              ? null
-                                              : () => _adjustExposure(
-                                                  -_exposureStepSize),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: OSSpace.sm, vertical: OSSpace.xxs + 2),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      borderRadius: BorderRadius.circular(OSRadius.sheet),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_rounded, size: 14, color: onAccent),
+                        const SizedBox(width: OSSpace.xxs + 1),
+                        Text(
+                          'Document detected',
+                          style: OSTypography.caption.copyWith(
+                            color: onAccent,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      );
-                    },
+                      ],
+                    ),
                   );
                 },
               ),
-        bottomNavigationBar: SafeArea(
-          child: Container(
-            color: Colors.black,
-            height: 90,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        tooltip: 'Undo last capture',
-                        icon: const Icon(Icons.undo, color: Colors.white),
-                        onPressed: _capturedFiles.isEmpty
-                            ? null
-                            : _onUndoLastPressed,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _bottomChrome(Color accent, Color onAccent) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_maxZoom > _minZoom) _zoomSlider(),
+            if (_controlsExpanded) _expandedControls(accent, onAccent),
+            // The session chip gets its own row above the shutter: sharing
+            // one row with three fixed-width controls left it fighting the
+            // shutter for space on a 1080px-wide screen.
+            if (_capturedFiles.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: OSSpace.md),
+                child: _sessionChip(accent),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: OSSpace.md, vertical: OSSpace.xs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: _ChromeButton(
+                        icon: Icons.grid_3x3_rounded,
+                        tooltip: 'Composition grid',
+                        highlight: _gridVisible,
+                        onPressed: () =>
+                            setState(() => _gridVisible = !_gridVisible),
                       ),
-                      CircleAvatar(
-                        radius: 14,
-                        backgroundColor: Colors.white24,
-                        child: Text(
-                          '${_capturedFiles.length}',
-                          style: const TextStyle(color: Colors.white),
-                        ),
+                    ),
+                  ),
+                  _shutter(accent),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: _ChromeButton(
+                        icon: Icons.photo_library_rounded,
+                        tooltip: 'Import from gallery',
+                        onPressed: _onImportPressed,
                       ),
-                    ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: OSSpace.xs),
+              child: Text(
+                _autoCaptureImminent
+                    ? 'HOLD STILL…'
+                    : 'AUTO · ${_autoCaptureEnabled ? 'ON' : 'OFF'}',
+                style: OSTypography.caption.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: _autoCaptureImminent
+                      ? OSColors.chromeOnBackground
+                      : _autoCaptureEnabled
+                          ? accent
+                          : OSColors.chromeMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The shutter. Its ring is the auto-capture state: accent when a page is
+  /// locked, pulsing when a capture is about to fire on its own.
+  Widget _shutter(Color accent) {
+    if (_capturing) {
+      return SizedBox(
+        height: 70,
+        width: 70,
+        child: Center(
+          child: CircularProgressIndicator(color: accent),
+        ),
+      );
+    }
+
+    final locked = _quadSmoother.smoothedQuad.value != null;
+    return GestureDetector(
+      onLongPress: _toggleAutoCapture,
+      child: SizedBox(
+        height: 70,
+        width: 70,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (_autoCaptureImminent)
+              _PulseRing(color: accent),
+            GestureDetector(
+              onTap: _cameraController != null ? _onCapturePressed : null,
+              child: Container(
+                height: 70,
+                width: 70,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: locked
+                        ? accent
+                        : Colors.white.withValues(alpha: 0.35),
+                    width: 4,
                   ),
                 ),
-                _capturing
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : GestureDetector(
-                        onLongPress: _toggleAutoCapture,
-                        child: IconButton(
-                          iconSize: 64,
-                          icon: const Icon(Icons.camera, color: Colors.white),
-                          onPressed: _cameraController != null
-                              ? _onCapturePressed
-                              : null,
-                        ),
-                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// "You have N pages, go look at them" — the session's exit, rather than
+  /// a separate Done button that would mean the same thing twice.
+  Widget _sessionChip(Color accent) {
+    if (_capturedFiles.isEmpty) return const SizedBox.shrink();
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: _onDonePressed,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(6, 6, 10, 6),
+          decoration: BoxDecoration(
+            color: OSColors.chromeScrim,
+            borderRadius: BorderRadius.circular(OSRadius.pill),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(OSRadius.chip),
+                child: Image.file(
+                  _capturedFiles.last.file,
+                  height: 30,
+                  width: 30,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 30,
+                    width: 30,
+                    color: OSColors.chromeControl,
+                  ),
+                ),
+              ),
+              const SizedBox(width: OSSpace.xs),
+              Flexible(
+                child: Text(
+                  '${_capturedFiles.length} · Done ›',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: OSTypography.caption.copyWith(
+                    color: OSColors.chromeOnBackground,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Everything that isn't needed on every shot, one tap behind the caret.
+  Widget _expandedControls(Color accent, Color onAccent) {
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: OSSpace.md),
+        children: [
+          if (_exposureStepSize > 0)
+            Container(
+              margin: const EdgeInsets.only(right: OSSpace.xs),
+              padding: const EdgeInsets.symmetric(horizontal: OSSpace.xs),
+              decoration: BoxDecoration(
+                color: OSColors.chromeControl,
+                borderRadius: BorderRadius.circular(OSRadius.card),
+              ),
+              child: Row(
+                children: [
+                  Text('EV',
+                      style: OSTypography.caption
+                          .copyWith(color: OSColors.chromeOnBackground)),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.remove_rounded,
+                        size: 18, color: OSColors.chromeOnBackground),
+                    onPressed: _currentExposureOffset <= _minExposureOffset
+                        ? null
+                        : () => _adjustExposure(-_exposureStepSize),
+                  ),
+                  Text(
+                    _currentExposureOffset == 0
+                        ? '0.0'
+                        : '${_currentExposureOffset > 0 ? '+' : ''}'
+                            '${_currentExposureOffset.toStringAsFixed(1)}',
+                    style: OSTypography.caption
+                        .copyWith(color: OSColors.chromeOnBackground),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.add_rounded,
+                        size: 18, color: OSColors.chromeOnBackground),
+                    onPressed: _currentExposureOffset >= _maxExposureOffset
+                        ? null
+                        : () => _adjustExposure(_exposureStepSize),
+                  ),
+                ],
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(right: OSSpace.xs),
+            child: _ControlChip(
+              label: 'Auto-capture: ${_autoCaptureEnabled ? 'On' : 'Off'}',
+              selected: _autoCaptureEnabled,
+              selectedColor: Theme.of(context).colorScheme.primaryContainer,
+              selectedTextColor:
+                  Theme.of(context).colorScheme.onPrimaryContainer,
+              onTap: _toggleAutoCapture,
+            ),
+          ),
+          if (_capturedFiles.isNotEmpty)
+            _ControlChip(
+              label: 'Undo last',
+              selected: false,
+              onTap: _onUndoLastPressed,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _zoomSlider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: OSSpace.md, vertical: OSSpace.xxs),
+      // Absorb taps so a miss on the slider track isn't read as a
+      // tap-to-focus by the preview's GestureDetector below.
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {},
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: OSSpace.sm),
+          decoration: BoxDecoration(
+            color: OSColors.chromeScrim,
+            borderRadius: BorderRadius.circular(OSRadius.pill),
+          ),
+          child: ValueListenableBuilder<double>(
+            valueListenable: _currentZoom,
+            builder: (context, zoom, _) => Row(
+              children: [
+                SizedBox(
+                  width: 38,
+                  child: Text(
+                    '${zoom.toStringAsFixed(1)}x',
+                    style: OSTypography.caption
+                        .copyWith(color: OSColors.chromeOnBackground),
+                  ),
+                ),
                 Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TextButton(
-                        onPressed: _onDonePressed,
-                        child: const Text(
-                          'Done',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ),
-                    ],
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 2,
+                      overlayShape:
+                          const RoundSliderOverlayShape(overlayRadius: 16),
+                      thumbShape:
+                          const RoundSliderThumbShape(enabledThumbRadius: 8),
+                      activeTrackColor: Colors.white,
+                      inactiveTrackColor: Colors.white30,
+                      thumbColor: Colors.white,
+                    ),
+                    child: Slider(
+                      min: _minZoom,
+                      max: _maxZoom,
+                      value: zoom.clamp(_minZoom, _maxZoom),
+                      onChanged: _onZoomSliderChanged,
+                      onChangeEnd: _onZoomSliderChangeEnd,
+                    ),
                   ),
                 ),
               ],
@@ -891,16 +1206,231 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
+  /// Explains what the camera is for before asking again — the permission
+  /// prompt itself has no room for the "nothing leaves your device" half.
+  Widget _permissionDeniedState(Color accent, Color onAccent) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(OSSpace.xxxl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 64,
+              width: 64,
+              decoration: const BoxDecoration(
+                color: Color(0xFF221E18),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.no_photography_rounded,
+                  color: OSColors.chromeMuted),
+            ),
+            const SizedBox(height: OSSpace.md),
+            Text('Camera access needed',
+                style: OSTypography.subtitle
+                    .copyWith(color: OSColors.chromeOnBackground)),
+            const SizedBox(height: OSSpace.xs),
+            Text(
+              'OpenScan only uses your camera to scan pages — nothing leaves '
+              'your device. Turn it on in Settings to continue.',
+              textAlign: TextAlign.center,
+              style:
+                  OSTypography.body.copyWith(color: OSColors.chromeMuted),
+            ),
+            const SizedBox(height: OSSpace.lg),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: accent,
+                foregroundColor: onAccent,
+              ),
+              onPressed: openAppSettings,
+              child: const Text('Open Settings'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: Text('Not now',
+                  style: OSTypography.label
+                      .copyWith(color: OSColors.chromeMuted)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessage(String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(OSSpace.xl),
         child: Text(
           message,
-          style: TextStyle(color: Colors.white),
+          style: OSTypography.body.copyWith(color: OSColors.chromeOnBackground),
           textAlign: TextAlign.center,
         ),
       ),
     );
   }
+}
+
+/// A round translucent control button, the camera's one button shape.
+class _ChromeButton extends StatelessWidget {
+  const _ChromeButton({
+    required this.icon,
+    required this.onPressed,
+    this.tooltip,
+    this.highlight = false,
+    this.highlightColor,
+  });
+
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+  final bool highlight;
+  final Color? highlightColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = highlightColor ?? Theme.of(context).colorScheme.primary;
+    final enabled = onPressed != null;
+    final button = Material(
+      color: highlight ? active : OSColors.chromeScrim,
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: SizedBox(
+          height: 40,
+          width: 40,
+          child: Icon(
+            icon,
+            size: 20,
+            color: highlight
+                ? Theme.of(context).colorScheme.onPrimary
+                : enabled
+                    ? OSColors.chromeOnBackground
+                    : OSColors.chromeMuted,
+          ),
+        ),
+      ),
+    );
+    return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
+  }
+}
+
+/// A labelled pill in the expanded control row.
+class _ControlChip extends StatelessWidget {
+  const _ControlChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.selectedColor,
+    this.selectedTextColor,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color? selectedColor;
+  final Color? selectedTextColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: OSSpace.sm, vertical: OSSpace.xs),
+          decoration: BoxDecoration(
+            color: selected
+                ? (selectedColor ?? Theme.of(context).colorScheme.primary)
+                : OSColors.chromeControl,
+            borderRadius: BorderRadius.circular(OSRadius.chip + 2),
+          ),
+          child: Text(
+            label,
+            style: OSTypography.caption.copyWith(
+              fontWeight: FontWeight.w700,
+              color: selected
+                  ? (selectedTextColor ??
+                      Theme.of(context).colorScheme.onPrimary)
+                  : OSColors.chromeOnBackground,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The 900ms ring that expands out of the shutter while an auto-capture is
+/// about to fire — the "something is about to happen" cue that pairs with
+/// the HOLD STILL label.
+class _PulseRing extends StatefulWidget {
+  const _PulseRing({required this.color});
+
+  final Color color;
+
+  @override
+  State<_PulseRing> createState() => _PulseRingState();
+}
+
+class _PulseRingState extends State<_PulseRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = _controller.value;
+        return Transform.scale(
+          scale: 0.9 + t * 0.45,
+          child: Opacity(
+            opacity: (1 - t / 0.7).clamp(0.0, 0.9),
+            child: Container(
+              height: 70,
+              width: 70,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: widget.color, width: 3),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Rule-of-thirds guides, drawn hairline-thin so they never compete with
+/// the detected document boundary.
+class _ThirdsGridPainter extends CustomPainter {
+  const _ThirdsGridPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.25)
+      ..strokeWidth = 1;
+    for (var i = 1; i < 3; i++) {
+      final dx = size.width * i / 3;
+      final dy = size.height * i / 3;
+      canvas.drawLine(Offset(dx, 0), Offset(dx, size.height), paint);
+      canvas.drawLine(Offset(0, dy), Offset(size.width, dy), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ThirdsGridPainter oldDelegate) => false;
 }

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:openscan/core/data/database_helper.dart';
+import 'package:openscan/core/theme/os_colors.dart';
+import 'package:openscan/core/theme/os_tokens.dart';
+import 'package:openscan/core/theme/os_typography.dart';
 
+/// Rename, following the canonical dialog spec: title, one field, cancel +
+/// confirm. The field opens with the current name selected, so the common
+/// case (replace it entirely) is one keystroke.
 class RenameDialog extends StatefulWidget {
   const RenameDialog({
     Key? key,
@@ -18,9 +24,8 @@ class RenameDialog extends StatefulWidget {
 }
 
 class _RenameDialogState extends State<RenameDialog> {
-  // bool isEmptyError = false;
-  DatabaseHelper database = DatabaseHelper();
-  TextEditingController _controller = TextEditingController();
+  final DatabaseHelper database = DatabaseHelper();
+  final TextEditingController _controller = TextEditingController();
   String? errorText;
 
   late String newName;
@@ -33,78 +38,69 @@ class _RenameDialogState extends State<RenameDialog> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    newName = newName.trim();
+    if (newName.isEmpty) {
+      setState(() => errorText = 'File name cannot be empty');
+      return;
+    }
+    if (newName.contains(RegExp(r'[/.]'))) {
+      setState(() => errorText = 'Special characters are not allowed');
+      return;
+    }
+    database.renameDirectory(
+      tableName: widget.docTableName,
+      newName: newName,
+    );
+    Navigator.pop(context);
+    widget.onConfirm(newName);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
+    final os = context.os;
     return AlertDialog(
+      backgroundColor: os.surfaceContainer,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(
-          Radius.circular(10),
+        borderRadius: BorderRadius.circular(OSRadius.sheet),
+      ),
+      title: Text('Rename file',
+          style: OSTypography.subtitle.copyWith(color: os.onSurface)),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        // Selecting the whole name on focus makes "type a new name" the
+        // default gesture rather than "edit the timestamp OpenScan made up".
+        onTap: () => _controller.selection = TextSelection(
+            baseOffset: 0, extentOffset: _controller.value.text.length),
+        onChanged: (value) => newName = value,
+        onSubmitted: (_) => _save(),
+        textCapitalization: TextCapitalization.words,
+        style: OSTypography.body.copyWith(color: os.onSurface),
+        decoration: InputDecoration(
+          errorText: errorText,
+          errorStyle: OSTypography.caption.copyWith(color: os.danger),
         ),
       ),
-      title: Text('Rename File'),
-      content: Container(
-        width: size.width * 0.7,
-        child: Theme(
-          data: ThemeData(
-            textTheme: TextTheme(),
-            textSelectionTheme: TextSelectionThemeData(
-              selectionColor: Theme.of(context).colorScheme.secondary,
-              cursorColor: Theme.of(context).colorScheme.secondary,
-              selectionHandleColor: Theme.of(context).colorScheme.secondary,
-            ),
-          ),
-          child: TextField(
-            onTap: () => _controller.selection = TextSelection(
-                baseOffset: 0, extentOffset: _controller.value.text.length),
-            controller: _controller,
-            onChanged: (value) {
-              newName = value;
-            },
-            style: TextStyle(color: Colors.white),
-            textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(
-              // prefixStyle: TextStyle(color: Colors.white),
-              focusedBorder: UnderlineInputBorder(
-                borderSide:
-                    BorderSide(color: Theme.of(context).colorScheme.secondary),
-              ),
-              errorText: errorText,
-            ),
-          ),
-        ),
-      ),
-      actions: <Widget>[
+      actionsPadding:
+          const EdgeInsets.fromLTRB(OSSpace.sm, 0, OSSpace.sm, OSSpace.sm),
+      actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Cancel',
-            style: TextStyle(color: Colors.white),
-          ),
+          child: Text('Cancel',
+              style: OSTypography.label.copyWith(
+                  fontWeight: FontWeight.w700, color: os.onSurfaceVariant)),
         ),
         TextButton(
-          onPressed: () {
-            newName = newName.trim();
-            if (newName.isEmpty) {
-              setState(() {
-                errorText = 'Error! File name cannot be empty';
-              });
-            } else if (newName.contains(RegExp(r'[/.]'))) {
-              setState(() {
-                errorText = 'Error! Special characters not allowed';
-              });
-            } else {
-              database.renameDirectory(
-                tableName: widget.docTableName,
-                newName: newName,
-              );
-              Navigator.pop(context);
-              widget.onConfirm(newName);
-            }
-          },
-          child: Text(
-            'Save',
-            style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-          ),
+          onPressed: _save,
+          child: Text('Save',
+              style: OSTypography.label
+                  .copyWith(fontWeight: FontWeight.w700, color: os.accent)),
         ),
       ],
     );
