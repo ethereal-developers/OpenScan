@@ -67,5 +67,37 @@
     "quality": "Quality",
     "save_to_device": "Save to device",
     "share_pdf": "Share PDF",
-    "share_images": "Share images"
+    "share_images": "Share images",
+    "filters": "Filters",
+    "@filters": {
+        "description": "Filter picker screen title"
+    },
+    "filter_original": "Original",
+    "@filter_original": {
+        "description": "Colour mode: the capture, unchanged"
+    },
+    "filter_auto": "Auto",
+    "@filter_auto": {
+        "description": "Colour mode: automatic colour and contrast correction"
+    },
+    "filter_lighten": "Lighten",
+    "@filter_lighten": {
+        "description": "Colour mode: keeps colour, whitens the paper"
+    },
+    "filter_grayscale": "Grayscale",
+    "@filter_grayscale": {
+        "description": "Colour mode: shades of grey only"
+    },
+    "filter_bw": "B&W",
+    "@filter_bw": {
+        "description": "Colour mode: pure black and white"
+    },
+    "filter_whiteboard": "Whiteboard",
+    "@filter_whiteboard": {
+        "description": "Colour mode: removes shadows and glare from a whiteboard"
+    },
+    "apply_to_all_pages": "Apply to all pages",
+    "@apply_to_all_pages": {
+        "description": "Applies the selected filter to every page of the document"
+    }
 }

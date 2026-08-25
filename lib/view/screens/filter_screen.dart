@@ -1,22 +1,53 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:image/image.dart' as imageLib;
-import 'package:path/path.dart';
+import 'package:openscan/core/image_filter/apply_filter.dart';
+import 'package:openscan/core/image_filter/filters/document_filters.dart';
+import 'package:openscan/core/image_filter/filters/filters.dart';
+import 'package:openscan/core/models.dart';
+import 'package:openscan/l10n/app_localizations.dart';
+import 'package:openscan/logic/cubit/directory_cubit.dart';
+import 'package:openscan/view/Widgets/loading.dart';
 
-import '../../core/image_filter/filters/filters.dart';
-import '../../core/image_filter/filters/preset_filters.dart';
-import '../../logic/cubit/directory_cubit.dart';
-import '../../logic/cubit/filter_cubit.dart';
+/// Longest edge the large preview is rendered at. Filtering a
+/// full-resolution capture just to look at it on a phone screen costs
+/// seconds; this is indistinguishable and near-instant.
+const int _previewMaxEdge = 1000;
 
+/// Longest edge of the per-filter chips along the bottom.
+const int _thumbnailMaxEdge = 160;
+
+/// Localized label for a filter. [Filter.name] stays the stable,
+/// non-localized id — it is the cache key and the value stored in the
+/// database — so the two are resolved separately.
+String filterLabel(BuildContext context, Filter filter) {
+  final l10n = AppLocalizations.of(context)!;
+  switch (filter.name) {
+    case 'Auto':
+      return l10n.filter_auto;
+    case 'Lighten':
+      return l10n.filter_lighten;
+    case 'Grayscale':
+      return l10n.filter_grayscale;
+    case 'B&W':
+      return l10n.filter_bw;
+    case 'Whiteboard':
+      return l10n.filter_whiteboard;
+    default:
+      return l10n.filter_original;
+  }
+}
+
+/// Picks the colour mode for a page.
+///
+/// Every image shown here is derived from [ImageOS.filterSourcePath] — the
+/// page's unfiltered version — so switching between modes always previews
+/// the filter on its own, never stacked on the previous one.
 class FilterScreen extends StatefulWidget {
-  const FilterScreen({
-    Key? key,
-    required this.pageIndex,
-  }) : super(key: key);
+  const FilterScreen({Key? key, required this.pageIndex}) : super(key: key);
 
   final int pageIndex;
 
@@ -25,126 +56,242 @@ class FilterScreen extends StatefulWidget {
 }
 
 class _FilterScreenState extends State<FilterScreen> {
-  List<Filter> filters = presetFiltersList;
-  Filter _filter = presetFiltersList[0];
-  late PageController _pageController;
-  late String currentImagePath;
-  late String filterImageName;
+  late final PageController _pageController;
+  late int _pageIndex;
+  late Filter _selected;
 
-  bool imageReady = false;
+  /// Decoded, downscaled copies of each page's unfiltered source, keyed by
+  /// `'<source path>|<max edge>'`. Filtering works off these rather than
+  /// off the file, so a page is decoded once instead of once per chip.
+  final Map<String, Uint8List> _sources = {};
+
+  /// Insertion order of the preview-sized entries in [_sources]; see
+  /// [_previewKeys] for why they are bounded.
+  final List<String> _sourceKeys = [];
+
+  /// Filtered results, keyed by [_key].
+  final Map<String, Uint8List> _results = {};
+
+  /// Insertion order of the large previews held in [_results], so the
+  /// oldest can be dropped. Chips are tiny and kept indefinitely; previews
+  /// are not, and a long document with every mode tried would otherwise
+  /// accumulate megabytes of decoded JPEG.
+  final List<String> _previewKeys = [];
+
+  /// How many large previews to keep — enough for the current page's six
+  /// modes, so flicking back and forth between two of them never recomputes.
+  static const int _previewCacheSize = 8;
+
+  final Set<String> _pending = {};
+
+  /// Filtering runs one job at a time: each `compute` call spins up an
+  /// isolate, and firing six chips plus a preview at once would leave the
+  /// device thrashing instead of drawing sooner.
+  Future<void> _queue = Future.value();
+
+  bool _disposed = false;
 
   @override
   void initState() {
     super.initState();
+    _pageIndex = widget.pageIndex;
     _pageController = PageController(initialPage: widget.pageIndex);
+    _selected = documentFilterByName(_imageAt(_pageIndex)?.filterName);
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  ImageOS? _imageAt(int index) {
+    final images = context.read<DirectoryCubit>().state.images;
+    if (images == null || index < 0 || index >= images.length) return null;
+    return images[index];
+  }
+
+  String _key(String sourcePath, Filter filter, int maxEdge) =>
+      '$sourcePath|${filter.name}|$maxEdge';
+
+  /// Schedules the work needed to show [filter] over [sourcePath] at
+  /// [maxEdge], if it is not already cached or running.
+  void _request(String sourcePath, Filter filter, int maxEdge) {
+    final key = _key(sourcePath, filter, maxEdge);
+    if (_results.containsKey(key) || _pending.contains(key)) return;
+    _pending.add(key);
+
+    _queue = _queue.then((_) async {
+      if (_disposed) return;
+      try {
+        final source = await _source(sourcePath, maxEdge);
+        final filtered = filter.name == defaultDocumentFilter.name
+            ? source
+            : await compute(filterBytesIsolateEntry, {
+                'filter': filter.name,
+                'bytes': source,
+              });
+        if (_disposed) return;
+        setState(() => _cache(key, filtered, maxEdge));
+      } catch (e) {
+        debugPrint('Could not preview ${filter.name} for $sourcePath: $e');
+      } finally {
+        _pending.remove(key);
+      }
+    });
+  }
+
+  void _cache(String key, Uint8List bytes, int maxEdge) {
+    _results[key] = bytes;
+    if (maxEdge != _previewMaxEdge) return;
+    _previewKeys.remove(key);
+    _previewKeys.add(key);
+    while (_previewKeys.length > _previewCacheSize) {
+      _results.remove(_previewKeys.removeAt(0));
+    }
+  }
+
+  /// The downscaled, unfiltered copy of [sourcePath], decoding it if this
+  /// is the first request for that size.
+  Future<Uint8List> _source(String sourcePath, int maxEdge) async {
+    final key = '$sourcePath|$maxEdge';
+    final cached = _sources[key];
+    if (cached != null) return cached;
+
+    final resized =
+        await compute(applyFilterIsolateEntry, {
+              'filter': defaultDocumentFilter.name,
+              'src': sourcePath,
+              'maxEdge': maxEdge,
+            })
+            as Uint8List;
+    if (maxEdge == _previewMaxEdge) {
+      // Preview-sized sources are the big ones; hold only a few pages'
+      // worth so paging through a long document doesn't keep every one.
+      _sourceKeys.remove(key);
+      _sourceKeys.add(key);
+      while (_sourceKeys.length > _previewCacheSize) {
+        _sources.remove(_sourceKeys.removeAt(0));
+      }
+    }
+    _sources[key] = resized;
+    return resized;
+  }
+
+  Future<void> _confirm({required bool allPages}) async {
+    final image = _imageAt(_pageIndex);
+    if (image == null) return;
+
+    final cubit = context.read<DirectoryCubit>();
+    final navigator = Navigator.of(context);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const LoadingWidget(),
+    );
+
+    if (allPages) {
+      await cubit.applyFilterToAllImages(filter: _selected);
+    } else {
+      await cubit.applyFilterToImage(imageOS: image, filter: _selected);
+    }
+
+    if (!mounted) return;
+    navigator.pop(); // the loading dialog
+    navigator.pop(); // this screen
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SafeArea(
       child: Scaffold(
+        backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
           elevation: 0,
           centerTitle: true,
-          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+          title: Text(l10n.filters),
+          backgroundColor: Theme.of(
+            context,
+          ).primaryColor.withValues(alpha: 0.5),
           leading: IconButton(
             icon: Icon(Icons.arrow_back_ios),
             padding: EdgeInsets.fromLTRB(15, 8, 0, 8),
             onPressed: () => Navigator.pop(context),
           ),
+          actions: [
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert_rounded),
+              onSelected: (_) => _confirm(allPages: true),
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'all',
+                  child: Text(l10n.apply_to_all_pages),
+                ),
+              ],
+            ),
+            IconButton(
+              icon: Icon(Icons.check_rounded),
+              onPressed: () => _confirm(allPages: false),
+            ),
+          ],
         ),
-        backgroundColor: Theme.of(context).primaryColor,
-        body: BlocConsumer<DirectoryCubit, DirectoryState>(
-          listener: (context, state) {},
+        body: BlocBuilder<DirectoryCubit, DirectoryState>(
           builder: (context, directoryState) {
+            final images = directoryState.images ?? const <ImageOS>[];
+            if (images.isEmpty) return const SizedBox.shrink();
+
             return PageView.builder(
-              physics:
-                  // enablePageScroll
-                  //       ?
-                  ClampingScrollPhysics(),
-              // : NeverScrollableScrollPhysics(),
+              physics: ClampingScrollPhysics(),
               controller: _pageController,
-              itemCount: directoryState.imageCount,
-              onPageChanged: (value) {
-                _imageBytes = null;
+              itemCount: images.length,
+              onPageChanged: (index) {
+                setState(() {
+                  _pageIndex = index;
+                  // Open each page on the filter it is already carrying.
+                  _selected = documentFilterByName(images[index].filterName);
+                });
               },
-              itemBuilder: (context, imageIndex) {
-                currentImagePath = directoryState.images![imageIndex].imgPath;
-                filterImageName = _filter.name + basename(currentImagePath);
+              itemBuilder: (context, index) {
+                final sourcePath = images[index].filterSourcePath;
                 return Column(
-                  mainAxisSize: MainAxisSize.max,
                   children: [
                     Expanded(
                       child: Padding(
                         padding: EdgeInsets.all(12.0),
-                        child: BlocConsumer<FilterCubit, FilterState>(
-                          listener: (context, state) {
-                            debugPrint('Filter Cubit: ${state.cachedFilters.keys}');
-                          },
-                          buildWhen: (previous, current) {
-                            if(!imageReady && current.cachedFilters[filterImageName] !=
-                                    null) {
-                              imageReady = true;
-                              return true;
-                            }
-                            return false;
-                          },
-                          builder: (context, filterState) {
-                            List<int>? filteredImage =
-                                filterState.cachedFilters[filterImageName];
-
-                            if (filteredImage != null) {
-                              return Image.memory(
-                                Uint8List.fromList(filteredImage),
-                                fit: BoxFit.contain,
-                              );
-                            } else {
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
-                              );
-                            }
-                          },
+                        child: _FilteredImage(
+                          bytes:
+                              _results[_key(
+                                sourcePath,
+                                _selected,
+                                _previewMaxEdge,
+                              )],
+                          onMissing: () =>
+                              _request(sourcePath, _selected, _previewMaxEdge),
                         ),
                       ),
                     ),
-                    Container(
-                      height: 100,
+                    SizedBox(
+                      height: 110,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount: filters.length,
-                        itemBuilder: (BuildContext context, int filterIndex) {
-                          String imagePath =
-                              directoryState.images![imageIndex].imgPath;
-                          return InkWell(
-                            child: Container(
-                              padding: EdgeInsets.all(5.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: <Widget>[
-                                  FilterThumbnail(
-                                    imagePath: imagePath,
-                                    filter: filters[filterIndex],
-                                  ),
-                                  SizedBox(
-                                    height: 5.0,
-                                  ),
-                                  Text(
-                                    filters[filterIndex].name,
-                                  )
-                                ],
-                              ),
-                            ),
-                            onTap: () {
-                              if (_filter != filters[filterIndex]) {
-                                _filter = filters[filterIndex];
-                                filterImageName =
-                                    _filter.name + basename(currentImagePath);
-                                BlocProvider.of<FilterCubit>(context)
-                                    .changeFilter(_filter);
-                              }
-                            },
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        itemCount: documentFiltersList.length,
+                        itemBuilder: (context, filterIndex) {
+                          final filter = documentFiltersList[filterIndex];
+                          return _FilterChip(
+                            label: filterLabel(context, filter),
+                            selected: filter.name == _selected.name,
+                            bytes:
+                                _results[_key(
+                                  sourcePath,
+                                  filter,
+                                  _thumbnailMaxEdge,
+                                )],
+                            onMissing: () =>
+                                _request(sourcePath, filter, _thumbnailMaxEdge),
+                            onTap: () => setState(() => _selected = filter),
                           );
                         },
                       ),
@@ -160,110 +307,92 @@ class _FilterScreenState extends State<FilterScreen> {
   }
 }
 
-class FilterThumbnail extends StatelessWidget {
-  const FilterThumbnail({
-    Key? key,
-    required this.imagePath,
-    required this.filter,
-  }) : super(key: key);
+/// Shows [bytes] once they exist, and asks for them exactly once per build
+/// while they do not.
+class _FilteredImage extends StatelessWidget {
+  const _FilteredImage({required this.bytes, required this.onMissing});
 
-  final String imagePath;
-  final Filter filter;
+  final Uint8List? bytes;
+  final VoidCallback onMissing;
 
   @override
   Widget build(BuildContext context) {
-    String filterName = filter.name + basename(imagePath);
-    return BlocConsumer<FilterCubit, FilterState>(
-      listener: (context, state) {},
-      buildWhen: (previous, current) {
-        return previous.cachedFilters[filterName] !=
-            current.cachedFilters[filterName];
-      },
-      builder: (context, filterState) {
-        return (filterState.cachedFilters[filterName] == null)
-            ? FutureBuilder<List<int>>(
-                future: compute(applyFilter, <String, dynamic>{
-                  "filter": filter,
-                  "image": File(imagePath),
-                  "filename": basename(imagePath),
-                }),
-                builder:
-                    (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
-                  debugPrint('$filterName => ${snapshot.connectionState}');
-
-                  switch (snapshot.connectionState) {
-                    case ConnectionState.none:
-                    case ConnectionState.active:
-                    case ConnectionState.waiting:
-                      BlocProvider.of<FilterCubit>(context)
-                          .cacheImage(filterName, null);
-
-                      return CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Theme.of(context).primaryColor,
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
-                        ),
-                      );
-                    case ConnectionState.done:
-                      if (snapshot.hasError && !snapshot.hasData)
-                        return Center(child: Text('Error: ${snapshot.error}'));
-
-                      BlocProvider.of<FilterCubit>(context)
-                          .cacheImage(filterName, snapshot.data!);
-
-                      return Container(
-                        height: 60,
-                        width: 60,
-                        child: Image.memory(
-                          snapshot.data as dynamic,
-                        ),
-                      );
-                  }
-                },
-              )
-            : Container(
-                height: 60,
-                width: 60,
-                child: Image.memory(
-                  Uint8List.fromList(filterState.cachedFilters[filterName]!),
-                ),
-              );
-      },
-    );
+    final bytes = this.bytes;
+    if (bytes == null) {
+      // Requesting during build is safe: the request is de-duplicated and
+      // only ever calls setState from a later frame.
+      onMissing();
+      return Center(child: CircularProgressIndicator(color: Colors.white));
+    }
+    return Image.memory(bytes, fit: BoxFit.contain, gaplessPlayback: true);
   }
 }
 
-late imageLib.Image byteImage;
-List<int>? _imageBytes;
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.bytes,
+    required this.onMissing,
+    required this.onTap,
+  });
 
-///The global applyfilter function
-Future<List<int>> applyFilter(Map<String, dynamic> params) async {
-  Filter? filter = params["filter"];
-  File image = params["image"];
-  String filename = params["filename"];
+  final String label;
+  final bool selected;
+  final Uint8List? bytes;
+  final VoidCallback onMissing;
+  final VoidCallback onTap;
 
-  if (_imageBytes == null) {
-    byteImage = imageLib.decodeImage(await image.readAsBytes())!;
-    _imageBytes = byteImage.getBytes();
+  @override
+  Widget build(BuildContext context) {
+    final bytes = this.bytes;
+    if (bytes == null) onMissing();
+
+    final accent = Theme.of(context).colorScheme.secondary;
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: 92,
+        padding: EdgeInsets.all(6.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 60,
+              width: 60,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: selected ? accent : Colors.transparent,
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: bytes == null
+                  ? Center(
+                      child: SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : Image.memory(bytes, fit: BoxFit.cover),
+            ),
+            SizedBox(height: 5.0),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
-
-  if (filter != null && filter.name != 'Original') {
-    filter.apply(_imageBytes as dynamic, byteImage.width, byteImage.height);
-  }
-
-  // imageLib.Image _image =
-  //     imageLib.Image.fromBytes(imageBytes.width, imageBytes.height, _bytes);
-
-  _imageBytes = imageLib.encodeNamedImage(filename, byteImage)!;
-
-  // PreviewScreen.previewModel.cachedFilters[
-  //     filter?.name == null ? '_' + filename : filter!.name + filename] = _bytes;
-
-  debugPrint(
-      'Caching image: ${filter?.name == null ? '_' + filename : filter!.name + filename}');
-
-  return _imageBytes!;
 }

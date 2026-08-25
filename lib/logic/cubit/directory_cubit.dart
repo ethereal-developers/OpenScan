@@ -8,6 +8,9 @@ import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/core/cv/perspective_crop.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/file_operations.dart';
+import 'package:openscan/core/image_filter/apply_filter.dart';
+import 'package:openscan/core/image_filter/filters/document_filters.dart';
+import 'package:openscan/core/image_filter/filters/filters.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:openscan/view/screens/live_scan/live_scan_screen.dart';
@@ -92,6 +95,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         idx: image['idx'],
         imgPath: image['img_path'],
         origPath: image['orig_img_path'],
+        unfilteredPath: image['unfiltered_img_path'],
+        filterName: image['filter_name'],
         selected: false,
       );
       debugPrint('${tempImage.imgPath} => ${tempImage.idx}');
@@ -289,7 +294,10 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     // from there instead of from this crop's result.
     if (imageOS.origPath == null) {
       File promoted = File('$dir/orig_$stamp.jpg');
-      File(imageOS.imgPath).copySync(promoted.path);
+      // Promote the *unfiltered* version, so a page that was filtered
+      // before it was ever cropped doesn't end up with the filter baked
+      // into its permanent original.
+      File(imageOS.filterSourcePath).copySync(promoted.path);
       imageOS.origPath = promoted.path;
     }
 
@@ -301,10 +309,16 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     imageOS.imgPath = temp.path;
     debugPrint('Image Cropped');
 
+    // The crop came off the uncropped original, so any filtered result and
+    // the unfiltered copy it was derived from both describe a page that no
+    // longer exists. Drop them and let the page start filter-free again.
+    _deleteUnfilteredCopy(imageOS);
+
     database.updateImagePath(
       tableName: state.dirName!,
       imgPath: imageOS.imgPath,
       origPath: imageOS.origPath,
+      clearFilter: true,
       idx: imageOS.idx,
     );
     debugPrint(imageOS.idx.toString());
@@ -319,6 +333,111 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
     debugPrint('Image paths updated');
     emitState(state);
+  }
+
+  /// Applies [filter] to a single page, writing the result to disk and
+  /// recording it, so the choice survives leaving the screen.
+  Future<void> applyFilterToImage({
+    required ImageOS imageOS,
+    required Filter filter,
+  }) async {
+    await _applyFilter(imageOS, filter);
+    state.images![imageOS.idx! - 1] = imageOS;
+    if (imageOS.idx == 1) {
+      database.updateFirstImagePath(
+        imagePath: imageOS.imgPath,
+        dirPath: state.dirPath,
+      );
+    }
+    emitState(state);
+  }
+
+  /// Applies [filter] to every page of the document.
+  Future<void> applyFilterToAllImages({required Filter filter}) async {
+    for (ImageOS imageOS in state.images!) {
+      await _applyFilter(imageOS, filter);
+    }
+    if (state.images!.isNotEmpty) {
+      database.updateFirstImagePath(
+        imagePath: state.images!.first.imgPath,
+        dirPath: state.dirPath,
+      );
+    }
+    emitState(state);
+  }
+
+  /// Re-derives a page from its unfiltered source under [filter].
+  ///
+  /// Filtering is non-destructive: the first filter applied to a page
+  /// promotes the current file to being that page's unfiltered copy (the
+  /// same trick [saveCroppedImage] uses to keep an uncropped original), and
+  /// every later filter is computed from that copy rather than from the
+  /// previous filtered result, so switching modes never compounds.
+  Future<void> _applyFilter(ImageOS imageOS, Filter filter) async {
+    final bool isOriginal = filter.name == defaultDocumentFilter.name;
+    if ((imageOS.filterName ?? defaultDocumentFilter.name) == filter.name) {
+      return;
+    }
+
+    String dir = imageOS.imgPath.substring(0, imageOS.imgPath.lastIndexOf("/"));
+    String stamp = DateTime.now().microsecondsSinceEpoch.toString();
+    String previousPath = imageOS.imgPath;
+
+    bool justPromoted = false;
+    if (imageOS.unfilteredPath == null) {
+      // Nothing filtered yet and nothing asked for — nothing to do.
+      if (isOriginal) return;
+      File promoted = File('$dir/unfilt_$stamp.jpg');
+      File(imageOS.imgPath).copySync(promoted.path);
+      imageOS.unfilteredPath = promoted.path;
+      justPromoted = true;
+    }
+    String sourcePath = imageOS.unfilteredPath!;
+
+    if (isOriginal) {
+      // Back to no filter: the unfiltered copy simply becomes the page
+      // again, rather than being re-encoded into a fresh file.
+      if (previousPath != sourcePath) {
+        File previous = File(previousPath);
+        if (previous.existsSync()) previous.deleteSync();
+      }
+      imageOS.imgPath = sourcePath;
+      imageOS.unfilteredPath = null;
+      imageOS.filterName = null;
+    } else {
+      try {
+        String filteredPath = await compute(applyFilterIsolateEntry, {
+          'filter': filter.name,
+          'src': sourcePath,
+          'dest': '$dir/$stamp.jpg',
+        }) as String;
+        if (previousPath != sourcePath) {
+          File previous = File(previousPath);
+          if (previous.existsSync()) previous.deleteSync();
+        }
+        imageOS.imgPath = filteredPath;
+        imageOS.filterName = filter.name;
+      } catch (e) {
+        // Leave the page exactly as it was — a filter that could not be
+        // computed is worth far less than the page it would have replaced.
+        debugPrint('Could not apply ${filter.name} to $sourcePath: $e');
+        if (justPromoted) {
+          File promoted = File(sourcePath);
+          if (promoted.existsSync()) promoted.deleteSync();
+          imageOS.unfilteredPath = null;
+        }
+        return;
+      }
+    }
+
+    await database.updateImagePath(
+      tableName: state.dirName!,
+      imgPath: imageOS.imgPath,
+      unfilteredPath: imageOS.unfilteredPath,
+      filterName: imageOS.filterName,
+      clearFilter: isOriginal,
+      idx: imageOS.idx,
+    );
   }
 
   /// Deletes image and updates db
@@ -477,6 +596,19 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       File orig = File(origPath);
       if (orig.existsSync()) orig.deleteSync();
     }
+    _deleteUnfilteredCopy(image);
+  }
+
+  /// Removes the unfiltered copy a filtered page keeps alongside it, and
+  /// forgets the filter. Safe to call on an unfiltered page.
+  void _deleteUnfilteredCopy(ImageOS image) {
+    final unfilteredPath = image.unfilteredPath;
+    if (unfilteredPath != null && unfilteredPath != image.imgPath) {
+      File unfiltered = File(unfilteredPath);
+      if (unfiltered.existsSync()) unfiltered.deleteSync();
+    }
+    image.unfilteredPath = null;
+    image.filterName = null;
   }
 
   /// Copies a capture aside before it gets cropped in place, so the

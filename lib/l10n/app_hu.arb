@@ -67,5 +67,13 @@
     "quality": "Minőség",
     "save_to_device": "Mentés eszközre",
     "share_pdf": "PDF megosztása",
-    "share_images": "Képek megosztása"
+    "share_images": "Képek megosztása",
+    "filters": "Szűrők",
+    "filter_original": "Eredeti",
+    "filter_auto": "Automatikus",
+    "filter_lighten": "Világosítás",
+    "filter_grayscale": "Szürkeárnyalatos",
+    "filter_bw": "Fekete-fehér",
+    "filter_whiteboard": "Tábla",
+    "apply_to_all_pages": "Alkalmazás minden oldalra"
 }

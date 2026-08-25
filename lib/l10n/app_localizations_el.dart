@@ -99,4 +99,28 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get share_images => 'Κοινοποίηση εικόνων';
+
+  @override
+  String get filters => 'Φίλτρα';
+
+  @override
+  String get filter_original => 'Πρωτότυπο';
+
+  @override
+  String get filter_auto => 'Αυτόματο';
+
+  @override
+  String get filter_lighten => 'Φωτεινό';
+
+  @override
+  String get filter_grayscale => 'Κλίμακα του γκρι';
+
+  @override
+  String get filter_bw => 'Ασπρόμαυρο';
+
+  @override
+  String get filter_whiteboard => 'Πίνακας';
+
+  @override
+  String get apply_to_all_pages => 'Εφαρμογή σε όλες τις σελίδες';
 }

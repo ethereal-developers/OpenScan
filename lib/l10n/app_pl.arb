@@ -67,5 +67,13 @@
     "quality": "Jakość",
     "save_to_device": "Zapisz na urządzeniu",
     "save_pdf": "Udostępnij PDF",
-    "share_images": "Udostępnij obrazy"
+    "share_images": "Udostępnij obrazy",
+    "filters": "Filtry",
+    "filter_original": "Oryginał",
+    "filter_auto": "Automatyczny",
+    "filter_lighten": "Rozjaśnienie",
+    "filter_grayscale": "Odcienie szarości",
+    "filter_bw": "Czarno-biały",
+    "filter_whiteboard": "Tablica",
+    "apply_to_all_pages": "Zastosuj do wszystkich stron"
 }

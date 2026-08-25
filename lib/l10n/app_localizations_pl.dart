@@ -99,4 +99,28 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get share_images => 'Udostępnij obrazy';
+
+  @override
+  String get filters => 'Filtry';
+
+  @override
+  String get filter_original => 'Oryginał';
+
+  @override
+  String get filter_auto => 'Automatyczny';
+
+  @override
+  String get filter_lighten => 'Rozjaśnienie';
+
+  @override
+  String get filter_grayscale => 'Odcienie szarości';
+
+  @override
+  String get filter_bw => 'Czarno-biały';
+
+  @override
+  String get filter_whiteboard => 'Tablica';
+
+  @override
+  String get apply_to_all_pages => 'Zastosuj do wszystkich stron';
 }

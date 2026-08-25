@@ -281,6 +281,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share images'**
   String get share_images;
+
+  /// Filter picker screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get filters;
+
+  /// Colour mode: the capture, unchanged
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get filter_original;
+
+  /// Colour mode: automatic colour and contrast correction
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get filter_auto;
+
+  /// Colour mode: keeps colour, whitens the paper
+  ///
+  /// In en, this message translates to:
+  /// **'Lighten'**
+  String get filter_lighten;
+
+  /// Colour mode: shades of grey only
+  ///
+  /// In en, this message translates to:
+  /// **'Grayscale'**
+  String get filter_grayscale;
+
+  /// Colour mode: pure black and white
+  ///
+  /// In en, this message translates to:
+  /// **'B&W'**
+  String get filter_bw;
+
+  /// Colour mode: removes shadows and glare from a whiteboard
+  ///
+  /// In en, this message translates to:
+  /// **'Whiteboard'**
+  String get filter_whiteboard;
+
+  /// Applies the selected filter to every page of the document
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to all pages'**
+  String get apply_to_all_pages;
 }
 
 class _AppLocalizationsDelegate

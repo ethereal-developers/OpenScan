@@ -1,13 +1,16 @@
 import 'dart:typed_data';
 
-///The [Filter] class to define a Filter consists of multiple [SubFilter]s
+/// A colour mode that can be applied to a scanned page.
+///
+/// [name] is the filter's stable id: it is the key previews are cached
+/// under and the value written to the database, so it must not change with
+/// the app's locale. The label the user sees is resolved separately, by
+/// `filterLabel` in `lib/view/screens/filter_screen.dart`.
 abstract class Filter extends Object {
-  late final String name;
   Filter({required this.name});
 
-  ///Apply the [SubFilter] to an Image.
+  final String name;
+
+  /// Rewrites [pixels] — an RGBA buffer of stride 4 — in place.
   void apply(Uint8List pixels, int width, int height);
 }
-
-///The [SubFilter] class is the abstract class to define any SubFilter.
-abstract class SubFilter extends Object {}

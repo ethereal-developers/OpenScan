@@ -67,5 +67,13 @@
     "quality": "Ποιότητα",
     "save_to_device": "Αποθήκευση στη συσκευή",
     "share_pdf": "Κοινοποίηση PDF",
-    "share_images": "Κοινοποίηση εικόνων"
+    "share_images": "Κοινοποίηση εικόνων",
+    "filters": "Φίλτρα",
+    "filter_original": "Πρωτότυπο",
+    "filter_auto": "Αυτόματο",
+    "filter_lighten": "Φωτεινό",
+    "filter_grayscale": "Κλίμακα του γκρι",
+    "filter_bw": "Ασπρόμαυρο",
+    "filter_whiteboard": "Πίνακας",
+    "apply_to_all_pages": "Εφαρμογή σε όλες τις σελίδες"
 }

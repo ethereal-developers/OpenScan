@@ -3,9 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/appRouter.dart';
-import 'package:openscan/core/image_filter/filters/preset_filters.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
-import 'package:openscan/logic/cubit/filter_cubit.dart';
 import 'package:openscan/view/Widgets/delete_dialog.dart';
 import 'package:openscan/view/extensions.dart';
 import 'package:openscan/view/screens/filter_screen.dart';
@@ -332,18 +330,8 @@ class _PreviewScreenState extends State<PreviewScreen>
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => MultiBlocProvider(
-                      providers: [
-                        BlocProvider<DirectoryCubit>.value(
-                          value: BlocProvider.of<DirectoryCubit>(context),
-                        ),
-                        BlocProvider(
-                          create: (context) => FilterCubit(
-                            selectedFilter: presetFiltersList[0],
-                            cachedFilters: {},
-                          ),
-                        ),
-                      ],
+                    builder: (_) => BlocProvider<DirectoryCubit>.value(
+                      value: BlocProvider.of<DirectoryCubit>(context),
                       child: FilterScreen(
                         pageIndex: pageController.page!.round(),
                       ),

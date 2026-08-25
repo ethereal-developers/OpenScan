@@ -99,4 +99,28 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get share_images => 'Képek megosztása';
+
+  @override
+  String get filters => 'Szűrők';
+
+  @override
+  String get filter_original => 'Eredeti';
+
+  @override
+  String get filter_auto => 'Automatikus';
+
+  @override
+  String get filter_lighten => 'Világosítás';
+
+  @override
+  String get filter_grayscale => 'Szürkeárnyalatos';
+
+  @override
+  String get filter_bw => 'Fekete-fehér';
+
+  @override
+  String get filter_whiteboard => 'Tábla';
+
+  @override
+  String get apply_to_all_pages => 'Alkalmazás minden oldalra';
 }

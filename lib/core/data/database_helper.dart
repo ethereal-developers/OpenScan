@@ -114,7 +114,8 @@ class DatabaseHelper {
       idx INTEGER,
       img_path TEXT,
       orig_img_path TEXT,
-      filtered_image_path TEXT)
+      unfiltered_img_path TEXT,
+      filter_name TEXT)
       ''');
   }
 
@@ -124,11 +125,10 @@ class DatabaseHelper {
   Future getImageData(String tableName) async {
     Database db = await instance.database;
     await addOrigImageColumn(tableName);
+    await addFilterColumns(tableName);
     getDirectoryTableName(tableName);
     List<Map<String, dynamic>> data =
         await db.query(_dirTableName, orderBy: 'idx');
-
-    // addFilteredImageColumn(tableName);
 
     return data;
   }
@@ -144,6 +144,9 @@ class DatabaseHelper {
       {required String tableName,
       String? imgPath,
       String? origPath,
+      String? unfilteredPath,
+      String? filterName,
+      bool clearFilter = false,
       int? idx}) async {
     Database db = await instance.database;
     getDirectoryTableName(tableName);
@@ -152,6 +155,9 @@ class DatabaseHelper {
         {
           'img_path': imgPath,
           if (origPath != null) 'orig_img_path': origPath,
+          if (clearFilter || unfilteredPath != null)
+            'unfiltered_img_path': unfilteredPath,
+          if (clearFilter || filterName != null) 'filter_name': filterName,
         },
         where: 'idx == ?',
         whereArgs: [idx]);
@@ -178,32 +184,33 @@ class DatabaseHelper {
   /// `orig_img_path`, which callers read as "no original kept — crop from
   /// the stored image itself".
   Future addOrigImageColumn(String tableName) async {
-    Database db = await instance.database;
     getDirectoryTableName(tableName);
-
-    List tableData = await db.rawQuery('PRAGMA table_info($_dirTableName);');
-    bool columnAvailable =
-        tableData.any((column) => column['name'] == 'orig_img_path');
-    if (!columnAvailable) {
-      await db
-          .execute('ALTER TABLE $_dirTableName ADD COLUMN orig_img_path TEXT;');
-    }
+    await _addColumnIfMissing(_dirTableName, 'orig_img_path', 'TEXT');
   }
 
-  /// Add filtered image path column to old directory
-  Future addFilteredImageColumn(String tableName) async {
-    Database db = await instance.database;
+  /// Adds the filter columns to directory tables created before filters
+  /// were persisted. Rows in those tables keep a null `unfiltered_img_path`
+  /// and `filter_name`, which callers read as "no filter applied — the
+  /// stored image is the unfiltered one".
+  ///
+  /// Tables from those builds also carry a `filtered_image_path` column
+  /// that was never written to; it is left in place (SQLite makes dropping
+  /// a column costly) and simply ignored.
+  Future addFilterColumns(String tableName) async {
     getDirectoryTableName(tableName);
+    await _addColumnIfMissing(_dirTableName, 'unfiltered_img_path', 'TEXT');
+    await _addColumnIfMissing(_dirTableName, 'filter_name', 'TEXT');
+  }
 
-    List tableData = await db.rawQuery('PRAGMA table_info($_dirTableName);');
-    bool filterColumnAvailable = false;
-    for (Map<String, dynamic> column in tableData.reversed) {
-      if (column['name'] == 'filtered_image_path') filterColumnAvailable = true;
-      break;
-    }
-    if (!filterColumnAvailable) {
-      await db.rawQuery(
-          'ALTER TABLE $_dirTableName ADD COLUMN filtered_image_path TEXT;');
+  /// Adds [column] to [table] unless it is already there, so the migration
+  /// is safe to run on every read.
+  Future _addColumnIfMissing(String table, String column, String type) async {
+    Database db = await instance.database;
+    List tableData = await db.rawQuery('PRAGMA table_info($table);');
+    bool columnAvailable =
+        tableData.any((tableColumn) => tableColumn['name'] == column);
+    if (!columnAvailable) {
+      await db.execute('ALTER TABLE $table ADD COLUMN $column $type;');
     }
   }
 
@@ -216,9 +223,10 @@ class DatabaseHelper {
   Future createImage(
       {required ImageOS image, required String tableName}) async {
     Database db = await instance.database;
-    // Directory tables created by older versions have no orig_img_path
-    // column; inserting one into them would throw.
+    // Directory tables created by older versions have no orig_img_path or
+    // filter columns; writing to them would throw.
     await addOrigImageColumn(tableName);
+    await addFilterColumns(tableName);
     getDirectoryTableName(tableName);
     int index = await db.insert(_dirTableName, {
       'idx': image.idx,

@@ -99,4 +99,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get share_images => 'Share images';
+
+  @override
+  String get filters => 'Filters';
+
+  @override
+  String get filter_original => 'Original';
+
+  @override
+  String get filter_auto => 'Auto';
+
+  @override
+  String get filter_lighten => 'Lighten';
+
+  @override
+  String get filter_grayscale => 'Grayscale';
+
+  @override
+  String get filter_bw => 'B&W';
+
+  @override
+  String get filter_whiteboard => 'Whiteboard';
+
+  @override
+  String get apply_to_all_pages => 'Apply to all pages';
 }
