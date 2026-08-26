@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/core/data/database_helper.dart';
+import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/core/settings/app_settings.dart';
@@ -267,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ];
       if (images.isEmpty) continue;
       final path = await fileOperations.saveToDevice(
-        fileName: _sanitize(_titleOf(doc)),
+        fileName: exportFileName(_titleOf(doc)),
         images: images,
       );
       if (path != null) exported++;
@@ -284,11 +285,6 @@ class _HomeScreenState extends State<HomeScreen> {
       OSSnack.error(context, "Couldn't export ${documents.length - exported}");
     }
   }
-
-  static String _sanitize(String name) =>
-      name.replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '').trim().isEmpty
-          ? 'OpenScan'
-          : name.replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '').trim();
 
   // <========================= Sheets & menus =========================>
 

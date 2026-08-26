@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/core/data/database_helper.dart';
+import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/image_filter/apply_filter.dart';
 import 'package:openscan/core/image_filter/filters/document_filters.dart';
@@ -74,7 +75,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     Directory? appDir = await getExternalStorageDirectory();
     var now = DateTime.now();
 
-    state.dirName = 'OpenScan $now';
+    state.dirName = defaultDocumentName(now);
     state.created = now;
     state.dirPath = '${appDir!.path}/${state.dirName}';
     state.firstImgPath = '';

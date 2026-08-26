@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/cv/compress.dart';
+import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
 import 'package:openscan/core/theme/os_colors.dart';
@@ -60,6 +60,16 @@ extension on ExportQuality {
         return kStoredPageQuality;
     }
   }
+
+  /// What the chip says under its name.
+  ///
+  /// The sheet used to quote a measured size here, which meant encoding a
+  /// page four times over — on a real 2400px page that came to five
+  /// seconds before the sheet could label its own buttons, against twenty
+  /// for the entire export it was describing. The resolution is the honest
+  /// thing to show instead: it is what the preset actually controls, and
+  /// it is known without touching a pixel.
+  String get hint => '${maxEdge}px';
 
   /// Long edge, in pixels, the page is capped at on the way out.
   ///
@@ -126,101 +136,12 @@ class _ExportSheetState extends State<ExportSheet> {
   ExportQuality _quality = ExportQuality.medium;
   ExportPageSize _pageSize = ExportPageSize.a4;
 
-  /// Bytes each encoding costs for one representative page, measured by
-  /// actually encoding it — see [_measureSizes]. Null until that finishes.
-  Map<String, int>? _measured;
-  bool _measuring = true;
-
   _Stage _stage = _Stage.idle;
   int _progressPage = 0;
   String? _resultPath;
   int _resultCount = 0;
   String? _resultSize;
   String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    // Deferred a frame: _pages needs the cubit, which is read from context.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureSizes());
-  }
-
-  /// Quotes export sizes from a real encode rather than a guessed
-  /// multiplier: one representative page is encoded at every quality the
-  /// sheet offers, and the ratio it comes out at is applied to what the
-  /// whole selection currently weighs on disk.
-  ///
-  /// One page rather than all of them because the estimate only has to be
-  /// good to the nearest tenth of a megabyte, and pages of one document
-  /// compress alike — scanning a 40-page document four times over to
-  /// label four chips would cost more than the export itself.
-  Future<void> _measureSizes() async {
-    if (!mounted) return;
-    final pages = _pages(context.read<DirectoryCubit>().state);
-    final sample = _representativePage(pages);
-    if (sample == null) {
-      if (mounted) setState(() => _measuring = false);
-      return;
-    }
-    try {
-      final sizes = await compute(measureEncodedSizesIsolateEntry, {
-        'src': sample,
-        'presets': [
-          for (final quality in ExportQuality.values)
-            {'quality': quality.encodeQuality, 'maxEdge': quality.maxEdge},
-        ],
-        'includePng': true,
-      });
-      if (!mounted) return;
-      setState(() {
-        _measured = sizes;
-        _measuring = false;
-      });
-    } catch (e) {
-      debugPrint('Could not measure export sizes: $e');
-      if (mounted) setState(() => _measuring = false);
-    }
-  }
-
-  /// The median-sized page of the selection: a busy photo page or a nearly
-  /// blank one would both skew an estimate meant to describe the document.
-  String? _representativePage(List<ImageOS> pages) {
-    final existing = [
-      for (final page in pages)
-        if (File(page.imgPath).existsSync()) page.imgPath,
-    ];
-    if (existing.isEmpty) return null;
-    existing.sort((a, b) => File(a).lengthSync().compareTo(File(b).lengthSync()));
-    return existing[existing.length ~/ 2];
-  }
-
-  /// What this selection is expected to weigh, exported as [format] at
-  /// [quality]. Null while the measurement is still running.
-  int? _estimatedBytes(
-      List<ImageOS> pages, ExportFormat format, ExportQuality quality) {
-    final measured = _measured;
-    final sourceBytes = measured?['source'];
-    if (measured == null || sourceBytes == null || sourceBytes == 0) return null;
-    final encoded = format == ExportFormat.png
-        ? measured[pngSizeKey(quality.maxEdge)]
-        : measured[encodedSizeKey(quality.encodeQuality, quality.maxEdge)];
-    if (encoded == null) return null;
-
-    final total = (_sourceBytes(pages) * encoded / sourceBytes).round();
-    // A PDF wraps the same JPEG bytes in page objects and a font-free
-    // catalogue: a couple of KB in total, and about 1KB per page.
-    return format == ExportFormat.pdf ? total + 2048 + pages.length * 1024 : total;
-  }
-
-  /// The label under a quality chip: a measured size, or a placeholder
-  /// while measuring. PNG gets a real number too — its bytes do not move
-  /// with JPEG quality, but every preset also caps the page's pixels, and
-  /// that reaches PNG.
-  String _sizeHint(List<ImageOS> pages, ExportQuality quality) {
-    if (_measuring) return '…';
-    final bytes = _estimatedBytes(pages, _format, quality);
-    return bytes == null ? '—' : '~${_formatBytes(bytes)}';
-  }
 
   List<ImageOS> _pages(DirectoryState state) {
     final images = state.images ?? const <ImageOS>[];
@@ -232,27 +153,9 @@ class _ExportSheetState extends State<ExportSheet> {
   String _documentName(DirectoryState state) =>
       state.newName ?? state.dirName ?? 'OpenScan';
 
-  /// A filename safe on every filesystem the export can land on, suffixed
-  /// with the date so repeated exports of one document don't collide.
-  String _fileName(DirectoryState state) {
-    final cleaned = _documentName(state)
-        .replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '')
-        .trim()
-        .replaceAll(RegExp(r'\s+'), '_');
-    final date = DateTime.now();
-    final stamp = '${date.year}-${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
-    return '${cleaned.isEmpty ? 'OpenScan' : cleaned}_$stamp';
-  }
+  String _fileName(DirectoryState state) =>
+      exportFileName(_documentName(state));
 
-  int _sourceBytes(List<ImageOS> pages) {
-    var total = 0;
-    for (final page in pages) {
-      final file = File(page.imgPath);
-      if (file.existsSync()) total += file.lengthSync();
-    }
-    return total;
-  }
 
   static String _formatBytes(num bytes) {
     if (bytes >= 1024 * 1024) {
@@ -373,7 +276,6 @@ class _ExportSheetState extends State<ExportSheet> {
   Widget _idle(DirectoryState state) {
     final os = context.os;
     final pages = _pages(state);
-    final estimate = _estimatedBytes(pages, _format, _quality);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -404,7 +306,7 @@ class _ExportSheetState extends State<ExportSheet> {
               Expanded(
                 child: _QualityOption(
                   label: quality.label,
-                  hint: _sizeHint(pages, quality),
+                  hint: quality.hint,
                   selected: _quality == quality,
                   onTap: () => setState(() => _quality = quality),
                 ),
@@ -427,14 +329,6 @@ class _ExportSheetState extends State<ExportSheet> {
         _MetaRow(
           label: widget.imagesSelected ? 'Selected pages' : 'All pages',
           value: pages.length == 1 ? '1 page' : '${pages.length} pages',
-        ),
-        _MetaRow(
-          label: 'Estimated size',
-          value: _measuring
-              ? 'Measuring…'
-              : estimate == null
-                  ? '—'
-                  : '~${_formatBytes(estimate)}',
         ),
         const SizedBox(height: OSSpace.sm),
         Container(
@@ -503,6 +397,21 @@ class _ExportSheetState extends State<ExportSheet> {
     );
   }
 
+  /// Hands the export to whatever app opens that kind of file, and says so
+  /// when nothing does. The result used to be discarded, which meant a
+  /// refusal — no viewer installed, or a path the plugin will not touch —
+  /// looked exactly like a button that did nothing.
+  Future<void> _open(String path) async {
+    final result = await OpenFilex.open(path);
+    if (!mounted || result.type == ResultType.done) return;
+    OSSnack.error(
+      context,
+      result.type == ResultType.noAppToOpen
+          ? 'No app on this phone opens that kind of file'
+          : "Couldn't open the file: ${result.message}",
+    );
+  }
+
   Widget _success() {
     final os = context.os;
     final path = _resultPath;
@@ -545,7 +454,7 @@ class _ExportSheetState extends State<ExportSheet> {
                 label: 'Open',
                 kind: OSButtonKind.tonal,
                 expand: true,
-                onPressed: path == null ? null : () => OpenFilex.open(path),
+                onPressed: path == null ? null : () => _open(path),
               ),
             ),
             const SizedBox(width: OSSpace.sm),

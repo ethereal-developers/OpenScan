@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:openscan/core/data/database_helper.dart';
+import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/settings/app_settings.dart';
 import 'package:openscan/main.dart';
@@ -53,7 +54,7 @@ Future<SeededDocument> seedDocument({
 }) async {
   final root = (await getExternalStorageDirectory())!;
   final when = created ?? DateTime.now();
-  final dirName = name == null ? 'OpenScan $when' : 'OpenScan $when';
+  final dirName = defaultDocumentName(when);
   final dirPath = '${root.path}/$dirName';
 
   final cache = await getTemporaryDirectory();

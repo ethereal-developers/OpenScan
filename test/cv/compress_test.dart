@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
@@ -90,55 +89,4 @@ void main() {
     tempDir.deleteSync(recursive: true);
   });
 
-  test('measures every preset, and smaller presets weigh less', () async {
-    final tempDir = Directory.systemTemp.createTempSync('compress_measure');
-    final srcPath = '${tempDir.path}/page.jpg';
-
-    // Noise rather than a flat fill: a solid colour compresses to almost
-    // nothing at any setting, which would hide the differences entirely.
-    final image = img.Image(width: 2400, height: 1800);
-    final random = Random(7);
-    for (int y = 0; y < image.height; y += 1) {
-      for (int x = 0; x < image.width; x += 1) {
-        final v = random.nextInt(256);
-        image.setPixelRgb(x, y, v, (v * 3) % 256, (v * 7) % 256);
-      }
-    }
-    File(srcPath).writeAsBytesSync(img.encodeJpg(image, quality: 85));
-
-    final presets = <Map<String, dynamic>>[
-      {'quality': 30, 'maxEdge': 900},
-      {'quality': 45, 'maxEdge': 1200},
-      {'quality': 65, 'maxEdge': 1800},
-      {'quality': 85, 'maxEdge': 2400},
-    ];
-    final sizes = await measureEncodedSizesIsolateEntry({
-      'src': srcPath,
-      'presets': presets,
-      'includePng': true,
-    });
-
-    expect(sizes['source'], File(srcPath).lengthSync());
-    for (final preset in presets) {
-      expect(sizes[encodedSizeKey(preset['quality'] as int,
-          preset['maxEdge'] as int?)], isNotNull);
-      expect(sizes[pngSizeKey(preset['maxEdge'] as int?)], isNotNull);
-    }
-
-    // The whole point of the presets: each step down is actually smaller.
-    final jpegs = [
-      for (final preset in presets)
-        sizes[encodedSizeKey(
-            preset['quality'] as int, preset['maxEdge'] as int?)]!,
-    ];
-    for (int i = 1; i < jpegs.length; i++) {
-      expect(jpegs[i], greaterThan(jpegs[i - 1]),
-          reason: 'preset ${presets[i]} should weigh more than ${presets[i - 1]}');
-    }
-
-    // PNG ignores JPEG quality but not the pixel cap, so it still moves.
-    expect(sizes[pngSizeKey(900)]!, lessThan(sizes[pngSizeKey(2400)]!));
-
-    tempDir.deleteSync(recursive: true);
-  });
 }

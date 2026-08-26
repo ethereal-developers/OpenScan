@@ -9,6 +9,7 @@ import 'package:openscan/core/cv/capture_pipeline.dart';
 import 'package:openscan/core/cv/compress.dart';
 import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/core/data/database_helper.dart';
+import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/models.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -143,7 +144,10 @@ class FileOperations {
     await Directory(dirPath).create();
 
     final dirName = dirPath.substring(dirPath.lastIndexOf('/') + 1);
-    final created = DateTime.parse(dirName.substring(dirName.indexOf(' ') + 1));
+    // A folder the app named carries its own created time; one named
+    // anything else (a user's rename, an import) simply starts now rather
+    // than throwing on a name that was never a date.
+    final created = createdFromDocumentName(dirName) ?? DateTime.now();
     await database.createDirectory(
       directory: DirectoryOS(
         dirName: dirName,
@@ -361,11 +365,20 @@ class FileOperations {
   }
 
   /// The directory exports land in — PDFs and images alike: a visible
-  /// OpenScan folder under Documents, falling back to app storage where
+  /// OpenScan folder under Downloads, falling back to app storage where
   /// that is not writable. There is no way to choose another one; a
   /// directory picker is a feature this has never had.
+  ///
+  /// Downloads rather than Documents because of what happens next. Opening
+  /// an export goes through open_filex, which on API 30+ refuses any path
+  /// outside the app's own directories unless it matches a hardcoded list
+  /// of media folders — /DCIM/, /Pictures/, /Download/ and so on — or the
+  /// app holds MANAGE_EXTERNAL_STORAGE, which this app has no business
+  /// asking for. /Documents/ is not on that list, so every export landed
+  /// somewhere the Open button could not reach. Verified on a device:
+  /// Documents gives permissionDenied, Downloads opens.
   Future<Directory> exportDirectory() async {
-    Directory openscanDir = Directory("/storage/emulated/0/Documents/OpenScan");
+    Directory openscanDir = Directory("/storage/emulated/0/Download/OpenScan");
     try {
       if (!openscanDir.existsSync()) openscanDir.createSync(recursive: true);
       return openscanDir;
