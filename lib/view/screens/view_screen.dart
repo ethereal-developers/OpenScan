@@ -21,13 +21,12 @@ import 'package:reorderables/reorderables.dart';
 /// things you actually do next — add more pages, export — are the only
 /// persistent buttons.
 class ViewScreen extends StatefulWidget {
-  final bool quickScan;
-  final bool fromGallery;
+  /// The scan type to start as soon as this screen opens, for a document
+  /// created by a scan rather than opened from the library. Null for an
+  /// existing document.
+  final String? initialScan;
 
-  ViewScreen({
-    this.quickScan = false,
-    this.fromGallery = false,
-  });
+  ViewScreen({this.initialScan});
 
   @override
   _ViewScreenState createState() => _ViewScreenState();
@@ -35,6 +34,44 @@ class ViewScreen extends StatefulWidget {
 
 class _ViewScreenState extends State<ViewScreen> {
   bool _selectionMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final scanType = widget.initialScan;
+    if (scanType != null) {
+      // After the first frame: createImage pushes the camera route, and a
+      // route cannot be pushed from inside another route's build.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _startSession(
+            fromGallery: scanType == 'Import from Gallery',
+            quickScan: scanType == 'Quick Scan',
+            liveScan: scanType == 'Live Scan',
+          ));
+    }
+  }
+
+  /// Runs a capture session and, if it ends with the document still empty,
+  /// closes this screen: a document nobody put a page in is not worth
+  /// landing on — backing out of the camera should land back where the
+  /// scan was started from.
+  Future<void> _startSession({
+    bool fromGallery = false,
+    bool quickScan = false,
+    bool liveScan = false,
+  }) async {
+    final cubit = BlocProvider.of<DirectoryCubit>(context);
+    final navigator = Navigator.of(context);
+    await cubit.createImage(
+      context,
+      fromGallery: fromGallery,
+      quickScan: quickScan,
+      liveScan: liveScan,
+    );
+    if (!mounted) return;
+    if ((cubit.state.images ?? const []).isEmpty && navigator.canPop()) {
+      navigator.pop();
+    }
+  }
 
   static const List<String> _months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
@@ -50,11 +87,7 @@ class _ViewScreenState extends State<ViewScreen> {
   }
 
   void _addPages({bool fromGallery = false}) {
-    BlocProvider.of<DirectoryCubit>(context).createImage(
-      context,
-      fromGallery: fromGallery,
-      liveScan: !fromGallery,
-    );
+    _startSession(fromGallery: fromGallery, liveScan: !fromGallery);
   }
 
   void _rename(DirectoryState state) {

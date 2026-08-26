@@ -21,6 +21,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _kAutoCapturePrefKey = 'liveScanAutoCaptureEnabled';
 
+/// Height of the two controls flanking the shutter — big enough to sit as
+/// peers of the 70px shutter rather than as afterthoughts beside it.
+const double _kSideControlSize = 60;
+
 /// One page captured in a live-scan session: the full-resolution photo,
 /// plus the document boundary that was on screen at the moment of capture
 /// (fractional [0,1] portrait-overlay coordinates — see
@@ -31,12 +35,23 @@ const _kAutoCapturePrefKey = 'liveScanAutoCaptureEnabled';
 /// user already agreed to those edges by letting the auto-capture fire on
 /// them. Manual shots still go through the crop screen, which reruns
 /// detection fresh at full resolution.
+///
+/// [imported] marks a page picked from the gallery rather than shot here.
+/// An imported picture is already whatever the user wants it to be — it
+/// was never framed through this viewfinder — so it goes straight into
+/// the document, exactly like a gallery import from the library screen.
 class LiveCapture {
   final File file;
   final Quad? quad;
   final bool autoMode;
+  final bool imported;
 
-  const LiveCapture({required this.file, this.quad, required this.autoMode});
+  const LiveCapture({
+    required this.file,
+    this.quad,
+    required this.autoMode,
+    this.imported = false,
+  });
 
   /// True when this page can be cropped straight to [quad] with no crop
   /// screen in between.
@@ -72,7 +87,7 @@ class LiveScanScreen extends StatefulWidget {
 }
 
 class _LiveScanScreenState extends State<LiveScanScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   final LiveScanController _liveScanController = LiveScanController();
   final QuadSmoother _quadSmoother = QuadSmoother();
   late final AutoCaptureDetector _autoCaptureDetector;
@@ -101,18 +116,24 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   bool _lowLight = false;
   static const int _kLowLightThreshold = 55;
 
-  /// Whether the secondary control row (EV, grid, auto-capture) is showing.
-  /// The resting camera is shutter + torch + switch + zoom and nothing
-  /// else; everything rarer lives one tap behind the caret.
-  bool _controlsExpanded = false;
-
   /// Rule-of-thirds guides over the preview. Off by default — the resting
   /// viewfinder shows the document boundary and nothing else.
   bool _gridVisible = false;
 
   /// Shows the white shutter flash for one frame's worth of time after a
-  /// capture, so a photo taken in auto mode is visibly acknowledged.
+  /// capture. Only used when nothing was detected: a capture with a
+  /// document on screen is acknowledged by [_captureFillController]
+  /// filling that document instead.
   bool _flashing = false;
+
+  /// Drives the capture acknowledgement over [_captureFillQuad]: the
+  /// detected page fills with light from its bottom edge upward.
+  late final AnimationController _captureFillController;
+
+  /// The boundary the fill animation runs inside — the quad as it was at
+  /// the moment of capture, kept after the smoother is reset so the
+  /// animation outlives the detection that produced it.
+  Quad? _captureFillQuad;
 
   CameraLensDirection _lensDirection = CameraLensDirection.back;
 
@@ -134,15 +155,18 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   bool _focusSupported = true;
   bool _exposureSupported = true;
 
-  double _minExposureOffset = 0.0;
-  double _maxExposureOffset = 0.0;
-  double _exposureStepSize = 0.0;
-  double _currentExposureOffset = 0.0;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _captureFillController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 520),
+    )..addStatusListener((status) {
+        if (status != AnimationStatus.completed || !mounted) return;
+        setState(() => _captureFillQuad = null);
+        _captureFillController.value = 0;
+      });
     _autoCaptureDetector = AutoCaptureDetector(
       onStable: _onAutoCaptureStable,
       onImminentChanged: (imminent) {
@@ -201,13 +225,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           _minZoom = await controller.getMinZoomLevel();
           _maxZoom = await controller.getMaxZoomLevel();
           _currentZoom.value = _minZoom;
-          _minExposureOffset = await controller.getMinExposureOffset();
-          _maxExposureOffset = await controller.getMaxExposureOffset();
-          _exposureStepSize = await controller.getExposureOffsetStepSize();
-          _currentExposureOffset = 0.0;
         } catch (_) {
           _minZoom = _maxZoom = 1.0;
-          _minExposureOffset = _maxExposureOffset = _exposureStepSize = 0.0;
         }
         await controller.startImageStream(_onFrame);
         setState(() {});
@@ -336,7 +355,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     // than silently relighting it without the user re-tapping.
     _torchOn = false;
     _currentZoom.value = 1.0;
-    _currentExposureOffset = 0.0;
     _focusPointNormalized = null;
     _focusHideTimer?.cancel();
     // Rebuild immediately so no widget keeps referencing the disposed
@@ -367,13 +385,21 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     final autoMode = _autoCaptureEnabled;
     setState(() {
       _capturing = true;
-      _flashing = true;
+      // With a page on screen the capture is acknowledged inside that
+      // page; the whole-screen blink is the fallback for a shot taken
+      // with nothing detected, where there is no shape to fill.
+      _captureFillQuad = quadAtCapture;
+      _flashing = quadAtCapture == null;
     });
-    // 90ms white flash, per the motion spec — long enough to register as
-    // "that was taken", short enough not to hide the next framing.
-    Future.delayed(const Duration(milliseconds: 90), () {
-      if (mounted) setState(() => _flashing = false);
-    });
+    if (quadAtCapture != null) {
+      _captureFillController.forward(from: 0);
+    } else {
+      // 90ms white flash, per the motion spec — long enough to register as
+      // "that was taken", short enough not to hide the next framing.
+      Future.delayed(const Duration(milliseconds: 90), () {
+        if (mounted) setState(() => _flashing = false);
+      });
+    }
     try {
       await controller.stopImageStream();
       if (AppSettings.instance.captureSound) {
@@ -424,7 +450,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       if (picked.isEmpty || !mounted) return;
       setState(() {
         for (final file in picked) {
-          _capturedFiles.add(LiveCapture(file: file, autoMode: false));
+          _capturedFiles.add(
+              LiveCapture(file: file, autoMode: false, imported: true));
         }
       });
     } catch (e) {
@@ -478,7 +505,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     _lensDirection = targetDirection;
     _torchOn = false;
     _currentZoom.value = 1.0;
-    _currentExposureOffset = 0.0;
     _focusPointNormalized = null;
     _focusHideTimer?.cancel();
     _focusSupported = true;
@@ -591,26 +617,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     }
   }
 
-  Future<void> _adjustExposure(double delta) async {
-    final controller = _cameraController;
-    if (controller == null || _exposureStepSize <= 0) return;
-    final target = (_currentExposureOffset + delta)
-        .clamp(_minExposureOffset, _maxExposureOffset);
-    if (target == _currentExposureOffset) return;
-    try {
-      // Not the return value: on Android, camera_android_camerax's
-      // setExposureOffset returns the raw exposure-compensation index
-      // (an integer step count) rather than the EV offset its own
-      // doc comment promises, so trusting it here corrupts
-      // _currentExposureOffset by a factor of ~1/stepSize and makes
-      // the offset run away upward regardless of which button was
-      // pressed. `target` is already the exact step-aligned EV value
-      // we asked the camera to apply, so use that instead.
-      await controller.setExposureOffset(target);
-      if (mounted) setState(() => _currentExposureOffset = target);
-    } catch (_) {}
-  }
-
   @override
   void dispose() {
     _focusHideTimer?.cancel();
@@ -625,6 +631,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       _cameraController?.stopImageStream();
     }
     _cameraController?.dispose();
+    _captureFillController.dispose();
     _currentZoom.dispose();
     _liveScanController.dispose();
     super.dispose();
@@ -662,9 +669,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                       SafeArea(
                         child: Column(
                           children: [
-                            _topChrome(),
-                            if (_controlsExpanded)
-                              _expandedControls(accent, onAccent),
+                            _topChrome(accent),
                             Expanded(child: _previewBox(accent, onAccent)),
                             _bottomChrome(accent, onAccent),
                           ],
@@ -755,6 +760,23 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                           );
                         },
                       ),
+                      if (_captureFillQuad != null)
+                        IgnorePointer(
+                          child: AnimatedBuilder(
+                            animation: _captureFillController,
+                            builder: (context, _) => CustomPaint(
+                              size: size,
+                              painter: CaptureFillPainter(
+                                points: _captureFillQuad!.points
+                                    .map((p) => Offset(
+                                        p.x * size.width, p.y * size.height))
+                                    .toList(),
+                                progress: _captureFillController.value,
+                                color: accent,
+                              ),
+                            ),
+                          ),
+                        ),
                       if (_focusPointNormalized != null)
                         Positioned(
                           left: _focusPointNormalized!.dx * size.width - 32,
@@ -799,7 +821,11 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
   // <========================= Chrome =========================>
 
-  Widget _topChrome() {
+  /// Every camera control on one row above the viewfinder: torch, the
+  /// auto-capture toggle, the composition grid, the lens switch, and undo
+  /// once there is something to undo. Nothing hides behind a caret — the
+  /// row is short enough to show all of it at once.
+  Widget _topChrome(Color accent) {
     final canTorch = _cameraController != null &&
         _lensDirection == CameraLensDirection.back;
     return Padding(
@@ -816,23 +842,37 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             highlightColor: _lowLight && !_torchOn ? context.os.warning : null,
             onPressed: canTorch ? _toggleTorch : null,
           ),
+          const SizedBox(width: OSSpace.xs),
+          _ChromeButton(
+            icon: Icons.auto_awesome_rounded,
+            tooltip: _autoCaptureEnabled
+                ? 'Auto-capture on'
+                : 'Auto-capture off',
+            highlight: _autoCaptureEnabled,
+            onPressed: _toggleAutoCapture,
+          ),
           const Spacer(),
+          if (_capturedFiles.isNotEmpty) ...[
+            _ChromeButton(
+              icon: Icons.undo_rounded,
+              tooltip: 'Undo last capture',
+              onPressed: _onUndoLastPressed,
+            ),
+            const SizedBox(width: OSSpace.xs),
+          ],
+          _ChromeButton(
+            icon: Icons.grid_3x3_rounded,
+            tooltip: 'Composition grid',
+            highlight: _gridVisible,
+            onPressed: () => setState(() => _gridVisible = !_gridVisible),
+          ),
+          const SizedBox(width: OSSpace.xs),
           _ChromeButton(
             icon: Icons.cameraswitch_rounded,
             tooltip: 'Switch camera',
             onPressed: (_cameraController != null && Globals.cameras.length > 1)
                 ? _switchCamera
                 : null,
-          ),
-          const SizedBox(width: OSSpace.xs),
-          _ChromeButton(
-            icon: _controlsExpanded
-                ? Icons.expand_less_rounded
-                : Icons.expand_more_rounded,
-            tooltip: 'More controls',
-            highlight: _controlsExpanded,
-            onPressed: () =>
-                setState(() => _controlsExpanded = !_controlsExpanded),
           ),
         ],
       ),
@@ -915,13 +955,13 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
-  /// The one row of controls under the viewfinder: gallery on the left of
-  /// the shutter, done on its right, with the auto-capture state spelled
-  /// out above them.
+  /// The one row of controls under the viewfinder: gallery, shutter and
+  /// done, all on the same centre line and evenly spaced, with the
+  /// auto-capture state spelled out above them.
   Widget _bottomChrome(Color accent, Color onAccent) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: OSSpace.md, vertical: OSSpace.xs),
+          horizontal: OSSpace.md, vertical: OSSpace.sm),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -938,26 +978,20 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                       : OSColors.chromeMuted,
             ),
           ),
-          const SizedBox(height: OSSpace.xs),
+          const SizedBox(height: OSSpace.sm),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: _ChromeButton(
-                    icon: Icons.photo_library_rounded,
-                    tooltip: 'Import from gallery',
-                    onPressed: _onImportPressed,
-                  ),
-                ),
+              _ChromeButton(
+                icon: Icons.photo_library_rounded,
+                tooltip: 'Import from gallery',
+                size: _kSideControlSize,
+                iconSize: 30,
+                onPressed: _onImportPressed,
               ),
               _shutter(accent),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: _doneButton(accent, onAccent),
-                ),
-              ),
+              _doneButton(accent, onAccent),
             ],
           ),
         ],
@@ -967,36 +1001,37 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
   /// The session's exit, carrying its page count: nothing captured yet
   /// means nothing to finish, so it sits inert rather than disappearing
-  /// and shifting the row around the shutter.
+  /// and shifting the row around the shutter. Sized to match the gallery
+  /// button on the other side of the shutter.
   Widget _doneButton(Color accent, Color onAccent) {
     final count = _capturedFiles.length;
     final enabled = count > 0;
-    return GestureDetector(
-      onTap: enabled ? _onDonePressed : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: OSSpace.sm, vertical: OSSpace.xs + 2),
-        decoration: BoxDecoration(
-          color: enabled ? accent : OSColors.chromeControl,
-          borderRadius: BorderRadius.circular(OSRadius.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              enabled ? 'Done · $count' : 'Done',
-              style: OSTypography.caption.copyWith(
-                fontWeight: FontWeight.w700,
-                color: enabled ? onAccent : OSColors.chromeMuted,
-              ),
+    final ink = enabled ? onAccent : OSColors.chromeMuted;
+    return Material(
+      color: enabled ? accent : OSColors.chromeScrim,
+      borderRadius: BorderRadius.circular(OSRadius.pill),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: enabled ? _onDonePressed : null,
+        child: SizedBox(
+          height: _kSideControlSize,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: OSSpace.md),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  enabled ? 'Done · $count' : 'Done',
+                  style: OSTypography.label.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: ink,
+                  ),
+                ),
+                const SizedBox(width: OSSpace.xxs),
+                Icon(Icons.check_rounded, size: 20, color: ink),
+              ],
             ),
-            const SizedBox(width: OSSpace.xxs),
-            Icon(
-              Icons.check_rounded,
-              size: 16,
-              color: enabled ? onAccent : OSColors.chromeMuted,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1045,87 +1080,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Everything that isn't needed on every shot, one tap behind the caret.
-  Widget _expandedControls(Color accent, Color onAccent) {
-    return SizedBox(
-      height: 48,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: OSSpace.md),
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: OSSpace.xs),
-            child: Center(
-              child: _ChromeButton(
-                icon: Icons.grid_3x3_rounded,
-                tooltip: 'Composition grid',
-                highlight: _gridVisible,
-                onPressed: () => setState(() => _gridVisible = !_gridVisible),
-              ),
-            ),
-          ),
-          if (_exposureStepSize > 0)
-            Container(
-              margin: const EdgeInsets.only(right: OSSpace.xs),
-              padding: const EdgeInsets.symmetric(horizontal: OSSpace.xs),
-              decoration: BoxDecoration(
-                color: OSColors.chromeControl,
-                borderRadius: BorderRadius.circular(OSRadius.card),
-              ),
-              child: Row(
-                children: [
-                  Text('EV',
-                      style: OSTypography.caption
-                          .copyWith(color: OSColors.chromeOnBackground)),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.remove_rounded,
-                        size: 18, color: OSColors.chromeOnBackground),
-                    onPressed: _currentExposureOffset <= _minExposureOffset
-                        ? null
-                        : () => _adjustExposure(-_exposureStepSize),
-                  ),
-                  Text(
-                    _currentExposureOffset == 0
-                        ? '0.0'
-                        : '${_currentExposureOffset > 0 ? '+' : ''}'
-                            '${_currentExposureOffset.toStringAsFixed(1)}',
-                    style: OSTypography.caption
-                        .copyWith(color: OSColors.chromeOnBackground),
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(Icons.add_rounded,
-                        size: 18, color: OSColors.chromeOnBackground),
-                    onPressed: _currentExposureOffset >= _maxExposureOffset
-                        ? null
-                        : () => _adjustExposure(_exposureStepSize),
-                  ),
-                ],
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.only(right: OSSpace.xs),
-            child: _ControlChip(
-              label: 'Auto-capture: ${_autoCaptureEnabled ? 'On' : 'Off'}',
-              selected: _autoCaptureEnabled,
-              selectedColor: Theme.of(context).colorScheme.primaryContainer,
-              selectedTextColor:
-                  Theme.of(context).colorScheme.onPrimaryContainer,
-              onTap: _toggleAutoCapture,
-            ),
-          ),
-          if (_capturedFiles.isNotEmpty)
-            _ControlChip(
-              label: 'Undo last',
-              selected: false,
-              onTap: _onUndoLastPressed,
-            ),
-        ],
       ),
     );
   }
@@ -1270,6 +1224,8 @@ class _ChromeButton extends StatelessWidget {
     this.tooltip,
     this.highlight = false,
     this.highlightColor,
+    this.size = 48,
+    this.iconSize = 26,
   });
 
   final IconData icon;
@@ -1277,6 +1233,8 @@ class _ChromeButton extends StatelessWidget {
   final String? tooltip;
   final bool highlight;
   final Color? highlightColor;
+  final double size;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
@@ -1289,11 +1247,11 @@ class _ChromeButton extends StatelessWidget {
       child: InkWell(
         onTap: onPressed,
         child: SizedBox(
-          height: 48,
-          width: 48,
+          height: size,
+          width: size,
           child: Icon(
             icon,
-            size: 26,
+            size: iconSize,
             color: highlight
                 ? Theme.of(context).colorScheme.onPrimary
                 : enabled
@@ -1304,52 +1262,6 @@ class _ChromeButton extends StatelessWidget {
       ),
     );
     return tooltip == null ? button : Tooltip(message: tooltip!, child: button);
-  }
-}
-
-/// A labelled pill in the expanded control row.
-class _ControlChip extends StatelessWidget {
-  const _ControlChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.selectedColor,
-    this.selectedTextColor,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final Color? selectedColor;
-  final Color? selectedTextColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: OSSpace.sm, vertical: OSSpace.xs),
-          decoration: BoxDecoration(
-            color: selected
-                ? (selectedColor ?? Theme.of(context).colorScheme.primary)
-                : OSColors.chromeControl,
-            borderRadius: BorderRadius.circular(OSRadius.chip + 2),
-          ),
-          child: Text(
-            label,
-            style: OSTypography.caption.copyWith(
-              fontWeight: FontWeight.w700,
-              color: selected
-                  ? (selectedTextColor ??
-                      Theme.of(context).colorScheme.onPrimary)
-                  : OSColors.chromeOnBackground,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 

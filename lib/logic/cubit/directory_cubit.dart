@@ -167,8 +167,12 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     debugPrint('$name size --> $kb');
   }
 
-  /// Imports image from gallery and camera and stores it in db
-  void createImage(
+  /// Imports image from gallery and camera and stores it in db.
+  ///
+  /// Resolves with the number of pages this call actually added, so a
+  /// caller can tell a cancelled session (0) from a real capture — an
+  /// empty new document has nothing worth showing.
+  Future<int> createImage(
     context, {
     bool quickScan = false,
     bool fromGallery = false,
@@ -204,8 +208,9 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       }
     }
 
+    int stored = 0;
     for (_PendingImage pending in imageList) {
-      await _storePending(pending);
+      if (await _storePending(pending)) stored++;
     }
 
     // Run once after every image in this call's imageList has been copied
@@ -216,14 +221,17 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     // deleting it mid-loop silently drops every image after the first.
     await fileOperations.deleteTemporaryImages();
     if (quickScan) {
-      return createImage(context, quickScan: quickScan);
+      return stored + await createImage(context, quickScan: quickScan);
     }
+    return stored;
   }
 
   /// Copies one prepared capture into the document as a new last page.
-  Future<void> _storePending(_PendingImage pending) async {
+  ///
+  /// Returns false when there was nothing to store.
+  Future<bool> _storePending(_PendingImage pending) async {
     File image = pending.image;
-    if (!image.existsSync()) return;
+    if (!image.existsSync()) return false;
 
     ImageOS savedImage = await fileOperations.saveImage(
       image: image,
@@ -255,18 +263,24 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
 
     emitState(state);
+    return true;
   }
 
   /// Turns one live-scan capture into the page to store, paired with the
   /// uncropped image it came from.
   ///
   /// Auto-mode pages are cropped straight to the edges the user already
-  /// agreed with on the live preview; everything else goes through the
-  /// crop screen.
+  /// agreed with on the live preview, and gallery imports are taken as
+  /// they are; everything else goes through the crop screen.
   Future<_PendingImage> _prepareCapture(context, LiveCapture capture) async {
     debugPrint('Live capture: autoMode=${capture.autoMode} '
-        'quad=${capture.quad != null} -> '
-        '${capture.canAutoCrop ? "auto-crop" : "crop screen"}');
+        'imported=${capture.imported} quad=${capture.quad != null} -> '
+        '${capture.imported ? "as-is" : capture.canAutoCrop ? "auto-crop" : "crop screen"}');
+    // An imported picture isn't a capture of anything: it is both the
+    // page and its own original, with no crop step in between.
+    if (capture.imported) {
+      return _PendingImage(image: capture.file, original: capture.file);
+    }
     final original = await _copyAsideOriginal(capture.file);
     if (capture.canAutoCrop) {
       final result = await _cropToLiveQuad(capture.file, capture.quad!);

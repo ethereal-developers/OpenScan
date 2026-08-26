@@ -47,3 +47,90 @@ class LiveQuadPainter extends CustomPainter {
   bool shouldRepaint(covariant LiveQuadPainter oldDelegate) =>
       oldDelegate.points != points || oldDelegate.isImminent != isImminent;
 }
+
+/// The capture acknowledgement: the detected document fills with light
+/// from its bottom edge upward, instead of the whole screen blinking
+/// white. The fill is clipped to the quad itself, so what flashes is
+/// exactly the area that was just photographed.
+///
+/// [progress] runs 0 → 1 over the whole animation: the fill rises over the
+/// first [_riseFraction] of it and the whole thing fades out over the
+/// rest, so the page is never hidden for longer than the shot takes.
+class CaptureFillPainter extends CustomPainter {
+  final List<Offset>? points; // [topLeft, topRight, bottomRight, bottomLeft]
+  final double progress;
+  final Color color;
+
+  static const double _riseFraction = 0.62;
+
+  CaptureFillPainter({
+    required this.points,
+    required this.progress,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final pts = points;
+    if (pts == null || pts.length != 4 || progress <= 0) return;
+
+    final rise = (progress / _riseFraction).clamp(0.0, 1.0);
+    final fade = progress <= _riseFraction
+        ? 1.0
+        : 1.0 - ((progress - _riseFraction) / (1 - _riseFraction));
+    final opacity = Curves.easeOut.transform(fade.clamp(0.0, 1.0));
+    // Ease the rise so it leaves the bottom edge quickly and settles into
+    // the top one, rather than sweeping at a constant machine-like speed.
+    final level = Curves.easeOutCubic.transform(rise);
+
+    final path = Path()..addPolygon(pts, true);
+    final bounds = path.getBounds();
+    if (bounds.isEmpty) return;
+
+    final top = bounds.bottom - bounds.height * level;
+
+    canvas.save();
+    canvas.clipPath(path);
+
+    // The body of the fill: brightest at the leading edge, thinning out
+    // toward the bottom it rose from.
+    final filled = Rect.fromLTRB(bounds.left, top, bounds.right, bounds.bottom);
+    canvas.drawRect(
+      filled,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white.withValues(alpha: 0.92 * opacity),
+            color.withValues(alpha: 0.45 * opacity),
+          ],
+        ).createShader(filled),
+    );
+
+    // The leading edge itself, a bright line riding the top of the fill —
+    // the part that reads as movement.
+    if (level < 1) {
+      canvas.drawRect(
+        Rect.fromLTRB(bounds.left, top - 2, bounds.right, top + 2),
+        Paint()..color = Colors.white.withValues(alpha: 0.95 * opacity),
+      );
+    }
+    canvas.restore();
+
+    // The outline stays lit for the whole animation, so the shape being
+    // captured is legible even at the very start of the rise.
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.9 * opacity)
+        ..strokeWidth = 3
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CaptureFillPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.points != points;
+}

@@ -180,20 +180,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Starts a capture session in a brand-new document and lands in
   /// Document detail when it finishes — never back in the library grid.
+  /// The session is started by [ViewScreen] itself, which closes again if
+  /// the user backs out of the camera without capturing anything, so a
+  /// cancelled scan returns here rather than to an empty document.
   void _startScan(String scanType) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => BlocProvider<DirectoryCubit>(
-          create: (context) => DirectoryCubit()
-            ..createDirectory()
-            ..createImage(
-              context,
-              quickScan: scanType == 'Quick Scan',
-              fromGallery: scanType == 'Import from Gallery',
-              liveScan: scanType == 'Live Scan',
-            ),
-          child: ViewScreen(),
+          create: (context) => DirectoryCubit()..createDirectory(),
+          child: ViewScreen(initialScan: scanType),
         ),
         settings: RouteSettings(name: AppRouter.viewScreen),
       ),
@@ -328,23 +324,6 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          OSSheetAction(
-            icon: Icons.photo_camera_rounded,
-            label: 'Normal scan (system camera)',
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _startScan('Normal Scan');
-            },
-          ),
-          OSSheetAction(
-            icon: Icons.timelapse_rounded,
-            label: 'Quick scan',
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _startScan('Quick Scan');
-            },
-          ),
-          const Divider(),
           OSSheetAction(
             icon: Icons.settings_rounded,
             label: 'Settings',
