@@ -259,31 +259,36 @@ class FileOperations {
 
   /// Saves PDF to Internal storage
   ///
-  /// [quality] is a JPEG quality (0-100) every page is re-encoded at on
-  /// the way into the document — the same number the export sheet quotes
-  /// a size for.
+  /// [quality] is a JPEG quality (0-100) and [maxEdge] a cap on the long
+  /// edge in pixels; every page is re-encoded to both on the way into the
+  /// PDF — the same pair the export sheet quotes a size for. The defaults
+  /// match what the page is already stored at, so a caller that does not
+  /// choose (the library's bulk export) neither loses detail nor inflates
+  /// the file re-encoding past it.
   ///
   /// Returns: FileName with Path [String]
   Future<String?> saveToDevice(
       {required String fileName,
       required List<ImageOS> images,
       PdfPageFormat pageFormat = PdfPageFormat.a4,
-      int quality = 100}) async {
+      int quality = kStoredPageQuality,
+      int? maxEdge = kStoredPageMaxEdge}) async {
     return await compute(createPdf, {
       'selectedDirectory': await exportDirectory(),
       'fileName': fileName,
-      'images': await _compressedForPdf(images, quality),
+      'images': await _compressedForPdf(images, quality, maxEdge),
       'pageFormat': pageFormat,
     });
   }
 
-  /// Re-encodes every page at [quality] into the cache directory, and
-  /// hands back records pointing at those copies.
+  /// Re-encodes every page at [quality], capped at [maxEdge] pixels on its
+  /// long edge, into the cache directory, and hands back records pointing
+  /// at those copies.
   ///
   /// Falls back to the pages themselves if anything goes wrong: a
   /// full-size PDF beats no PDF.
   Future<List<ImageOS>> _compressedForPdf(
-      List<ImageOS> images, int quality) async {
+      List<ImageOS> images, int quality, int? maxEdge) async {
     Directory cacheDir = await getTemporaryDirectory();
     List<ImageOS> compressed = [];
     try {
@@ -292,6 +297,7 @@ class FileOperations {
           'src': image.imgPath,
           'dest': cacheDir.path,
           'quality': quality,
+          'maxEdge': maxEdge,
         });
         compressed.add(ImageOS(imgPath: path));
       }
@@ -313,7 +319,8 @@ class FileOperations {
       String? fileName,
       required List<ImageOS> images,
       PdfPageFormat pageFormat = PdfPageFormat.a4,
-      int quality = 100,
+      int quality = kStoredPageQuality,
+      int? maxEdge = kStoredPageMaxEdge,
       required bool imagesSelected}) async {
     Directory selectedDirectory = await getApplicationDocumentsDirectory();
     List<ImageOS> selected = [
@@ -324,8 +331,8 @@ class FileOperations {
     return await compute(createPdf, {
       'selectedDirectory': selectedDirectory,
       'fileName': fileName,
-      'images':
-          await _compressedForPdf(selected.isEmpty ? images : selected, quality),
+      'images': await _compressedForPdf(
+          selected.isEmpty ? images : selected, quality, maxEdge),
       'pageFormat': pageFormat,
     });
   }
@@ -341,6 +348,7 @@ class FileOperations {
     required String baseName,
     required String format,
     required int quality,
+    int? maxEdge,
   }) async {
     return await compute(exportImagesIsolateEntry, {
       'sources': [for (final image in images) image.imgPath],
@@ -348,6 +356,7 @@ class FileOperations {
       'baseName': baseName,
       'format': format,
       'quality': quality,
+      'maxEdge': maxEdge,
     });
   }
 
@@ -376,6 +385,7 @@ Future<List<String>> exportImagesIsolateEntry(
   final String baseName = params['baseName'] as String;
   final String format = params['format'] as String;
   final int quality = params['quality'] as int;
+  final int? maxEdge = params['maxEdge'] as int?;
 
   final written = <String>[];
   try {
@@ -385,10 +395,12 @@ Future<List<String>> exportImagesIsolateEntry(
 
       final suffix = sources.length == 1 ? '' : '_${i + 1}';
       final path = '$dest/$baseName$suffix.$format';
+      // The preset's pixel cap reaches PNG even though its JPEG quality
+      // does not: shedding pixels is lossy compression PNG can still do.
+      final fitted = fitToMaxEdge(decoded, maxEdge);
       final bytes = format == 'png'
-          ? img.encodePng(decoded)
-          // PNG is lossless, so the quality control only reaches JPEG.
-          : img.encodeJpg(decoded, quality: quality);
+          ? img.encodePng(fitted)
+          : img.encodeJpg(fitted, quality: quality);
       await File(path).writeAsBytes(bytes, flush: true);
       written.add(path);
     }

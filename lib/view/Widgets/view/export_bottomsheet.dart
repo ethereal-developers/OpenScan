@@ -17,7 +17,7 @@ import 'package:share_plus/share_plus.dart';
 
 enum ExportFormat { pdf, jpg, png }
 
-enum ExportQuality { low, medium, high, extreme }
+enum ExportQuality { ultraLow, low, medium, high }
 
 enum ExportPageSize { a4, letter, legal }
 
@@ -31,28 +31,53 @@ extension on ExportFormat {
 extension on ExportQuality {
   String get label {
     switch (this) {
+      case ExportQuality.ultraLow:
+        return 'Ultra low';
       case ExportQuality.low:
         return 'Low';
       case ExportQuality.medium:
         return 'Medium';
       case ExportQuality.high:
         return 'High';
-      case ExportQuality.extreme:
-        return 'Extreme';
     }
   }
 
   /// JPEG quality the page is re-encoded at.
+  ///
+  /// [ExportQuality.high] matches [kStoredPageQuality], the quality the
+  /// page is already sitting on disk at: there is nothing above it to
+  /// recover, and asking for more only re-encodes the same detail into a
+  /// larger file.
   int get encodeQuality {
     switch (this) {
+      case ExportQuality.ultraLow:
+        return 30;
       case ExportQuality.low:
-        return 55;
+        return 45;
       case ExportQuality.medium:
-        return 70;
+        return 65;
       case ExportQuality.high:
-        return 85;
-      case ExportQuality.extreme:
-        return 100;
+        return kStoredPageQuality;
+    }
+  }
+
+  /// Long edge, in pixels, the page is capped at on the way out.
+  ///
+  /// Below about quality 45 the JPEG artefacts cost more legibility than
+  /// the pixels are worth, so the small presets shed resolution instead —
+  /// which is also where the bytes actually are. 1200px still holds body
+  /// text across an A4 page; 900px is the point where a dense page starts
+  /// to soften, and is the smallest this offers.
+  int get maxEdge {
+    switch (this) {
+      case ExportQuality.ultraLow:
+        return 900;
+      case ExportQuality.low:
+        return 1200;
+      case ExportQuality.medium:
+        return 1800;
+      case ExportQuality.high:
+        return kStoredPageMaxEdge;
     }
   }
 }
@@ -98,7 +123,7 @@ class _ExportSheetState extends State<ExportSheet> {
   final FileOperations fileOperations = FileOperations();
 
   ExportFormat _format = ExportFormat.pdf;
-  ExportQuality _quality = ExportQuality.high;
+  ExportQuality _quality = ExportQuality.medium;
   ExportPageSize _pageSize = ExportPageSize.a4;
 
   /// Bytes each encoding costs for one representative page, measured by
@@ -140,8 +165,9 @@ class _ExportSheetState extends State<ExportSheet> {
     try {
       final sizes = await compute(measureEncodedSizesIsolateEntry, {
         'src': sample,
-        'qualities': [
-          for (final quality in ExportQuality.values) quality.encodeQuality
+        'presets': [
+          for (final quality in ExportQuality.values)
+            {'quality': quality.encodeQuality, 'maxEdge': quality.maxEdge},
         ],
         'includePng': true,
       });
@@ -176,8 +202,8 @@ class _ExportSheetState extends State<ExportSheet> {
     final sourceBytes = measured?['source'];
     if (measured == null || sourceBytes == null || sourceBytes == 0) return null;
     final encoded = format == ExportFormat.png
-        ? measured['png']
-        : measured['jpg:${quality.encodeQuality}'];
+        ? measured[pngSizeKey(quality.maxEdge)]
+        : measured[encodedSizeKey(quality.encodeQuality, quality.maxEdge)];
     if (encoded == null) return null;
 
     final total = (_sourceBytes(pages) * encoded / sourceBytes).round();
@@ -186,12 +212,11 @@ class _ExportSheetState extends State<ExportSheet> {
     return format == ExportFormat.pdf ? total + 2048 + pages.length * 1024 : total;
   }
 
-  /// The label under a quality chip: a measured size, an em dash where
-  /// quality has no effect, or a placeholder while measuring.
+  /// The label under a quality chip: a measured size, or a placeholder
+  /// while measuring. PNG gets a real number too — its bytes do not move
+  /// with JPEG quality, but every preset also caps the page's pixels, and
+  /// that reaches PNG.
   String _sizeHint(List<ImageOS> pages, ExportQuality quality) {
-    // PNG is lossless, so its size does not move with the quality control
-    // and a per-quality number would be a lie.
-    if (_format == ExportFormat.png) return '—';
     if (_measuring) return '…';
     final bytes = _estimatedBytes(pages, _format, quality);
     return bytes == null ? '—' : '~${_formatBytes(bytes)}';
@@ -270,6 +295,7 @@ class _ExportSheetState extends State<ExportSheet> {
                 images: pages,
                 pageFormat: _pageSize.format,
                 quality: _quality.encodeQuality,
+                maxEdge: _quality.maxEdge,
                 imagesSelected: false,
               )
             : await fileOperations.saveToDevice(
@@ -277,6 +303,7 @@ class _ExportSheetState extends State<ExportSheet> {
                 images: pages,
                 pageFormat: _pageSize.format,
                 quality: _quality.encodeQuality,
+                maxEdge: _quality.maxEdge,
               );
         if (path == null) throw StateError('PDF could not be written');
         written = [path];
@@ -288,6 +315,7 @@ class _ExportSheetState extends State<ExportSheet> {
           baseName: name,
           format: _format.extension,
           quality: _quality.encodeQuality,
+          maxEdge: _quality.maxEdge,
         );
       }
 
@@ -595,20 +623,32 @@ class _QualityOption extends StatelessWidget {
           borderRadius: BorderRadius.circular(OSRadius.chip),
           border: Border.all(color: selected ? os.accent : os.outline),
         ),
+        // Four chips share the row, so a chip is about a quarter of the
+        // screen: "Ultra low" and a size like "~2.6 MB" both come close to
+        // filling one. Scaling down beats wrapping or an ellipsis, which
+        // would cost the digits that are the point of the hint.
         child: Column(
           children: [
-            Text(label,
-                style: OSTypography.caption.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: selected ? os.onAccentContainer : os.onSurface,
-                )),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(label,
+                  maxLines: 1,
+                  style: OSTypography.caption.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: selected ? os.onAccentContainer : os.onSurface,
+                  )),
+            ),
             const SizedBox(height: 2),
-            Text(hint,
-                style: OSTypography.caption.copyWith(
-                  fontSize: 10,
-                  color:
-                      selected ? os.onAccentContainer : os.onSurfaceVariant,
-                )),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(hint,
+                  maxLines: 1,
+                  style: OSTypography.caption.copyWith(
+                    fontSize: 10,
+                    color:
+                        selected ? os.onAccentContainer : os.onSurfaceVariant,
+                  )),
+            ),
           ],
         ),
       ),

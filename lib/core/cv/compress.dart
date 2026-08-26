@@ -6,10 +6,14 @@ import 'package:image/image.dart' as img;
 /// `params['src']` at `params['quality']` and writes it to a new file
 /// under `params['dest']`, mirroring the old native `compress` channel
 /// method (including its `<dest>/<timestamp>.jpg` naming).
+/// An optional `params['maxEdge']` caps the long edge first: an export
+/// preset gets small by shedding pixels as well as JPEG quality, and past
+/// a point the pixels are where the bytes actually are.
 Future<String> compressImageIsolateEntry(Map<String, dynamic> params) async {
   final String src = params['src'] as String;
   final String dest = params['dest'] as String;
   final int quality = params['quality'] as int;
+  final int? maxEdge = params['maxEdge'] as int?;
 
   final bytes = await File(src).readAsBytes();
   final decoded = img.decodeImage(bytes);
@@ -17,7 +21,7 @@ Future<String> compressImageIsolateEntry(Map<String, dynamic> params) async {
     throw StateError('Could not decode image: $src');
   }
 
-  final jpg = img.encodeJpg(decoded, quality: quality);
+  final jpg = img.encodeJpg(fitToMaxEdge(decoded, maxEdge), quality: quality);
   final outPath = '$dest/${DateTime.now().millisecondsSinceEpoch}.jpg';
   await File(outPath).writeAsBytes(jpg, flush: true);
   return outPath;
@@ -54,32 +58,42 @@ Future<void> normalizeImageIsolateEntry(Map<String, dynamic> params) async {
     throw StateError('Could not decode image: $src');
   }
 
-  final longEdge =
-      decoded.width > decoded.height ? decoded.width : decoded.height;
-  final resized = longEdge > maxEdge
-      ? img.copyResize(
-          decoded,
-          width: decoded.width >= decoded.height ? maxEdge : null,
-          height: decoded.height > decoded.width ? maxEdge : null,
-          interpolation: img.Interpolation.average,
-        )
-      : decoded;
-
-  await File(dest).writeAsBytes(img.encodeJpg(resized, quality: quality),
+  await File(dest).writeAsBytes(
+      img.encodeJpg(fitToMaxEdge(decoded, maxEdge), quality: quality),
       flush: true);
 }
 
+/// [image] scaled down so its long edge is at most [maxEdge], or [image]
+/// itself when it already fits or [maxEdge] is null. Never enlarges: a
+/// page smaller than the cap is left as it is rather than interpolated up
+/// to a size it has no detail for.
+img.Image fitToMaxEdge(img.Image image, int? maxEdge) {
+  if (maxEdge == null) return image;
+  final longEdge = image.width > image.height ? image.width : image.height;
+  if (longEdge <= maxEdge) return image;
+  return img.copyResize(
+    image,
+    width: image.width >= image.height ? maxEdge : null,
+    height: image.height > image.width ? maxEdge : null,
+    interpolation: img.Interpolation.average,
+  );
+}
+
 /// Entry point designed to be run via `compute()`. Encodes one already
-/// decoded-from-disk image at several JPEG qualities (and optionally PNG)
-/// and reports what each one weighs, so an export can quote a measured
-/// size instead of a guess.
+/// decoded-from-disk image at each of several presets (and optionally PNG
+/// at each preset's size) and reports what each one weighs, so an export
+/// can quote a measured size instead of a guess.
 ///
-/// Returns bytes keyed by `'jpg:<quality>'` and `'png'`, plus `'source'`
-/// for the file it measured.
+/// `params['presets']` is a list of `{'quality': int, 'maxEdge': int?}`
+/// maps. Returns bytes keyed by [encodedSizeKey] and [pngSizeKey], plus
+/// `'source'` for the file it measured.
 Future<Map<String, int>> measureEncodedSizesIsolateEntry(
     Map<String, dynamic> params) async {
   final String src = params['src'] as String;
-  final List<int> qualities = List<int>.from(params['qualities'] as List);
+  final presets = [
+    for (final preset in params['presets'] as List)
+      Map<String, dynamic>.from(preset as Map),
+  ];
   final bool includePng = params['includePng'] as bool? ?? false;
 
   final file = File(src);
@@ -90,11 +104,25 @@ Future<Map<String, int>> measureEncodedSizesIsolateEntry(
   }
 
   final sizes = <String, int>{'source': bytes.length};
-  for (final quality in qualities) {
-    sizes['jpg:$quality'] = img.encodeJpg(decoded, quality: quality).length;
-  }
-  if (includePng) {
-    sizes['png'] = img.encodePng(decoded).length;
+  // Resizing is the expensive half, and presets often share a size, so
+  // each distinct one is produced once and reused across its qualities.
+  final scaled = <int?, img.Image>{};
+  for (final preset in presets) {
+    final quality = preset['quality'] as int;
+    final maxEdge = preset['maxEdge'] as int?;
+    final image = scaled[maxEdge] ??= fitToMaxEdge(decoded, maxEdge);
+    sizes[encodedSizeKey(quality, maxEdge)] =
+        img.encodeJpg(image, quality: quality).length;
+    if (includePng) {
+      sizes[pngSizeKey(maxEdge)] ??= img.encodePng(image).length;
+    }
   }
   return sizes;
 }
+
+/// Key a JPEG measurement is reported under.
+String encodedSizeKey(int quality, int? maxEdge) => 'jpg:$quality@$maxEdge';
+
+/// Key a PNG measurement is reported under. PNG ignores JPEG quality, but
+/// not the preset's pixel cap, so it is keyed by size alone.
+String pngSizeKey(int? maxEdge) => 'png@$maxEdge';
