@@ -130,10 +130,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         tableName: state.dirName!,
       );
       if (index == 1) {
-        database.updateFirstImagePath(
-          dirPath: state.dirPath,
-          imagePath: state.images![index - 1].imgPath,
-        );
         state.firstImgPath = state.images![index - 1].imgPath;
       }
     }
@@ -145,10 +141,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     for (var i = 1; i <= state.images!.length; i++) {
       state.images![i - 1].idx = i;
       if (i == 1) {
-        database.updateFirstImagePath(
-          dirPath: state.dirPath,
-          imagePath: state.images![i - 1].imgPath,
-        );
         state.firstImgPath = state.images![i - 1].imgPath;
       }
       database.updateImagePath(
@@ -316,10 +308,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
       state.images![imageOS.idx! - 1] = imageOS;
       if (imageOS.idx == 1) {
-        database.updateFirstImagePath(
-          imagePath: imageOS.imgPath,
-          dirPath: state.dirPath,
-        );
         state.firstImgPath = imageOS.imgPath;
       }
       emitState(state);
@@ -398,12 +386,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 
     state.images![imageOS.idx! - 1] = imageOS;
 
-    if (imageOS.idx == 1) {
-      database.updateFirstImagePath(
-        imagePath: imageOS.imgPath,
-        dirPath: state.dirPath,
-      );
-    }
     debugPrint('Image paths updated');
     emitState(state);
   }
@@ -416,12 +398,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   }) async {
     await _applyFilter(imageOS, filter);
     state.images![imageOS.idx! - 1] = imageOS;
-    if (imageOS.idx == 1) {
-      database.updateFirstImagePath(
-        imagePath: imageOS.imgPath,
-        dirPath: state.dirPath,
-      );
-    }
     emitState(state);
   }
 
@@ -429,12 +405,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   Future<void> applyFilterToAllImages({required Filter filter}) async {
     for (ImageOS imageOS in state.images!) {
       await _applyFilter(imageOS, filter);
-    }
-    if (state.images!.isNotEmpty) {
-      database.updateFirstImagePath(
-        imagePath: state.images!.first.imgPath,
-        dirPath: state.dirPath,
-      );
     }
     emitState(state);
   }
@@ -536,7 +506,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     } catch (e) {
       state.images!.remove(imageToDelete);
       state.imageCount = state.images!.length;
-      database.updateImageCount(tableName: state.dirName!);
 
       // Updating index of images
       for (int i = imageToDelete.idx! - 1; i < state.imageCount; i++) {
@@ -545,14 +514,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
           imgPath: state.images![i].imgPath,
           newIndex: state.images![i].idx,
           tableName: state.dirName!,
-        );
-      }
-
-      // Updating first image path
-      if (imageToDelete.idx == 1) {
-        database.updateFirstImagePath(
-          imagePath: state.images![0].imgPath,
-          dirPath: state.dirPath,
         );
       }
     }
@@ -566,7 +527,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   ///
   /// Returns: True if directory is deleted, else False
   bool deleteSelectedImages(context, {deleteAll = false}) {
-    bool firstImageDeleted = false;
     debugPrint('Image count = ${state.imageCount} : ${state.images!.length}');
     List<ImageOS> imagesToDelete = [];
 
@@ -574,7 +534,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       if (state.images![i].selected || deleteAll) {
         debugPrint('Deleting ${state.images![i].toMap()}');
         imagesToDelete.add(state.images![i]);
-        firstImageDeleted = (state.images![i].idx == 1 || firstImageDeleted);
       }
     }
 
@@ -603,16 +562,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       return true;
     } catch (e) {
       debugPrint('Directory: What a save!');
-
-      // Update first image path
-      if (firstImageDeleted) {
-        database.updateFirstImagePath(
-          imagePath: state.images![0].imgPath,
-          dirPath: state.dirPath,
-        );
-      }
-
-      database.updateImageCount(tableName: state.dirName!);
 
       // Updating image index in cubit and db
       for (int i = 0; i < state.imageCount; i++) {

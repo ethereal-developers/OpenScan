@@ -114,18 +114,13 @@ class FileOperations {
       idx: index,
     );
 
-    // Awaited, both of them: these write the page count and cover the
-    // library grid reads, and a caller that refreshes the library as soon
-    // as this returns would otherwise race them and show a document one
-    // page short.
+    // Awaited: the library grid counts a document's pages by querying
+    // them, so a caller that refreshes as soon as this returns would
+    // otherwise race the insert and show a document one page short.
     await database.createImage(
       image: saved,
       tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
     );
-    if (index == 1) {
-      await database.updateFirstImagePath(
-          imagePath: written.pagePath, dirPath: dirPath);
-    }
     return saved;
   }
 
