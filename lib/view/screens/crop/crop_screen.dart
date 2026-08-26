@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:openscan/core/cv/models/detection_result.dart';
+import 'package:openscan/core/settings/app_settings.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/core/theme/os_colors.dart';
 import 'package:openscan/core/theme/os_tokens.dart';
@@ -29,6 +30,13 @@ Future<File?> imageCropper(BuildContext context, File image) async {
     ),
   );
 }
+
+/// Breathing room between the page and the edge of the screen.
+const double _kCanvasPadding = 20.0;
+
+/// Radius of the corner handles the polygon painter draws, so the side
+/// padding can keep the whole dot out of the system gesture strip.
+const double _kHandleRadius = 10.0;
 
 class CropImage extends StatefulWidget {
   final File? file;
@@ -100,6 +108,27 @@ class _CropImageState extends State<CropImage>
     _cropScreen.screenSize = MediaQuery.of(context).size;
     debugPrint(
         'Screen size=> ${_cropScreen.screenSize.width} / ${_cropScreen.screenSize.height}');
+
+    // On gesture navigation the system reserves a strip down each side of
+    // the display for the back swipe. A touch that starts inside that
+    // strip never reaches this screen's GestureDetector — dragging a
+    // corner there pops the route instead of moving the point. Widening
+    // the inset past that strip fixes it, at the cost of page width on
+    // every scan, so it is the "Avoid back-gesture strip" setting rather
+    // than the default. The dot's own radius is added on top of the strip
+    // so the whole handle (not just its centre) sits clear of it.
+    final gestureInsets = MediaQuery.of(context).systemGestureInsets;
+    final avoidStrip = AppSettings.instance.avoidGestureStrip;
+    final sidePadding = EdgeInsets.only(
+      left: avoidStrip
+          ? max(_kCanvasPadding, gestureInsets.left + _kHandleRadius)
+          : _kCanvasPadding,
+      right: avoidStrip
+          ? max(_kCanvasPadding, gestureInsets.right + _kHandleRadius)
+          : _kCanvasPadding,
+      top: _kCanvasPadding,
+      bottom: _kCanvasPadding,
+    );
     return SafeArea(
       child: PopScope(
         canPop: true,
@@ -163,7 +192,7 @@ class _CropImageState extends State<CropImage>
               child: Stack(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(13),
+                    padding: sidePadding,
                     alignment: Alignment.center,
                     child: !cropLoading
                         ? AnimatedBuilder(

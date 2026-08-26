@@ -184,6 +184,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: settings.keepOriginal,
               onChanged: settings.setKeepOriginal,
             ),
+            _SwitchRow(
+              label: 'Avoid back-gesture strip',
+              description:
+                  'Keeps the crop corners out of the edge of the screen, '
+                  'where a drag can trigger the system back gesture '
+                  'instead. Makes the page slightly narrower.',
+              value: settings.avoidGestureStrip,
+              onChanged: settings.setAvoidGestureStrip,
+            ),
             _ValueRow(
               label: 'Default filter',
               value: settings.defaultFilter ?? l10n.filter_original,

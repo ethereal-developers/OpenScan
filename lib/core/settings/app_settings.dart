@@ -38,6 +38,7 @@ class AppSettings extends ChangeNotifier {
   static const _kKeepOriginal = 'keepOriginal';
   static const _kDefaultFilter = 'defaultFilter';
   static const _kSort = 'librarySort';
+  static const _kAvoidGestureStrip = 'cropAvoidGestureStrip';
 
   SharedPreferences? _prefs;
 
@@ -48,12 +49,19 @@ class AppSettings extends ChangeNotifier {
   bool _keepOriginal = true;
   String? _defaultFilter;
   LibrarySort _sort = LibrarySort.lastModified;
+  bool _avoidGestureStrip = false;
 
   ThemeMode get themeMode => _themeMode;
   OSAccentFamily get accent => _accent;
   bool get autoCapture => _autoCapture;
   bool get captureSound => _captureSound;
   bool get keepOriginal => _keepOriginal;
+
+  /// Whether the crop screen insets the page past the system's back-gesture
+  /// strip, so a corner handle can't sit somewhere the system swallows the
+  /// drag. Costs width on every page, and only helps on gesture navigation,
+  /// so it is off unless the user has actually hit the problem.
+  bool get avoidGestureStrip => _avoidGestureStrip;
 
   /// [Filter.name] applied to new pages, or null for none.
   String? get defaultFilter => _defaultFilter;
@@ -77,6 +85,7 @@ class AppSettings extends ChangeNotifier {
     // only work off the already-cropped page. Worth the storage.
     _keepOriginal = prefs.getBool(_kKeepOriginal) ?? true;
     _defaultFilter = prefs.getString(_kDefaultFilter);
+    _avoidGestureStrip = prefs.getBool(_kAvoidGestureStrip) ?? false;
     _sort = LibrarySort.values.firstWhere(
       (s) => s.name == prefs.getString(_kSort),
       orElse: () => LibrarySort.lastModified,
@@ -122,6 +131,12 @@ class AppSettings extends ChangeNotifier {
     } else {
       await _prefs?.setString(_kDefaultFilter, filterName);
     }
+  }
+
+  Future<void> setAvoidGestureStrip(bool value) async {
+    _avoidGestureStrip = value;
+    notifyListeners();
+    await _prefs?.setBool(_kAvoidGestureStrip, value);
   }
 
   Future<void> setSort(LibrarySort sort) async {
