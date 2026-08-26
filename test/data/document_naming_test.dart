@@ -54,14 +54,22 @@ void main() {
   group('exportFileName', () {
     final now = DateTime(2026, 8, 26, 22, 29, 11);
 
-    test('files an unnamed document under a fresh generated name', () {
+    test('files an unnamed document under the name the app shows for it', () {
       final documentName = defaultDocumentName(DateTime(2026, 1, 1));
-      expect(exportFileName(documentName, now: now), defaultDocumentName(now));
+      expect(exportFileName(documentName, now: now), documentName);
     });
 
-    test('files a legacy-named document under a fresh generated name too', () {
+    test('files a legacy-named document under its name too, made safe', () {
+      // The old scheme's spaces and colon cannot survive into a filename,
+      // but what is left still identifies the document it came from.
       expect(exportFileName('OpenScan 2026-08-26 22:29:11.375905', now: now),
-          defaultDocumentName(now));
+          'OpenScan_2026-08-26_222911375905');
+    });
+
+    test('exporting the same document twice gives the same name', () {
+      final documentName = defaultDocumentName(DateTime(2026, 1, 1));
+      expect(exportFileName(documentName, now: now),
+          exportFileName(documentName, now: now.add(const Duration(days: 1))));
     });
 
     test('keeps the name the user gave', () {

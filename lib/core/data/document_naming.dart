@@ -43,23 +43,24 @@ DateTime? createdFromDocumentName(String name) {
 }
 
 /// Whether [name] is one this app generated rather than one the user
-/// chose, in either scheme. An unnamed document is filed under its own
-/// name; a named one is filed under the name it was given.
+/// chose, in either scheme.
 bool isGeneratedDocumentName(String name) =>
     createdFromDocumentName(name) != null;
 
 /// The filename an export of [documentName] is filed under, without an
 /// extension.
 ///
-/// A document the user named is filed under that name, stripped to
-/// characters every filesystem accepts. One they never named — or one
-/// whose name survives stripping as nothing at all — is filed under a
-/// freshly generated [defaultDocumentName], unique by construction, so
-/// repeated exports of an unnamed document do not overwrite each other.
+/// The export is named after the document, whatever the document is
+/// called: a name the user chose, or the generated one they have been
+/// looking at in the library. Finding the file afterwards means matching
+/// it to what the app showed, so the two do not get to differ — an
+/// unnamed document exports under its own name rather than a second
+/// timestamp minted at the moment of export.
+///
+/// The only change is stripping what a filesystem would object to.
+/// [defaultDocumentName] is a fallback for the one case that leaves
+/// nothing behind: a name made entirely of punctuation.
 String exportFileName(String documentName, {DateTime? now}) {
-  if (isGeneratedDocumentName(documentName)) {
-    return defaultDocumentName(now ?? DateTime.now());
-  }
   final cleaned = documentName
       .replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '')
       .trim()
