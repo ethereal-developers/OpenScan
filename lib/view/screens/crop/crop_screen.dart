@@ -11,7 +11,6 @@ import 'package:openscan/core/theme/os_typography.dart';
 import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/view/Widgets/cropper/polygon_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen_state.dart';
-import 'package:vector_math/vector_math.dart' as vector;
 
 /// Pushes the crop screen for [image].
 ///
@@ -39,10 +38,30 @@ class CropImage extends StatefulWidget {
   _CropImageState createState() => _CropImageState();
 }
 
-class _CropImageState extends State<CropImage> {
+class _CropImageState extends State<CropImage>
+    with SingleTickerProviderStateMixin {
   CropScreenState _cropScreen = CropScreenState();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool cropLoading = false;
+
+  /// Drives the quarter-turn animation. One controller for the whole
+  /// screen, rather than an implicit animation on the image alone: the
+  /// polygon overlay and the magnifier are painted outside the image's
+  /// subtree and have to be redrawn at the same angle on every frame of
+  /// the turn, or they visibly lag the page they belong to.
+  late final AnimationController _turnController = AnimationController(
+    vsync: this,
+    duration: OSMotion.standard,
+  );
+  Animation<double> _turnAnimation = const AlwaysStoppedAnimation(0);
+
+  double get _animatedTurns => _turnAnimation.value;
+
+  @override
+  void dispose() {
+    _turnController.dispose();
+    super.dispose();
+  }
 
   @override
   initState() {
@@ -65,7 +84,6 @@ class _CropImageState extends State<CropImage> {
     });
 
     _cropScreen.canvasSize = Size(0, 0);
-    _cropScreen.rotationAngle = 0;
     _cropScreen.originalCanvasSize = Size(0, 0);
     _cropScreen.tl = Offset(0, 0);
     _cropScreen.tr = Offset(0, 0);
@@ -113,12 +131,23 @@ class _CropImageState extends State<CropImage> {
           body: GestureDetector(
             key: _cropScreen.bodyKey,
             onPanUpdate: (updateDetails) {
-              _cropScreen.updatedPoint.value = updateDetails;
+              // Touches land on the page as it is being shown; the polygon
+              // lives in the page's own unrotated coordinates.
+              _cropScreen.updatedPoint.value = DragUpdateDetails(
+                globalPosition: updateDetails.globalPosition,
+                localPosition:
+                    _cropScreen.fromDisplay(updateDetails.localPosition),
+                delta: updateDetails.delta,
+              );
               _cropScreen.updatePolygon();
             },
             onPanStart: (startDetails) {
               _cropScreen.calculateAllSlopes();
-              _cropScreen.getMovingPoint(startDetails);
+              _cropScreen.getMovingPoint(DragStartDetails(
+                globalPosition: startDetails.globalPosition,
+                localPosition:
+                    _cropScreen.fromDisplay(startDetails.localPosition),
+              ));
               if (_cropScreen.movingPoint.name != 'none')
                 _cropScreen.showMagnifier.value = true;
             },
@@ -137,18 +166,14 @@ class _CropImageState extends State<CropImage> {
                     padding: EdgeInsets.all(13),
                     alignment: Alignment.center,
                     child: !cropLoading
-                        ? TweenAnimationBuilder(
-                            tween: Tween(
-                                begin: 1.0,
-                                end: _cropScreen.scaleImage
-                                    ? _cropScreen.aspectRatio
-                                    : 1.0),
-                            duration: Duration(milliseconds: 100),
-                            builder: ((_, double scale, __) {
+                        ? AnimatedBuilder(
+                            animation: _turnController,
+                            builder: ((_, __) {
                               return Transform.rotate(
-                                angle: _cropScreen.rotationAngle,
+                                angle: _animatedTurns * pi / 2,
                                 child: Transform.scale(
-                                  scale: scale,
+                                  scale:
+                                      _cropScreen.scaleForTurns(_animatedTurns),
                                   child: Image(
                                     key: _cropScreen.imageKey,
                                     image: FileImage(_cropScreen.imageFile!),
@@ -207,20 +232,32 @@ class _CropImageState extends State<CropImage> {
                               child: ValueListenableBuilder(
                                   valueListenable: _cropScreen.updatedPoint,
                                   builder: (context, _updatedPoint, _) {
-                                    return CustomPaint(
-                                      painter: PolygonPainter(
-                                        accent: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                        tl: _cropScreen.tl,
-                                        tr: _cropScreen.tr,
-                                        bl: _cropScreen.bl,
-                                        br: _cropScreen.br,
-                                        t: _cropScreen.t,
-                                        l: _cropScreen.l,
-                                        b: _cropScreen.b,
-                                        r: _cropScreen.r,
-                                      ),
+                                    return AnimatedBuilder(
+                                      animation: _turnController,
+                                      builder: (context, _) {
+                                        // The polygon is stored unrotated
+                                        // and turned on its way to the
+                                        // screen, so it describes the same
+                                        // part of the photo at any angle.
+                                        Offset at(Offset p) =>
+                                            _cropScreen.toDisplay(p,
+                                                turns: _animatedTurns);
+                                        return CustomPaint(
+                                          painter: PolygonPainter(
+                                            accent: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            tl: at(_cropScreen.tl),
+                                            tr: at(_cropScreen.tr),
+                                            bl: at(_cropScreen.bl),
+                                            br: at(_cropScreen.br),
+                                            t: at(_cropScreen.t),
+                                            l: at(_cropScreen.l),
+                                            b: at(_cropScreen.b),
+                                            r: at(_cropScreen.r),
+                                          ),
+                                        );
+                                      },
                                     );
                                   }),
                             ),
@@ -237,9 +274,11 @@ class _CropImageState extends State<CropImage> {
                           valueListenable: _cropScreen.updatedPoint,
                           builder:
                               (context, DragUpdateDetails _updatedPoint, _) {
+                            final at = _cropScreen
+                                .toDisplay(_cropScreen.movingPoint.offset!);
                             return Positioned(
-                              left: _cropScreen.movingPoint.offset!.dx - 40,
-                              top: _cropScreen.movingPoint.offset!.dy - 120,
+                              left: at.dx - 40,
+                              top: at.dy - 120,
                               child: RawMagnifier(
                                 decoration: MagnifierDecoration(
                                   shadows: const <BoxShadow>[
@@ -317,23 +356,21 @@ class _CropImageState extends State<CropImage> {
     }
   }
 
-  /// Rotates the page a quarter turn, keeping the polygon canvas in step.
+  /// Turns the page a quarter turn clockwise. The polygon is not rotated
+  /// with it — it stays in the page's own unrotated coordinates and is
+  /// transformed on its way to the screen, so the corners keep describing
+  /// the same part of the photo however the page is being shown.
   void _rotate() {
-    setState(() {
-      _cropScreen.rotationAngle =
-          (_cropScreen.rotationAngle + pi / 2) % (2 * pi);
-      debugPrint(
-          'rotationAngle => ${vector.degrees(_cropScreen.rotationAngle)}');
-
-      /// Scaling image before rotation- solves Transform.rotate issue
-      _cropScreen.scaleImage = _cropScreen.rotationAngle % pi == pi / 2;
-
-      /// Updates canvas size to be passed to PolygonBuilder
-      _cropScreen.canvasSize = _cropScreen.scaleImage
-          ? Size(_cropScreen.canvasSize.height * _cropScreen.aspectRatio,
-              _cropScreen.canvasSize.width * _cropScreen.aspectRatio)
-          : _cropScreen.imageBox.size;
-    });
+    final from = _animatedTurns;
+    setState(() => _cropScreen.turns++);
+    _turnAnimation = Tween(
+      begin: from,
+      end: _cropScreen.turns.toDouble(),
+    ).animate(CurvedAnimation(
+      parent: _turnController,
+      curve: OSMotion.emphasizedDecel,
+    ));
+    _turnController.forward(from: 0);
   }
 
   Widget bottomBar() {

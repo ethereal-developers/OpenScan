@@ -27,7 +27,10 @@ class CropScreenState {
   bool isLoading = false;
   double aspectRatio = 1;
   late RenderBox imageBox;
-  late double rotationAngle;
+
+  /// Quarter turns applied by the user, counted up rather than wrapped, so
+  /// the display can animate 3 -> 4 forwards instead of unwinding 3 -> 0.
+  int turns = 0;
   late Size originalCanvasSize;
   double verticalScaleFactor = 1;
   double horizontalScaleFactor = 1;
@@ -37,8 +40,61 @@ class CropScreenState {
   Size imageSizeNative = Size(600.0, 600.0);
   late double tSlope, bSlope, rSlope, lSlope;
 
-  /// Scales image up or down while rotating
-  bool scaleImage = false;
+  /// The rotation the page is being shown at, in radians.
+  double get rotationAngle => turns * pi / 2;
+
+  /// The same rotation as a count of quarter turns clockwise, which is
+  /// what the crop itself applies to the output image.
+  int get quarterTurns => turns % 4;
+
+  /// How much a quarter-turned page has to shrink to keep fitting the box
+  /// it was laid out in: turning a w x h box on its side makes it h x w,
+  /// and the smaller of the two ratios is what fits either way round.
+  double get rotatedScale =>
+      aspectRatio <= 0 ? 1.0 : min(aspectRatio, 1 / aspectRatio);
+
+  /// Scale for a rotation [turns] of the way through — a whole number of
+  /// turns is a quarter turn's scale on the odd ones and none on the even,
+  /// and everything between eases across.
+  double scaleForTurns(double turns) =>
+      1 + (rotatedScale - 1) * sin(turns * pi / 2).abs();
+
+  /// Centre of the laid-out page, in the body's coordinates: everything
+  /// the rotation does, it does around this point.
+  Offset get displayCentre => Offset(
+        canvasOffset.dx + canvasSize.width / 2,
+        canvasOffset.dy + canvasSize.height / 2,
+      );
+
+  /// Where a point of the *unrotated* page — which is what every corner,
+  /// slope and constraint in this class is expressed in — ends up on
+  /// screen once the page has been turned.
+  ///
+  /// Keeping the geometry unrotated and transforming only at the edges is
+  /// what lets rotation stay a display concern for the whole screen: the
+  /// crop still maps canvas points onto the original photo exactly as it
+  /// did before, and the turn is applied to the result instead.
+  Offset toDisplay(Offset p, {double? turns}) {
+    final t = turns ?? this.turns.toDouble();
+    final angle = t * pi / 2;
+    final scale = scaleForTurns(t);
+    final centre = displayCentre;
+    final v = p - centre;
+    final c = cos(angle), s = sin(angle);
+    return centre +
+        Offset((v.dx * c - v.dy * s) * scale, (v.dx * s + v.dy * c) * scale);
+  }
+
+  /// The inverse of [toDisplay]: turns a touch on the rotated page back
+  /// into the unrotated coordinates the polygon lives in.
+  Offset fromDisplay(Offset p) {
+    final angle = rotationAngle;
+    final scale = scaleForTurns(turns.toDouble());
+    final centre = displayCentre;
+    final v = (p - centre) / (scale == 0 ? 1 : scale);
+    final c = cos(-angle), s = sin(-angle);
+    return centre + Offset(v.dx * c - v.dy * s, v.dx * s + v.dy * c);
+  }
 
   /// Closest distance that neighbor point can exist: 10
   int crossoverThreshold = 10;
@@ -337,6 +393,9 @@ class CropScreenState {
       final result = await compute(cropImageIsolateEntry, {
         'path': imageFile!.path,
         'quad': quad,
+        // The rotation is only ever shown, never applied to the file, so
+        // it has to travel with the crop or it is lost on the way out.
+        'quarterTurns': quarterTurns,
       }).timeout(const Duration(seconds: 15));
       debugPrint('cropper: ${imageFile!.path} => $result');
       return result;

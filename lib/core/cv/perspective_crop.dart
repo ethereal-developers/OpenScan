@@ -14,12 +14,17 @@ import 'models/quad.dart';
 /// overwrites the file in place, mirroring the previous native behavior
 /// (`ImageUtil.cropImage` also wrote the result back to the same path).
 ///
+/// `params['quarterTurns']`, when given, turns the warped result clockwise
+/// that many quarter turns — the crop screen shows a rotation without
+/// touching the file, so this is where that rotation is actually made real.
+///
 /// Replaces `Imgproc.getPerspectiveTransform` + `Imgproc.warpPerspective`
 /// with a hand-rolled direct-linear-transform homography solve and
 /// bilinear-sampled inverse warp.
 Future<CropResult> cropImageIsolateEntry(Map<String, dynamic> params) async {
   final String path = params['path'] as String;
   final Quad quad = params['quad'] as Quad;
+  final int quarterTurns = (params['quarterTurns'] as int?) ?? 0;
 
   try {
     final bytes = await File(path).readAsBytes();
@@ -27,7 +32,7 @@ Future<CropResult> cropImageIsolateEntry(Map<String, dynamic> params) async {
     if (decoded == null) {
       return const CropFailure('Could not decode image');
     }
-    return await _cropDecoded(decoded, quad, path);
+    return await _cropDecoded(decoded, quad, path, quarterTurns: quarterTurns);
   } catch (e) {
     return CropFailure(e.toString());
   }
@@ -117,10 +122,14 @@ img.Image? warpToPage(img.Image decoded, Quad quad, {int? maxEdge}) {
 
 /// Warps [quad] (in [decoded]'s own pixel coordinates) into an upright
 /// rectangle and writes the result to [path].
-Future<CropResult> _cropDecoded(img.Image decoded, Quad quad, String path) async {
+Future<CropResult> _cropDecoded(img.Image decoded, Quad quad, String path,
+    {int quarterTurns = 0}) async {
   try {
-    final warped = _warp(decoded, quad, null, null);
+    var warped = _warp(decoded, quad, null, null);
     if (warped == null) return const CropFailure('Could not warp image');
+    if (quarterTurns % 4 != 0) {
+      warped = img.copyRotate(warped, angle: 90 * (quarterTurns % 4));
+    }
     final jpg = img.encodeJpg(warped, quality: 100);
     await File(path).writeAsBytes(jpg, flush: true);
     return CropSuccess(path);
