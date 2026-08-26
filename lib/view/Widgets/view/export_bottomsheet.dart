@@ -192,7 +192,7 @@ class _ExportSheetState extends State<ExportSheet> {
         // to track encoding.
         setState(() => _progressPage = pages.length);
         final path = share
-            ? await fileOperations.saveToAppDirectory(
+            ? await fileOperations.saveForSharing(
                 context: context,
                 fileName: name,
                 images: pages,

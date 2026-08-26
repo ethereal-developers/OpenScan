@@ -277,48 +277,65 @@ class FileOperations {
       PdfPageFormat pageFormat = PdfPageFormat.a4,
       int quality = kStoredPageQuality,
       int? maxEdge = kStoredPageMaxEdge}) async {
-    return await compute(createPdf, {
-      'selectedDirectory': await exportDirectory(),
-      'fileName': fileName,
-      'images': await _compressedForPdf(images, quality, maxEdge),
-      'pageFormat': pageFormat,
-    });
-  }
-
-  /// Re-encodes every page at [quality], capped at [maxEdge] pixels on its
-  /// long edge, into the cache directory, and hands back records pointing
-  /// at those copies.
-  ///
-  /// Falls back to the pages themselves if anything goes wrong: a
-  /// full-size PDF beats no PDF.
-  Future<List<ImageOS>> _compressedForPdf(
-      List<ImageOS> images, int quality, int? maxEdge) async {
-    Directory cacheDir = await getTemporaryDirectory();
-    List<ImageOS> compressed = [];
+    final source = await _compressedForPdf(images, quality, maxEdge);
     try {
-      for (ImageOS image in images) {
-        final path = await compute(compressImageIsolateEntry, {
-          'src': image.imgPath,
-          'dest': cacheDir.path,
-          'quality': quality,
-          'maxEdge': maxEdge,
-        });
-        compressed.add(ImageOS(imgPath: path));
-      }
-      return compressed;
-    } catch (e) {
-      print(e);
-      return images;
+      return await compute(createPdf, {
+        'selectedDirectory': await exportDirectory(),
+        'fileName': fileName,
+        'images': source.images,
+        'pageFormat': pageFormat,
+      });
+    } finally {
+      // finally, not after: a PDF that throws half way has still written
+      // every page copy that got it that far.
+      await _deleteStaged(source.staged);
     }
   }
 
-  /// Saves PDF to App directory
+  /// Re-encodes every page at [quality], capped at [maxEdge] pixels on its
+  /// long edge, into staging, and hands back records pointing at those
+  /// copies along with the paths it wrote.
+  ///
+  /// The caller deletes `staged` when the PDF is written. It is reported
+  /// separately rather than inferred from the returned images because the
+  /// two are not the same list on the failure path: a run that gives up
+  /// half way falls back to the pages themselves — a full-size PDF beats
+  /// no PDF — and deleting those would take the user's document with it.
+  /// The copies it did manage to write are cleaned up there and then.
+  Future<({List<ImageOS> images, List<String> staged})> _compressedForPdf(
+      List<ImageOS> images, int quality, int? maxEdge) async {
+    final stagingDir = await _stagingDirectory('pdf');
+    final staged = <String>[];
+    try {
+      for (ImageOS image in images) {
+        staged.add(await compute(compressImageIsolateEntry, {
+          'src': image.imgPath,
+          'dest': stagingDir.path,
+          'quality': quality,
+          'maxEdge': maxEdge,
+        }));
+      }
+      return (
+        images: [for (final path in staged) ImageOS(imgPath: path)],
+        staged: staged,
+      );
+    } catch (e) {
+      debugPrint('Could not compress pages for the PDF: $e');
+      await _deleteStaged(staged);
+      return (images: images, staged: const <String>[]);
+    }
+  }
+
+  /// Writes a PDF into [shareDirectory] for handing to another app.
   ///
   /// The share path: same [quality] treatment as [saveToDevice], so a
-  /// shared PDF and a saved one are the same file.
+  /// shared PDF and a saved one are the same file. It goes to staging
+  /// rather than anywhere the user would look for it, because nobody is
+  /// meant to find it again — share_plus takes its own copy, and the next
+  /// share clears this one.
   ///
   /// Returns: FileName with Path [String]
-  Future<String?> saveToAppDirectory(
+  Future<String?> saveForSharing(
       {BuildContext? context,
       String? fileName,
       required List<ImageOS> images,
@@ -326,19 +343,24 @@ class FileOperations {
       int quality = kStoredPageQuality,
       int? maxEdge = kStoredPageMaxEdge,
       required bool imagesSelected}) async {
-    Directory selectedDirectory = await getApplicationDocumentsDirectory();
+    final selectedDirectory = await shareDirectory();
     List<ImageOS> selected = [
       for (final image in images)
         if (image.selected || !imagesSelected) image,
     ];
 
-    return await compute(createPdf, {
-      'selectedDirectory': selectedDirectory,
-      'fileName': fileName,
-      'images': await _compressedForPdf(
-          selected.isEmpty ? images : selected, quality, maxEdge),
-      'pageFormat': pageFormat,
-    });
+    final source = await _compressedForPdf(
+        selected.isEmpty ? images : selected, quality, maxEdge);
+    try {
+      return await compute(createPdf, {
+        'selectedDirectory': selectedDirectory,
+        'fileName': fileName,
+        'images': source.images,
+        'pageFormat': pageFormat,
+      });
+    } finally {
+      await _deleteStaged(source.staged);
+    }
   }
 
   /// Writes each page out as a standalone image file rather than a PDF.
@@ -364,16 +386,102 @@ class FileOperations {
     });
   }
 
-  /// The directory a file being shared is staged in.
+  /// Where this app puts files that are not the user's own data: page
+  /// copies re-encoded on the way into a PDF, and files staged for a
+  /// share.
   ///
-  /// App storage rather than the visible export folder: a share is a
-  /// handoff, not a save, and the copy only has to live long enough for
-  /// the receiving app to read it. Writing those into Downloads left a
-  /// file behind on the user's phone for every share they ever made.
-  /// This is the same place [saveToAppDirectory] already staged shared
-  /// PDFs, so both formats now go out the same way.
-  Future<Directory> shareDirectory() async =>
-      await getApplicationDocumentsDirectory();
+  /// Under the cache directory, deliberately. Everything here is
+  /// disposable the moment the operation that made it finishes, and the
+  /// cache is the one place Android lets the user reclaim without
+  /// uninstalling — "Clear cache" in the app's storage settings empties
+  /// it, and the system evicts it on its own when the device runs low.
+  /// The app documents directory, where shared PDFs used to be staged,
+  /// offers neither: a file written there is invisible, permanent, and
+  /// removable only by clearing all app data, which also takes the
+  /// user's library with it.
+  Future<Directory> _stagingDirectory(String purpose) async {
+    final dir =
+        Directory('${(await getTemporaryDirectory()).path}/staging/$purpose');
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// The directory a file being shared is staged in, emptied of whatever
+  /// the last share left there.
+  ///
+  /// A share is a handoff, not a save: share_plus copies what it is given
+  /// into its own provider directory before the receiving app ever sees
+  /// it, so our copy is finished with as soon as the share sheet opens.
+  /// Clearing on the way in rather than on the way out means a share
+  /// interrupted by the app being killed does not leave its file behind
+  /// for good.
+  Future<Directory> shareDirectory() async {
+    final dir = await _stagingDirectory('share');
+    await _emptyDirectory(dir);
+    return dir;
+  }
+
+  /// Deletes everything staged by an earlier run.
+  ///
+  /// Called at startup: staging is only ever needed for the length of one
+  /// export or share, so anything still there is the residue of a run
+  /// that was killed part way through.
+  Future<void> purgeStaging() async {
+    try {
+      final root = Directory('${(await getTemporaryDirectory()).path}/staging');
+      if (await root.exists()) await root.delete(recursive: true);
+    } catch (e) {
+      // Nothing here is load-bearing; a cache the OS will reclaim anyway
+      // is not worth failing a launch over.
+      debugPrint('Could not purge staging: $e');
+    }
+    await _purgeLegacySharedPdfs();
+  }
+
+  /// Removes PDFs left in the app documents directory by the versions that
+  /// staged shares there.
+  ///
+  /// Those copies are invisible and permanent — no file manager reaches
+  /// them and no "Clear cache" touches them, so an upgrade alone would
+  /// leave every share a user had ever made sitting on their phone for
+  /// good. Only loose *.pdf files at the top of that directory are
+  /// touched, which is exactly what the old share path wrote there; the
+  /// database and everything else beside them is left alone.
+  Future<void> _purgeLegacySharedPdfs() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      if (!await dir.exists()) return;
+      await for (final entity in dir.list()) {
+        if (entity is File && entity.path.toLowerCase().endsWith('.pdf')) {
+          debugPrint('Removing orphaned shared PDF: ${entity.path}');
+          await entity.delete();
+        }
+      }
+    } catch (e) {
+      debugPrint('Could not purge old shared PDFs: $e');
+    }
+  }
+
+  Future<void> _emptyDirectory(Directory dir) async {
+    try {
+      await for (final entity in dir.list()) {
+        await entity.delete(recursive: true);
+      }
+    } catch (e) {
+      debugPrint('Could not empty ${dir.path}: $e');
+    }
+  }
+
+  Future<void> _deleteStaged(List<String> paths) async {
+    for (final path in paths) {
+      try {
+        final file = File(path);
+        if (await file.exists()) await file.delete();
+      } catch (e) {
+        debugPrint('Could not delete staged file $path: $e');
+      }
+    }
+  }
 
   /// The directory exports land in — PDFs and images alike: a visible
   /// OpenScan folder under Downloads, falling back to app storage where

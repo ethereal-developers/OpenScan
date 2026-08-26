@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/appRouter.dart';
+import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/settings/app_settings.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/core/theme/os_colors.dart';
@@ -15,6 +18,12 @@ void main() async {
   await AppSettings.instance.load();
   await _initializeCameras();
   runApp(const OpenScan());
+
+  // Not awaited: nothing on screen depends on it, and a launch should not
+  // wait on housekeeping. Staging only ever holds files for the length of
+  // one export or share, so whatever is still there belongs to a run that
+  // was killed part way through.
+  unawaited(FileOperations().purgeStaging());
 }
 
 Future<void> _initializeCameras() async {
