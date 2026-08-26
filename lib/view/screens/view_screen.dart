@@ -221,7 +221,7 @@ class _ViewScreenState extends State<ViewScreen> {
                 : _documentAppBar(os, state),
             body: SafeArea(
               top: false,
-              child: images.isEmpty
+              child: images.isEmpty && state.pendingPages.isEmpty
                   ? OSEmptyState(
                       icon: Icons.add_rounded,
                       title: 'This document has no pages',
@@ -337,6 +337,16 @@ class _ViewScreenState extends State<ViewScreen> {
         final tileWidth =
             (constraints.maxWidth - padding * 2 - spacing * 2) / 3;
 
+        final pendingTiles = <Widget>[
+          for (int i = 0; i < state.pendingPages.length; i++)
+            _PendingTile(
+              key: ValueKey('pending-${state.pendingPages[i]}'),
+              path: state.pendingPages[i],
+              index: images.length + i + 1,
+              width: tileWidth,
+            ),
+        ];
+
         final tiles = <Widget>[
           for (final image in images)
             _PageTile(
@@ -362,11 +372,18 @@ class _ViewScreenState extends State<ViewScreen> {
             ),
         ];
 
+        // Pending pages sit outside the reorderable set: they have no
+        // database row yet, so there is no index for a drag to rewrite.
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(padding, OSSpace.xs, padding, 96),
-          child: _selectionMode
-              ? Wrap(spacing: spacing, runSpacing: spacing, children: tiles)
-              : ReorderableWrap(
+          child: Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            children: [
+              if (_selectionMode || pendingTiles.isNotEmpty)
+                ...tiles
+              else
+                ReorderableWrap(
                   spacing: spacing,
                   runSpacing: spacing,
                   needsLongPressDraggable: true,
@@ -376,13 +393,16 @@ class _ViewScreenState extends State<ViewScreen> {
                         .updateImageIndex(oldIndex, newIndex);
                   },
                 ),
+              ...pendingTiles,
+            ],
+          ),
         );
       },
     );
   }
 
   Widget? _bottomBar(OSColors os, DirectoryState state, int selectedCount) {
-    if ((state.images ?? const []).isEmpty) {
+    if ((state.images ?? const []).isEmpty && state.pendingPages.isEmpty) {
       return SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -536,6 +556,83 @@ class _PageTile extends StatelessWidget {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A page that has been captured but not yet written into the document.
+///
+/// Shows the capture itself, dimmed, with a progress line across the
+/// bottom: the scan is visibly there and visibly still landing, which is
+/// the honest version of a grid that would otherwise sit empty for a
+/// second or two per page.
+class _PendingTile extends StatelessWidget {
+  const _PendingTile({
+    Key? key,
+    required this.path,
+    required this.index,
+    required this.width,
+  }) : super(key: key);
+
+  final String path;
+  final int index;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final os = context.os;
+    return SizedBox(
+      width: width,
+      height: width * 4 / 3,
+      child: Container(
+        decoration: BoxDecoration(
+          color: os.surfaceVariant,
+          borderRadius: BorderRadius.circular(OSRadius.chip + 1),
+          border: Border.all(color: os.outline),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Opacity(
+              opacity: 0.45,
+              child: Image.file(
+                File(path),
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+                // Decoded straight to tile size rather than at capture
+                // resolution: this is a thumbnail of a photo that is being
+                // re-encoded on another isolate right now, and the two
+                // should not be competing for the same CPU.
+                cacheWidth: (width * MediaQuery.of(context).devicePixelRatio)
+                    .round(),
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: LinearProgressIndicator(
+                minHeight: 3,
+                backgroundColor: os.outline,
+                valueColor: AlwaysStoppedAnimation(os.accent),
+              ),
+            ),
+            Positioned(
+              bottom: 8,
+              right: 4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: os.overlayChrome,
+                  borderRadius: BorderRadius.circular(OSRadius.chip),
+                ),
+                child: Text('$index',
+                    style: OSTypography.caption.copyWith(color: Colors.white)),
+              ),
+            ),
+          ],
         ),
       ),
     );

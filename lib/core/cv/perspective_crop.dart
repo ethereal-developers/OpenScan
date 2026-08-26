@@ -56,28 +56,95 @@ Future<CropResult> cropImageNormalizedIsolateEntry(
       return const CropFailure('Could not decode image');
     }
 
-    var normalized = quad;
-    if (decoded.width > decoded.height) {
-      // Inverse of rotateQuadForPortrait's fixed 90-degree rotation, in
-      // normalized space: portrait (x, y) came from sensor (y, 1 - x).
-      normalized = sortCorners(
-        normalized.points.map((p) => Pt(p.y, 1 - p.x)).toList(),
-      );
-    }
-
-    return await _cropDecoded(
-      decoded,
-      normalized.scaled(decoded.width.toDouble(), decoded.height.toDouble()),
-      path,
-    );
+    return await _cropDecoded(decoded, quadInPixels(quad, decoded), path);
   } catch (e) {
     return CropFailure(e.toString());
   }
 }
 
+/// Maps a quad in fractional [0,1] *portrait overlay* coordinates onto
+/// [decoded]'s own pixel grid, rotating it back into the photo's
+/// orientation first if the photo decoded landscape — otherwise the
+/// overlay's corners would be stretched across the wrong axes.
+Quad quadInPixels(Quad normalized, img.Image decoded) {
+  var quad = normalized;
+  if (decoded.width > decoded.height) {
+    // Inverse of rotateQuadForPortrait's fixed 90-degree rotation, in
+    // normalized space: portrait (x, y) came from sensor (y, 1 - x).
+    quad = sortCorners(quad.points.map((p) => Pt(p.y, 1 - p.x)).toList());
+  }
+  return quad.scaled(decoded.width.toDouble(), decoded.height.toDouble());
+}
+
+/// Warps [quad] (in [decoded]'s pixel coordinates) into an upright
+/// rectangle and returns it, capped at [maxEdge] on its long side.
+///
+/// The cap is applied to the warp itself rather than by resizing
+/// afterwards: the warp samples the source once per *output* pixel, so
+/// asking it for a page-sized result directly is both faster than warping
+/// at capture resolution and free of the extra decode/encode round trip a
+/// separate downscale would cost. Where that means throwing away more than
+/// half the detail, the source is box-filtered down first, so the result
+/// is averaged rather than point-sampled.
+img.Image? warpToPage(img.Image decoded, Quad quad, {int? maxEdge}) {
+  var source = decoded;
+  var pixels = quad;
+
+  final natural = _outputSize(pixels);
+  var outWidth = natural.width;
+  var outHeight = natural.height;
+
+  if (maxEdge != null && maxEdge > 0) {
+    final longest = max(outWidth, outHeight);
+    if (longest > maxEdge) {
+      final scale = maxEdge / longest;
+      outWidth = max(1, (outWidth * scale).round());
+      outHeight = max(1, (outHeight * scale).round());
+      if (scale <= 0.5) {
+        source = img.copyResize(
+          decoded,
+          width: max(1, (decoded.width * scale).round()),
+          height: max(1, (decoded.height * scale).round()),
+          interpolation: img.Interpolation.average,
+        );
+        pixels = pixels.scaled(scale, scale);
+      }
+    }
+  }
+
+  return _warp(source, pixels, outWidth, outHeight);
+}
+
 /// Warps [quad] (in [decoded]'s own pixel coordinates) into an upright
 /// rectangle and writes the result to [path].
 Future<CropResult> _cropDecoded(img.Image decoded, Quad quad, String path) async {
+  try {
+    final warped = _warp(decoded, quad, null, null);
+    if (warped == null) return const CropFailure('Could not warp image');
+    final jpg = img.encodeJpg(warped, quality: 100);
+    await File(path).writeAsBytes(jpg, flush: true);
+    return CropSuccess(path);
+  } catch (e) {
+    return CropFailure(e.toString());
+  }
+}
+
+/// The size an unscaled warp of [quad] produces: the longest of each pair
+/// of opposite edges, so no part of the page is squeezed.
+({int width, int height}) _outputSize(Quad quad) {
+  final tl = quad.topLeft, tr = quad.topRight;
+  final br = quad.bottomRight, bl = quad.bottomLeft;
+  final width = max(_dist(tl.x, tl.y, tr.x, tr.y), _dist(bl.x, bl.y, br.x, br.y));
+  final height = max(_dist(tl.x, tl.y, bl.x, bl.y), _dist(tr.x, tr.y, br.x, br.y));
+  return (
+    width: width.round().clamp(1, 1 << 16),
+    height: height.round().clamp(1, 1 << 16),
+  );
+}
+
+/// Inverse-samples [quad] out of [source] into an upright [outWidth] x
+/// [outHeight] rectangle. Both dimensions default to the quad's own size.
+img.Image? _warp(img.Image decoded, Quad quad, int? width, int? height) {
   try {
     final srcWidth = decoded.width;
     final srcHeight = decoded.height;
@@ -86,13 +153,9 @@ Future<CropResult> _cropDecoded(img.Image decoded, Quad quad, String path) async
     final tl = quad.topLeft, tr = quad.topRight;
     final br = quad.bottomRight, bl = quad.bottomLeft;
 
-    final widthTop = _dist(tl.x, tl.y, tr.x, tr.y);
-    final widthBottom = _dist(bl.x, bl.y, br.x, br.y);
-    final outWidth = max(widthTop, widthBottom).round().clamp(1, 1 << 16);
-
-    final heightLeft = _dist(tl.x, tl.y, bl.x, bl.y);
-    final heightRight = _dist(tr.x, tr.y, br.x, br.y);
-    final outHeight = max(heightLeft, heightRight).round().clamp(1, 1 << 16);
+    final natural = _outputSize(quad);
+    final outWidth = width ?? natural.width;
+    final outHeight = height ?? natural.height;
 
     // Homography mapping output-rectangle coordinates -> source quad
     // coordinates, used to inverse-sample the source for each output pixel.
@@ -112,20 +175,15 @@ Future<CropResult> _cropDecoded(img.Image decoded, Quad quad, String path) async
       }
     }
 
-    final outImage = img.Image.fromBytes(
+    return img.Image.fromBytes(
       width: outWidth,
       height: outHeight,
       bytes: outRgba.buffer,
       numChannels: 4,
       order: img.ChannelOrder.rgba,
     );
-
-    final jpg = img.encodeJpg(outImage, quality: 100);
-    await File(path).writeAsBytes(jpg, flush: true);
-
-    return CropSuccess(path);
   } catch (e) {
-    return CropFailure(e.toString());
+    return null;
   }
 }
 

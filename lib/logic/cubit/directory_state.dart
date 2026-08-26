@@ -10,6 +10,12 @@ class DirectoryState {
   String? newName;
   List<ImageOS>? images;
 
+  /// Captures that have been taken but not yet written into the document,
+  /// as paths to the photos themselves. The grid shows one placeholder per
+  /// entry so a finished scan is visible immediately, rather than after
+  /// every page has been decoded and re-encoded.
+  List<String> pendingPages;
+
   DirectoryState({
     this.dirName,
     this.created,
@@ -19,5 +25,6 @@ class DirectoryState {
     this.lastModified,
     this.newName,
     this.images,
+    this.pendingPages = const [],
   });
 }

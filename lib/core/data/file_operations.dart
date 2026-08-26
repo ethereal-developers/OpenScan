@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
+import 'package:openscan/core/cv/capture_pipeline.dart';
 import 'package:openscan/core/cv/compress.dart';
+import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/models.dart';
 import 'package:path_provider/path_provider.dart';
@@ -77,69 +79,38 @@ class FileOperations {
     return imageFiles;
   }
 
-  /// Saves image in directory and database
+  /// Writes one capture into [dirPath] as a page — cropped to [quad] if
+  /// there is one, downscaled and re-encoded to page size either way — and
+  /// records it in the database.
   ///
-  /// [original] is the uncropped capture [image] was produced from. It is
-  /// stored next to the page (prefixed `orig_`) and recorded in the
-  /// database so a later re-crop can start from the full original rather
-  /// than from the already-cropped page. Pass null to keep no original.
+  /// When [keepOriginal] is set, what the page would have been uncropped
+  /// is written alongside it (prefixed `orig_`) and recorded too, so a
+  /// later re-crop can start from the full capture rather than from the
+  /// already-cropped page. It costs nothing extra to produce: page and
+  /// original come out of the same decode, in the same isolate pass.
   ///
-  /// Returns: Saved image record [ImageOS], carrying both stored paths
-  Future<ImageOS> saveImage(
-      {required File image,
-      File? original,
-      int? index,
-      required String dirPath}) async {
-    if (!await Directory(dirPath).exists()) {
-      new Directory(dirPath).create();
-      await database.createDirectory(
-        directory: DirectoryOS(
-          dirName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
-          dirPath: dirPath,
-          imageCount: 0,
-          created: DateTime.parse(dirPath
-              .substring(dirPath.lastIndexOf('/') + 1)
-              .substring(
-                  dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
-                      1)),
-          newName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
-          lastModified: DateTime.parse(dirPath
-              .substring(dirPath.lastIndexOf('/') + 1)
-              .substring(
-                  dirPath.substring(dirPath.lastIndexOf('/') + 1).indexOf(' ') +
-                      1)),
-          firstImgPath: null,
-        ),
-      );
-    }
+  /// Returns: Saved image record [ImageOS], carrying both stored paths.
+  Future<ImageOS> saveCapture({
+    required File source,
+    required String dirPath,
+    Quad? quad,
+    bool keepOriginal = false,
+    int? index,
+  }) async {
+    await _ensureDirectory(dirPath);
 
-    String stamp = DateTime.now().toString();
-    File tempPic = File("$dirPath/$stamp.jpg");
-    await _copyNormalized(
-      source: image,
-      destination: tempPic,
-      maxEdge: kStoredPageMaxEdge,
-      quality: kStoredPageQuality,
+    final stamp = DateTime.now().toString();
+    final written = await writeCapture(
+      source: source,
+      dir: dirPath,
+      stamp: stamp,
+      quad: quad,
+      keepOriginal: keepOriginal,
     );
 
-    // Always a separate file, even when it's byte-identical to the page
-    // (an uncropped gallery import): cropping rewrites the page in place,
-    // so an original sharing its path would be destroyed by the first
-    // re-crop — the exact thing keeping originals is meant to prevent.
-    String? origPath;
-    if (original != null && original.existsSync()) {
-      origPath = "$dirPath/orig_$stamp.jpg";
-      await _copyNormalized(
-        source: original,
-        destination: File(origPath),
-        maxEdge: kStoredOriginalMaxEdge,
-        quality: kStoredOriginalQuality,
-      );
-    }
-
     ImageOS saved = ImageOS(
-      imgPath: tempPic.path,
-      origPath: origPath,
+      imgPath: written.pagePath,
+      origPath: written.originalPath,
       idx: index,
     );
 
@@ -148,15 +119,70 @@ class FileOperations {
       tableName: dirPath.substring(dirPath.lastIndexOf('/') + 1),
     );
     if (index == 1) {
-      database.updateFirstImagePath(imagePath: tempPic.path, dirPath: dirPath);
+      database.updateFirstImagePath(
+          imagePath: written.pagePath, dirPath: dirPath);
     }
     return saved;
   }
 
-  /// Copies [source] into permanent storage the same way [saveImage] does
-  /// — downscaled to page size and re-encoded — for the paths that write a
-  /// page file directly rather than going through [saveImage] (re-crop,
-  /// re-scan).
+  /// The file half of [saveCapture], without the database: writes
+  /// `$dir/$stamp.jpg` (and `$dir/orig_$stamp.jpg` when [keepOriginal]) in
+  /// one isolate pass. Used directly by the paths that own their own
+  /// database bookkeeping, like replacing a page on re-scan.
+  Future<({String pagePath, String? originalPath})> writeCapture({
+    required File source,
+    required String dir,
+    required String stamp,
+    Quad? quad,
+    bool keepOriginal = false,
+  }) async {
+    final pagePath = '$dir/$stamp.jpg';
+    final originalPath = keepOriginal ? '$dir/orig_$stamp.jpg' : null;
+
+    final result = await compute(storeCaptureIsolateEntry, {
+      'src': source.path,
+      'pageDest': pagePath,
+      'pageMaxEdge': kStoredPageMaxEdge,
+      'pageQuality': kStoredPageQuality,
+      'quad': quad,
+      'originalDest': originalPath,
+      'originalMaxEdge': kStoredOriginalMaxEdge,
+      'originalQuality': kStoredOriginalQuality,
+    });
+
+    return (
+      pagePath: pagePath,
+      // An original that failed to write is simply not recorded, rather
+      // than leaving the page pointing at a file that isn't there.
+      originalPath: (result['original'] ?? false) ? originalPath : null,
+    );
+  }
+
+  /// Creates the document's folder and its database row if this is the
+  /// first page being written into it.
+  Future<void> _ensureDirectory(String dirPath) async {
+    if (await Directory(dirPath).exists()) return;
+    await Directory(dirPath).create();
+
+    final dirName = dirPath.substring(dirPath.lastIndexOf('/') + 1);
+    final created = DateTime.parse(dirName.substring(dirName.indexOf(' ') + 1));
+    await database.createDirectory(
+      directory: DirectoryOS(
+        dirName: dirName,
+        dirPath: dirPath,
+        imageCount: 0,
+        created: created,
+        newName: dirName,
+        lastModified: created,
+        firstImgPath: null,
+      ),
+    );
+  }
+
+  /// Copies [source] into permanent storage the same way a capture is
+  /// stored — downscaled to page size and re-encoded — for the paths that
+  /// write a page file directly from an image that is already in hand
+  /// (the crop screen's result, an original being promoted).
   Future<void> storeNormalized({
     required File source,
     required File destination,

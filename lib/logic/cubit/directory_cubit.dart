@@ -3,9 +3,7 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
-import 'package:openscan/core/cv/models/detection_result.dart';
 import 'package:openscan/core/cv/models/quad.dart';
-import 'package:openscan/core/cv/perspective_crop.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/image_filter/apply_filter.dart';
@@ -59,6 +57,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   /// Updates the data to reflect in the UI - adhoc
   void emitState(state) {
     emit(DirectoryState(
+      pendingPages: state.pendingPages,
       dirName: state.dirName,
       created: state.created,
       dirPath: state.dirPath,
@@ -178,29 +177,37 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     bool fromGallery = false,
     bool liveScan = false,
   }) async {
-    // Each entry pairs the page to store with the uncropped capture it
-    // came from, so the original outlives the crop (see
-    // [FileOperations.saveImage]).
-    List<_PendingImage> imageList = [];
+    List<_PendingCapture> imageList = [];
 
     if (fromGallery) {
       for (File image in await fileOperations.openGallery()) {
-        // Gallery imports aren't cropped on the way in, so the import is
-        // both the page and its own original.
-        imageList.add(_PendingImage(image: image, original: image));
+        // Gallery imports aren't cropped on the way in.
+        imageList.add(_PendingCapture(file: image));
       }
     } else if (liveScan) {
       List<LiveCapture>? captures = await captureWithLiveScan(context);
       if (captures != null) {
         for (LiveCapture capture in captures) {
-          imageList.add(await _prepareCapture(capture));
+          imageList.add(_PendingCapture(file: capture.file, quad: capture.quad));
         }
       }
     }
 
+    // Every captured page shows in the document immediately, as itself,
+    // while it is still being written: storing a page means decoding and
+    // re-encoding a multi-megapixel photo, and a grid that stays empty
+    // until that finishes reads as a scan that didn't work.
+    state.pendingPages = [for (final p in imageList) p.file.path];
+    if (imageList.isNotEmpty) emitState(state);
+
     int stored = 0;
-    for (_PendingImage pending in imageList) {
+    for (_PendingCapture pending in imageList) {
       if (await _storePending(pending)) stored++;
+      // Emitted here as well as inside _storePending: the last page's
+      // placeholder would otherwise sit there until something else
+      // happened to rebuild the grid.
+      state.pendingPages = state.pendingPages.sublist(1);
+      emitState(state);
     }
 
     // Run once after every image in this call's imageList has been copied
@@ -213,16 +220,17 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     return stored;
   }
 
-  /// Copies one prepared capture into the document as a new last page.
+  /// Writes one capture into the document as a new last page.
   ///
   /// Returns false when there was nothing to store.
-  Future<bool> _storePending(_PendingImage pending) async {
-    File image = pending.image;
+  Future<bool> _storePending(_PendingCapture pending) async {
+    File image = pending.file;
     if (!image.existsSync()) return false;
 
-    ImageOS savedImage = await fileOperations.saveImage(
-      image: image,
-      original: pending.original,
+    ImageOS savedImage = await fileOperations.saveCapture(
+      source: image,
+      quad: pending.quad,
+      keepOriginal: AppSettings.instance.keepOriginal,
       index: state.images!.length + 1,
       dirPath: state.dirPath!,
     );
@@ -253,37 +261,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     return true;
   }
 
-  /// Turns one live-scan capture into the page to store, paired with the
-  /// uncropped image it came from.
-  ///
-  /// Nothing here opens the crop screen. A capture is cropped to the
-  /// boundary that was on the live preview when the shutter fired — the
-  /// edges the user was looking at, whether the shot was fired by hand or
-  /// by auto-capture — and a capture with no boundary is stored whole.
-  /// Cropping by hand is a deliberate act afterwards, from the page's own
-  /// Crop button, not a checkpoint every page has to pass through.
-  Future<_PendingImage> _prepareCapture(LiveCapture capture) async {
-    debugPrint('Live capture: imported=${capture.imported} '
-        'quad=${capture.quad != null}');
-    // An imported picture isn't a capture of anything: it is both the
-    // page and its own original.
-    if (capture.imported) {
-      return _PendingImage(image: capture.file, original: capture.file);
-    }
-    final original = await _copyAsideOriginal(capture.file);
-    final quad = capture.quad;
-    if (quad == null) {
-      return _PendingImage(image: capture.file, original: original);
-    }
-    final result = await _cropToLiveQuad(capture.file, quad);
-    return _PendingImage(
-      // A failed warp leaves the capture untouched on disk, so the page
-      // falls back to the uncropped photo rather than being dropped.
-      image: capture.file,
-      original: result is CropSuccess ? original : capture.file,
-    );
-  }
-
   /// Re-scans a single page: the capture *replaces* [imageOS] in place —
   /// same position in the document, same database row — rather than being
   /// appended as an extra page. Re-scanning is how you redo a page that
@@ -297,34 +274,26 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     final captures = await captureWithLiveScan(context);
     if (captures == null || captures.isEmpty) return;
 
-    final replacement = await _prepareCapture(captures.first);
-    if (replacement.image.existsSync()) {
+    final replacement = captures.first;
+    if (replacement.file.existsSync()) {
       final String dir =
           imageOS.imgPath.substring(0, imageOS.imgPath.lastIndexOf("/"));
-      final String stamp = DateTime.now().toString();
 
-      final File page = File('$dir/$stamp.jpg');
-      await fileOperations.storeNormalized(
-          source: replacement.image, destination: page);
-
-      String? origPath;
-      final original = replacement.original;
-      if (original != null && original.existsSync()) {
-        origPath = '$dir/orig_$stamp.jpg';
-        await fileOperations.storeNormalized(
-          source: original,
-          destination: File(origPath),
-          asOriginal: true,
-        );
-      }
+      final written = await fileOperations.writeCapture(
+        source: replacement.file,
+        dir: dir,
+        stamp: DateTime.now().toString(),
+        quad: replacement.quad,
+        keepOriginal: AppSettings.instance.keepOriginal,
+      );
 
       // Every file the old page owned describes an image that is no longer
       // in the document: drop the page, its uncropped original and its
       // unfiltered copy before pointing the record at the new capture.
       _deleteImageFiles(imageOS);
 
-      imageOS.imgPath = page.path;
-      imageOS.origPath = origPath;
+      imageOS.imgPath = written.pagePath;
+      imageOS.origPath = written.originalPath;
 
       await database.updateImagePath(
         tableName: state.dirName!,
@@ -357,7 +326,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
 
     for (final capture in captures.skip(1)) {
-      await _storePending(await _prepareCapture(capture));
+      await _storePending(
+          _PendingCapture(file: capture.file, quad: capture.quad));
     }
 
     await fileOperations.deleteTemporaryImages();
@@ -713,53 +683,14 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     image.unfilteredPath = null;
     image.filterName = null;
   }
-
-  /// Copies a capture aside before it gets cropped in place, so the
-  /// uncropped version survives to be stored alongside the page.
-  ///
-  /// Returns null (and the caller stores no original) if the copy fails —
-  /// losing the original is worth far less than losing the page.
-  Future<File?> _copyAsideOriginal(File capture) async {
-    // Opting out of keeping originals halves the storage a document costs,
-    // at the price of re-crops working off the already-cropped page.
-    if (!AppSettings.instance.keepOriginal) return null;
-    try {
-      Directory cacheDir = await getTemporaryDirectory();
-      File copy = File(
-          '${cacheDir.path}/orig_${DateTime.now().millisecondsSinceEpoch}.jpg');
-      await capture.copy(copy.path);
-      return copy;
-    } catch (e) {
-      debugPrint("Couldn't keep original of ${capture.path}: $e");
-      return null;
-    }
-  }
-
-  /// Warps a live-scan capture to the quad that was on the preview when it
-  /// was taken, writing the result over [capture] (the uncropped version
-  /// has already been copied aside by [_copyAsideOriginal]).
-  Future<CropResult> _cropToLiveQuad(File capture, Quad quad) async {
-    try {
-      final result = await compute(cropImageNormalizedIsolateEntry, {
-        'path': capture.path,
-        'quad': quad,
-      }).timeout(const Duration(seconds: 15));
-      if (result is CropFailure) {
-        debugPrint('Live-scan auto-crop failed: ${result.message}');
-      }
-      return result;
-    } catch (e) {
-      debugPrint('Live-scan auto-crop error: $e');
-      return CropFailure(e.toString());
-    }
-  }
 }
 
-/// A capture on its way into storage: the page to save, paired with the
-/// uncropped image it came from (null when no original was kept).
-class _PendingImage {
-  final File image;
-  final File? original;
+/// A capture on its way into storage: the photo, and the boundary it
+/// should be cropped to (null for a gallery import, or a shot taken with
+/// nothing detected — those are stored whole).
+class _PendingCapture {
+  final File file;
+  final Quad? quad;
 
-  const _PendingImage({required this.image, this.original});
+  const _PendingCapture({required this.file, this.quad});
 }
