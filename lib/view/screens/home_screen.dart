@@ -267,7 +267,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ];
       if (images.isEmpty) continue;
       final path = await fileOperations.saveToDevice(
-        context: context,
         fileName: _sanitize(_titleOf(doc)),
         images: images,
       );

@@ -273,7 +273,6 @@ class _ExportSheetState extends State<ExportSheet> {
                 imagesSelected: false,
               )
             : await fileOperations.saveToDevice(
-                context: context,
                 fileName: name,
                 images: pages,
                 pageFormat: _pageSize.format,
@@ -282,9 +281,7 @@ class _ExportSheetState extends State<ExportSheet> {
         if (path == null) throw StateError('PDF could not be written');
         written = [path];
       } else {
-        final directory = share
-            ? await fileOperations.exportDirectory()
-            : await fileOperations.exportDirectory(context: context);
+        final directory = await fileOperations.exportDirectory();
         written = await fileOperations.exportImages(
           images: pages,
           directory: directory,

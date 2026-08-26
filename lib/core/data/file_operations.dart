@@ -35,27 +35,6 @@ class FileOperations {
     }
   }
 
-  /// Selects directory wrt OS
-  ///
-  /// Returns: selected directory [Directory]
-  Future<Directory> pickDirectory(
-      BuildContext? context, selectedDirectory) async {
-    Directory? directory = selectedDirectory;
-    try {
-      if (Platform.isAndroid) {
-        directory = Directory("/storage/emulated/0/");
-      } else {
-        directory = await getExternalStorageDirectory();
-      }
-    } catch (e) {
-      print(e);
-      directory = await getExternalStorageDirectory();
-    }
-
-    // TODO: Pick custom directory
-    return directory!;
-  }
-
   // <=========================== Image Operations ============================>
 
   /// Image picker opens gallery
@@ -286,28 +265,12 @@ class FileOperations {
   ///
   /// Returns: FileName with Path [String]
   Future<String?> saveToDevice(
-      {BuildContext? context,
-      required String fileName,
+      {required String fileName,
       required List<ImageOS> images,
       PdfPageFormat pageFormat = PdfPageFormat.a4,
       int quality = 100}) async {
-    Directory? selectedDirectory;
-    Directory openscanDir = Directory("/storage/emulated/0/Documents/OpenScan");
-
-    try {
-      if (!openscanDir.existsSync()) {
-        openscanDir.createSync();
-        openscanDir.createSync();
-      }
-      selectedDirectory = openscanDir;
-    } catch (e) {
-      print(e);
-      selectedDirectory = await pickDirectory(context, selectedDirectory);
-    }
-
-    // TODO: remove await and display toast
     return await compute(createPdf, {
-      'selectedDirectory': selectedDirectory,
+      'selectedDirectory': await exportDirectory(),
       'fileName': fileName,
       'images': await _compressedForPdf(images, quality),
       'pageFormat': pageFormat,
@@ -388,9 +351,11 @@ class FileOperations {
     });
   }
 
-  /// The directory image exports land in: the same visible OpenScan folder
-  /// PDFs use, falling back to app storage where that is not writable.
-  Future<Directory> exportDirectory({BuildContext? context}) async {
+  /// The directory exports land in — PDFs and images alike: a visible
+  /// OpenScan folder under Documents, falling back to app storage where
+  /// that is not writable. There is no way to choose another one; a
+  /// directory picker is a feature this has never had.
+  Future<Directory> exportDirectory() async {
     Directory openscanDir = Directory("/storage/emulated/0/Documents/OpenScan");
     try {
       if (!openscanDir.existsSync()) openscanDir.createSync(recursive: true);
