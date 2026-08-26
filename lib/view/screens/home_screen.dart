@@ -75,12 +75,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<bool> _requestPermission() async {
-    if (await Permission.storage.request().isGranted &&
-        await Permission.camera.request().isGranted) {
-      return true;
+    // A permission request can fail outright rather than be denied — the
+    // platform side refuses a second request while one is still running,
+    // for instance — and an unhandled failure here would take the library
+    // down with it on launch. Asking is worth a try; not getting an answer
+    // is not worth a crash.
+    try {
+      if (await Permission.storage.request().isGranted &&
+          await Permission.camera.request().isGranted) {
+        return true;
+      }
+      await Permission.storage.request();
+      await Permission.camera.request();
+    } catch (e) {
+      debugPrint('Could not request permissions: $e');
     }
-    await Permission.storage.request();
-    await Permission.camera.request();
     return false;
   }
 
