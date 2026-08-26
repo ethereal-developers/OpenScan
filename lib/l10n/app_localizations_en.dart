@@ -12,12 +12,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scan_options => 'Scan Options';
 
   @override
-  String get normal_scan => 'Normal Scan';
-
-  @override
-  String get quick_scan => 'Quick Scan';
-
-  @override
   String get import_from_gallery => 'Import from Gallery';
 
   @override

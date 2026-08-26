@@ -12,12 +12,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get scan_options => 'Szkennelési beállítások';
 
   @override
-  String get normal_scan => 'Normál szkennelés';
-
-  @override
-  String get quick_scan => 'Gyors szkennelés';
-
-  @override
   String get import_from_gallery => 'Importálás a Galériából';
 
   @override

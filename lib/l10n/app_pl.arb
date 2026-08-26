@@ -3,14 +3,6 @@
     "@scan_options": {
         "description": "Podpowiedź dotycząca przycisku skanowania" 
     },
-    "normal_scan": "Normalny Skan",
-    "@normal_scan": {
-        "description": "Typ skanowania 1" 
-    },
-    "quick_scan": "Szybki Skan",
-    "@quick_scan": {
-        "description": "Typ skanowania 2" 
-    },
     "import_from_gallery": "Import z Galerii",
     "@import_from_gallery": {
         "description": "Typ skanowania 3"

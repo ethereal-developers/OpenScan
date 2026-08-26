@@ -3,14 +3,6 @@
     "@scan_options": {
         "description": "Szkennelés gomb buboréksúgója" 
     },
-    "normal_scan": "Normál szkennelés",
-    "@normal_scan": {
-        "description": "1-es típusú szkennelés" 
-    },
-    "quick_scan": "Gyors szkennelés",
-    "@quick_scan": {
-        "description": "2-es típusú szkennelés"
-    },
     "import_from_gallery": "Importálás a Galériából",
     "@import_from_gallery": {
         "description": "3-as típusú szkennelés"

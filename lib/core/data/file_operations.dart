@@ -56,18 +56,6 @@ class FileOperations {
 
   // <=========================== Image Operations ============================>
 
-  /// Image picker opens camera
-  ///
-  /// Returns: Picked image [File]
-  Future<File?> openCamera() async {
-    File? image;
-    var picture = await ImagePicker().pickImage(source: ImageSource.camera);
-    if (picture != null) {
-      image = File(picture.path);
-    }
-    return image;
-  }
-
   /// Image picker opens gallery
   ///
   /// Returns: Picked images [List]

@@ -167,14 +167,14 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     debugPrint('$name size --> $kb');
   }
 
-  /// Imports image from gallery and camera and stores it in db.
+  /// Imports pages from the gallery or from a live-scan session and
+  /// stores them in db.
   ///
   /// Resolves with the number of pages this call actually added, so a
   /// caller can tell a cancelled session (0) from a real capture — an
   /// empty new document has nothing worth showing.
   Future<int> createImage(
     context, {
-    bool quickScan = false,
     bool fromGallery = false,
     bool liveScan = false,
   }) async {
@@ -193,18 +193,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       List<LiveCapture>? captures = await captureWithLiveScan(context);
       if (captures != null) {
         for (LiveCapture capture in captures) {
-          imageList.add(await _prepareCapture(context, capture));
+          imageList.add(await _prepareCapture(capture));
         }
-      }
-    } else {
-      File? image = await fileOperations.openCamera();
-      if (image != null) {
-        final original = await _copyAsideOriginal(image);
-        final cropped = await imageCropper(context, image);
-        imageList.add(_PendingImage(
-          image: cropped ?? image,
-          original: cropped == null ? image : original,
-        ));
       }
     }
 
@@ -220,9 +210,6 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     // multi-select gallery import) live until their turn in the loop —
     // deleting it mid-loop silently drops every image after the first.
     await fileOperations.deleteTemporaryImages();
-    if (quickScan) {
-      return stored + await createImage(context, quickScan: quickScan);
-    }
     return stored;
   }
 
@@ -269,32 +256,31 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   /// Turns one live-scan capture into the page to store, paired with the
   /// uncropped image it came from.
   ///
-  /// Auto-mode pages are cropped straight to the edges the user already
-  /// agreed with on the live preview, and gallery imports are taken as
-  /// they are; everything else goes through the crop screen.
-  Future<_PendingImage> _prepareCapture(context, LiveCapture capture) async {
-    debugPrint('Live capture: autoMode=${capture.autoMode} '
-        'imported=${capture.imported} quad=${capture.quad != null} -> '
-        '${capture.imported ? "as-is" : capture.canAutoCrop ? "auto-crop" : "crop screen"}');
+  /// Nothing here opens the crop screen. A capture is cropped to the
+  /// boundary that was on the live preview when the shutter fired — the
+  /// edges the user was looking at, whether the shot was fired by hand or
+  /// by auto-capture — and a capture with no boundary is stored whole.
+  /// Cropping by hand is a deliberate act afterwards, from the page's own
+  /// Crop button, not a checkpoint every page has to pass through.
+  Future<_PendingImage> _prepareCapture(LiveCapture capture) async {
+    debugPrint('Live capture: imported=${capture.imported} '
+        'quad=${capture.quad != null}');
     // An imported picture isn't a capture of anything: it is both the
-    // page and its own original, with no crop step in between.
+    // page and its own original.
     if (capture.imported) {
       return _PendingImage(image: capture.file, original: capture.file);
     }
     final original = await _copyAsideOriginal(capture.file);
-    if (capture.canAutoCrop) {
-      final result = await _cropToLiveQuad(capture.file, capture.quad!);
-      return _PendingImage(
-        // A failed warp leaves the capture untouched on disk, so the page
-        // falls back to the uncropped photo rather than being dropped.
-        image: capture.file,
-        original: result is CropSuccess ? original : capture.file,
-      );
+    final quad = capture.quad;
+    if (quad == null) {
+      return _PendingImage(image: capture.file, original: original);
     }
-    final cropped = await imageCropper(context, capture.file);
+    final result = await _cropToLiveQuad(capture.file, quad);
     return _PendingImage(
-      image: cropped ?? capture.file,
-      original: cropped == null ? capture.file : original,
+      // A failed warp leaves the capture untouched on disk, so the page
+      // falls back to the uncropped photo rather than being dropped.
+      image: capture.file,
+      original: result is CropSuccess ? original : capture.file,
     );
   }
 
@@ -311,7 +297,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     final captures = await captureWithLiveScan(context);
     if (captures == null || captures.isEmpty) return;
 
-    final replacement = await _prepareCapture(context, captures.first);
+    final replacement = await _prepareCapture(captures.first);
     if (replacement.image.existsSync()) {
       final String dir =
           imageOS.imgPath.substring(0, imageOS.imgPath.lastIndexOf("/"));
@@ -371,7 +357,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
 
     for (final capture in captures.skip(1)) {
-      await _storePending(await _prepareCapture(context, capture));
+      await _storePending(await _prepareCapture(capture));
     }
 
     await fileOperations.deleteTemporaryImages();

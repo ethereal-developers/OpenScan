@@ -3,14 +3,6 @@
     "@scan_options": {
         "description": "Εργαλείο κουμπιού σάρωσης" 
     },
-    "normal_scan": "Κανονική σάρωση",
-    "@normal_scan": {
-        "description": "Τύπος σάρωσης 1" 
-    },
-    "quick_scan": "Γρήγορη σάρωση",
-    "@quick_scan": {
-        "description": "Τύπος σάρωσης 2" 
-    },
     "import_from_gallery": "Εισαγωγή από έκθεση",
     "@import_from_gallery": {
         "description": "Τύπος σάρωσης 3"

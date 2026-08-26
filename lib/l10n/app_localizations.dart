@@ -108,18 +108,6 @@ abstract class AppLocalizations {
   /// **'Scan Options'**
   String get scan_options;
 
-  /// Scan-type 1
-  ///
-  /// In en, this message translates to:
-  /// **'Normal Scan'**
-  String get normal_scan;
-
-  /// Scan-type 2
-  ///
-  /// In en, this message translates to:
-  /// **'Quick Scan'**
-  String get quick_scan;
-
   /// Scan-type 3
   ///
   /// In en, this message translates to:

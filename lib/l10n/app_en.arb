@@ -3,14 +3,6 @@
     "@scan_options": {
         "description": "Scan button tool tip" 
     },
-    "normal_scan": "Normal Scan",
-    "@normal_scan": {
-        "description": "Scan-type 1" 
-    },
-    "quick_scan": "Quick Scan",
-    "@quick_scan": {
-        "description": "Scan-type 2" 
-    },
     "import_from_gallery": "Import from Gallery",
     "@import_from_gallery": {
         "description": "Scan-type 3"

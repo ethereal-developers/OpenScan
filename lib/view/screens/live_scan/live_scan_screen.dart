@@ -30,11 +30,11 @@ const double _kSideControlSize = 60;
 /// (fractional [0,1] portrait-overlay coordinates — see
 /// `rotateQuadForPortrait`), or null if nothing was detected then.
 ///
-/// [autoMode] records whether auto-capture was on for this shot. Auto-mode
-/// pages are cropped to [quad] without ever showing the crop screen: the
-/// user already agreed to those edges by letting the auto-capture fire on
-/// them. Manual shots still go through the crop screen, which reruns
-/// detection fresh at full resolution.
+/// A page is cropped to [quad] on the way into the document — those are
+/// the edges the user was looking at when the shutter fired, by hand or by
+/// auto-capture — and stored whole when there is no [quad]. Nothing here
+/// opens the crop screen; cropping by hand is a deliberate act afterwards,
+/// from the page's own Crop button.
 ///
 /// [imported] marks a page picked from the gallery rather than shot here.
 /// An imported picture is already whatever the user wants it to be — it
@@ -43,19 +43,13 @@ const double _kSideControlSize = 60;
 class LiveCapture {
   final File file;
   final Quad? quad;
-  final bool autoMode;
   final bool imported;
 
   const LiveCapture({
     required this.file,
     this.quad,
-    required this.autoMode,
     this.imported = false,
   });
-
-  /// True when this page can be cropped straight to [quad] with no crop
-  /// screen in between.
-  bool get canAutoCrop => autoMode && quad != null;
 }
 
 /// Pushes the live-scan route and resolves with the captured pages (one
@@ -382,7 +376,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     final quadAtCapture = _lensDirection == CameraLensDirection.back
         ? _quadSmoother.smoothedQuad.value
         : null;
-    final autoMode = _autoCaptureEnabled;
     setState(() {
       _capturing = true;
       // With a page on screen the capture is acknowledged inside that
@@ -411,7 +404,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       _capturedFiles.add(LiveCapture(
         file: File(shot.path),
         quad: quadAtCapture,
-        autoMode: autoMode,
       ));
       _autoCaptureDetector.notifyCaptured();
       // A new document after this one shouldn't inherit the outgoing
@@ -450,8 +442,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       if (picked.isEmpty || !mounted) return;
       setState(() {
         for (final file in picked) {
-          _capturedFiles.add(
-              LiveCapture(file: file, autoMode: false, imported: true));
+          _capturedFiles.add(LiveCapture(file: file, imported: true));
         }
       });
     } catch (e) {

@@ -12,12 +12,6 @@ class AppLocalizationsEl extends AppLocalizations {
   String get scan_options => 'Επιλογές σάρωσης';
 
   @override
-  String get normal_scan => 'Κανονική σάρωση';
-
-  @override
-  String get quick_scan => 'Γρήγορη σάρωση';
-
-  @override
   String get import_from_gallery => 'Εισαγωγή από έκθεση';
 
   @override

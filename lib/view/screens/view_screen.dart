@@ -44,7 +44,6 @@ class _ViewScreenState extends State<ViewScreen> {
       // route cannot be pushed from inside another route's build.
       WidgetsBinding.instance.addPostFrameCallback((_) => _startSession(
             fromGallery: scanType == 'Import from Gallery',
-            quickScan: scanType == 'Quick Scan',
             liveScan: scanType == 'Live Scan',
           ));
     }
@@ -56,7 +55,6 @@ class _ViewScreenState extends State<ViewScreen> {
   /// scan was started from.
   Future<void> _startSession({
     bool fromGallery = false,
-    bool quickScan = false,
     bool liveScan = false,
   }) async {
     final cubit = BlocProvider.of<DirectoryCubit>(context);
@@ -64,7 +62,6 @@ class _ViewScreenState extends State<ViewScreen> {
     await cubit.createImage(
       context,
       fromGallery: fromGallery,
-      quickScan: quickScan,
       liveScan: liveScan,
     );
     if (!mounted) return;

@@ -12,12 +12,6 @@ class AppLocalizationsPl extends AppLocalizations {
   String get scan_options => 'Opcje skanowania';
 
   @override
-  String get normal_scan => 'Normalny Skan';
-
-  @override
-  String get quick_scan => 'Szybki Skan';
-
-  @override
   String get import_from_gallery => 'Import z Galerii';
 
   @override
