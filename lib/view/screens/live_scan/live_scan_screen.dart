@@ -744,21 +744,14 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                         ),
                       ValueListenableBuilder(
                         valueListenable: _quadSmoother.smoothedQuad,
-                        builder: (context, quad, _) {
-                          if (quad == null) {
-                            return const SizedBox.shrink();
-                          }
-                          return CustomPaint(
-                            painter: LiveQuadPainter(
-                              accent: accent,
-                              points: quad.points
-                                  .map((p) => Offset(
-                                      p.x * size.width, p.y * size.height))
-                                  .toList(),
-                              isImminent: _autoCaptureImminent,
-                            ),
-                          );
-                        },
+                        builder: (context, quad, _) => quad == null
+                            ? const SizedBox.shrink()
+                            : LiveQuadOverlay(
+                                quad: quad,
+                                size: size,
+                                accent: accent,
+                                isImminent: _autoCaptureImminent,
+                              ),
                       ),
                       if (_captureFillQuad != null)
                         IgnorePointer(

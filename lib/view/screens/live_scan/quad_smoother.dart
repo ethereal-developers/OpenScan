@@ -70,7 +70,13 @@ class QuadSmoother {
   /// continued tracking of the same one. Deliberately compared raw-to-raw,
   /// not raw-to-displayed-output, so filter lag during a genuinely fast
   /// move can never itself be mistaken for a jump.
-  static const double kJumpDistanceFraction = 0.12;
+  ///
+  /// Tight on purpose: anything looser lets a detection of a visibly
+  /// different shape through as "continued tracking", where the position
+  /// filters then drag the whole overlay toward it — which is what a jump
+  /// looks like on screen. A real document being moved by hand crosses far
+  /// less than this between two consecutive samples.
+  static const double kJumpDistanceFraction = 0.06;
 
   /// How many consecutive raw samples landing within
   /// [kJumpDistanceFraction] of *each other* (not of the previously
@@ -169,13 +175,17 @@ class QuadSmoother {
     }
 
     if (_pendingStreak >= kJumpConfirmFrameCount) {
-      // Confirmed: this is a genuinely different document, not noise —
-      // switch the track to it fresh (no easing from the old position).
+      // Confirmed: a genuinely different shape, not noise. The track
+      // moves to it, but it is *eased* there through the existing
+      // filters rather than snapped — a corner teleporting across the
+      // frame is the single most jarring thing this overlay can do, and
+      // by this point three consecutive frames have agreed on where it
+      // is going, so there is no hurry.
       final confirmed = _pendingQuad!;
       _pendingQuad = null;
       _pendingStreak = 0;
       _lastRawQuad = confirmed;
-      _seedTrack(confirmed, now);
+      _retargetTrack(confirmed, now);
     }
     // Otherwise: leave the currently-displayed smoothedQuad untouched
     // while this candidate is still unconfirmed.
@@ -205,6 +215,21 @@ class QuadSmoother {
     _filters = filters;
     _lastSampleAt = now;
     _smoothedQuad.value = raw;
+  }
+
+  /// Moves an existing track onto a confirmed new shape without resetting
+  /// the filters, so the corners travel to their new positions over the
+  /// next few frames instead of jumping there in one.
+  void _retargetTrack(Quad confirmed, DateTime now) {
+    final displayed = _smoothedQuad.value;
+    if (displayed == null || _filters == null) {
+      _seedTrack(confirmed, now);
+      return;
+    }
+    // Against the displayed quad, not the abandoned track: the corners
+    // have to travel from where they are actually drawn.
+    final aligned = bestCornerAssignment(confirmed.points, displayed).quad;
+    _trackContinued(aligned, now);
   }
 
   void _trackContinued(Quad corresponded, DateTime now) {

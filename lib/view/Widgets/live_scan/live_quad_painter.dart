@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:openscan/core/cv/models/point.dart';
+import 'package:openscan/core/cv/models/quad.dart';
 
 /// Read-only guidance overlay for the live-scan preview: paints a stroked
 /// quad wherever the detector currently thinks the document edges are, or
@@ -133,4 +135,77 @@ class CaptureFillPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CaptureFillPainter oldDelegate) =>
       oldDelegate.progress != progress || oldDelegate.points != points;
+}
+
+
+/// Corner-wise interpolation between two quads, so the overlay can be
+/// animated from wherever it is drawn to wherever detection just put it.
+class QuadTween extends Tween<Quad?> {
+  QuadTween({super.begin, super.end});
+
+  @override
+  Quad? lerp(double t) {
+    final from = begin, to = end;
+    if (from == null || to == null) return to ?? from;
+    Pt at(Pt a, Pt b) => Pt(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+    return Quad(
+      topLeft: at(from.topLeft, to.topLeft),
+      topRight: at(from.topRight, to.topRight),
+      bottomRight: at(from.bottomRight, to.bottomRight),
+      bottomLeft: at(from.bottomLeft, to.bottomLeft),
+    );
+  }
+}
+
+/// The detection overlay, drawn continuously rather than in steps.
+///
+/// Detection produces a result perhaps ten times a second; a display
+/// updated only when a result arrives moves in visible increments no
+/// matter how well filtered those results are. Each new [quad] instead
+/// becomes the target of a short corner-wise tween from wherever the
+/// overlay currently sits, so the corners slide at screen refresh rate
+/// and land right about when the next detection replaces them.
+///
+/// The tween is linear on purpose: detection results are already smoothed
+/// (`QuadSmoother`) and arrive at irregular intervals, and easing each
+/// short hop on top of that reads as the overlay hesitating.
+class LiveQuadOverlay extends StatelessWidget {
+  const LiveQuadOverlay({
+    super.key,
+    required this.quad,
+    required this.size,
+    required this.accent,
+    this.isImminent = false,
+    this.duration = const Duration(milliseconds: 120),
+  });
+
+  /// The latest detection, in fractional [0,1] overlay coordinates.
+  final Quad quad;
+
+  /// Rendered size of the preview the overlay is painted over.
+  final Size size;
+
+  final Color accent;
+  final bool isImminent;
+  final Duration duration;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<Quad?>(
+      tween: QuadTween(end: quad),
+      duration: duration,
+      curve: Curves.linear,
+      builder: (context, value, _) => CustomPaint(
+        size: size,
+        painter: LiveQuadPainter(
+          accent: accent,
+          isImminent: isImminent,
+          points: (value ?? quad)
+              .points
+              .map((p) => Offset(p.x * size.width, p.y * size.height))
+              .toList(),
+        ),
+      ),
+    );
+  }
 }

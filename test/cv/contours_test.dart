@@ -183,4 +183,103 @@ void main() {
       expect(quad.topLeft.y, greaterThan(100));
     });
   });
+
+  group('sortCorners', () {
+    /// Every labelling this function produces has to be geometrically
+    /// honest — the right-hand corners actually right of the left-hand
+    /// ones, the bottom ones actually below the top ones — and has to use
+    /// each input point exactly once.
+    void expectWellFormed(Quad q) {
+      final xs = q.points.map((p) => '${p.x},${p.y}').toSet();
+      expect(xs.length, 4, reason: 'each corner used exactly once');
+      expect(q.topRight.x, greaterThan(q.topLeft.x));
+      expect(q.bottomRight.x, greaterThan(q.bottomLeft.x));
+      expect(q.bottomLeft.y, greaterThan(q.topLeft.y));
+      expect(q.bottomRight.y, greaterThan(q.topRight.y));
+    }
+
+    test('labels an axis-aligned square whatever order it arrives in', () {
+      const tl = Pt(0, 0), tr = Pt(10, 0), br = Pt(10, 10), bl = Pt(0, 10);
+      for (final input in [
+        [tl, tr, br, bl],
+        [br, bl, tl, tr],
+        [bl, br, tr, tl],
+        [tr, bl, br, tl],
+      ]) {
+        final q = sortCorners(input);
+        expect(q.topLeft.x, tl.x);
+        expect(q.topLeft.y, tl.y);
+        expect(q.topRight.x, tr.x);
+        expect(q.bottomRight.y, br.y);
+        expect(q.bottomLeft.x, bl.x);
+        expectWellFormed(q);
+      }
+    });
+
+    test('keeps corners distinct and sensibly labelled when the document '
+        'is rotated toward 45 degrees', () {
+      // A square turned ~40 degrees: the classic sum/difference sort hands
+      // the same physical point to two slots here.
+      final rotated = [Pt(30, 0), Pt(100, 40), Pt(70, 110), Pt(0, 70)];
+      for (final input in [
+        rotated,
+        rotated.reversed.toList(),
+        [rotated[2], rotated[0], rotated[3], rotated[1]],
+      ]) {
+        expectWellFormed(sortCorners(input));
+      }
+    });
+
+    test('keeps a perspective trapezoid in clockwise order', () {
+      final q = sortCorners([Pt(95, 90), Pt(20, 10), Pt(5, 85), Pt(80, 15)]);
+      expect(q.topLeft.x, 20);
+      expect(q.topRight.x, 80);
+      expect(q.bottomRight.x, 95);
+      expect(q.bottomLeft.x, 5);
+      expectWellFormed(q);
+    });
+  });
+
+  group('pickBestQuad clustering', () {
+    const width = 400, height = 400;
+
+    Quad shifted(double dx, double dy) => Quad(
+          topLeft: Pt(50 + dx, 50 + dy),
+          topRight: Pt(350 + dx, 50 + dy),
+          bottomRight: Pt(350 + dx, 350 + dy),
+          bottomLeft: Pt(50 + dx, 350 + dy),
+        );
+
+    test('averages near-identical candidates instead of picking one', () {
+      // The same shape found three times with slightly different corners,
+      // as the threshold/epsilon sweep does every frame.
+      final best = pickBestQuad(
+        [shifted(-2, 0), shifted(0, 0), shifted(2, 0)],
+        width,
+        height,
+      );
+
+      expect(best, isNotNull);
+      expect(best!.topLeft.x, closeTo(50, 0.001));
+    });
+
+    test('a shape several candidates agree on beats a marginally larger '
+        'one-off', () {
+      const oneOff = Quad(
+        topLeft: Pt(45, 45),
+        topRight: Pt(355, 45),
+        bottomRight: Pt(355, 355),
+        bottomLeft: Pt(45, 355),
+      );
+
+      final best = pickBestQuad(
+        [oneOff, shifted(0, 0), shifted(1, 0), shifted(-1, 0), shifted(0, 1)],
+        width,
+        height,
+      );
+
+      expect(best, isNotNull);
+      expect(best!.topLeft.x, closeTo(50, 1.0));
+    });
+  });
 }

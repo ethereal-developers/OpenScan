@@ -39,11 +39,24 @@ void _liveDetectionIsolateEntry(SendPort mainSendPort) {
   final workerReceivePort = ReceivePort();
   mainSendPort.send(workerReceivePort.sendPort);
   Quad? previousQuad;
+  // Frames in a row with nothing detected. The previous quad is only a
+  // useful hint while it is still recent: once the document has been gone
+  // for a moment (put down, moved out of frame, the camera turned to
+  // something else), keeping it around biases every later frame toward a
+  // position nothing is at any more — which shows up as the overlay
+  // flicking back and forth between the old spot and the real one.
+  int missStreak = 0;
+  const int forgetPreviousAfterMisses = 5;
   workerReceivePort.listen((message) {
     final req = message as _FrameRequest;
     final quad = detectQuadFromGrayscale(req.gray, req.width, req.height,
         previousQuad: previousQuad);
-    if (quad != null) previousQuad = quad;
+    if (quad != null) {
+      previousQuad = quad;
+      missStreak = 0;
+    } else if (++missStreak >= forgetPreviousAfterMisses) {
+      previousQuad = null;
+    }
     mainSendPort.send(_FrameResult(req.requestId, quad));
   });
 }
@@ -164,8 +177,8 @@ Quad rotateQuadForPortrait(Quad quad, int frameWidth, int frameHeight) {
   Pt rotate(Pt p) => Pt(frameHeight - p.y, p.x);
   // Rotating the sensor-space corners doesn't preserve which corner is
   // visually top-left in portrait space, so re-derive the canonical
-  // corner order from the rotated points via the same sum/diff sort used
-  // everywhere else in the app, instead of assuming positional
+  // corner order from the rotated points with the same labelling rule
+  // used everywhere else in the app, instead of assuming positional
   // correspondence with the pre-rotation quad.
   final rotated = sortCorners(quad.points.map(rotate).toList());
   return rotated.scaled(1 / frameHeight, 1 / frameWidth);

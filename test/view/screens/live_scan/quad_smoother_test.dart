@@ -243,11 +243,22 @@ void main() {
       }
 
       // The confirming sample: streak reaches kJumpConfirmFrameCount. The
-      // accepted quad may have been re-labeled via corner correspondence
-      // along the way, so compare geometry rather than object identity.
+      // output now heads for the new document, but eases there through the
+      // position filters rather than teleporting in one frame.
       smoother.onRawQuad(newDocument);
+      final afterConfirm = smoother.smoothedQuad.value!;
+      expect(_maxCornerDelta(afterConfirm, quad), greaterThan(0.0),
+          reason: 'the track started moving');
+      expect(_maxCornerDelta(afterConfirm, newDocument), greaterThan(0.001),
+          reason: 'but did not jump straight onto the new shape');
+
+      // Held there, it converges on the new document within a few frames.
+      for (int i = 0; i < 12; i++) {
+        clock.advance(step);
+        smoother.onRawQuad(newDocument);
+      }
       expect(_maxCornerDelta(smoother.smoothedQuad.value!, newDocument),
-          lessThan(0.001));
+          lessThan(0.01));
     });
 
     test('an unrelated stray candidate does not build toward confirming a '

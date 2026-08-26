@@ -64,19 +64,39 @@ List<Quad> findDocumentQuadCandidates(Uint8List mask, int width, int height) {
 /// between otherwise similarly-good candidates, not the primary signal.
 const double kPreviousQuadProximityWeight = 0.15;
 
-/// Picks the best candidate from [candidates] (as gathered by
-/// [findDocumentQuadCandidates], possibly pooled from multiple masks),
-/// mirroring the reference document-scanner app's native detector: score
-/// every valid candidate by area and how close its corners are to 90
-/// degrees (`getContourSortFactor` in its `DocumentDetector.cpp`) and take
-/// the highest-scoring one, rather than whichever a sweep happens to reach
-/// first. This is what makes detection consistent frame-to-frame for a
-/// document that hasn't actually moved — the same objectively-best
-/// contour keeps winning, instead of an arbitrary tie among several
-/// similarly-plausible ones. If [previousQuad] is supplied, a small
-/// proximity bonus ([kPreviousQuadProximityWeight]) nudges the choice
-/// toward whichever candidate best corresponds to it (via
-/// [bestCornerAssignment]) when candidates are otherwise close in quality.
+/// How far apart (average per-corner distance, as a fraction of the
+/// frame diagonal) two candidates may sit and still be treated as the
+/// same detection by [pickBestQuad]'s clustering.
+const double kCandidateClusterFraction = 0.03;
+
+/// Weight given to how many candidates back a cluster. A shape that
+/// several thresholds and several RDP epsilons all independently agree on
+/// is far more likely to be the real document edge than one that only a
+/// single parameter combination produced — and, crucially, it is the one
+/// that will still be there next frame.
+const double kCandidateSupportWeight = 0.12;
+
+/// Picks the best detection from [candidates] (as gathered by
+/// [findDocumentQuadCandidates], possibly pooled from multiple masks).
+///
+/// The pool is first *clustered*: candidates whose corners all sit within
+/// [kCandidateClusterFraction] of each other are the same shape found
+/// several times over — once per threshold multiplier, once per RDP
+/// epsilon — and are averaged into one consensus quad. This matters more
+/// than it sounds. Taking the single highest-scoring candidate meant that
+/// two near-identical shapes differing by a hair in score could trade
+/// places from frame to frame, and each swap moved the overlay by however
+/// far apart those two shapes happened to be; averaging the cluster
+/// removes that coin-flip entirely, and cancels most of the per-epsilon
+/// corner jitter along with it.
+///
+/// Clusters are then scored the way the reference document-scanner app's
+/// native detector scores contours — area weighted by how close the
+/// corners are to 90 degrees (`getContourSortFactor` in its
+/// `DocumentDetector.cpp`) — plus a bonus for how many candidates back the
+/// cluster ([kCandidateSupportWeight]), plus, if [previousQuad] is
+/// supplied, a small proximity bonus ([kPreviousQuadProximityWeight])
+/// toward whatever was detected last frame.
 Quad? pickBestQuad(
   List<Quad> candidates,
   int width,
@@ -86,15 +106,17 @@ Quad? pickBestQuad(
   if (candidates.isEmpty) return null;
 
   final diagonal = sqrt(width * width + height * height).toDouble();
+  final clusters = _clusterCandidates(candidates, diagonal);
 
   Quad? best;
   double bestScore = double.negativeInfinity;
-  for (final candidate in candidates) {
-    var score = _qualityScore(candidate, width, height);
-    var result = candidate;
+  for (final cluster in clusters) {
+    var score = _qualityScore(cluster.quad, width, height) +
+        kCandidateSupportWeight * (cluster.support / candidates.length);
+    var result = cluster.quad;
 
     if (previousQuad != null) {
-      final match = bestCornerAssignment(candidate.points, previousQuad);
+      final match = bestCornerAssignment(result.points, previousQuad);
       result = match.quad;
       final proximity = diagonal == 0
           ? 0.0
@@ -109,6 +131,75 @@ Quad? pickBestQuad(
   }
   return best;
 }
+
+/// Groups candidates that describe the same shape and averages each group
+/// corner-wise, returning one quad per group along with how many
+/// candidates it was built from.
+///
+/// Greedy single-pass clustering against each group's running mean: the
+/// pool is a handful of quads at most (5 components x 5 epsilons x 3
+/// thresholds, before plausibility filtering), so this stays trivial
+/// per frame.
+List<({Quad quad, int support})> _clusterCandidates(
+  List<Quad> candidates,
+  double diagonal,
+) {
+  final tolerance = diagonal * kCandidateClusterFraction;
+  final means = <Quad>[];
+  final sums = <List<double>>[];
+  final counts = <int>[];
+
+  for (final candidate in candidates) {
+    int? matched;
+    Quad aligned = candidate;
+    for (int i = 0; i < means.length; i++) {
+      // Align corner labels to the cluster before averaging: two
+      // detections of the same physical shape can carry different labels
+      // (a near-45-degree document), and averaging those slot-wise would
+      // produce a quad that is in neither of them.
+      final match = bestCornerAssignment(candidate.points, means[i]);
+      if (match.totalDistance / 4 <= tolerance) {
+        matched = i;
+        aligned = match.quad;
+        break;
+      }
+    }
+
+    if (matched == null) {
+      means.add(candidate);
+      sums.add(_scalars(candidate));
+      counts.add(1);
+      continue;
+    }
+
+    final sum = sums[matched];
+    final scalars = _scalars(aligned);
+    for (int i = 0; i < 8; i++) {
+      sum[i] += scalars[i];
+    }
+    counts[matched]++;
+    means[matched] = _quadOfScalars(sum, counts[matched]);
+  }
+
+  return [
+    for (int i = 0; i < means.length; i++)
+      (quad: means[i], support: counts[i]),
+  ];
+}
+
+List<double> _scalars(Quad q) => [
+      q.topLeft.x, q.topLeft.y,
+      q.topRight.x, q.topRight.y,
+      q.bottomRight.x, q.bottomRight.y,
+      q.bottomLeft.x, q.bottomLeft.y,
+    ];
+
+Quad _quadOfScalars(List<double> sums, int count) => Quad(
+      topLeft: Pt(sums[0] / count, sums[1] / count),
+      topRight: Pt(sums[2] / count, sums[3] / count),
+      bottomRight: Pt(sums[4] / count, sums[5] / count),
+      bottomLeft: Pt(sums[6] / count, sums[7] / count),
+    );
 
 /// Area (as a fraction of the frame) weighted by squareness — mirrors the
 /// reference app's `getContourSortFactor`: `area + weight * (1 - maxCos)`,
@@ -414,19 +505,60 @@ double _angleAtVertexDegrees(Pt a, Pt b, Pt c) {
 }
 
 /// Canonical corner order: top-left / top-right / bottom-right /
-/// bottom-left, via the classic sum/difference sort (same math OpenCV's
-/// `Imgproc`-based `sortPoints` used, but defined exactly once and shared
-/// by every consumer instead of being re-implemented per platform).
+/// bottom-left, clockwise as seen on screen (y grows downward).
+///
+/// Works in two steps, rather than by the classic sum/difference sort this
+/// replaces. That sort picked each slot independently — `min(x+y)` for
+/// top-left, `min(y-x)` for top-right and so on — which for a tilted or
+/// slightly irregular quad can hand the *same* physical point to two
+/// slots, leaving one corner duplicated and one dropped: a bow-tie shape
+/// that flips as the document rotates, which is exactly the kind of
+/// frame-to-frame corner swap that makes an overlay jump around.
+///
+/// Instead:
+///
+/// 1. The four points are put in convex cyclic order by angle around
+///    their centroid, so whatever labels are applied, the polygon is a
+///    simple (non-self-intersecting) quadrilateral wound clockwise.
+/// 2. Of the four rotations of that cycle, the one whose labels best fit
+///    their names wins — top corners above bottom ones, right corners to
+///    the right of left ones. Rotating a cycle can never duplicate or drop
+///    a point, so the result is always a permutation of the input.
 Quad sortCorners(List<Pt> pts) {
-  final bySum = List<Pt>.from(pts)
-    ..sort((a, b) => (a.x + a.y).compareTo(b.x + b.y));
-  final byDiff = List<Pt>.from(pts)
-    ..sort((a, b) => (a.y - a.x).compareTo(b.y - b.x));
+  assert(pts.length == 4);
+  final cx = (pts[0].x + pts[1].x + pts[2].x + pts[3].x) / 4;
+  final cy = (pts[0].y + pts[1].y + pts[2].y + pts[3].y) / 4;
+
+  // Ascending angle around the centroid is clockwise on screen, since y
+  // grows downward: a point above the centre has a negative dy and so
+  // comes before one to its right.
+  final ordered = List<Pt>.from(pts)
+    ..sort((a, b) =>
+        atan2(a.y - cy, a.x - cx).compareTo(atan2(b.y - cy, b.x - cx)));
+
+  int bestStart = 0;
+  double bestScore = double.negativeInfinity;
+  for (int start = 0; start < 4; start++) {
+    final tl = ordered[start];
+    final tr = ordered[(start + 1) % 4];
+    final br = ordered[(start + 2) % 4];
+    final bl = ordered[(start + 3) % 4];
+    // How well this labelling agrees with what the names claim: the two
+    // "right" corners right of their "left" counterparts, the two
+    // "bottom" corners below their "top" ones. The rotation that agrees
+    // most is the one a person would have drawn.
+    final score =
+        (tr.x - tl.x) + (br.x - bl.x) + (bl.y - tl.y) + (br.y - tr.y);
+    if (score > bestScore) {
+      bestScore = score;
+      bestStart = start;
+    }
+  }
 
   return Quad(
-    topLeft: bySum.first,
-    bottomRight: bySum.last,
-    topRight: byDiff.first,
-    bottomLeft: byDiff.last,
+    topLeft: ordered[bestStart],
+    topRight: ordered[(bestStart + 1) % 4],
+    bottomRight: ordered[(bestStart + 2) % 4],
+    bottomLeft: ordered[(bestStart + 3) % 4],
   );
 }
