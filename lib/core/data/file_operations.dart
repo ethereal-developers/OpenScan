@@ -364,6 +364,17 @@ class FileOperations {
     });
   }
 
+  /// The directory a file being shared is staged in.
+  ///
+  /// App storage rather than the visible export folder: a share is a
+  /// handoff, not a save, and the copy only has to live long enough for
+  /// the receiving app to read it. Writing those into Downloads left a
+  /// file behind on the user's phone for every share they ever made.
+  /// This is the same place [saveToAppDirectory] already staged shared
+  /// PDFs, so both formats now go out the same way.
+  Future<Directory> shareDirectory() async =>
+      await getApplicationDocumentsDirectory();
+
   /// The directory exports land in — PDFs and images alike: a visible
   /// OpenScan folder under Downloads, falling back to app storage where
   /// that is not writable. There is no way to choose another one; a

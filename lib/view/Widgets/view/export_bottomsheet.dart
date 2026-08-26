@@ -211,7 +211,9 @@ class _ExportSheetState extends State<ExportSheet> {
         if (path == null) throw StateError('PDF could not be written');
         written = [path];
       } else {
-        final directory = await fileOperations.exportDirectory();
+        final directory = share
+            ? await fileOperations.shareDirectory()
+            : await fileOperations.exportDirectory();
         written = await fileOperations.exportImages(
           images: pages,
           directory: directory,
@@ -222,17 +224,12 @@ class _ExportSheetState extends State<ExportSheet> {
         );
       }
 
-      final bytes = written.fold<int>(
-          0, (sum, path) => sum + (File(path).existsSync() ? File(path).lengthSync() : 0));
-
       if (!mounted) return;
-      setState(() {
-        _stage = _Stage.success;
-        _resultPath = written.first;
-        _resultCount = written.length;
-        _resultSize = _formatBytes(bytes);
-      });
 
+      // A share ends at the share sheet. The success panel behind it is
+      // about a file the user keeps — where it landed, how big it is, a
+      // button to open it — and none of that describes a copy staged for
+      // another app, so the sheet closes instead of reporting on it.
       if (share) {
         await SharePlus.instance.share(
           ShareParams(
@@ -240,7 +237,18 @@ class _ExportSheetState extends State<ExportSheet> {
             subject: _documentName(state),
           ),
         );
+        if (mounted) Navigator.pop(context);
+        return;
       }
+
+      final bytes = written.fold<int>(
+          0, (sum, path) => sum + (File(path).existsSync() ? File(path).lengthSync() : 0));
+      setState(() {
+        _stage = _Stage.success;
+        _resultPath = written.first;
+        _resultCount = written.length;
+        _resultSize = _formatBytes(bytes);
+      });
     } catch (e) {
       debugPrint('Export failed: $e');
       if (!mounted) return;
