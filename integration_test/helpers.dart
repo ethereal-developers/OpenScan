@@ -67,6 +67,12 @@ Future<SeededDocument> seedDocument({
       dirPath: dirPath,
       index: i + 1,
     );
+    // The seed images are freshly encoded JPEGs, so a null here means the
+    // storage path itself broke — fail the test loudly rather than seeding
+    // a document with holes in it.
+    if (saved == null) {
+      throw StateError('Could not store seed page ${i + 1} in $dirPath');
+    }
     paths.add(saved.imgPath);
     if (source.existsSync()) source.deleteSync();
   }

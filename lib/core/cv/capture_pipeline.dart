@@ -24,9 +24,12 @@ import 'perspective_crop.dart';
 /// `originalDest` with `originalMaxEdge` and `originalQuality`.
 ///
 /// Never throws: a capture that cannot be decoded or re-encoded is copied
-/// through as-is instead, since an oversized page is worth far more than
-/// no page at all. Returns which of the two files were written, and
-/// whether the page was actually cropped.
+/// through as-is instead, since an oversized page — or one in a format
+/// only the platform's own decoder knows, like HEIC — is worth far more
+/// than no page at all. Returns which of the two files were written,
+/// whether the page was actually cropped, and `decoded`: false means the
+/// bytes went through untouched and nothing here has confirmed they are a
+/// readable image, so the caller has to check before keeping the page.
 Future<Map<String, bool>> storeCaptureIsolateEntry(
     Map<String, dynamic> params) async {
   final src = params['src'] as String;
@@ -65,12 +68,22 @@ Future<Map<String, bool>> storeCaptureIsolateEntry(
     await File(pageDest)
         .writeAsBytes(img.encodeJpg(page, quality: pageQuality), flush: true);
 
-    return {'page': true, 'original': wroteOriginal, 'cropped': cropped};
+    return {
+      'page': true,
+      'original': wroteOriginal,
+      'cropped': cropped,
+      'decoded': true,
+    };
   } catch (_) {
     final page = await _copyThrough(src, pageDest);
     final original =
         originalDest == null ? false : await _copyThrough(src, originalDest);
-    return {'page': page, 'original': original, 'cropped': false};
+    return {
+      'page': page,
+      'original': original,
+      'cropped': false,
+      'decoded': false,
+    };
   }
 }
 

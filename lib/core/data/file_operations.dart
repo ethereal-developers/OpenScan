@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -41,22 +42,12 @@ class FileOperations {
   /// Image picker opens gallery
   ///
   /// Returns: Picked images [List]
+  /// Throws whatever the picker throws — a gallery that refused to open is
+  /// something the caller has to tell the user about, and an empty list
+  /// looks exactly like a picker the user backed out of.
   Future<List<File>> openGallery() async {
-    List<XFile>? pic;
-    try {
-      pic = await ImagePicker().pickMultiImage();
-    } catch (e) {
-      print(e);
-    }
-
-    List<File> imageFiles = [];
-
-    if (pic != null) {
-      for (XFile image in pic) {
-        imageFiles.add(File(image.path));
-      }
-    }
-    return imageFiles;
+    final pic = await ImagePicker().pickMultiImage();
+    return [for (final image in pic) File(image.path)];
   }
 
   /// Writes one capture into [dirPath] as a page — cropped to [quad] if
@@ -69,8 +60,12 @@ class FileOperations {
   /// already-cropped page. It costs nothing extra to produce: page and
   /// original come out of the same decode, in the same isolate pass.
   ///
-  /// Returns: Saved image record [ImageOS], carrying both stored paths.
-  Future<ImageOS> saveCapture({
+  /// Returns: Saved image record [ImageOS], carrying both stored paths, or
+  /// null when [source] turned out not to be a readable image — see
+  /// [writeCapture]. Nothing is written to the database in that case: a
+  /// page the app cannot draw is worse than no page, because it fills a
+  /// slot in the document and exports as a hole in the PDF.
+  Future<ImageOS?> saveCapture({
     required File source,
     required String dirPath,
     Quad? quad,
@@ -87,6 +82,7 @@ class FileOperations {
       quad: quad,
       keepOriginal: keepOriginal,
     );
+    if (written == null) return null;
 
     ImageOS saved = ImageOS(
       imgPath: written.pagePath,
@@ -108,7 +104,17 @@ class FileOperations {
   /// `$dir/$stamp.jpg` (and `$dir/orig_$stamp.jpg` when [keepOriginal]) in
   /// one isolate pass. Used directly by the paths that own their own
   /// database bookkeeping, like replacing a page on re-scan.
-  Future<({String pagePath, String? originalPath})> writeCapture({
+  ///
+  /// A capture the pipeline could not decode is copied through untouched
+  /// rather than dropped — a format only the platform decoder knows, like
+  /// HEIC, still makes a perfectly good page — but those bytes have to
+  /// clear the platform decoder before they count as one. A gallery pick
+  /// that is truncated or corrupt would otherwise sail through as a page
+  /// that nothing can draw: it lands in the grid as an empty placeholder,
+  /// which reads as an import that silently did nothing.
+  ///
+  /// Returns null when that check fails, leaving no files behind.
+  Future<({String pagePath, String? originalPath})?> writeCapture({
     required File source,
     required String dir,
     required String stamp,
@@ -129,12 +135,42 @@ class FileOperations {
       'originalQuality': kStoredOriginalQuality,
     });
 
+    final wrotePage = result['page'] ?? false;
+    final decoded = result['decoded'] ?? false;
+    if (!wrotePage || (!decoded && !await _isDisplayable(pagePath))) {
+      _deleteIfPresent(pagePath);
+      if (originalPath != null) _deleteIfPresent(originalPath);
+      return null;
+    }
+
     return (
       pagePath: pagePath,
       // An original that failed to write is simply not recorded, rather
       // than leaving the page pointing at a file that isn't there.
       originalPath: (result['original'] ?? false) ? originalPath : null,
     );
+  }
+
+  /// True when the platform's own image decoder can read the file at
+  /// [path] — the same decoder behind every `Image.file` in the grid, the
+  /// preview and the PDF, so what it refuses is exactly what the user
+  /// would never see.
+  Future<bool> _isDisplayable(String path) async {
+    try {
+      final codec = await ui.instantiateImageCodec(await File(path).readAsBytes());
+      final frame = await codec.getNextFrame();
+      frame.image.dispose();
+      codec.dispose();
+      return true;
+    } catch (e) {
+      debugPrint('Not a readable image: $path ($e)');
+      return false;
+    }
+  }
+
+  void _deleteIfPresent(String path) {
+    final file = File(path);
+    if (file.existsSync()) file.deleteSync();
   }
 
   /// Creates the document's folder and its database row if this is the

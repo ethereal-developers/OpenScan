@@ -53,18 +53,42 @@ class _ViewScreenState extends State<ViewScreen> {
   /// closes this screen: a document nobody put a page in is not worth
   /// landing on — backing out of the camera should land back where the
   /// scan was started from.
+  ///
+  /// Captures the app could not read never become pages, so they are called
+  /// out here: silently landing on a document with fewer pages than the
+  /// user picked is the one outcome worse than saying so.
   Future<void> _startSession({
     bool fromGallery = false,
     bool liveScan = false,
   }) async {
     final cubit = BlocProvider.of<DirectoryCubit>(context);
     final navigator = Navigator.of(context);
-    await cubit.createImage(
-      context,
-      fromGallery: fromGallery,
-      liveScan: liveScan,
-    );
+    final messenger = ScaffoldMessenger.of(context);
+
+    int skipped = 0;
+    try {
+      final result = await cubit.createImage(
+        context,
+        fromGallery: fromGallery,
+        liveScan: liveScan,
+      );
+      skipped = result.skipped;
+    } catch (e) {
+      debugPrint('Capture session failed: $e');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Couldn't open the gallery.")),
+      );
+    }
+
     if (!mounted) return;
+    if (skipped > 0) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(skipped == 1
+            ? "Skipped 1 file this app can't read."
+            : "Skipped $skipped files this app can't read."),
+      ));
+    }
     if ((cubit.state.images ?? const []).isEmpty && navigator.canPop()) {
       navigator.pop();
     }

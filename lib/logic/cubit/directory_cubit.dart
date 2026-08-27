@@ -164,8 +164,11 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   ///
   /// Resolves with the number of pages this call actually added, so a
   /// caller can tell a cancelled session (0) from a real capture — an
-  /// empty new document has nothing worth showing.
-  Future<int> createImage(
+  /// empty new document has nothing worth showing — alongside the number
+  /// it had to skip, which is a gallery pick the app cannot read and has
+  /// to say so about rather than leave the user staring at a document
+  /// that didn't grow.
+  Future<({int stored, int skipped})> createImage(
     context, {
     bool fromGallery = false,
     bool liveScan = false,
@@ -210,23 +213,28 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     // multi-select gallery import) live until their turn in the loop —
     // deleting it mid-loop silently drops every image after the first.
     await fileOperations.deleteTemporaryImages();
-    return stored;
+    return (stored: stored, skipped: imageList.length - stored);
   }
 
   /// Writes one capture into the document as a new last page.
   ///
-  /// Returns false when there was nothing to store.
+  /// Returns false when there was nothing to store — the capture is gone
+  /// from disk, or it turned out not to be an image the app can draw.
   Future<bool> _storePending(_PendingCapture pending) async {
     File image = pending.file;
     if (!image.existsSync()) return false;
 
-    ImageOS savedImage = await fileOperations.saveCapture(
+    ImageOS? savedImage = await fileOperations.saveCapture(
       source: image,
       quad: pending.quad,
       keepOriginal: AppSettings.instance.keepOriginal,
       index: state.images!.length + 1,
       dirPath: state.dirPath!,
     );
+    if (savedImage == null) {
+      debugPrint("Skipped ${image.path}: not an image this app can read");
+      return false;
+    }
     debugPrint('Saved ${savedImage.imgPath}');
 
     ImageOS tempImage = ImageOS(
@@ -280,38 +288,44 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         keepOriginal: AppSettings.instance.keepOriginal,
       );
 
-      // Every file the old page owned describes an image that is no longer
-      // in the document: drop the page, its uncropped original and its
-      // unfiltered copy before pointing the record at the new capture.
-      _deleteImageFiles(imageOS);
+      // A replacement the app cannot draw is not a replacement: the page
+      // being re-scanned stays exactly as it was rather than being traded
+      // for a blank one. Checked before anything is deleted, since the
+      // old page is the only copy left once it goes.
+      if (written != null) {
+        // Every file the old page owned describes an image that is no longer
+        // in the document: drop the page, its uncropped original and its
+        // unfiltered copy before pointing the record at the new capture.
+        _deleteImageFiles(imageOS);
 
-      imageOS.imgPath = written.pagePath;
-      imageOS.origPath = written.originalPath;
+        imageOS.imgPath = written.pagePath;
+        imageOS.origPath = written.originalPath;
 
-      await database.updateImagePath(
-        tableName: state.dirName!,
-        imgPath: imageOS.imgPath,
-        origPath: imageOS.origPath,
-        clearFilter: true,
-        // The replaced page's original has just been deleted: if this
-        // capture kept none of its own, the column has to be emptied
-        // rather than left pointing at that dead file.
-        clearOriginal: true,
-        idx: imageOS.idx,
-      );
+        await database.updateImagePath(
+          tableName: state.dirName!,
+          imgPath: imageOS.imgPath,
+          origPath: imageOS.origPath,
+          clearFilter: true,
+          // The replaced page's original has just been deleted: if this
+          // capture kept none of its own, the column has to be emptied
+          // rather than left pointing at that dead file.
+          clearOriginal: true,
+          idx: imageOS.idx,
+        );
 
-      // A re-scan is a fresh page, so it picks up the default filter the
-      // same way a newly captured one does.
-      final defaultFilter = AppSettings.instance.defaultFilter;
-      if (defaultFilter != null) {
-        await _applyFilter(imageOS, documentFilterByName(defaultFilter));
+        // A re-scan is a fresh page, so it picks up the default filter the
+        // same way a newly captured one does.
+        final defaultFilter = AppSettings.instance.defaultFilter;
+        if (defaultFilter != null) {
+          await _applyFilter(imageOS, documentFilterByName(defaultFilter));
+        }
+
+        state.images![imageOS.idx! - 1] = imageOS;
+        if (imageOS.idx == 1) {
+          state.firstImgPath = imageOS.imgPath;
+        }
+        emitState(state);
       }
-
-      state.images![imageOS.idx! - 1] = imageOS;
-      if (imageOS.idx == 1) {
-        state.firstImgPath = imageOS.imgPath;
-      }
-      emitState(state);
     }
 
     for (final capture in captures.skip(1)) {
