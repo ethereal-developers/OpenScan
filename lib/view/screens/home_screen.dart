@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -76,18 +77,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<bool> _requestPermission() async {
+    // Camera only. Storage used to be requested alongside it, but the
+    // manifest caps READ/WRITE_EXTERNAL_STORAGE at API 32/28 and every
+    // path this app writes is either its own directory or handed over by
+    // the system picker, so on anything newer the request was answered
+    // "denied" without a dialog and the result was never read anyway.
+    //
     // A permission request can fail outright rather than be denied — the
     // platform side refuses a second request while one is still running,
     // for instance — and an unhandled failure here would take the library
     // down with it on launch. Asking is worth a try; not getting an answer
     // is not worth a crash.
     try {
-      if (await Permission.storage.request().isGranted &&
-          await Permission.camera.request().isGranted) {
-        return true;
-      }
-      await Permission.storage.request();
-      await Permission.camera.request();
+      return await Permission.camera.request().isGranted;
     } catch (e) {
       debugPrint('Could not request permissions: $e');
     }
@@ -253,11 +255,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final documents = _selectedDocuments;
     final messenger = ScaffoldMessenger.of(context);
 
-    showDialog(
+    unawaited(showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const _ExportingDialog(),
-    );
+    ));
 
     int exported = 0;
     for (final doc in documents) {
@@ -311,8 +313,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     : null,
                 onTap: () async {
                   await AppSettings.instance.setSort(sort);
-                  if (mounted) Navigator.pop(sheetContext);
-                  setState(() {});
+                  // Two different contexts, so two different checks: the
+                  // sheet can be dismissed during the await while this
+                  // screen is still very much alive, and an unguarded
+                  // setState after that pop would fire on a dead State.
+                  if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  if (mounted) setState(() {});
                 },
               ),
           ],

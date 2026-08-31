@@ -194,11 +194,11 @@ class _FilterScreenState extends State<FilterScreen> {
 
     final cubit = context.read<DirectoryCubit>();
     final navigator = Navigator.of(context);
-    showDialog(
+    unawaited(showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const LoadingWidget(),
-    );
+    ));
 
     if (allPages) {
       await cubit.applyFilterToAllImages(filter: _selected);

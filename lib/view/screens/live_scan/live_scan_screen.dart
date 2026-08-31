@@ -398,7 +398,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       if (AppSettings.instance.captureSound) {
         // The plugin has no shutter-sound hook, so this is the system's
         // own click — audible confirmation without bundling an asset.
-        SystemSound.play(SystemSoundType.click);
+        unawaited(SystemSound.play(SystemSoundType.click));
       }
       final shot = await controller.takePicture();
       _capturedFiles.add(LiveCapture(

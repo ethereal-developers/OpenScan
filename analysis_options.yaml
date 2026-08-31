@@ -1,0 +1,35 @@
+# Correctness-focused lints. Deliberately not `flutter_lints`: this is the
+# subset that catches bugs rather than style, so a clean `flutter analyze`
+# means something. Style rules that would flag existing, deliberate
+# choices — relative imports inside lib/core, async dart:io — are left out
+# on purpose rather than suppressed file by file.
+analyzer:
+  exclude:
+    - build/**
+    - lib/l10n/app_localizations*.dart
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+
+linter:
+  rules:
+    # A BuildContext used after an await may belong to a dead widget.
+    - use_build_context_synchronously
+    # A dropped Future swallows its errors; `unawaited(...)` says the drop
+    # was deliberate.
+    - unawaited_futures
+    - avoid_empty_else
+    - cancel_subscriptions
+    - close_sinks
+    - throw_in_finally
+    - unnecessary_statements
+    - no_adjacent_strings_in_list
+    - avoid_relative_lib_imports
+    - valid_regexps
+    - control_flow_in_finally
+    - empty_statements
+    - hash_and_equals
+    - unrelated_type_equality_checks

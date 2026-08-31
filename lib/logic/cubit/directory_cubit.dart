@@ -390,7 +390,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     // longer exists. Drop them and let the page start filter-free again.
     _deleteUnfilteredCopy(imageOS);
 
-    database.updateImagePath(
+    await database.updateImagePath(
       tableName: state.dirName!,
       imgPath: imageOS.imgPath,
       origPath: imageOS.origPath,
@@ -504,7 +504,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
   Future<bool> deleteImage(context, {required ImageOS imageToDelete}) async {
     // Deleting image from database
     _deleteImageFiles(imageToDelete);
-    database.deleteImage(
+    await database.deleteImage(
       imgPath: imageToDelete.imgPath,
       tableName: state.dirName!,
     );
@@ -514,7 +514,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     try {
       // Delete directory if only 1 image exists
       Directory(state.dirPath!).deleteSync(recursive: false);
-      database.deleteDirectory(dirPath: state.dirPath!);
+      await database.deleteDirectory(dirPath: state.dirPath!);
       Navigator.pop(context);
       directoryDeleted = true;
       debugPrint('Directory deleted');
@@ -525,7 +525,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       // Updating index of images
       for (int i = imageToDelete.idx! - 1; i < state.imageCount; i++) {
         state.images![i].idx = i + 1;
-        database.updateImageIndex(
+        await database.updateImageIndex(
           imgPath: state.images![i].imgPath,
           newIndex: state.images![i].idx,
           tableName: state.dirName!,
