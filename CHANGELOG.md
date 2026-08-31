@@ -12,6 +12,9 @@ A full rewrite of the scanning pipeline, the camera, and the UI.
   exposure, and a front/back switch.
 - On-device integration tests covering the capture, crop, library,
   settings and export flows, plus a database migration test.
+- Tamil and Hindi translations. The interface is now fully translated
+  in English, Greek, Hindi, Hungarian, Polish and Tamil, with plural
+  forms and dates that follow the locale.
 
 ### Changed
 
@@ -42,11 +45,6 @@ A full rewrite of the scanning pipeline, the camera, and the UI.
   `READ_MEDIA_IMAGES`, which dependencies declared but OpenScan never
   used.
 - The storage permission request, made redundant by scoped storage.
-
-### Known limitations
-
-- The Greek, Hungarian and Polish translations cover only part of the
-  interface; most strings are still English.
 
 # v2.2.0
 
