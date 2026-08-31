@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/core/theme/os_colors.dart';
 import 'package:openscan/core/theme/os_tokens.dart';
 import 'package:openscan/core/theme/os_typography.dart';
@@ -491,7 +492,7 @@ class OSSnack {
             style: OSTypography.body.copyWith(color: os.surface)),
         backgroundColor: os.onSurface,
         action: SnackBarAction(
-          label: 'UNDO',
+          label: AppLocalizations.of(context)!.undo,
           textColor: os.accent,
           onPressed: onUndo,
         ),
@@ -530,7 +531,7 @@ class OSDialog extends StatelessWidget {
     this.message,
     required this.confirmLabel,
     required this.onConfirm,
-    this.cancelLabel = 'Cancel',
+    this.cancelLabel,
     this.destructive = false,
     this.content,
   }) : super(key: key);
@@ -538,7 +539,9 @@ class OSDialog extends StatelessWidget {
   final String title;
   final String? message;
   final String confirmLabel;
-  final String cancelLabel;
+  /// Null means the standard "Cancel", which can only be resolved once
+  /// there is a [BuildContext] to read the locale from.
+  final String? cancelLabel;
   final VoidCallback onConfirm;
   final bool destructive;
   final Widget? content;
@@ -564,7 +567,7 @@ class OSDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(cancelLabel,
+          child: Text(cancelLabel ?? AppLocalizations.of(context)!.cancel,
               style: OSTypography.label.copyWith(
                   fontWeight: FontWeight.w700, color: os.onSurfaceVariant)),
         ),

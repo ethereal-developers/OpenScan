@@ -5,21 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// How the library grid is ordered.
 enum LibrarySort { lastModified, created, name, pageCount }
 
-extension LibrarySortLabel on LibrarySort {
-  String get label {
-    switch (this) {
-      case LibrarySort.lastModified:
-        return 'Last modified';
-      case LibrarySort.created:
-        return 'Date created';
-      case LibrarySort.name:
-        return 'Name (A–Z)';
-      case LibrarySort.pageCount:
-        return 'Page count';
-    }
-  }
-}
-
 /// App-wide preferences, persisted to [SharedPreferences].
 ///
 /// A plain [ChangeNotifier] rather than a Bloc: these are single values with

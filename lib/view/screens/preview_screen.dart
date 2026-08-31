@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/core/theme/os_colors.dart';
 import 'package:openscan/core/theme/os_tokens.dart';
@@ -139,12 +140,13 @@ class _PreviewScreenState extends State<PreviewScreen>
           : (widget.initialIndex ?? 0);
 
   void _confirmDelete(DirectoryState state) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (_) => OSDialog(
-        title: 'Delete page?',
-        message: "This can't be undone.",
-        confirmLabel: 'Delete',
+        title: l10n.delete_page_q,
+        message: l10n.cant_be_undone,
+        confirmLabel: l10n.delete,
         destructive: true,
         onConfirm: () async {
           final index = _currentIndex;

@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/appRouter.dart';
 import 'package:openscan/core/models.dart';
@@ -64,6 +66,7 @@ class _ViewScreenState extends State<ViewScreen> {
     final cubit = BlocProvider.of<DirectoryCubit>(context);
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     int skipped = 0;
     try {
@@ -77,27 +80,20 @@ class _ViewScreenState extends State<ViewScreen> {
       debugPrint('Capture session failed: $e');
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text("Couldn't open the gallery.")),
+        SnackBar(content: Text(l10n.couldnt_open_gallery)),
       );
     }
 
     if (!mounted) return;
     if (skipped > 0) {
-      messenger.showSnackBar(SnackBar(
-        content: Text(skipped == 1
-            ? "Skipped 1 file this app can't read."
-            : "Skipped $skipped files this app can't read."),
-      ));
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.skipped_files(skipped))),
+      );
     }
     if ((cubit.state.images ?? const []).isEmpty && navigator.canPop()) {
       navigator.pop();
     }
   }
-
-  static const List<String> _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
 
   int _selectedCount(DirectoryState state) =>
       state.images?.where((image) => image.selected).length ?? 0;
@@ -135,12 +131,14 @@ class _ViewScreenState extends State<ViewScreen> {
 
   void _confirmDeleteSelected(DirectoryState state) {
     final count = _selectedCount(state);
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (_) => OSDialog(
-        title: count == 1 ? 'Delete page?' : 'Delete $count pages?',
-        message: "This can't be undone.",
-        confirmLabel: 'Delete',
+        title:
+            count == 1 ? l10n.delete_page_q : l10n.delete_n_pages_q(count),
+        message: l10n.cant_be_undone,
+        confirmLabel: l10n.delete,
         destructive: true,
         onConfirm: () {
           final returnHome = BlocProvider.of<DirectoryCubit>(context)
@@ -158,6 +156,7 @@ class _ViewScreenState extends State<ViewScreen> {
   }
 
   void _openOverflow(DirectoryState state) {
+    final l10n = AppLocalizations.of(context)!;
     OSSheet.show(
       context: context,
       title: state.newName ?? state.dirName ?? '',
@@ -166,7 +165,7 @@ class _ViewScreenState extends State<ViewScreen> {
         children: [
           OSSheetAction(
             icon: Icons.edit_rounded,
-            label: 'Rename',
+            label: l10n.rename,
             onTap: () {
               Navigator.pop(sheetContext);
               _rename(state);
@@ -174,7 +173,7 @@ class _ViewScreenState extends State<ViewScreen> {
           ),
           OSSheetAction(
             icon: Icons.checklist_rounded,
-            label: 'Select pages',
+            label: l10n.select_pages,
             onTap: () {
               Navigator.pop(sheetContext);
               setState(() => _selectionMode = true);
@@ -182,7 +181,7 @@ class _ViewScreenState extends State<ViewScreen> {
           ),
           OSSheetAction(
             icon: Icons.add_photo_alternate_outlined,
-            label: 'Import from gallery',
+            label: l10n.import_from_gallery_short,
             onTap: () {
               Navigator.pop(sheetContext);
               _addPages(fromGallery: true);
@@ -190,7 +189,7 @@ class _ViewScreenState extends State<ViewScreen> {
           ),
           OSSheetAction(
             icon: Icons.ios_share_rounded,
-            label: 'Export',
+            label: l10n.export,
             onTap: () {
               Navigator.pop(sheetContext);
               _openExport(imagesSelected: false);
@@ -198,16 +197,16 @@ class _ViewScreenState extends State<ViewScreen> {
           ),
           OSSheetAction(
             icon: Icons.delete_rounded,
-            label: 'Delete document',
+            label: l10n.delete_document,
             destructive: true,
             onTap: () {
               Navigator.pop(sheetContext);
               showDialog(
                 context: context,
                 builder: (_) => OSDialog(
-                  title: 'Delete document?',
-                  message: "Every page goes with it. This can't be undone.",
-                  confirmLabel: 'Delete',
+                  title: l10n.delete_document_q,
+                  message: l10n.delete_document_body,
+                  confirmLabel: l10n.delete,
                   destructive: true,
                   onConfirm: () {
                     BlocProvider.of<DirectoryCubit>(context)
@@ -227,6 +226,7 @@ class _ViewScreenState extends State<ViewScreen> {
   @override
   Widget build(BuildContext context) {
     final os = context.os;
+    final l10n = AppLocalizations.of(context)!;
 
     return BlocBuilder<DirectoryCubit, DirectoryState>(
       builder: (context, state) {
@@ -248,9 +248,8 @@ class _ViewScreenState extends State<ViewScreen> {
               child: images.isEmpty && state.pendingPages.isEmpty
                   ? OSEmptyState(
                       icon: Icons.add_rounded,
-                      title: 'This document has no pages',
-                      message: 'Named after your first page — rename anytime '
-                          'by tapping the title.',
+                      title: l10n.no_pages_title,
+                      message: l10n.no_pages_body,
                     )
                   : _pageGrid(os, state, images),
             ),
@@ -262,14 +261,19 @@ class _ViewScreenState extends State<ViewScreen> {
   }
 
   PreferredSizeWidget _documentAppBar(OSColors os, DirectoryState state) {
+    final l10n = AppLocalizations.of(context)!;
     final title = state.newName ?? state.dirName ?? '';
     final date = state.lastModified ?? state.created;
-    final pages = state.imageCount == 1 ? '1 page' : '${state.imageCount} pages';
+    final pages = l10n.pages_count(state.imageCount);
     final subtitle = state.imageCount > 1
-        ? '$pages · hold a page to reorder'
+        ? l10n.hold_to_reorder(pages)
         : date == null
             ? pages
-            : '$pages · ${_months[date.month - 1]} ${date.day}';
+            : l10n.date_and_pages(
+                DateFormat.MMMd(Localizations.localeOf(context).toString())
+                    .format(date),
+                pages,
+              );
 
     return AppBar(
       backgroundColor: os.surface,
@@ -325,6 +329,7 @@ class _ViewScreenState extends State<ViewScreen> {
 
   PreferredSizeWidget _selectionAppBar(
       OSColors os, int count, DirectoryState state) {
+    final l10n = AppLocalizations.of(context)!;
     return AppBar(
       backgroundColor: os.onSurface,
       foregroundColor: os.surface,
@@ -334,17 +339,17 @@ class _ViewScreenState extends State<ViewScreen> {
         icon: Icon(Icons.close_rounded, color: os.surface),
         onPressed: _exitSelection,
       ),
-      title: Text('$count selected',
+      title: Text(l10n.n_selected(count),
           style: OSTypography.subtitle.copyWith(color: os.surface)),
       actions: [
         IconButton(
-          tooltip: 'Select all',
+          tooltip: l10n.select_all,
           icon: Icon(Icons.select_all_rounded, color: os.surface),
           onPressed: () =>
               BlocProvider.of<DirectoryCubit>(context).selectAllImages(),
         ),
         IconButton(
-          tooltip: 'Delete',
+          tooltip: l10n.delete,
           icon: Icon(Icons.delete_rounded, color: os.accent),
           onPressed: count == 0 ? null : () => _confirmDeleteSelected(state),
         ),
@@ -426,13 +431,14 @@ class _ViewScreenState extends State<ViewScreen> {
   }
 
   Widget? _bottomBar(OSColors os, DirectoryState state, int selectedCount) {
+    final l10n = AppLocalizations.of(context)!;
     if ((state.images ?? const []).isEmpty && state.pendingPages.isEmpty) {
       return SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
               OSSpace.md + 2, OSSpace.xs, OSSpace.md + 2, OSSpace.md),
           child: OSButton(
-            label: 'Continue scanning',
+            label: l10n.continue_scanning,
             icon: Icons.add_rounded,
             expand: true,
             onPressed: _addPages,
@@ -448,8 +454,8 @@ class _ViewScreenState extends State<ViewScreen> {
               OSSpace.md + 2, OSSpace.xs, OSSpace.md + 2, OSSpace.md),
           child: OSButton(
             label: selectedCount == 0
-                ? 'Export selected'
-                : 'Export $selectedCount selected',
+                ? l10n.export_selected
+                : l10n.export_n_selected(selectedCount),
             expand: true,
             onPressed: selectedCount == 0
                 ? null
@@ -467,7 +473,7 @@ class _ViewScreenState extends State<ViewScreen> {
           children: [
             Expanded(
               child: OSButton(
-                label: 'Add pages',
+                label: l10n.add_pages,
                 icon: Icons.add_rounded,
                 kind: OSButtonKind.tonal,
                 expand: true,
@@ -477,7 +483,7 @@ class _ViewScreenState extends State<ViewScreen> {
             const SizedBox(width: OSSpace.sm),
             Expanded(
               child: OSButton(
-                label: 'Export',
+                label: l10n.export,
                 expand: true,
                 onPressed: () => _openExport(imagesSelected: false),
               ),

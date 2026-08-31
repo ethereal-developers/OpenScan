@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/config/globals.dart';
 import 'package:openscan/core/cv/frame_adapter.dart';
 import 'package:openscan/core/data/file_operations.dart';
@@ -414,7 +415,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Couldn't capture — please try again.")),
+        SnackBar(
+            content: Text(AppLocalizations.of(context)!.couldnt_capture)),
       );
     } finally {
       if (mounted) setState(() => _capturing = false);
@@ -449,7 +451,9 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       debugPrint('Gallery import from camera failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't open the gallery.")),
+        SnackBar(
+            content:
+                Text(AppLocalizations.of(context)!.couldnt_open_gallery)),
       );
     }
   }
@@ -470,7 +474,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Torch isn't available on this device.")),
+        SnackBar(
+            content: Text(AppLocalizations.of(context)!.torch_unavailable)),
       );
     }
   }
@@ -632,6 +637,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
     final onAccent = Theme.of(context).colorScheme.onPrimary;
+    final l10n = AppLocalizations.of(context)!;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -648,8 +654,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         body: _permissionDenied
             ? _permissionDeniedState(accent, onAccent)
             : _cameraError
-                ? _buildMessage(
-                    "Couldn't start the camera — please go back and try again.")
+                ? _buildMessage(l10n.couldnt_start_camera)
                 : Stack(
                     fit: StackFit.expand,
                     children: [
@@ -810,6 +815,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// once there is something to undo. Nothing hides behind a caret — the
   /// row is short enough to show all of it at once.
   Widget _topChrome(Color accent) {
+    final l10n = AppLocalizations.of(context)!;
     final canTorch = _cameraController != null &&
         _lensDirection == CameraLensDirection.back;
     return Padding(
@@ -819,7 +825,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         children: [
           _ChromeButton(
             icon: _torchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
-            tooltip: _torchOn ? 'Torch on' : 'Torch off',
+            tooltip: _torchOn ? l10n.torch_on : l10n.torch_off,
             // The torch is the fix for the low-light warning, so it
             // adopts the warning colour while that banner is up.
             highlight: _torchOn || _lowLight,
@@ -830,8 +836,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           _ChromeButton(
             icon: Icons.auto_awesome_rounded,
             tooltip: _autoCaptureEnabled
-                ? 'Auto-capture on'
-                : 'Auto-capture off',
+                ? l10n.auto_capture_on
+                : l10n.auto_capture_off,
             highlight: _autoCaptureEnabled,
             onPressed: _toggleAutoCapture,
           ),
@@ -839,21 +845,21 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           if (_capturedFiles.isNotEmpty) ...[
             _ChromeButton(
               icon: Icons.undo_rounded,
-              tooltip: 'Undo last capture',
+              tooltip: l10n.undo_last_capture,
               onPressed: _onUndoLastPressed,
             ),
             const SizedBox(width: OSSpace.xs),
           ],
           _ChromeButton(
             icon: Icons.grid_3x3_rounded,
-            tooltip: 'Composition grid',
+            tooltip: l10n.composition_grid,
             highlight: _gridVisible,
             onPressed: () => setState(() => _gridVisible = !_gridVisible),
           ),
           const SizedBox(width: OSSpace.xs),
           _ChromeButton(
             icon: Icons.cameraswitch_rounded,
-            tooltip: 'Switch camera',
+            tooltip: l10n.switch_camera,
             onPressed: (_cameraController != null && Globals.cameras.length > 1)
                 ? _switchCamera
                 : null,
@@ -866,6 +872,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// The detection state, spelled out in words as well as colour: the quad
   /// turning accent is never the only signal that a page was found.
   Widget _statusOverlay(Color accent, Color onAccent) {
+    final l10n = AppLocalizations.of(context)!;
     return IgnorePointer(
       child: Padding(
         padding: const EdgeInsets.only(top: OSSpace.sm),
@@ -885,7 +892,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                     borderRadius: BorderRadius.circular(OSRadius.card),
                   ),
                   child: Text(
-                    'Low light — hold steady or turn on flash',
+                    l10n.low_light,
                     style: OSTypography.caption.copyWith(
                       color: context.os.warning,
                       fontWeight: FontWeight.w700,
@@ -898,7 +905,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                 builder: (context, quad, _) {
                   if (quad == null) {
                     return Text(
-                      'Looking for a document…',
+                      l10n.looking_for_document,
                       style: OSTypography.caption.copyWith(
                         color: OSColors.chromeOnBackground,
                         fontWeight: FontWeight.w600,
@@ -921,7 +928,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                         Icon(Icons.check_rounded, size: 14, color: onAccent),
                         const SizedBox(width: OSSpace.xxs + 1),
                         Text(
-                          'Document detected',
+                          l10n.document_detected,
                           style: OSTypography.caption.copyWith(
                             color: onAccent,
                             fontWeight: FontWeight.w700,
@@ -943,6 +950,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// done, all on the same centre line and evenly spaced, with the
   /// auto-capture state spelled out above them.
   Widget _bottomChrome(Color accent, Color onAccent) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: OSSpace.md, vertical: OSSpace.sm),
@@ -951,8 +959,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         children: [
           Text(
             _autoCaptureImminent
-                ? 'HOLD STILL…'
-                : 'AUTO · ${_autoCaptureEnabled ? 'ON' : 'OFF'}',
+                ? l10n.hold_still
+                : _autoCaptureEnabled
+                    ? l10n.auto_on
+                    : l10n.auto_off,
             style: OSTypography.caption.copyWith(
               fontWeight: FontWeight.w700,
               color: _autoCaptureImminent
@@ -969,7 +979,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             children: [
               _ChromeButton(
                 icon: Icons.photo_library_rounded,
-                tooltip: 'Import from gallery',
+                tooltip: l10n.import_from_gallery_short,
                 size: _kSideControlSize,
                 iconSize: 30,
                 onPressed: _onImportPressed,
@@ -988,6 +998,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// and shifting the row around the shutter. Sized to match the gallery
   /// button on the other side of the shutter.
   Widget _doneButton(Color accent, Color onAccent) {
+    final l10n = AppLocalizations.of(context)!;
     final count = _capturedFiles.length;
     final enabled = count > 0;
     final ink = enabled ? onAccent : OSColors.chromeMuted;
@@ -1005,7 +1016,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  enabled ? 'Done · $count' : 'Done',
+                  enabled ? l10n.done_count(count) : l10n.done,
                   style: OSTypography.label.copyWith(
                     fontWeight: FontWeight.w700,
                     color: ink,
@@ -1137,6 +1148,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// Explains what the camera is for before asking again — the permission
   /// prompt itself has no room for the "nothing leaves your device" half.
   Widget _permissionDeniedState(Color accent, Color onAccent) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(OSSpace.xxxl),
@@ -1154,13 +1166,12 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                   color: OSColors.chromeMuted),
             ),
             const SizedBox(height: OSSpace.md),
-            Text('Camera access needed',
+            Text(l10n.camera_access_needed,
                 style: OSTypography.subtitle
                     .copyWith(color: OSColors.chromeOnBackground)),
             const SizedBox(height: OSSpace.xs),
             Text(
-              'OpenScan only uses your camera to scan pages — nothing leaves '
-              'your device. Turn it on in Settings to continue.',
+              l10n.camera_access_body,
               textAlign: TextAlign.center,
               style:
                   OSTypography.body.copyWith(color: OSColors.chromeMuted),
@@ -1172,11 +1183,11 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                 foregroundColor: onAccent,
               ),
               onPressed: openAppSettings,
-              child: const Text('Open Settings'),
+              child: Text(l10n.open_settings),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, null),
-              child: Text('Not now',
+              child: Text(l10n.not_now,
                   style: OSTypography.label
                       .copyWith(color: OSColors.chromeMuted)),
             ),

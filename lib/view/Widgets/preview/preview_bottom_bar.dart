@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/core/theme/os_colors.dart';
 import 'package:openscan/core/theme/os_tokens.dart';
 import 'package:openscan/core/theme/os_typography.dart';
@@ -24,6 +25,7 @@ class PreviewScreenBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return IgnorePointer(
       ignoring: !visible,
       child: AnimatedOpacity(
@@ -39,22 +41,22 @@ class PreviewScreenBottomBar extends StatelessWidget {
               children: [
                 _PreviewAction(
                   icon: Icons.crop_rounded,
-                  label: 'Crop',
+                  label: l10n.crop,
                   onPressed: cropOnPressed,
                 ),
                 _PreviewAction(
                   icon: Icons.delete_outline_rounded,
-                  label: 'Delete',
+                  label: l10n.delete,
                   onPressed: deleteOnPressed,
                 ),
                 _PreviewAction(
                   icon: Icons.tune_rounded,
-                  label: 'Filter',
+                  label: l10n.filter_action,
                   onPressed: filterOnPressed,
                 ),
                 _PreviewAction(
                   icon: Icons.photo_camera_rounded,
-                  label: 'Re-scan',
+                  label: l10n.rescan,
                   onPressed: rescanOnPressed,
                 ),
               ],

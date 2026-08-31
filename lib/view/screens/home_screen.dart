@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openscan/core/appRouter.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/data/file_operations.dart';
@@ -56,15 +58,26 @@ class _HomeScreenState extends State<HomeScreen> {
     quickActions.initialize((String shortcutType) {
       _startScan(shortcutType);
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Shortcut titles are the one piece of UI text the system renders for
+    // us, so they have to be re-registered whenever the locale changes.
+    // `type` stays an English id: it is what comes back through the
+    // callback and is matched on, so translating it would break the
+    // shortcut.
+    final l10n = AppLocalizations.of(context)!;
     quickActions.setShortcutItems(<ShortcutItem>[
       ShortcutItem(
         type: 'Live Scan',
-        localizedTitle: 'Scan',
+        localizedTitle: l10n.scan,
         icon: 'normal_scan',
       ),
       ShortcutItem(
         type: 'Import from Gallery',
-        localizedTitle: 'Import from Gallery',
+        localizedTitle: l10n.import_from_gallery,
         icon: 'gallery_action',
       ),
     ]);
@@ -240,11 +253,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _clearSelection();
     await _refresh();
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
     OSSnack.success(
       context,
       documents.length == 1
-          ? 'Document deleted'
-          : '${documents.length} documents deleted',
+          ? l10n.document_deleted
+          : l10n.n_documents_deleted(documents.length),
     );
   }
 
@@ -281,19 +295,22 @@ class _HomeScreenState extends State<HomeScreen> {
     _clearSelection();
 
     messenger.hideCurrentSnackBar();
+    final l10n = AppLocalizations.of(context)!;
     if (exported == documents.length) {
-      OSSnack.success(context, 'Saved $exported to device');
+      OSSnack.success(context, l10n.saved_n_to_device(exported));
     } else {
-      OSSnack.error(context, "Couldn't export ${documents.length - exported}");
+      OSSnack.error(
+          context, l10n.couldnt_export_n(documents.length - exported));
     }
   }
 
   // <========================= Sheets & menus =========================>
 
   void _openSortSheet() {
+    final l10n = AppLocalizations.of(context)!;
     OSSheet.show(
       context: context,
-      title: 'Sort order',
+      title: l10n.sort_order,
       builder: (sheetContext) {
         final os = sheetContext.os;
         return Column(
@@ -307,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   LibrarySort.name => Icons.sort_by_alpha_rounded,
                   LibrarySort.pageCount => Icons.filter_none_rounded,
                 },
-                label: sort.label,
+                label: sort.label(l10n),
                 trailing: AppSettings.instance.sort == sort
                     ? Icon(Icons.check_rounded, size: 20, color: os.accent)
                     : null,
@@ -328,6 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openOverflow() {
+    final l10n = AppLocalizations.of(context)!;
     OSSheet.show(
       context: context,
       title: 'OpenScan',
@@ -336,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           OSSheetAction(
             icon: Icons.settings_rounded,
-            label: 'Settings',
+            label: l10n.settings,
             onTap: () {
               Navigator.pop(sheetContext);
               Navigator.pushNamed(context, AppRouter.settingsScreen)
@@ -345,7 +363,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           OSSheetAction(
             icon: Icons.school_rounded,
-            label: 'Tutorial',
+            label: l10n.tutorial,
             onTap: () {
               Navigator.pop(sheetContext);
               Navigator.push(
@@ -358,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           OSSheetAction(
             icon: Icons.info_outline_rounded,
-            label: 'About',
+            label: l10n.about,
             onTap: () {
               Navigator.pop(sheetContext);
               Navigator.pushNamed(context, AppRouter.aboutScreen);
@@ -370,6 +388,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openDocumentMenu(DirectoryOS doc) {
+    final l10n = AppLocalizations.of(context)!;
     OSSheet.show(
       context: context,
       title: _titleOf(doc),
@@ -378,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           OSSheetAction(
             icon: Icons.edit_rounded,
-            label: 'Rename',
+            label: l10n.rename,
             onTap: () {
               Navigator.pop(sheetContext);
               showDialog(
@@ -393,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           OSSheetAction(
             icon: Icons.select_all_rounded,
-            label: 'Select',
+            label: l10n.select,
             onTap: () {
               Navigator.pop(sheetContext);
               _toggleSelection(doc);
@@ -401,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           OSSheetAction(
             icon: Icons.delete_rounded,
-            label: 'Delete',
+            label: l10n.delete,
             destructive: true,
             onTap: () {
               Navigator.pop(sheetContext);
@@ -418,12 +437,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _confirmDelete() {
     final count = _selected.length;
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (_) => OSDialog(
-        title: count == 1 ? 'Delete document?' : 'Delete $count documents?',
-        message: "This can't be undone.",
-        confirmLabel: 'Delete',
+        title: count == 1
+            ? l10n.delete_document_q
+            : l10n.delete_n_documents_q(count),
+        message: l10n.cant_be_undone,
+        confirmLabel: l10n.delete,
         destructive: true,
         onConfirm: _deleteSelected,
       ),
@@ -439,6 +461,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final os = context.os;
+    final l10n = AppLocalizations.of(context)!;
     final documents = _visibleDocuments;
 
     return PopScope(
@@ -466,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> {
             : FloatingActionButton.extended(
                 onPressed: () => _startScan('Live Scan'),
                 icon: const Icon(Icons.camera_alt_rounded, size: 20),
-                label: const Text('Scan'),
+                label: Text(l10n.scan),
                 backgroundColor: os.accent,
                 foregroundColor: os.onAccent,
               ),
@@ -475,24 +498,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   PreferredSizeWidget _libraryAppBar(OSColors os) {
+    final l10n = AppLocalizations.of(context)!;
     return AppBar(
       backgroundColor: os.surface,
       titleSpacing: OSSpace.md + 2,
-      title: Text('Library',
+      title: Text(l10n.library,
           style: OSTypography.display.copyWith(fontSize: 26, height: 1.2)),
       actions: [
         IconButton(
-          tooltip: 'Sort',
+          tooltip: l10n.sort,
           icon: const Icon(Icons.sort_rounded),
           onPressed: _openSortSheet,
         ),
         IconButton(
-          tooltip: 'Import from gallery',
+          tooltip: l10n.import_from_gallery_short,
           icon: const Icon(Icons.add_photo_alternate_outlined),
           onPressed: () => _startScan('Import from Gallery'),
         ),
         IconButton(
-          tooltip: 'More',
+          tooltip: l10n.more,
           icon: const Icon(Icons.more_vert_rounded),
           onPressed: _openOverflow,
         ),
@@ -504,6 +528,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Selection mode swaps in an inverted bar rather than tinting the
   /// existing one, so "you are selecting" is legible at a glance.
   PreferredSizeWidget _selectionAppBar(OSColors os) {
+    final l10n = AppLocalizations.of(context)!;
     return AppBar(
       backgroundColor: os.onSurface,
       foregroundColor: os.surface,
@@ -513,12 +538,12 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: Icon(Icons.close_rounded, color: os.surface),
         onPressed: _clearSelection,
       ),
-      title: Text('${_selected.length} selected',
+      title: Text(l10n.n_selected(_selected.length),
           style: OSTypography.subtitle.copyWith(color: os.surface)),
       actions: [
         TextButton(
           onPressed: _selectAll,
-          child: Text('Select all',
+          child: Text(l10n.select_all,
               style: OSTypography.label.copyWith(
                   fontWeight: FontWeight.w700, color: os.accent)),
         ),
@@ -528,6 +553,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _selectionBar(OSColors os) {
+    final l10n = AppLocalizations.of(context)!;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -536,7 +562,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Expanded(
               child: OSButton(
-                label: 'Export',
+                label: l10n.export,
                 kind: OSButtonKind.tonal,
                 expand: true,
                 onPressed: _exportSelected,
@@ -545,7 +571,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: OSSpace.sm),
             Expanded(
               child: OSButton(
-                label: 'Delete',
+                label: l10n.delete,
                 kind: OSButtonKind.danger,
                 expand: true,
                 onPressed: _confirmDelete,
@@ -558,18 +584,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _body(OSColors os, List<DirectoryOS> documents) {
+    final l10n = AppLocalizations.of(context)!;
     if (_loading) return _skeleton(os);
 
     if (_documents.isEmpty) {
       return _scrollable(
         OSEmptyState(
           icon: Icons.description_outlined,
-          title: 'No documents yet',
-          message:
-              'Scan your first page — it takes about two seconds and stays '
-              'only on this device.',
+          title: l10n.no_documents_yet,
+          message: l10n.no_documents_body,
           action: OSButton(
-            label: 'Start scanning',
+            label: l10n.start_scanning,
             onPressed: () => _startScan('Live Scan'),
           ),
         ),
@@ -586,7 +611,7 @@ class _HomeScreenState extends State<HomeScreen> {
             hasScrollBody: false,
             child: OSEmptyState(
               icon: Icons.search_off_rounded,
-              title: 'No results for "$_query"',
+              title: l10n.no_results_for(_query),
             ),
           )
         else
@@ -623,6 +648,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _searchField(OSColors os) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
           OSSpace.md + 2, 0, OSSpace.md + 2, OSSpace.sm),
@@ -631,7 +657,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onChanged: (value) => setState(() => _query = value.trim()),
         style: OSTypography.body.copyWith(color: os.onSurface),
         decoration: InputDecoration(
-          hintText: 'Search documents',
+          hintText: l10n.search_documents,
           prefixIcon:
               Icon(Icons.search_rounded, size: 20, color: os.onSurfaceVariant),
           prefixIconConstraints:
@@ -651,6 +677,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _skeleton(OSColors os) {
+    final l10n = AppLocalizations.of(context)!;
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
@@ -658,7 +685,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: OSSpace.sm),
-              child: Text('Refreshing…',
+              child: Text(l10n.refreshing,
                   style:
                       OSTypography.caption.copyWith(color: os.onSurfaceVariant)),
             ),
@@ -719,16 +746,17 @@ class _DocumentCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
-  static const List<String> _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-
-  String get _subtitle {
+  /// The month/day abbreviation comes from [DateFormat] rather than a
+  /// hardcoded table, so it follows the locale — and its calendar's own
+  /// field order — instead of always reading as English.
+  String _subtitle(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
     final date = document.lastModified ?? document.created;
-    final pages =
-        document.imageCount == 1 ? '1 page' : '${document.imageCount} pages';
-    return '${_months[date.month - 1]} ${date.day} · $pages';
+    return l10n.date_and_pages(
+      DateFormat.MMMd(locale).format(date),
+      l10n.pages_count(document.imageCount),
+    );
   }
 
   @override
@@ -803,7 +831,7 @@ class _DocumentCard extends StatelessWidget {
                 .copyWith(fontWeight: FontWeight.w700, color: os.onSurface),
           ),
           Text(
-            _subtitle,
+            _subtitle(context),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OSTypography.caption.copyWith(color: os.onSurfaceVariant),
@@ -826,6 +854,7 @@ class _ExportingDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final os = context.os;
+    final l10n = AppLocalizations.of(context)!;
     return Dialog(
       backgroundColor: os.surfaceContainer,
       shape: RoundedRectangleBorder(
@@ -843,11 +872,31 @@ class _ExportingDialog extends StatelessWidget {
                   CircularProgressIndicator(strokeWidth: 2, color: os.accent),
             ),
             const SizedBox(width: OSSpace.md),
-            Text('Exporting…',
+            Text(l10n.exporting,
                 style: OSTypography.body.copyWith(color: os.onSurface)),
           ],
         ),
       ),
     );
+  }
+}
+
+/// The sort order's name, as shown in the sort sheet.
+///
+/// This lives here rather than beside the enum: [LibrarySort] is a stored
+/// preference and has no business reaching for a [BuildContext], while the
+/// label is only ever wanted by the sheet that draws it.
+extension LibrarySortLabel on LibrarySort {
+  String label(AppLocalizations l10n) {
+    switch (this) {
+      case LibrarySort.lastModified:
+        return l10n.sort_last_modified;
+      case LibrarySort.created:
+        return l10n.sort_date_created;
+      case LibrarySort.name:
+        return l10n.sort_name;
+      case LibrarySort.pageCount:
+        return l10n.sort_page_count;
+    }
   }
 }

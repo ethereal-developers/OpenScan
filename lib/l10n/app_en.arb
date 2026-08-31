@@ -1,95 +1,341 @@
 {
-    "scan_options":"Scan Options",
-    "@scan_options": {
-        "description": "Scan button tool tip" 
-    },
-    "import_from_gallery": "Import from Gallery",
-    "@import_from_gallery": {
-        "description": "Scan-type 3"
-    },
-    "live_scan": "Live Scan",
-    "@live_scan": {
-        "description": "Scan-type 4"
-    },
-    "refresh": "Drag down to refresh",
-    "@refresh": {
-        "description": "Refresh tool tip" 
-    },
-    "last_updated": "Last Updated",
-    "@last_updated": {
-        "description": "File last updated" 
-    },
-    "images": "images",
-    "@images": {
-        "description": "Multiple Images" 
-    },
-    "app_description": "is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file.",
-    "@app_description": {
-        "description": "Short app description on About-Screen" 
-    },
-    "app_description_2": "No ads. We don't collect any data.\n We respect your privacy.",
-    "@app_description_2": {
-        "description": "Moto on About-Screen" 
-    },
-    "crop": "Crop",
-    "@crop": {
-        "description": "Crop-Screen header" 
-    },
-    "rotate_right": "Rotate right",
-    "@rotate_right": {
-        "description": "Rotate image right" 
-    },
-    "rotate_left": "Rotate left",
-    "@rotate_left": {
-        "description": "Rotate image left" 
-    },
-    "about":"About",
-    "rename": "Rename",
-    "delete": "Delete",
-    "image": "image",
-    "developers": "Developers",
-    "version": "Version",
-    "next": "Next",
-    "tutorial_title": "How to use the app?",
-    "done": "Done",
-    "skip": "Skip",
-    "loading": "Loading",
-    "home": "Home",
-    "demo": "Demo",
-    "quality": "Quality",
-    "save_to_device": "Save to device",
-    "share_pdf": "Share PDF",
-    "share_images": "Share images",
-    "filters": "Filters",
-    "@filters": {
-        "description": "Filter picker screen title"
-    },
-    "filter_original": "Original",
-    "@filter_original": {
-        "description": "Colour mode: the capture, unchanged"
-    },
-    "filter_auto": "Auto",
-    "@filter_auto": {
-        "description": "Colour mode: automatic colour and contrast correction"
-    },
-    "filter_lighten": "Lighten",
-    "@filter_lighten": {
-        "description": "Colour mode: keeps colour, whitens the paper"
-    },
-    "filter_grayscale": "Grayscale",
-    "@filter_grayscale": {
-        "description": "Colour mode: shades of grey only"
-    },
-    "filter_bw": "B&W",
-    "@filter_bw": {
-        "description": "Colour mode: pure black and white"
-    },
-    "filter_whiteboard": "Whiteboard",
-    "@filter_whiteboard": {
-        "description": "Colour mode: removes shadows and glare from a whiteboard"
-    },
-    "apply_to_all_pages": "Apply to all pages",
-    "@apply_to_all_pages": {
-        "description": "Applies the selected filter to every page of the document"
+  "about": "About",
+  "cancel": "Cancel",
+  "save": "Save",
+  "open": "Open",
+  "share": "Share",
+  "export": "Export",
+  "clear": "Clear",
+  "delete": "Delete",
+  "rename": "Rename",
+  "crop": "Crop",
+  "done": "Done",
+  "next": "Next",
+  "skip": "Skip",
+  "loading": "Loading",
+  "home": "Home",
+  "demo": "Demo",
+  "quality": "Quality",
+  "version": "Version",
+  "select": "Select",
+  "select_all": "Select all",
+  "select_pages": "Select pages",
+  "try_again": "Try again",
+  "undo": "UNDO",
+  "@undo": {
+    "description": "Snackbar undo action, shown in caps"
+  },
+  "not_now": "Not now",
+  "open_settings": "Open Settings",
+  "more": "More",
+  "sort": "Sort",
+  "settings": "Settings",
+  "tutorial": "Tutorial",
+  "library": "Library",
+  "scan": "Scan",
+  "image": "image",
+  "images": "images",
+  "developers": "Developers",
+  "tutorial_title": "How to use the app?",
+  "cant_be_undone": "This can't be undone.",
+  "rotate": "Rotate",
+  "rotate_left": "Rotate left",
+  "rotate_right": "Rotate right",
+  "pages_count": "{count, plural, =1{1 page} other{{count} pages}}",
+  "@pages_count": {
+    "description": "Page count for a document",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
     }
+  },
+  "scan_options": "Scan Options",
+  "@scan_options": {
+    "description": "Scan button tooltip"
+  },
+  "live_scan": "Live Scan",
+  "import_from_gallery": "Import from Gallery",
+  "import_from_gallery_short": "Import from gallery",
+  "@import_from_gallery_short": {
+    "description": "Toolbar tooltip and menu row"
+  },
+  "refresh": "Drag down to refresh",
+  "last_updated": "Last Updated",
+  "sort_order": "Sort order",
+  "search_documents": "Search documents",
+  "no_documents_yet": "No documents yet",
+  "no_documents_body": "Scan your first page — it takes about two seconds and stays only on this device.",
+  "start_scanning": "Start scanning",
+  "no_results_for": "No results for \"{query}\"",
+  "@no_results_for": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "refreshing": "Refreshing…",
+  "exporting": "Exporting…",
+  "n_selected": "{count} selected",
+  "@n_selected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "delete_document_q": "Delete document?",
+  "delete_n_documents_q": "Delete {count} documents?",
+  "@delete_n_documents_q": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "document_deleted": "Document deleted",
+  "n_documents_deleted": "{count} documents deleted",
+  "@n_documents_deleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "saved_n_to_device": "Saved {count} to device",
+  "@saved_n_to_device": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "couldnt_export_n": "Couldn't export {count}",
+  "@couldnt_export_n": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "date_and_pages": "{date} · {pages}",
+  "@date_and_pages": {
+    "description": "Library card subtitle: a short date and a page count",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "sort_last_modified": "Last modified",
+  "sort_date_created": "Date created",
+  "sort_name": "Name (A–Z)",
+  "sort_page_count": "Page count",
+  "scanning": "Scanning",
+  "auto_capture": "Auto-capture",
+  "auto_capture_desc": "Take the shot as soon as the page holds still.",
+  "capture_sound": "Capture sound",
+  "keep_original": "Keep original image",
+  "keep_original_desc": "Keeps the uncropped photo so a page can be re-cropped from the full capture. Roughly doubles the space a document uses.",
+  "avoid_gesture_strip": "Avoid back-gesture strip",
+  "avoid_gesture_strip_desc": "Keeps the crop corners out of the edge of the screen, where a drag can trigger the system back gesture instead. Makes the page slightly narrower.",
+  "default_filter": "Default filter",
+  "appearance": "Appearance",
+  "theme": "Theme",
+  "language": "Language",
+  "accent_color": "Accent color",
+  "privacy_storage": "Privacy & storage",
+  "privacy_body": "OpenScan never sends your documents anywhere. No accounts, no cloud, no telemetry.",
+  "cache": "Cache",
+  "clear_cache_q": "Clear cache?",
+  "clear_cache_body": "Frees {size} of thumbnail data. Your documents are not affected.",
+  "@clear_cache_body": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cache_clear_action": "{size} · Clear",
+  "@cache_clear_action": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cache_cleared": "Cache cleared",
+  "couldnt_clear_cache": "Couldn't clear the cache",
+  "theme_system": "System",
+  "theme_light": "Light",
+  "theme_dark": "Dark",
+  "filters": "Filters",
+  "filter_original": "Original",
+  "filter_auto": "Auto",
+  "filter_lighten": "Lighten",
+  "filter_grayscale": "Grayscale",
+  "filter_bw": "B&W",
+  "filter_whiteboard": "Whiteboard",
+  "filter_action": "Filter",
+  "@filter_action": {
+    "description": "Preview toolbar button that opens the filter picker"
+  },
+  "apply_to_all_pages": "Apply to all pages",
+  "apply_to_all_n_pages": "Apply to all {count} pages",
+  "@apply_to_all_n_pages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adjust_edges": "Adjust edges",
+  "automatic_crop": "Automatic crop",
+  "no_crop": "No crop",
+  "rescan": "Re-scan",
+  "couldnt_crop": "Couldn't crop the image — please try again.",
+  "looking_for_document": "Looking for a document…",
+  "document_detected": "Document detected",
+  "hold_still": "HOLD STILL…",
+  "auto_on": "AUTO · ON",
+  "auto_off": "AUTO · OFF",
+  "low_light": "Low light — hold steady or turn on flash",
+  "torch_on": "Torch on",
+  "torch_off": "Torch off",
+  "torch_unavailable": "Torch isn't available on this device.",
+  "auto_capture_on": "Auto-capture on",
+  "auto_capture_off": "Auto-capture off",
+  "undo_last_capture": "Undo last capture",
+  "composition_grid": "Composition grid",
+  "switch_camera": "Switch camera",
+  "couldnt_capture": "Couldn't capture — please try again.",
+  "couldnt_open_gallery": "Couldn't open the gallery.",
+  "couldnt_start_camera": "Couldn't start the camera — please go back and try again.",
+  "camera_access_needed": "Camera access needed",
+  "camera_access_body": "OpenScan only uses your camera to scan pages — nothing leaves your device. Turn it on in Settings to continue.",
+  "done_count": "Done · {count}",
+  "@done_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "delete_document": "Delete document",
+  "delete_document_body": "Every page goes with it. This can't be undone.",
+  "delete_page_q": "Delete page?",
+  "delete_n_pages_q": "Delete {count} pages?",
+  "@delete_n_pages_q": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "no_pages_title": "This document has no pages",
+  "no_pages_body": "Named after your first page — rename anytime by tapping the title.",
+  "continue_scanning": "Continue scanning",
+  "add_pages": "Add pages",
+  "export_selected": "Export selected",
+  "export_n_selected": "Export {count} selected",
+  "@export_n_selected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "skipped_files": "{count, plural, =1{Skipped 1 file this app can't read.} other{Skipped {count} files this app can't read.}}",
+  "@skipped_files": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hold_to_reorder": "{pages} · hold a page to reorder",
+  "@hold_to_reorder": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "export_title": "Export · {name}",
+  "@export_title": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quality_caps": "QUALITY",
+  "@quality_caps": {
+    "description": "Section heading in the export sheet, shown in caps"
+  },
+  "page_size": "Page size",
+  "all_pages": "All pages",
+  "selected_pages": "Selected pages",
+  "page_x_of_y": "Page {current} of {total}",
+  "@page_x_of_y": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "exported": "Exported",
+  "export_failed": "Export failed",
+  "no_pages_to_export": "There are no pages to export.",
+  "pdf_not_written": "PDF could not be written",
+  "not_enough_storage": "Not enough storage space on this device.",
+  "export_went_wrong": "Something went wrong while exporting.",
+  "couldnt_open_file": "Couldn't open the file: {message}",
+  "@couldnt_open_file": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "no_app_opens_file": "No app on this phone opens that kind of file",
+  "quality_ultra_low": "Ultra low",
+  "quality_low": "Low",
+  "quality_medium": "Medium",
+  "quality_high": "High",
+  "result_and_more": "{name} + {count} more",
+  "@result_and_more": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rename_file": "Rename file",
+  "file_name_empty": "File name cannot be empty",
+  "special_chars_not_allowed": "Special characters are not allowed",
+  "save_to_device": "Save to device",
+  "share_pdf": "Share PDF",
+  "share_images": "Share images",
+  "demo_detect_title": "Point, and it's scanned",
+  "demo_detect_body": "OpenScan finds the page edges and captures automatically — no shutter tap needed.",
+  "demo_private_title": "Everything stays on your phone",
+  "demo_private_body": "No accounts, no cloud uploads, no ads, no tracking — ever.",
+  "demo_camera_title": "One last thing",
+  "demo_camera_body": "OpenScan needs your camera to scan pages. That's the only thing it's ever used for.",
+  "allow_camera_access": "Allow camera access",
+  "app_description": "is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file.",
+  "app_description_2": "No ads. We don't collect any data.\n We respect your privacy.",
+  "open_source_github": "Open source on GitHub",
+  "couldnt_launch_url": "Couldn't launch the url"
 }

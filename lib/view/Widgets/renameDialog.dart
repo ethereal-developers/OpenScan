@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/theme/os_colors.dart';
 import 'package:openscan/core/theme/os_tokens.dart';
@@ -46,11 +47,13 @@ class _RenameDialogState extends State<RenameDialog> {
   void _save() {
     newName = newName.trim();
     if (newName.isEmpty) {
-      setState(() => errorText = 'File name cannot be empty');
+      setState(
+          () => errorText = AppLocalizations.of(context)!.file_name_empty);
       return;
     }
     if (newName.contains(RegExp(r'[/.]'))) {
-      setState(() => errorText = 'Special characters are not allowed');
+      setState(() =>
+          errorText = AppLocalizations.of(context)!.special_chars_not_allowed);
       return;
     }
     database.renameDirectory(
@@ -64,12 +67,13 @@ class _RenameDialogState extends State<RenameDialog> {
   @override
   Widget build(BuildContext context) {
     final os = context.os;
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: os.surfaceContainer,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(OSRadius.sheet),
       ),
-      title: Text('Rename file',
+      title: Text(l10n.rename_file,
           style: OSTypography.subtitle.copyWith(color: os.onSurface)),
       content: TextField(
         controller: _controller,
@@ -92,13 +96,13 @@ class _RenameDialogState extends State<RenameDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel',
+          child: Text(l10n.cancel,
               style: OSTypography.label.copyWith(
                   fontWeight: FontWeight.w700, color: os.onSurfaceVariant)),
         ),
         TextButton(
           onPressed: _save,
-          child: Text('Save',
+          child: Text(l10n.save,
               style: OSTypography.label
                   .copyWith(fontWeight: FontWeight.w700, color: os.accent)),
         ),

@@ -27,9 +27,14 @@ const int _thumbnailMaxEdge = 160;
 /// Localized label for a filter. [Filter.name] stays the stable,
 /// non-localized id — it is the cache key and the value stored in the
 /// database — so the two are resolved separately.
-String filterLabel(BuildContext context, Filter filter) {
+String filterLabel(BuildContext context, Filter filter) =>
+    filterLabelForName(context, filter.name);
+
+/// [filterLabel] for a filter id that has been read back from storage,
+/// where there is a name but no [Filter] to go with it.
+String filterLabelForName(BuildContext context, String name) {
   final l10n = AppLocalizations.of(context)!;
-  switch (filter.name) {
+  switch (name) {
     case 'Auto':
       return l10n.filter_auto;
     case 'Lighten':
@@ -319,7 +324,7 @@ class _FilterScreenState extends State<FilterScreen> {
         children: [
           Expanded(
             child: Text(
-              'Apply to all $pageCount pages',
+              AppLocalizations.of(context)!.apply_to_all_n_pages(pageCount),
               style: OSTypography.body
                   .copyWith(color: OSColors.chromeOnBackground),
             ),

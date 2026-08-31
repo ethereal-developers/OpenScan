@@ -140,7 +140,7 @@ class _CropImageState extends State<CropImage>
           key: _scaffoldKey,
           appBar: AppBar(
             title: Text(
-              'Adjust edges',
+              AppLocalizations.of(context)!.adjust_edges,
               style: OSTypography.subtitle
                   .copyWith(color: OSColors.chromeOnBackground),
             ),
@@ -380,7 +380,7 @@ class _CropImageState extends State<CropImage>
       Navigator.pop(context, _cropScreen.imageFile);
     } else if (result is CropFailure) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Couldn't crop the image — please try again.")),
+        SnackBar(content: Text(AppLocalizations.of(context)!.couldnt_crop)),
       );
     }
   }
@@ -415,18 +415,18 @@ class _CropImageState extends State<CropImage>
             children: <Widget>[
               _CropAction(
                 icon: Icons.auto_awesome_rounded,
-                label: 'Automatic crop',
+                label: AppLocalizations.of(context)!.automatic_crop,
                 accent: true,
                 onPressed: () => setState(_cropScreen.initPoints),
               ),
               _CropAction(
                 icon: Icons.crop_free_rounded,
-                label: 'No crop',
+                label: AppLocalizations.of(context)!.no_crop,
                 onPressed: () => setState(_cropScreen.resetPointsToCorners),
               ),
               _CropAction(
                 icon: Icons.rotate_right_rounded,
-                label: 'Rotate',
+                label: AppLocalizations.of(context)!.rotate,
                 onPressed: _rotate,
               ),
             ],

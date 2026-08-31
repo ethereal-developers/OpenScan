@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/core/theme/os_colors.dart';
 import 'package:openscan/core/theme/os_tokens.dart';
 import 'package:openscan/core/theme/os_typography.dart';
@@ -16,6 +17,7 @@ class SlideItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final slide = slideList[index];
+    final l10n = AppLocalizations.of(context)!;
     final accent = Theme.of(context).colorScheme.primary;
 
     return Padding(
@@ -25,14 +27,14 @@ class SlideItem extends StatelessWidget {
         children: [
           Expanded(child: Center(child: _hero(slide.hero, accent))),
           Text(
-            slide.title,
+            slide.title(l10n),
             textAlign: TextAlign.center,
             style: OSTypography.title
                 .copyWith(color: OSColors.chromeOnBackground, fontSize: 24),
           ),
           const SizedBox(height: OSSpace.sm),
           Text(
-            slide.body,
+            slide.body(l10n),
             textAlign: TextAlign.center,
             style: OSTypography.body.copyWith(color: OSColors.chromeMuted),
           ),
@@ -90,34 +92,41 @@ class SlideItem extends StatelessWidget {
 
 enum SlideHero { detect, private, camera }
 
+/// One slide's content.
+///
+/// The text is looked up rather than stored, because the list itself is a
+/// compile-time constant and a translated string is not: [slideList] fixes
+/// the order and the artwork, and the words arrive with the locale.
 class Slide {
   final SlideHero hero;
-  final String title;
-  final String body;
 
-  const Slide({
-    required this.hero,
-    required this.title,
-    required this.body,
-  });
+  const Slide(this.hero);
+
+  String title(AppLocalizations l10n) {
+    switch (hero) {
+      case SlideHero.detect:
+        return l10n.demo_detect_title;
+      case SlideHero.private:
+        return l10n.demo_private_title;
+      case SlideHero.camera:
+        return l10n.demo_camera_title;
+    }
+  }
+
+  String body(AppLocalizations l10n) {
+    switch (hero) {
+      case SlideHero.detect:
+        return l10n.demo_detect_body;
+      case SlideHero.private:
+        return l10n.demo_private_body;
+      case SlideHero.camera:
+        return l10n.demo_camera_body;
+    }
+  }
 }
 
 const slideList = [
-  Slide(
-    hero: SlideHero.detect,
-    title: "Point, and it's scanned",
-    body: 'OpenScan finds the page edges and captures automatically — no '
-        'shutter tap needed.',
-  ),
-  Slide(
-    hero: SlideHero.private,
-    title: 'Everything stays on your phone',
-    body: 'No accounts, no cloud uploads, no ads, no tracking — ever.',
-  ),
-  Slide(
-    hero: SlideHero.camera,
-    title: 'One last thing',
-    body: "OpenScan needs your camera to scan pages. That's the only thing "
-        "it's ever used for.",
-  ),
+  Slide(SlideHero.detect),
+  Slide(SlideHero.private),
+  Slide(SlideHero.camera),
 ];

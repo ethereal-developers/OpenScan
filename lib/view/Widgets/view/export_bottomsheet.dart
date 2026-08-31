@@ -12,6 +12,7 @@ import 'package:openscan/core/theme/os_typography.dart';
 import 'package:openscan/logic/cubit/directory_cubit.dart';
 import 'package:openscan/view/Widgets/os/os_components.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:pdf/pdf.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -29,16 +30,16 @@ extension on ExportFormat {
 }
 
 extension on ExportQuality {
-  String get label {
+  String label(AppLocalizations l10n) {
     switch (this) {
       case ExportQuality.ultraLow:
-        return 'Ultra low';
+        return l10n.quality_ultra_low;
       case ExportQuality.low:
-        return 'Low';
+        return l10n.quality_low;
       case ExportQuality.medium:
-        return 'Medium';
+        return l10n.quality_medium;
       case ExportQuality.high:
-        return 'High';
+        return l10n.quality_high;
     }
   }
 
@@ -172,7 +173,7 @@ class _ExportSheetState extends State<ExportSheet> {
     if (pages.isEmpty) {
       setState(() {
         _stage = _Stage.failure;
-        _errorMessage = 'There are no pages to export.';
+        _errorMessage = AppLocalizations.of(context)!.no_pages_to_export;
       });
       return;
     }
@@ -252,11 +253,12 @@ class _ExportSheetState extends State<ExportSheet> {
     } catch (e) {
       debugPrint('Export failed: $e');
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _stage = _Stage.failure;
         _errorMessage = e is FileSystemException
-            ? 'Not enough storage space on this device.'
-            : "Something went wrong while exporting.";
+            ? l10n.not_enough_storage
+            : l10n.export_went_wrong;
       });
     }
   }
@@ -283,13 +285,14 @@ class _ExportSheetState extends State<ExportSheet> {
 
   Widget _idle(DirectoryState state) {
     final os = context.os;
+    final l10n = AppLocalizations.of(context)!;
     final pages = _pages(state);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Export · ${_documentName(state)}',
+        Text(l10n.export_title(_documentName(state)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: OSTypography.subtitle.copyWith(color: os.onSurface)),
@@ -301,7 +304,7 @@ class _ExportSheetState extends State<ExportSheet> {
           onChanged: (value) => setState(() => _format = value),
         ),
         const SizedBox(height: OSSpace.md),
-        Text('QUALITY',
+        Text(l10n.quality_caps,
             style: OSTypography.caption.copyWith(
               color: os.onSurfaceVariant,
               fontWeight: FontWeight.w700,
@@ -313,7 +316,7 @@ class _ExportSheetState extends State<ExportSheet> {
             for (final quality in ExportQuality.values) ...[
               Expanded(
                 child: _QualityOption(
-                  label: quality.label,
+                  label: quality.label(l10n),
                   hint: quality.hint,
                   selected: _quality == quality,
                   onTap: () => setState(() => _quality = quality),
@@ -327,7 +330,7 @@ class _ExportSheetState extends State<ExportSheet> {
         const SizedBox(height: OSSpace.sm),
         if (_format == ExportFormat.pdf)
           _MetaRow(
-            label: 'Page size',
+            label: l10n.page_size,
             value: _pageSize.label,
             onTap: () => setState(() {
               _pageSize = ExportPageSize.values[
@@ -335,8 +338,8 @@ class _ExportSheetState extends State<ExportSheet> {
             }),
           ),
         _MetaRow(
-          label: widget.imagesSelected ? 'Selected pages' : 'All pages',
-          value: pages.length == 1 ? '1 page' : '${pages.length} pages',
+          label: widget.imagesSelected ? l10n.selected_pages : l10n.all_pages,
+          value: l10n.pages_count(pages.length),
         ),
         const SizedBox(height: OSSpace.sm),
         Container(
@@ -359,7 +362,7 @@ class _ExportSheetState extends State<ExportSheet> {
           children: [
             Expanded(
               child: OSButton(
-                label: 'Save',
+                label: l10n.save,
                 kind: OSButtonKind.tonal,
                 expand: true,
                 onPressed: () => _run(share: false),
@@ -368,7 +371,7 @@ class _ExportSheetState extends State<ExportSheet> {
             const SizedBox(width: OSSpace.sm),
             Expanded(
               child: OSButton(
-                label: 'Share',
+                label: l10n.share,
                 expand: true,
                 onPressed: () => _run(share: true),
               ),
@@ -381,12 +384,13 @@ class _ExportSheetState extends State<ExportSheet> {
 
   Widget _exporting(DirectoryState state) {
     final os = context.os;
+    final l10n = AppLocalizations.of(context)!;
     final total = _pages(state).length;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Exporting…',
+        Text(l10n.exporting,
             style: OSTypography.subtitle.copyWith(color: os.onSurface)),
         const SizedBox(height: OSSpace.md),
         ClipRRect(
@@ -399,7 +403,7 @@ class _ExportSheetState extends State<ExportSheet> {
           ),
         ),
         const SizedBox(height: OSSpace.xs),
-        Text('Page ${_progressPage.clamp(1, total)} of $total',
+        Text(l10n.page_x_of_y(_progressPage.clamp(1, total), total),
             style: OSTypography.caption.copyWith(color: os.onSurfaceVariant)),
       ],
     );
@@ -415,12 +419,14 @@ class _ExportSheetState extends State<ExportSheet> {
     OSSnack.error(
       context,
       result.type == ResultType.noAppToOpen
-          ? 'No app on this phone opens that kind of file'
-          : "Couldn't open the file: ${result.message}",
+          ? AppLocalizations.of(context)!.no_app_opens_file
+          : AppLocalizations.of(context)!
+              .couldnt_open_file(result.message),
     );
   }
 
   Widget _success() {
+    final l10n = AppLocalizations.of(context)!;
     final os = context.os;
     final path = _resultPath;
     final name = path?.split('/').last ?? '';
@@ -439,7 +445,7 @@ class _ExportSheetState extends State<ExportSheet> {
                   size: 18, color: Colors.white),
             ),
             const SizedBox(width: OSSpace.sm),
-            Text('Exported',
+            Text(l10n.exported,
                 style: OSTypography.subtitle.copyWith(color: os.onSurface)),
           ],
         ),
@@ -448,7 +454,9 @@ class _ExportSheetState extends State<ExportSheet> {
           [
             // An image export writes one file per page; naming only the
             // first would under-report what actually landed on disk.
-            _resultCount > 1 ? '$name + ${_resultCount - 1} more' : name,
+            _resultCount > 1
+                ? l10n.result_and_more(name, _resultCount - 1)
+                : name,
             if (_resultSize != null) _resultSize!,
           ].join(' · '),
           maxLines: 2,
@@ -459,7 +467,7 @@ class _ExportSheetState extends State<ExportSheet> {
           children: [
             Expanded(
               child: OSButton(
-                label: 'Open',
+                label: l10n.open,
                 kind: OSButtonKind.tonal,
                 expand: true,
                 onPressed: path == null ? null : () => _open(path),
@@ -468,7 +476,7 @@ class _ExportSheetState extends State<ExportSheet> {
             const SizedBox(width: OSSpace.sm),
             Expanded(
               child: OSButton(
-                label: 'Done',
+                label: l10n.done,
                 expand: true,
                 onPressed: () => Navigator.pop(context),
               ),
@@ -481,6 +489,7 @@ class _ExportSheetState extends State<ExportSheet> {
 
   Widget _failure() {
     final os = context.os;
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -496,7 +505,7 @@ class _ExportSheetState extends State<ExportSheet> {
                   size: 18, color: os.onDanger),
             ),
             const SizedBox(width: OSSpace.sm),
-            Text('Export failed',
+            Text(l10n.export_failed,
                 style: OSTypography.subtitle.copyWith(color: os.onSurface)),
           ],
         ),
@@ -505,7 +514,7 @@ class _ExportSheetState extends State<ExportSheet> {
             style: OSTypography.body.copyWith(color: os.onSurfaceVariant)),
         const SizedBox(height: OSSpace.md),
         OSButton(
-          label: 'Try again',
+          label: l10n.try_again,
           kind: OSButtonKind.tonal,
           expand: true,
           onPressed: () => setState(() => _stage = _Stage.idle),

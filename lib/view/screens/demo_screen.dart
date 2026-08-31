@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/core/theme/os_colors.dart';
 import 'package:openscan/core/theme/os_tokens.dart';
 import 'package:openscan/core/theme/os_typography.dart';
@@ -54,6 +55,7 @@ class _DemoScreenState extends State<DemoScreen> {
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
     final onAccent = Theme.of(context).colorScheme.onPrimary;
+    final l10n = AppLocalizations.of(context)!;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -73,7 +75,7 @@ class _DemoScreenState extends State<DemoScreen> {
                 child: widget.showSkip!
                     ? TextButton(
                         onPressed: _finish,
-                        child: Text('Skip',
+                        child: Text(l10n.skip,
                             style: OSTypography.label
                                 .copyWith(color: OSColors.chromeMuted)),
                       )
@@ -116,8 +118,10 @@ class _DemoScreenState extends State<DemoScreen> {
                     ),
                     onPressed: _next,
                     child: Text(_onLastSlide
-                        ? (widget.showSkip! ? 'Allow camera access' : 'Done')
-                        : 'Next'),
+                        ? (widget.showSkip!
+                            ? l10n.allow_camera_access
+                            : l10n.done)
+                        : l10n.next),
                   ),
                 ),
               ),

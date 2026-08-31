@@ -8,6 +8,7 @@ import 'package:openscan/core/theme/os_tokens.dart';
 import 'package:openscan/core/theme/os_typography.dart';
 import 'package:openscan/l10n/app_localizations.dart';
 import 'package:openscan/view/Widgets/os/os_components.dart';
+import 'package:openscan/view/screens/filter_screen.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Settings, grouped by what the user is actually deciding: how scanning
@@ -54,10 +55,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
       await _measureCache();
-      if (mounted) OSSnack.success(context, 'Cache cleared');
+      if (mounted) {
+        OSSnack.success(context, AppLocalizations.of(context)!.cache_cleared);
+      }
     } catch (e) {
       debugPrint('Could not clear cache: $e');
-      if (mounted) OSSnack.error(context, "Couldn't clear the cache");
+      if (mounted) {
+        OSSnack.error(
+            context, AppLocalizations.of(context)!.couldnt_clear_cache);
+      }
     }
   }
 
@@ -71,20 +77,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _themeLabel(ThemeMode mode) {
+    final l10n = AppLocalizations.of(context)!;
     switch (mode) {
       case ThemeMode.system:
-        return 'System';
+        return l10n.theme_system;
       case ThemeMode.light:
-        return 'Light';
+        return l10n.theme_light;
       case ThemeMode.dark:
-        return 'Dark';
+        return l10n.theme_dark;
     }
   }
 
   void _pickTheme(AppSettings settings) {
     OSSheet.show(
       context: context,
-      title: 'Theme',
+      title: AppLocalizations.of(context)!.theme,
       builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -113,14 +120,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _pickDefaultFilter(AppSettings settings) {
     OSSheet.show(
       context: context,
-      title: 'Default filter',
+      title: AppLocalizations.of(context)!.default_filter,
       builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           for (final filter in documentFiltersList)
             OSSheetAction(
               icon: Icons.tune_rounded,
-              label: filter.name,
+              label: filterLabel(context, filter),
               trailing: (settings.defaultFilter ??
                           defaultDocumentFilter.name) ==
                       filter.name
@@ -156,64 +163,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: () => Navigator.pop(context),
           ),
-          title: Text('Settings',
+          title: Text(l10n.settings,
               style: OSTypography.subtitle
                   .copyWith(color: os.onSurface, fontWeight: FontWeight.w800)),
         ),
         body: ListView(
           padding: const EdgeInsets.only(bottom: OSSpace.xxl),
           children: [
-            const OSSectionHeader('Scanning'),
+            OSSectionHeader(l10n.scanning),
             _SwitchRow(
-              label: 'Auto-capture',
-              description: 'Take the shot as soon as the page holds still.',
+              label: l10n.auto_capture,
+              description: l10n.auto_capture_desc,
               value: settings.autoCapture,
               onChanged: settings.setAutoCapture,
             ),
             _SwitchRow(
-              label: 'Capture sound',
+              label: l10n.capture_sound,
               value: settings.captureSound,
               onChanged: settings.setCaptureSound,
             ),
             _SwitchRow(
-              label: 'Keep original image',
-              description:
-                  'Keeps the uncropped photo so a page can be re-cropped '
-                  'from the full capture. Roughly doubles the space a '
-                  'document uses.',
+              label: l10n.keep_original,
+              description: l10n.keep_original_desc,
               value: settings.keepOriginal,
               onChanged: settings.setKeepOriginal,
             ),
             _SwitchRow(
-              label: 'Avoid back-gesture strip',
-              description:
-                  'Keeps the crop corners out of the edge of the screen, '
-                  'where a drag can trigger the system back gesture '
-                  'instead. Makes the page slightly narrower.',
+              label: l10n.avoid_gesture_strip,
+              description: l10n.avoid_gesture_strip_desc,
               value: settings.avoidGestureStrip,
               onChanged: settings.setAvoidGestureStrip,
             ),
             _ValueRow(
-              label: 'Default filter',
-              value: settings.defaultFilter ?? l10n.filter_original,
+              label: l10n.default_filter,
+              value: settings.defaultFilter == null
+                  ? l10n.filter_original
+                  : filterLabelForName(context, settings.defaultFilter!),
               onTap: () => _pickDefaultFilter(settings),
             ),
-            const OSSectionHeader('Appearance'),
+            OSSectionHeader(l10n.appearance),
             _ValueRow(
-              label: 'Theme',
+              label: l10n.theme,
               value: _themeLabel(settings.themeMode),
               onTap: () => _pickTheme(settings),
             ),
             _AccentRow(settings: settings),
             _ValueRow(
-              label: 'Language',
+              label: l10n.language,
               value: Localizations.localeOf(context).languageName,
-              // Language follows the system locale: the app ships four
+              // Language follows the system locale: the app ships its
               // translations and no in-app override, so this reports
               // rather than pretends to set.
               onTap: null,
             ),
-            const OSSectionHeader('Privacy & storage'),
+            OSSectionHeader(l10n.privacy_storage),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: OSSpace.md),
               child: Container(
@@ -230,8 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(width: OSSpace.xs),
                     Expanded(
                       child: Text(
-                        'OpenScan never sends your documents anywhere. No '
-                        'accounts, no cloud, no telemetry.',
+                        l10n.privacy_body,
                         style: OSTypography.caption
                             .copyWith(color: os.onSurfaceVariant),
                       ),
@@ -241,16 +243,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             _ValueRow(
-              label: 'Cache',
-              value: '$_cacheLabel · Clear',
+              label: l10n.cache,
+              value: l10n.cache_clear_action(_cacheLabel),
               onTap: () => showDialog(
                 context: context,
                 builder: (_) => OSDialog(
-                  title: 'Clear cache?',
-                  message:
-                      'Frees $_cacheLabel of thumbnail data. Your documents '
-                      'are not affected.',
-                  confirmLabel: 'Clear',
+                  title: l10n.clear_cache_q,
+                  message: l10n.clear_cache_body(_cacheLabel),
+                  confirmLabel: l10n.clear,
                   destructive: true,
                   onConfirm: _clearCache,
                 ),
@@ -394,7 +394,7 @@ class _AccentRow extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return _SettingRow(
-      label: 'Accent color',
+      label: AppLocalizations.of(context)!.accent_color,
       trailing: Wrap(
         spacing: OSSpace.xs,
         children: [
@@ -438,6 +438,10 @@ extension on Locale {
         return 'Magyar';
       case 'pl':
         return 'Polski';
+      case 'ta':
+        return 'தமிழ்';
+      case 'hi':
+        return 'हिन्दी';
       default:
         return 'English';
     }

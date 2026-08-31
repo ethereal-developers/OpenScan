@@ -99,7 +99,7 @@ class AboutScreen extends StatelessWidget {
           ),
           const SizedBox(height: OSSpace.lg),
           OSButton(
-            label: 'Open source on GitHub',
+            label: l10n.open_source_github,
             icon: Icons.code_rounded,
             kind: OSButtonKind.tonal,
             expand: true,
