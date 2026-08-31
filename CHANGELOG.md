@@ -1,3 +1,53 @@
+# v3.0.0
+
+A full rewrite of the scanning pipeline, the camera, and the UI.
+
+### Added
+
+- Live document detection: edges are found in the viewfinder and the page
+  is captured and cropped to them automatically.
+- Six document filter modes (replacing the old photo filters), applied to
+  one page or the whole document.
+- Camera controls: pinch-to-zoom slider, tap-to-focus and -expose, manual
+  exposure, and a front/back switch.
+- On-device integration tests covering the capture, crop, library,
+  settings and export flows, plus a database migration test.
+
+### Changed
+
+- Cropping and edge detection are pure Dart; the OpenCV dependency is gone.
+- Captures are stored through the platform's own image decoder, which
+  decodes and downscales in one native step instead of several seconds of
+  pure-Dart work per page.
+- The database moved from a table-per-document schema to `documents` +
+  `pages`, migrated automatically on first launch.
+- Export quality is now a compression scale, and an export is named after
+  its document.
+- Rebuilt the interface on a warm-white, single-accent design system.
+- targetSdk 36, scoped storage, Java 17.
+
+### Fixed
+
+- Live scan no longer fails to reopen the camera after backgrounding.
+- Exposure +/- no longer only ever increases on Android.
+- Rotate turns the saved page and its detected outline, not just the
+  preview.
+- Crop handles stay clear of the system back-gesture strip.
+- Pages the app cannot draw are no longer kept, and exports no longer
+  leave files the user cannot delete.
+
+### Removed
+
+- `RECORD_AUDIO`, `READ_MEDIA_AUDIO`, `READ_MEDIA_VIDEO` and
+  `READ_MEDIA_IMAGES`, which dependencies declared but OpenScan never
+  used.
+- The storage permission request, made redundant by scoped storage.
+
+### Known limitations
+
+- The Greek, Hungarian and Polish translations cover only part of the
+  interface; most strings are still English.
+
 # v2.2.0
 
 ### Changed
