@@ -71,14 +71,21 @@ Future<CropResult> cropImageNormalizedIsolateEntry(
 /// [decoded]'s own pixel grid, rotating it back into the photo's
 /// orientation first if the photo decoded landscape — otherwise the
 /// overlay's corners would be stretched across the wrong axes.
-Quad quadInPixels(Quad normalized, img.Image decoded) {
+Quad quadInPixels(Quad normalized, img.Image decoded) =>
+    quadInPixelsOf(normalized, decoded.width, decoded.height);
+
+/// [quadInPixels] against bare dimensions, for the callers that know how
+/// big the image is before there is an image to ask — working out how far
+/// a capture can be scaled down while decoding needs the quad's size in
+/// pixels, and the decode is what the answer decides.
+Quad quadInPixelsOf(Quad normalized, int width, int height) {
   var quad = normalized;
-  if (decoded.width > decoded.height) {
+  if (width > height) {
     // Inverse of rotateQuadForPortrait's fixed 90-degree rotation, in
     // normalized space: portrait (x, y) came from sensor (y, 1 - x).
     quad = sortCorners(quad.points.map((p) => Pt(p.y, 1 - p.x)).toList());
   }
-  return quad.scaled(decoded.width.toDouble(), decoded.height.toDouble());
+  return quad.scaled(width.toDouble(), height.toDouble());
 }
 
 /// Warps [quad] (in [decoded]'s pixel coordinates) into an upright
@@ -95,7 +102,7 @@ img.Image? warpToPage(img.Image decoded, Quad quad, {int? maxEdge}) {
   var source = decoded;
   var pixels = quad;
 
-  final natural = _outputSize(pixels);
+  final natural = outputSize(pixels);
   var outWidth = natural.width;
   var outHeight = natural.height;
 
@@ -140,7 +147,7 @@ Future<CropResult> _cropDecoded(img.Image decoded, Quad quad, String path,
 
 /// The size an unscaled warp of [quad] produces: the longest of each pair
 /// of opposite edges, so no part of the page is squeezed.
-({int width, int height}) _outputSize(Quad quad) {
+({int width, int height}) outputSize(Quad quad) {
   final tl = quad.topLeft, tr = quad.topRight;
   final br = quad.bottomRight, bl = quad.bottomLeft;
   final width = max(_dist(tl.x, tl.y, tr.x, tr.y), _dist(bl.x, bl.y, br.x, br.y));
@@ -162,7 +169,7 @@ img.Image? _warp(img.Image decoded, Quad quad, int? width, int? height) {
     final tl = quad.topLeft, tr = quad.topRight;
     final br = quad.bottomRight, bl = quad.bottomLeft;
 
-    final natural = _outputSize(quad);
+    final natural = outputSize(quad);
     final outWidth = width ?? natural.width;
     final outHeight = height ?? natural.height;
 

@@ -1,10 +1,64 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math';
 
 import 'package:image/image.dart' as img;
 
 import 'models/quad.dart';
+import 'native_decode.dart';
 import 'perspective_crop.dart';
+
+/// Entry point designed to be run via `compute()`. Encodes one stored file
+/// from pixels the platform decoder has already produced (see
+/// `native_decode.dart`), warping them to [Quad] first when the page was
+/// captured with a boundary.
+///
+/// This is the isolate half of the fast storage path. The decode it used to
+/// begin with — by far the most expensive step — now happens on the UI
+/// isolate, because `dart:ui`'s codecs refuse to run anywhere else; what is
+/// left here is the JPEG encode, which is pure Dart, CPU-bound, and exactly
+/// the kind of work an isolate is for.
+///
+/// Parameters: `rgba` (a [TransferableTypedData] of 8-bit RGBA pixels),
+/// their `width` and `height`, `dest`, `quality`, `maxEdge`, and `quad` —
+/// the boundary in fractional [0,1] portrait-overlay coordinates, or null
+/// to store the pixels whole.
+///
+/// Returns whether the file was written.
+Future<bool> encodeStoredPageIsolateEntry(Map<String, dynamic> params) async {
+  final dest = params['dest'] as String;
+  try {
+    final rgba = (params['rgba'] as TransferableTypedData).materialize();
+    // The platform decoder hands back premultiplied pixels; a stored page
+    // is opaque, so flatten before the encoder drops the alpha channel and
+    // leaves transparent regions showing whatever was underneath.
+    flattenOntoWhite(rgba.asUint8List());
+    var page = img.Image.fromBytes(
+      width: params['width'] as int,
+      height: params['height'] as int,
+      bytes: rgba,
+      numChannels: 4,
+    );
+
+    final quad = params['quad'] as Quad?;
+    if (quad != null) {
+      // The caller already decoded at a scale that puts the warp's natural
+      // output at the page cap, so this warps roughly 1:1 and the cap is
+      // only here to hold the line if the estimate came out high.
+      page = warpToPage(page, quadInPixels(quad, page),
+              maxEdge: params['maxEdge'] as int) ??
+          page;
+    }
+
+    await File(dest).writeAsBytes(
+      img.encodeJpg(page, quality: params['quality'] as int),
+      flush: true,
+    );
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
 
 /// Everything one captured page needs on its way into storage, done in a
 /// single isolate pass over a single decode.

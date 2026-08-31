@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -9,6 +10,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:openscan/core/cv/capture_pipeline.dart';
 import 'package:openscan/core/cv/compress.dart';
 import 'package:openscan/core/cv/models/quad.dart';
+import 'package:openscan/core/cv/native_decode.dart';
+import 'package:openscan/core/cv/perspective_crop.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/models.dart';
@@ -124,6 +127,17 @@ class FileOperations {
     final pagePath = '$dir/$stamp.jpg';
     final originalPath = keepOriginal ? '$dir/orig_$stamp.jpg' : null;
 
+    // The fast path: let the platform decode the capture, and leave the
+    // isolate only the encoding. Falls through to the pure-Dart pipeline
+    // below when the platform decoder cannot read these bytes at all.
+    final native = await _writeCaptureNatively(
+      source: source,
+      pagePath: pagePath,
+      originalPath: originalPath,
+      quad: quad,
+    );
+    if (native != null) return native;
+
     final result = await compute(storeCaptureIsolateEntry, {
       'src': source.path,
       'pageDest': pagePath,
@@ -148,6 +162,111 @@ class FileOperations {
       // An original that failed to write is simply not recorded, rather
       // than leaving the page pointing at a file that isn't there.
       originalPath: (result['original'] ?? false) ? originalPath : null,
+    );
+  }
+
+  /// Stores a capture using the platform's image decoder, which decodes
+  /// and downscales in one native step: on a mid-range phone that is ~350ms
+  /// against the ~4s `package:image` spends decoding a 12MP capture and
+  /// resizing it in pure Dart. Only the JPEG encode stays in an isolate,
+  /// since `dart:ui` has no JPEG encoder and `package:image`'s would block
+  /// the UI.
+  ///
+  /// One decode per file written, each at exactly the size that file needs,
+  /// rather than one decode reused for both: a native decode is now cheap
+  /// enough that decoding twice costs far less than resizing once in Dart,
+  /// and it keeps only one page-sized buffer alive at a time.
+  ///
+  /// Returns null when the platform decoder cannot read the capture — an
+  /// unknown format, or bytes that aren't an image — leaving the caller to
+  /// fall back to the pure-Dart pipeline, which knows a few formats the
+  /// platform doesn't and has its own copy-through last resort.
+  Future<({String pagePath, String? originalPath})?> _writeCaptureNatively({
+    required File source,
+    required String pagePath,
+    required String? originalPath,
+    required Quad? quad,
+  }) async {
+    final Uint8List encoded;
+    try {
+      encoded = await source.readAsBytes();
+    } catch (e) {
+      debugPrint("Couldn't read ${source.path}: $e");
+      return null;
+    }
+
+    final page = await _decodeForPage(encoded, quad, label: source.path);
+    if (page == null) return null;
+
+    final wrotePage = await compute(encodeStoredPageIsolateEntry, {
+      'rgba': page.rgba,
+      'width': page.width,
+      'height': page.height,
+      'dest': pagePath,
+      'quality': kStoredPageQuality,
+      'maxEdge': kStoredPageMaxEdge,
+      'quad': quad,
+    });
+    if (!wrotePage) {
+      _deleteIfPresent(pagePath);
+      return null;
+    }
+
+    // An original that failed to write is simply not recorded, rather than
+    // leaving the page pointing at a file that isn't there. The page is
+    // already stored and readable, so this is never a reason to fall back.
+    String? storedOriginal;
+    if (originalPath != null) {
+      final original = await decodeScaled(encoded,
+          maxEdge: kStoredOriginalMaxEdge, label: source.path);
+      if (original != null &&
+          await compute(encodeStoredPageIsolateEntry, {
+            'rgba': original.rgba,
+            'width': original.width,
+            'height': original.height,
+            'dest': originalPath,
+            'quality': kStoredOriginalQuality,
+            'maxEdge': kStoredOriginalMaxEdge,
+            'quad': null,
+          })) {
+        storedOriginal = originalPath;
+      } else {
+        _deleteIfPresent(originalPath);
+      }
+    }
+
+    return (pagePath: pagePath, originalPath: storedOriginal);
+  }
+
+  /// The capture decoded at the smallest size that still fills a stored
+  /// page.
+  ///
+  /// Without a boundary that is simply the page cap. With one, the warp
+  /// only ever reads the quad's region, so decoding the whole capture at
+  /// page size would leave the cropped result short of the cap — the decode
+  /// is scaled so the quad's own natural size lands there instead, and the
+  /// warp then runs about 1:1. Scaling during the decode also means the
+  /// engine does the filtering, where the old path point-sampled the warp.
+  Future<DecodedPixels?> _decodeForPage(Uint8List encoded, Quad? quad,
+      {String? label}) async {
+    if (quad == null) {
+      return decodeScaled(encoded, maxEdge: kStoredPageMaxEdge, label: label);
+    }
+
+    final size = await decodedSize(encoded, label: label);
+    if (size == null) return null;
+
+    final natural =
+        outputSize(quadInPixelsOf(quad, size.width, size.height));
+    final longestOut = max(natural.width, natural.height);
+    final longestSrc = max(size.width, size.height);
+    if (longestOut <= kStoredPageMaxEdge) {
+      return decodeScaled(encoded, maxEdge: longestSrc, label: label);
+    }
+    return decodeScaled(
+      encoded,
+      maxEdge: max(1, (longestSrc * kStoredPageMaxEdge / longestOut).round()),
+      label: label,
     );
   }
 
@@ -251,7 +370,7 @@ class FileOperations {
     if (cacheDir.existsSync()) {
       cacheDir.deleteSync(recursive: true);
     }
-    new Directory(appDocPath).create();
+    await Directory(appDocPath).create(recursive: true);
   }
 
   // <============================ PDF Operations =============================>
