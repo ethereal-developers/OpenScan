@@ -162,6 +162,62 @@ void main() {
     source.deleteSync();
   });
 
+  testWidgets('a page processed at capture time is adopted byte for byte',
+      (tester) async {
+    // What the live-scan screen does: process the page as the shutter
+    // fires, into staging, then hand the finished file to the document.
+    // Adopting it must not decode or re-encode anything a second time —
+    // the page in the document is the staged bytes exactly.
+    final dirPath = await emptyDocumentPath();
+    final photo = img.Image(width: 900, height: 1200);
+    for (int y = 0; y < photo.height; y++) {
+      for (int x = 0; x < photo.width; x++) {
+        photo.setPixelRgb(x, y, x % 256, y % 256, 128);
+      }
+    }
+    final source = await cacheFile(
+        'prepared_${DateTime.now().microsecondsSinceEpoch}.jpg',
+        img.encodeJpg(photo, quality: 90));
+    const quad = Quad(
+      topLeft: Pt(0.1, 0.08),
+      topRight: Pt(0.92, 0.06),
+      bottomRight: Pt(0.95, 0.94),
+      bottomLeft: Pt(0.07, 0.92),
+    );
+
+    final staging = await fileOperations.captureDirectory();
+    final staged = await fileOperations.writeCapture(
+      source: source,
+      dir: staging.path,
+      stamp: 'staged_page',
+      quad: quad,
+      keepOriginal: true,
+    );
+    expect(staged, isNotNull);
+    final stagedBytes = File(staged!.pagePath).readAsBytesSync();
+
+    final saved = await fileOperations.saveCapture(
+      source: File(staged.pagePath),
+      dirPath: dirPath,
+      preparedOriginal: File(staged.originalPath!),
+      prepared: true,
+      keepOriginal: true,
+      index: 1,
+    );
+
+    expect(saved, isNotNull);
+    expect(File(saved!.imgPath).readAsBytesSync(), stagedBytes);
+    // The quad is not applied twice: the adopted page is the cropped one.
+    expect(saved.origPath, isNotNull);
+    final page = img.decodeImage(File(saved.imgPath).readAsBytesSync())!;
+    final original = img.decodeImage(File(saved.origPath!).readAsBytesSync())!;
+    expect(page.width, lessThan(original.width));
+
+    File(staged.pagePath).deleteSync();
+    File(staged.originalPath!).deleteSync();
+    source.deleteSync();
+  });
+
   testWidgets('a transparent gallery pick is flattened onto white',
       (tester) async {
     // A page is an opaque JPEG, so transparency has to land on something.

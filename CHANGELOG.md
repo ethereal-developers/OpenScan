@@ -27,6 +27,10 @@ A full rewrite of the scanning pipeline, the camera, and the UI.
 - The tutorial's illustrations are drawn from the theme's own tokens
   rather than shipped as screenshots, so they follow the chosen accent and
   cannot go stale against the screens they depict.
+- Each page is processed the moment its shutter fires — cropped to the
+  detected boundary and re-encoded while the shutter shows a spinner —
+  instead of the whole batch being processed after Done, so finishing a
+  session is instant however many pages it holds.
 - Cropping and edge detection are pure Dart; the OpenCV dependency is gone.
 - Captures are stored through the platform's own image decoder, which
   decodes and downscales in one native step instead of several seconds of

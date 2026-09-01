@@ -184,7 +184,12 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       List<LiveCapture>? captures = await captureWithLiveScan(context);
       if (captures != null) {
         for (LiveCapture capture in captures) {
-          imageList.add(_PendingCapture(file: capture.file, quad: capture.quad));
+          imageList.add(_PendingCapture(
+            file: capture.file,
+            quad: capture.quad,
+            prepared: capture.prepared,
+            original: capture.original,
+          ));
         }
       }
     }
@@ -227,6 +232,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     ImageOS? savedImage = await fileOperations.saveCapture(
       source: image,
       quad: pending.quad,
+      prepared: pending.prepared,
+      preparedOriginal: pending.original,
       keepOriginal: AppSettings.instance.keepOriginal,
       index: state.images!.length + 1,
       dirPath: state.dirPath!,
@@ -285,6 +292,8 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         dir: dir,
         stamp: DateTime.now().toString(),
         quad: replacement.quad,
+        prepared: replacement.prepared,
+        preparedOriginal: replacement.original,
         keepOriginal: AppSettings.instance.keepOriginal,
       );
 
@@ -329,8 +338,12 @@ class DirectoryCubit extends Cubit<DirectoryState> {
     }
 
     for (final capture in captures.skip(1)) {
-      await _storePending(
-          _PendingCapture(file: capture.file, quad: capture.quad));
+      await _storePending(_PendingCapture(
+        file: capture.file,
+        quad: capture.quad,
+        prepared: capture.prepared,
+        original: capture.original,
+      ));
     }
 
     await fileOperations.deleteTemporaryImages();
@@ -652,9 +665,22 @@ class DirectoryCubit extends Cubit<DirectoryState> {
 /// A capture on its way into storage: the photo, and the boundary it
 /// should be cropped to (null for a gallery import, or a shot taken with
 /// nothing detected — those are stored whole).
+/// One image on its way into a document.
+///
+/// [prepared] means [file] has already been through the storage pipeline
+/// (the live-scan screen runs it per page as the shutter fires), with
+/// [original] its uncropped companion where there is one — so storing it
+/// is a file move, and [quad] has already been applied.
 class _PendingCapture {
   final File file;
   final Quad? quad;
+  final bool prepared;
+  final File? original;
 
-  const _PendingCapture({required this.file, this.quad});
+  const _PendingCapture({
+    required this.file,
+    this.quad,
+    this.prepared = false,
+    this.original,
+  });
 }

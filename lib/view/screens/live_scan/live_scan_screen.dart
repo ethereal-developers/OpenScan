@@ -37,6 +37,18 @@ const double _kSideControlSize = 60;
 /// opens the crop screen; cropping by hand is a deliberate act afterwards,
 /// from the page's own Crop button.
 ///
+/// [prepared] marks a page that has already been through the storage
+/// pipeline here in the session — cropped to its boundary, downscaled and
+/// re-encoded at page size, staged on disk — so [file] is the finished
+/// page, [original] its uncropped companion when the keep-originals
+/// setting is on, and [quad] is null because it has already been applied.
+/// The document only has to move those files in. This is the normal case:
+/// each page is processed the moment its shutter fires, while the user is
+/// still framing the next one, rather than the whole batch being processed
+/// after Done. A page whose processing failed falls back to the raw
+/// capture with its [quad] intact, and the document processes it the old
+/// way.
+///
 /// [imported] marks a page picked from the gallery rather than shot here.
 /// An imported picture is already whatever the user wants it to be — it
 /// was never framed through this viewfinder — so it goes straight into
@@ -45,11 +57,15 @@ class LiveCapture {
   final File file;
   final Quad? quad;
   final bool imported;
+  final bool prepared;
+  final File? original;
 
   const LiveCapture({
     required this.file,
     this.quad,
     this.imported = false,
+    this.prepared = false,
+    this.original,
   });
 }
 
@@ -90,6 +106,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   CameraController? _cameraController;
   Future<void>? _initializeFuture;
   int _frameCounter = 0;
+  // True from the shutter firing until that page is processed and staged.
+  // Gates the shutter, auto-capture and Done, and shows the spinner in
+  // the shutter's place: one page is finished before the next is framed,
+  // so a session's pages are ready by the time the user is.
   bool _capturing = false;
   bool _permissionDenied = false;
   bool _cameraError = false;
@@ -100,6 +120,11 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   // underlying photo files are already persisted to disk by
   // takePicture(), so this survives a background/resume cycle.
   final List<LiveCapture> _capturedFiles = [];
+
+  /// Where processed pages are staged until the document adopts them.
+  /// Resolved once per session, on the first capture.
+  Directory? _stagingDir;
+  final FileOperations _fileOperations = FileOperations();
 
   bool _autoCaptureEnabled = true;
   bool _autoCaptureImminent = false;
@@ -402,16 +427,21 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         unawaited(SystemSound.play(SystemSoundType.click));
       }
       final shot = await controller.takePicture();
-      _capturedFiles.add(LiveCapture(
-        file: File(shot.path),
-        quad: quadAtCapture,
-      ));
       _autoCaptureDetector.notifyCaptured();
       // A new document after this one shouldn't inherit the outgoing
       // one's filter velocity/lag.
       _quadSmoother.reset();
-      if (!mounted) return;
+      if (!mounted) {
+        // Nothing left to process into, but the photo is on disk and the
+        // session may still be read by whoever popped this route.
+        _capturedFiles.add(LiveCapture(file: File(shot.path), quad: quadAtCapture));
+        return;
+      }
+      // The feed comes back before the page is processed: only the shutter
+      // waits on the encode, so the viewfinder is live and detecting again
+      // while the last page finishes in the background.
       await controller.startImageStream(_onFrame);
+      _capturedFiles.add(await _prepareCapture(File(shot.path), quadAtCapture));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -421,6 +451,45 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     } finally {
       if (mounted) setState(() => _capturing = false);
     }
+  }
+
+  /// Runs the page through the storage pipeline here and now — cropped to
+  /// the boundary that was on screen, downscaled and re-encoded at page
+  /// size — and stages the result, so adopting it into the document later
+  /// is a file move rather than a decode of a multi-megapixel photo.
+  ///
+  /// This is the work that used to happen for the whole batch after Done,
+  /// where a long session meant a long wait at the end with nothing to
+  /// look at. Done doing it per capture spends the same total time in the
+  /// gaps between shots, which is time the user is already using to frame
+  /// the next page.
+  ///
+  /// A capture that could not be processed — unreadable bytes, a full
+  /// disk — is returned raw, with its quad intact, and the document
+  /// processes it the way it always did.
+  Future<LiveCapture> _prepareCapture(File shot, Quad? quad) async {
+    try {
+      final dir = _stagingDir ??= await _fileOperations.captureDirectory();
+      final written = await _fileOperations.writeCapture(
+        source: shot,
+        dir: dir.path,
+        stamp: DateTime.now().microsecondsSinceEpoch.toString(),
+        quad: quad,
+        keepOriginal: AppSettings.instance.keepOriginal,
+      );
+      if (written != null) {
+        final original = written.originalPath;
+        return LiveCapture(
+          file: File(written.pagePath),
+          original: original == null ? null : File(original),
+          prepared: true,
+        );
+      }
+      debugPrint('Could not process capture ${shot.path}; storing it raw');
+    } catch (e) {
+      debugPrint('Could not process capture ${shot.path}: $e');
+    }
+    return LiveCapture(file: shot, quad: quad);
   }
 
   void _onDonePressed() {
@@ -1000,7 +1069,9 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   Widget _doneButton(Color accent, Color onAccent) {
     final l10n = AppLocalizations.of(context)!;
     final count = _capturedFiles.length;
-    final enabled = count > 0;
+    // Inert while a page is still being processed: the shot in flight is
+    // not in the list yet, and leaving on it would drop it.
+    final enabled = count > 0 && !_capturing;
     final ink = enabled ? onAccent : OSColors.chromeMuted;
     return Material(
       color: enabled ? accent : OSColors.chromeScrim,

@@ -74,6 +74,8 @@ class FileOperations {
     Quad? quad,
     bool keepOriginal = false,
     int? index,
+    bool prepared = false,
+    File? preparedOriginal,
   }) async {
     await _ensureDirectory(dirPath);
 
@@ -84,6 +86,8 @@ class FileOperations {
       stamp: stamp,
       quad: quad,
       keepOriginal: keepOriginal,
+      prepared: prepared,
+      preparedOriginal: preparedOriginal,
     );
     if (written == null) return null;
 
@@ -117,15 +121,35 @@ class FileOperations {
   /// which reads as an import that silently did nothing.
   ///
   /// Returns null when that check fails, leaving no files behind.
+  ///
+  /// [prepared] says the capture has already been through this pipeline
+  /// somewhere else — the live-scan screen runs it per page, the moment
+  /// the shutter fires, so the work is finished before the user frames the
+  /// next page — and only has to be moved into the document. [source] is
+  /// then the finished page and [preparedOriginal] its uncropped
+  /// companion, so [quad] is not applied a second time.
   Future<({String pagePath, String? originalPath})?> writeCapture({
     required File source,
     required String dir,
     required String stamp,
     Quad? quad,
     bool keepOriginal = false,
+    bool prepared = false,
+    File? preparedOriginal,
   }) async {
     final pagePath = '$dir/$stamp.jpg';
     final originalPath = keepOriginal ? '$dir/orig_$stamp.jpg' : null;
+
+    // Already page-sized, already cropped to its boundary: the only thing
+    // left is to move it in.
+    if (prepared) {
+      return _adoptPrepared(
+        page: source,
+        original: preparedOriginal,
+        pagePath: pagePath,
+        originalPath: originalPath,
+      );
+    }
 
     // The fast path: let the platform decode the capture, and leave the
     // isolate only the encoding. Falls through to the pure-Dart pipeline
@@ -163,6 +187,47 @@ class FileOperations {
       // than leaving the page pointing at a file that isn't there.
       originalPath: (result['original'] ?? false) ? originalPath : null,
     );
+  }
+
+  /// Moves an already-processed page (and its original, if it has one)
+  /// into the document, without decoding or re-encoding either: the bytes
+  /// are already exactly what storage wants.
+  ///
+  /// The same displayability guard as the processing path applies — a
+  /// staged file that turned out unreadable, or a copy that failed part
+  /// way, leaves no page behind rather than an empty slot in the grid.
+  Future<({String pagePath, String? originalPath})?> _adoptPrepared({
+    required File page,
+    required File? original,
+    required String pagePath,
+    required String? originalPath,
+  }) async {
+    try {
+      await page.copy(pagePath);
+    } catch (e) {
+      debugPrint("Couldn't move prepared page ${page.path}: $e");
+      _deleteIfPresent(pagePath);
+      return null;
+    }
+    if (!await _isDisplayable(pagePath)) {
+      _deleteIfPresent(pagePath);
+      return null;
+    }
+
+    // An original that failed to move is simply not recorded, rather than
+    // leaving the page pointing at a file that isn't there.
+    String? storedOriginal;
+    if (originalPath != null && original != null) {
+      try {
+        await original.copy(originalPath);
+        storedOriginal = originalPath;
+      } catch (e) {
+        debugPrint("Couldn't move prepared original ${original.path}: $e");
+        _deleteIfPresent(originalPath);
+      }
+    }
+
+    return (pagePath: pagePath, originalPath: storedOriginal);
   }
 
   /// Stores a capture using the platform's image decoder, which decodes
@@ -575,6 +640,16 @@ class FileOperations {
     await _emptyDirectory(dir);
     return dir;
   }
+
+  /// The directory a live-scan session stages its processed pages in,
+  /// between the shutter firing and the pages being adopted into a
+  /// document.
+  ///
+  /// Not emptied on the way in, unlike [shareDirectory]: one session
+  /// stages page after page here, and the whole staging tree is purged at
+  /// startup anyway, so a session killed mid-batch leaves nothing behind
+  /// for good.
+  Future<Directory> captureDirectory() => _stagingDirectory('capture');
 
   /// Deletes everything staged by an earlier run.
   ///
