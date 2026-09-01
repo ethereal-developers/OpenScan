@@ -47,6 +47,7 @@ app.*.map.json
 .gitignore
 key.properties
 android/app/key.jks
+android/key.jks
 local.properties
 .vscode
 
