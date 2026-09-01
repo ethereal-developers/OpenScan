@@ -180,7 +180,18 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: OSSpace.lg),
           OSButton(
             label: l10n.open_source_github,
-            icon: Icons.code_rounded,
+            // The real mark rather than a code glyph. github-mark carries
+            // the Octocat in its alpha channel — the v2 asset drew it in
+            // luminance inside an opaque disc, which tinted to a blob — so
+            // it takes the button's foreground in either theme.
+            leading: Builder(
+              builder: (context) => Image.asset(
+                'assets/github-mark.png',
+                height: 18,
+                width: 18,
+                color: IconTheme.of(context).color,
+              ),
+            ),
             kind: OSButtonKind.tonal,
             expand: true,
             onPressed: () => launchWebsite(context, Uri.parse(_repositoryUrl)),

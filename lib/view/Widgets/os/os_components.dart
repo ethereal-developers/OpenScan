@@ -19,6 +19,7 @@ class OSButton extends StatelessWidget {
     this.onPressed,
     this.kind = OSButtonKind.primary,
     this.icon,
+    this.leading,
     this.expand = false,
     this.busy = false,
   }) : super(key: key);
@@ -27,6 +28,13 @@ class OSButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final OSButtonKind kind;
   final IconData? icon;
+
+  /// A leading widget for marks Material has no glyph for — the GitHub
+  /// logo, say. Takes precedence over [icon]. It is built inside the
+  /// button's IconTheme, so a `Builder` reading `IconTheme.of(context)`
+  /// picks up the same foreground the label uses, disabled state included.
+  final Widget? leading;
+
   final bool expand;
 
   /// Swaps the label for a spinner and blocks the tap, for the moment
@@ -80,7 +88,10 @@ class OSButton extends StatelessWidget {
             mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (icon != null) ...[
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: OSSpace.xs),
+              ] else if (icon != null) ...[
                 Icon(icon, size: 18),
                 const SizedBox(width: OSSpace.xs),
               ],
