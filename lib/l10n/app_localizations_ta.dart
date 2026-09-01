@@ -560,25 +560,46 @@ class AppLocalizationsTa extends AppLocalizations {
   String get share_images => 'படங்களைப் பகிர்';
 
   @override
-  String get demo_detect_title => 'காட்டுங்கள், ஸ்கேன் ஆகிவிடும்';
+  String get demo_scan_title => 'பக்கத்தை நோக்கிக் காட்டுங்கள்';
 
   @override
-  String get demo_detect_body =>
-      'OpenScan பக்கத்தின் விளிம்புகளைக் கண்டறிந்து தானாகவே படம் எடுக்கும் — ஷட்டரைத் தட்ட வேண்டாம்.';
+  String get demo_scan_body =>
+      'அசையாமல் பிடித்தால் OpenScan விளிம்புகளைக் கண்டறிந்து தானாகவே படம் எடுக்கும் — அல்லது ஷட்டரைத் தட்டி நீங்களே எடுக்கலாம்.';
 
   @override
-  String get demo_private_title => 'எல்லாம் உங்கள் தொலைபேசியிலேயே இருக்கும்';
+  String get demo_pages_title => 'மேலும் பக்கங்களுக்குத் தொடருங்கள்';
 
   @override
-  String get demo_private_body =>
-      'கணக்குகள் இல்லை, கிளவுட் பதிவேற்றம் இல்லை, விளம்பரங்கள் இல்லை, கண்காணிப்பு இல்லை — ஒருபோதும் இல்லை.';
+  String get demo_pages_body =>
+      'ஒவ்வொரு படமும் அதே ஆவணத்தில் சேரும். எல்லாம் முடிந்ததும் \'முடிந்தது\' என்பதைத் தட்டுங்கள்.';
 
   @override
-  String get demo_camera_title => 'கடைசியாக ஒன்று';
+  String get demo_adjust_title => 'நேராக்கி, சுத்தம் செய்யுங்கள்';
 
   @override
-  String get demo_camera_body =>
-      'பக்கங்களை ஸ்கேன் செய்ய OpenScan க்கு உங்கள் கேமரா தேவை. அதற்கு மட்டுமே அது பயன்படுத்தப்படுகிறது.';
+  String get demo_adjust_body =>
+      'விளிம்புகள் சரியில்லை என்றால் மூலைகளை இழுங்கள், பிறகு வடிகட்டியைத் தேர்ந்தெடுங்கள் — தானியங்கி, சாம்பல் நிறம் அல்லது கருப்பு-வெள்ளை.';
+
+  @override
+  String get demo_organise_title => 'வரிசையை மாற்றி, பக்கங்களைச் சேருங்கள்';
+
+  @override
+  String get demo_organise_body =>
+      'ஒரு பக்கத்தை நீண்ட நேரம் அழுத்தி நகர்த்துங்கள், எப்போது வேண்டுமானாலும் புதிய பக்கங்களைச் சேருங்கள்.';
+
+  @override
+  String get demo_export_title => 'PDF ஆகச் சேமிக்கவும் அல்லது பகிரவும்';
+
+  @override
+  String get demo_export_body =>
+      'தரத்தையும் பக்க அளவையும் தேர்ந்தெடுத்து, தொலைபேசியில் சேமிக்கவும் அல்லது எங்கும் அனுப்பவும்.';
+
+  @override
+  String get demo_privacy_title => 'இது உங்கள் தொலைபேசியை விட்டு வெளியேறாது';
+
+  @override
+  String get demo_privacy_body =>
+      'கணக்குகள் இல்லை, கிளவுட் இல்லை, விளம்பரங்கள் இல்லை, கண்காணிப்பு இல்லை. கேமரா ஸ்கேன் செய்ய மட்டுமே பயன்படுகிறது.';
 
   @override
   String get allow_camera_access => 'கேமரா அணுகலை அனுமதி';

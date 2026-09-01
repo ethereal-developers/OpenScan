@@ -557,25 +557,46 @@ class AppLocalizationsHi extends AppLocalizations {
   String get share_images => 'छवियाँ साझा करें';
 
   @override
-  String get demo_detect_title => 'कैमरा घुमाइए, स्कैन हो गया';
+  String get demo_scan_title => 'पृष्ठ की ओर कैमरा करें';
 
   @override
-  String get demo_detect_body =>
-      'OpenScan पृष्ठ के किनारे ढूँढ़कर अपने आप कैप्चर करता है — शटर दबाने की ज़रूरत नहीं।';
+  String get demo_scan_body =>
+      'फ़ोन स्थिर रखें तो OpenScan किनारे ढूँढ़कर खुद ही तस्वीर ले लेता है — या शटर दबाकर खुद तस्वीर लें।';
 
   @override
-  String get demo_private_title => 'सब कुछ आपके फ़ोन पर ही रहता है';
+  String get demo_pages_title => 'और पृष्ठों के लिए जारी रखें';
 
   @override
-  String get demo_private_body =>
-      'कोई खाता नहीं, कोई क्लाउड अपलोड नहीं, कोई विज्ञापन नहीं, कोई ट्रैकिंग नहीं — कभी नहीं।';
+  String get demo_pages_body =>
+      'हर तस्वीर उसी दस्तावेज़ में जुड़ती है। सब हो जाएँ तो \'पूर्ण\' दबाएँ।';
 
   @override
-  String get demo_camera_title => 'आख़िरी बात';
+  String get demo_adjust_title => 'सीधा करें और साफ़ करें';
 
   @override
-  String get demo_camera_body =>
-      'पृष्ठ स्कैन करने के लिए OpenScan को आपके कैमरे की ज़रूरत है। इसका उपयोग सिर्फ़ इसी के लिए होता है।';
+  String get demo_adjust_body =>
+      'किनारे ठीक न हों तो कोनों को खींचें, फिर फ़िल्टर चुनें — स्वतः, ग्रेस्केल या श्वेत-श्याम।';
+
+  @override
+  String get demo_organise_title => 'क्रम बदलें और पृष्ठ जोड़ें';
+
+  @override
+  String get demo_organise_body =>
+      'पृष्ठ को दबाकर रखें और खिसकाएँ, और जब चाहें दस्तावेज़ में नए पृष्ठ जोड़ें।';
+
+  @override
+  String get demo_export_title => 'PDF के रूप में सहेजें या साझा करें';
+
+  @override
+  String get demo_export_body =>
+      'गुणवत्ता और पृष्ठ आकार चुनें, फिर फ़ोन में सहेजें या कहीं भी भेजें।';
+
+  @override
+  String get demo_privacy_title => 'यह कभी आपका फ़ोन नहीं छोड़ता';
+
+  @override
+  String get demo_privacy_body =>
+      'कोई खाता नहीं, कोई क्लाउड नहीं, कोई विज्ञापन नहीं, कोई ट्रैकिंग नहीं। कैमरा सिर्फ़ स्कैन करने के लिए इस्तेमाल होता है।';
 
   @override
   String get allow_camera_access => 'कैमरा एक्सेस की अनुमति दें';

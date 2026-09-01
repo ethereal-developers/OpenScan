@@ -557,25 +557,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get share_images => 'Share images';
 
   @override
-  String get demo_detect_title => 'Point, and it\'s scanned';
+  String get demo_scan_title => 'Point at the page';
 
   @override
-  String get demo_detect_body =>
-      'OpenScan finds the page edges and captures automatically — no shutter tap needed.';
+  String get demo_scan_body =>
+      'OpenScan finds the edges and takes the shot by itself when you hold still — or tap the shutter to take it yourself.';
 
   @override
-  String get demo_private_title => 'Everything stays on your phone';
+  String get demo_pages_title => 'Keep going for more pages';
 
   @override
-  String get demo_private_body =>
-      'No accounts, no cloud uploads, no ads, no tracking — ever.';
+  String get demo_pages_body =>
+      'Every shot joins the same document. Tap Done when you have them all.';
 
   @override
-  String get demo_camera_title => 'One last thing';
+  String get demo_adjust_title => 'Straighten and clean up';
 
   @override
-  String get demo_camera_body =>
-      'OpenScan needs your camera to scan pages. That\'s the only thing it\'s ever used for.';
+  String get demo_adjust_body =>
+      'Drag the corners if the edges are off, then pick a filter — Auto, Grayscale or B&W.';
+
+  @override
+  String get demo_organise_title => 'Reorder and add pages';
+
+  @override
+  String get demo_organise_body =>
+      'Hold a page to move it, and add more pages to a document whenever you like.';
+
+  @override
+  String get demo_export_title => 'Save or share as PDF';
+
+  @override
+  String get demo_export_body =>
+      'Choose a quality and page size, then save it to your phone or send it anywhere.';
+
+  @override
+  String get demo_privacy_title => 'It never leaves your phone';
+
+  @override
+  String get demo_privacy_body =>
+      'No accounts, no cloud, no ads, no tracking. The camera is used for scanning and nothing else.';
 
   @override
   String get allow_camera_access => 'Allow camera access';

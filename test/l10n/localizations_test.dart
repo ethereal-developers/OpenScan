@@ -26,7 +26,7 @@ void main() {
         l10n.settings,
         l10n.camera_access_body,
         l10n.no_documents_body,
-        l10n.demo_detect_title,
+        l10n.demo_scan_title,
         l10n.quality_high,
       ]) {
         expect(value.trim(), isNotEmpty,

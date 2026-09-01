@@ -593,25 +593,46 @@ class AppLocalizationsPl extends AppLocalizations {
   String get share_images => 'Udostępnij obrazy';
 
   @override
-  String get demo_detect_title => 'Wyceluj, a strona jest zeskanowana';
+  String get demo_scan_title => 'Skieruj na stronę';
 
   @override
-  String get demo_detect_body =>
-      'OpenScan znajduje krawędzie strony i robi zdjęcie automatycznie — bez naciskania migawki.';
+  String get demo_scan_body =>
+      'OpenScan znajduje krawędzie i sam robi zdjęcie, gdy nie poruszasz telefonem — albo dotknij migawki, by zrobić je samodzielnie.';
 
   @override
-  String get demo_private_title => 'Wszystko zostaje na Twoim telefonie';
+  String get demo_pages_title => 'Rób dalej, by dodać strony';
 
   @override
-  String get demo_private_body =>
-      'Bez kont, bez przesyłania do chmury, bez reklam, bez śledzenia — nigdy.';
+  String get demo_pages_body =>
+      'Każde zdjęcie trafia do tego samego dokumentu. Gdy masz już wszystkie, dotknij Gotowe.';
 
   @override
-  String get demo_camera_title => 'Jeszcze jedno';
+  String get demo_adjust_title => 'Wyprostuj i oczyść';
 
   @override
-  String get demo_camera_body =>
-      'OpenScan potrzebuje aparatu do skanowania stron. Do niczego innego go nie używa.';
+  String get demo_adjust_body =>
+      'Przeciągnij narożniki, jeśli krawędzie się nie zgadzają, a potem wybierz filtr — Auto, Odcienie szarości lub Czarno-biały.';
+
+  @override
+  String get demo_organise_title => 'Zmień kolejność i dodaj strony';
+
+  @override
+  String get demo_organise_body =>
+      'Przytrzymaj stronę, aby ją przenieść, i dodawaj kolejne strony, kiedy zechcesz.';
+
+  @override
+  String get demo_export_title => 'Zapisz lub udostępnij jako PDF';
+
+  @override
+  String get demo_export_body =>
+      'Wybierz jakość i rozmiar strony, a potem zapisz w telefonie lub wyślij gdziekolwiek.';
+
+  @override
+  String get demo_privacy_title => 'Nigdy nie opuszcza telefonu';
+
+  @override
+  String get demo_privacy_body =>
+      'Bez kont, bez chmury, bez reklam, bez śledzenia. Aparat służy wyłącznie do skanowania.';
 
   @override
   String get allow_camera_access => 'Zezwól na dostęp do aparatu';

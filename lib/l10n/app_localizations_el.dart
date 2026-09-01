@@ -562,25 +562,46 @@ class AppLocalizationsEl extends AppLocalizations {
   String get share_images => 'Κοινοποίηση εικόνων';
 
   @override
-  String get demo_detect_title => 'Στοχεύστε, και σαρώθηκε';
+  String get demo_scan_title => 'Στρέψτε το στη σελίδα';
 
   @override
-  String get demo_detect_body =>
-      'Το OpenScan βρίσκει τις άκρες της σελίδας και κάνει λήψη αυτόματα — χωρίς πάτημα κλείστρου.';
+  String get demo_scan_body =>
+      'Το OpenScan βρίσκει τις άκρες και τραβάει τη φωτογραφία μόνο του όταν κρατάτε το τηλέφωνο σταθερά — ή πατήστε το κλείστρο για να την τραβήξετε εσείς.';
 
   @override
-  String get demo_private_title => 'Όλα μένουν στο τηλέφωνό σας';
+  String get demo_pages_title => 'Συνεχίστε για κι άλλες σελίδες';
 
   @override
-  String get demo_private_body =>
-      'Χωρίς λογαριασμούς, χωρίς μεταφορτώσεις στο cloud, χωρίς διαφημίσεις, χωρίς παρακολούθηση — ποτέ.';
+  String get demo_pages_body =>
+      'Κάθε λήψη μπαίνει στο ίδιο έγγραφο. Πατήστε «Τέλος» όταν τις έχετε όλες.';
 
   @override
-  String get demo_camera_title => 'Ένα τελευταίο πράγμα';
+  String get demo_adjust_title => 'Ίσιωμα και καθάρισμα';
 
   @override
-  String get demo_camera_body =>
-      'Το OpenScan χρειάζεται την κάμερά σας για να σαρώνει σελίδες. Αυτό είναι το μόνο για το οποίο χρησιμοποιείται.';
+  String get demo_adjust_body =>
+      'Σύρετε τις γωνίες αν οι άκρες δεν ταιριάζουν και μετά διαλέξτε φίλτρο — Αυτόματο, Κλίμακα του γκρι ή Ασπρόμαυρο.';
+
+  @override
+  String get demo_organise_title => 'Αναδιάταξη και προσθήκη σελίδων';
+
+  @override
+  String get demo_organise_body =>
+      'Κρατήστε πατημένη μια σελίδα για να τη μετακινήσετε και προσθέστε κι άλλες όποτε θέλετε.';
+
+  @override
+  String get demo_export_title => 'Αποθήκευση ή κοινή χρήση ως PDF';
+
+  @override
+  String get demo_export_body =>
+      'Επιλέξτε ποιότητα και μέγεθος σελίδας και μετά αποθηκεύστε το στο τηλέφωνο ή στείλτε το οπουδήποτε.';
+
+  @override
+  String get demo_privacy_title => 'Δεν φεύγει ποτέ από το τηλέφωνό σας';
+
+  @override
+  String get demo_privacy_body =>
+      'Χωρίς λογαριασμούς, χωρίς cloud, χωρίς διαφημίσεις, χωρίς παρακολούθηση. Η κάμερα χρησιμοποιείται μόνο για σάρωση.';
 
   @override
   String get allow_camera_access => 'Να επιτραπεί η πρόσβαση στην κάμερα';

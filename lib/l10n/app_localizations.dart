@@ -1078,41 +1078,77 @@ abstract class AppLocalizations {
   /// **'Share images'**
   String get share_images;
 
-  /// No description provided for @demo_detect_title.
+  /// No description provided for @demo_scan_title.
   ///
   /// In en, this message translates to:
-  /// **'Point, and it\'s scanned'**
-  String get demo_detect_title;
+  /// **'Point at the page'**
+  String get demo_scan_title;
 
-  /// No description provided for @demo_detect_body.
+  /// No description provided for @demo_scan_body.
   ///
   /// In en, this message translates to:
-  /// **'OpenScan finds the page edges and captures automatically — no shutter tap needed.'**
-  String get demo_detect_body;
+  /// **'OpenScan finds the edges and takes the shot by itself when you hold still — or tap the shutter to take it yourself.'**
+  String get demo_scan_body;
 
-  /// No description provided for @demo_private_title.
+  /// No description provided for @demo_pages_title.
   ///
   /// In en, this message translates to:
-  /// **'Everything stays on your phone'**
-  String get demo_private_title;
+  /// **'Keep going for more pages'**
+  String get demo_pages_title;
 
-  /// No description provided for @demo_private_body.
+  /// No description provided for @demo_pages_body.
   ///
   /// In en, this message translates to:
-  /// **'No accounts, no cloud uploads, no ads, no tracking — ever.'**
-  String get demo_private_body;
+  /// **'Every shot joins the same document. Tap Done when you have them all.'**
+  String get demo_pages_body;
 
-  /// No description provided for @demo_camera_title.
+  /// No description provided for @demo_adjust_title.
   ///
   /// In en, this message translates to:
-  /// **'One last thing'**
-  String get demo_camera_title;
+  /// **'Straighten and clean up'**
+  String get demo_adjust_title;
 
-  /// No description provided for @demo_camera_body.
+  /// No description provided for @demo_adjust_body.
   ///
   /// In en, this message translates to:
-  /// **'OpenScan needs your camera to scan pages. That\'s the only thing it\'s ever used for.'**
-  String get demo_camera_body;
+  /// **'Drag the corners if the edges are off, then pick a filter — Auto, Grayscale or B&W.'**
+  String get demo_adjust_body;
+
+  /// No description provided for @demo_organise_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder and add pages'**
+  String get demo_organise_title;
+
+  /// No description provided for @demo_organise_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold a page to move it, and add more pages to a document whenever you like.'**
+  String get demo_organise_body;
+
+  /// No description provided for @demo_export_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Save or share as PDF'**
+  String get demo_export_title;
+
+  /// No description provided for @demo_export_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a quality and page size, then save it to your phone or send it anywhere.'**
+  String get demo_export_body;
+
+  /// No description provided for @demo_privacy_title.
+  ///
+  /// In en, this message translates to:
+  /// **'It never leaves your phone'**
+  String get demo_privacy_title;
+
+  /// No description provided for @demo_privacy_body.
+  ///
+  /// In en, this message translates to:
+  /// **'No accounts, no cloud, no ads, no tracking. The camera is used for scanning and nothing else.'**
+  String get demo_privacy_body;
 
   /// No description provided for @allow_camera_access.
   ///

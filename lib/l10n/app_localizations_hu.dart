@@ -558,25 +558,46 @@ class AppLocalizationsHu extends AppLocalizations {
   String get share_images => 'Képek megosztása';
 
   @override
-  String get demo_detect_title => 'Irányítsa rá, és be van szkennelve';
+  String get demo_scan_title => 'Irányítsa az oldalra';
 
   @override
-  String get demo_detect_body =>
-      'Az OpenScan megtalálja az oldal éleit, és automatikusan rögzít — nem kell exponálógombot nyomni.';
+  String get demo_scan_body =>
+      'Az OpenScan megtalálja a széleket, és magától elkészíti a felvételt, ha mozdulatlanul tartja — vagy koppintson az exponálógombra, és elkészítheti maga.';
 
   @override
-  String get demo_private_title => 'Minden a telefonján marad';
+  String get demo_pages_title => 'Folytassa a további oldalakkal';
 
   @override
-  String get demo_private_body =>
-      'Nincs fiók, nincs felhőfeltöltés, nincs hirdetés, nincs követés — soha.';
+  String get demo_pages_body =>
+      'Minden felvétel ugyanabba a dokumentumba kerül. Ha megvan mind, koppintson a Kész gombra.';
 
   @override
-  String get demo_camera_title => 'Még egy dolog';
+  String get demo_adjust_title => 'Igazítás és tisztítás';
 
   @override
-  String get demo_camera_body =>
-      'Az OpenScannek szüksége van a kamerájára az oldalak szkenneléséhez. Csak erre használja.';
+  String get demo_adjust_body =>
+      'Húzza a sarkokat, ha a szélek nem stimmelnek, majd válasszon szűrőt — Automatikus, Szürkeárnyalatos vagy Fekete-fehér.';
+
+  @override
+  String get demo_organise_title => 'Átrendezés és oldalak hozzáadása';
+
+  @override
+  String get demo_organise_body =>
+      'Tartsa nyomva az oldalt az áthelyezéshez, és bármikor adhat hozzá további oldalakat.';
+
+  @override
+  String get demo_export_title => 'Mentés vagy megosztás PDF-ként';
+
+  @override
+  String get demo_export_body =>
+      'Válasszon minőséget és oldalméretet, majd mentse a telefonjára, vagy küldje el bárhová.';
+
+  @override
+  String get demo_privacy_title => 'Soha nem hagyja el a telefonját';
+
+  @override
+  String get demo_privacy_body =>
+      'Nincsenek fiókok, nincs felhő, nincsenek hirdetések, nincs követés. A kamera csak beolvasásra szolgál.';
 
   @override
   String get allow_camera_access => 'Kamera-hozzáférés engedélyezése';

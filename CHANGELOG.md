@@ -15,9 +15,16 @@ A full rewrite of the scanning pipeline, the camera, and the UI.
 - Tamil and Hindi translations. The interface is now fully translated
   in English, Greek, Hindi, Hungarian, Polish and Tamil, with plural
   forms and dates that follow the locale.
+- The tutorial is now a walkthrough of the app: six slides covering
+  auto-capture, multi-page scanning, edge adjustment and filters, page
+  reordering, and export, each with a working miniature of the screen it
+  describes that animates the gesture being taught.
 
 ### Changed
 
+- The tutorial's illustrations are drawn from the theme's own tokens
+  rather than shipped as screenshots, so they follow the chosen accent and
+  cannot go stale against the screens they depict.
 - Cropping and edge detection are pure Dart; the OpenCV dependency is gone.
 - Captures are stored through the platform's own image decoder, which
   decodes and downscales in one native step instead of several seconds of
@@ -38,6 +45,11 @@ A full rewrite of the scanning pipeline, the camera, and the UI.
 - Crop handles stay clear of the system back-gesture strip.
 - Pages the app cannot draw are no longer kept, and exports no longer
   leave files the user cannot delete.
+- The tutorial's back button, opened from Settings, sat in the top-right
+  corner where Skip belongs; it is now on the leading edge.
+- Tutorial slides no longer overflow on short screens or at large text
+  sizes — the copy used to be pushed off the bottom, in every language at
+  200% text.
 
 ### Removed
 
