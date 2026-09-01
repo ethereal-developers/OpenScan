@@ -111,6 +111,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get developers => 'डेवलपर';
 
   @override
+  String get view_on_linkedin => 'LinkedIn पर देखें';
+
+  @override
   String get tutorial_title => 'ऐप का उपयोग कैसे करें?';
 
   @override

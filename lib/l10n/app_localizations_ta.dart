@@ -111,6 +111,9 @@ class AppLocalizationsTa extends AppLocalizations {
   String get developers => 'உருவாக்குநர்கள்';
 
   @override
+  String get view_on_linkedin => 'LinkedIn இல் பார்க்கவும்';
+
+  @override
   String get tutorial_title => 'செயலியை எப்படிப் பயன்படுத்துவது?';
 
   @override

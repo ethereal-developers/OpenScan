@@ -10,11 +10,47 @@ const String _repositoryUrl =
     'https://github.com/Ethereal-Developers-Inc/OpenScan';
 const String _appVersion = '3.0.0';
 
-Future<void> launchWebsite(Uri url) async {
-  if (await canLaunchUrl(url)) {
-    await launchUrl(url, mode: LaunchMode.externalApplication);
-  } else {
-    debugPrint("Couldn't launch the url");
+/// The two people who wrote the app, as the v2 About screen had them.
+/// Names are not localised: they are names.
+const List<_Developer> _developers = [
+  _Developer(
+    name: 'Vijay',
+    photo: 'assets/vj_jpg.JPG',
+    linkedIn: 'https://www.linkedin.com/in/vijay-t-s/',
+  ),
+  _Developer(
+    name: 'Vikram',
+    photo: 'assets/vikkiboi.jpg',
+    linkedIn: 'https://www.linkedin.com/in/vikram-harikrishnan/',
+  ),
+];
+
+class _Developer {
+  const _Developer({
+    required this.name,
+    required this.photo,
+    required this.linkedIn,
+  });
+
+  final String name;
+  final String photo;
+  final String linkedIn;
+}
+
+/// Opens [url] in the browser, and says so when it cannot.
+///
+/// A dead link that prints to the debug console and nothing else looks
+/// exactly like a card that is not a link at all, which is how the missing
+/// browser <queries> entry stayed invisible.
+Future<void> launchWebsite(BuildContext context, Uri url) async {
+  var launched = false;
+  try {
+    launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+  } catch (e) {
+    debugPrint('Could not launch $url: $e');
+  }
+  if (!launched && context.mounted) {
+    OSSnack.error(context, AppLocalizations.of(context)!.couldnt_launch_url);
   }
 }
 
@@ -70,9 +106,27 @@ class AboutScreen extends StatelessWidget {
                     OSTypography.caption.copyWith(color: os.onSurfaceVariant)),
           ),
           const SizedBox(height: OSSpace.lg),
-          Text(
-            l10n.app_description,
-            style: OSTypography.body.copyWith(color: os.onSurfaceVariant),
+          // Every locale writes app_description to follow the app's name
+          // inline — "is an open-source app…", "είναι…", "एक … है" — so the
+          // name has to lead the paragraph or it opens mid-sentence.
+          Text.rich(
+            TextSpan(
+              text: 'Open',
+              style: OSTypography.body.copyWith(
+                color: os.onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+              children: [
+                TextSpan(text: 'Scan', style: TextStyle(color: os.accent)),
+                TextSpan(
+                  text: ' ${l10n.app_description}',
+                  style: OSTypography.body.copyWith(
+                    color: os.onSurfaceVariant,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: OSSpace.md),
           Container(
@@ -98,14 +152,124 @@ class AboutScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: OSSpace.lg),
+          // Written out rather than using OSSectionHeader, which carries the
+          // settings list's own gutter and would indent past this page's text.
+          Text(
+            l10n.developers.toUpperCase(),
+            style: OSTypography.caption.copyWith(
+              color: os.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: OSSpace.sm),
+          // IntrinsicHeight so the two cards match height whatever the
+          // names do — `stretch` alone asks for infinite height inside a
+          // list, which silently blanks the whole page.
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (int i = 0; i < _developers.length; i++) ...[
+                  if (i > 0) const SizedBox(width: OSSpace.sm),
+                  Expanded(child: _DeveloperCard(_developers[i])),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: OSSpace.lg),
           OSButton(
             label: l10n.open_source_github,
             icon: Icons.code_rounded,
             kind: OSButtonKind.tonal,
             expand: true,
-            onPressed: () => launchWebsite(Uri.parse(_repositoryUrl)),
+            onPressed: () => launchWebsite(context, Uri.parse(_repositoryUrl)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One developer, tappable through to their LinkedIn.
+///
+/// The card states where it goes rather than only implying it: a bare
+/// portrait gives no clue that it is a link at all, which is what the v2
+/// card left to a commented-out "Tap for more".
+class _DeveloperCard extends StatelessWidget {
+  const _DeveloperCard(this.developer, {Key? key}) : super(key: key);
+
+  final _Developer developer;
+
+  @override
+  Widget build(BuildContext context) {
+    final os = context.os;
+    final l10n = AppLocalizations.of(context)!;
+
+    return Semantics(
+      button: true,
+      label: '${developer.name}, ${l10n.view_on_linkedin}',
+      // The card is one link, so it announces once. Without this the name
+      // and the word "LinkedIn" come through as separate nodes and the
+      // label never reaches the reader.
+      excludeSemantics: true,
+      child: Material(
+        color: os.surfaceVariant,
+        borderRadius: BorderRadius.circular(OSRadius.card),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(OSRadius.card),
+          onTap: () => launchWebsite(context, Uri.parse(developer.linkedIn)),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                vertical: OSSpace.md, horizontal: OSSpace.sm),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(OSRadius.card),
+              border: Border.all(color: os.outline),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: os.accent, width: 2),
+                  ),
+                  child: CircleAvatar(
+                    radius: 34,
+                    backgroundColor: os.surfaceContainer,
+                    backgroundImage: AssetImage(developer.photo),
+                  ),
+                ),
+                const SizedBox(height: OSSpace.sm),
+                Text(
+                  developer.name,
+                  style: OSTypography.label.copyWith(
+                    color: os.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: OSSpace.xxs),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.open_in_new_rounded,
+                        size: 12, color: os.onSurfaceVariant),
+                    const SizedBox(width: OSSpace.xxs),
+                    Flexible(
+                      child: Text(
+                        'LinkedIn',
+                        overflow: TextOverflow.ellipsis,
+                        style: OSTypography.caption
+                            .copyWith(color: os.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

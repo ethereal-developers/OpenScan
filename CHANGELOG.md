@@ -15,6 +15,8 @@ A full rewrite of the scanning pipeline, the camera, and the UI.
 - Tamil and Hindi translations. The interface is now fully translated
   in English, Greek, Hindi, Hungarian, Polish and Tamil, with plural
   forms and dates that follow the locale.
+- The About screen credits both developers again, as v2 did, with a card
+  each linking to their LinkedIn.
 - The tutorial is now a walkthrough of the app: six slides covering
   auto-capture, multi-page scanning, edge adjustment and filters, page
   reordering, and export, each with a working miniature of the screen it
@@ -47,6 +49,13 @@ A full rewrite of the scanning pipeline, the camera, and the UI.
   leave files the user cannot delete.
 - The tutorial's back button, opened from Settings, sat in the top-right
   corner where Skip belongs; it is now on the leading edge.
+- Every outbound link works again. Android 11+ package visibility hid all
+  browsers from `canLaunchUrl`, so the About screen's GitHub button did
+  nothing at all; the manifest now declares the browser query, and a link
+  that still cannot open says so instead of only logging.
+- The About screen's description no longer opens mid-sentence: every
+  locale writes it to follow the app's name inline, and the name had been
+  dropped from the paragraph.
 - Tutorial slides no longer overflow on short screens or at large text
   sizes — the copy used to be pushed off the bottom, in every language at
   200% text.

@@ -111,6 +111,9 @@ class AppLocalizationsEl extends AppLocalizations {
   String get developers => 'Προγραμματιστές';
 
   @override
+  String get view_on_linkedin => 'Προβολή στο LinkedIn';
+
+  @override
   String get tutorial_title => 'Πώς να χρησιμοποιήσετε την εφαρμογή;';
 
   @override

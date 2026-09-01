@@ -310,6 +310,12 @@ abstract class AppLocalizations {
   /// **'Developers'**
   String get developers;
 
+  /// No description provided for @view_on_linkedin.
+  ///
+  /// In en, this message translates to:
+  /// **'View on LinkedIn'**
+  String get view_on_linkedin;
+
   /// No description provided for @tutorial_title.
   ///
   /// In en, this message translates to:

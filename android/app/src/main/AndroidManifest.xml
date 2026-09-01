@@ -38,6 +38,14 @@
     <intent>
       <action android:name="android.media.action.IMAGE_CAPTURE" />
     </intent>
+    <!-- Without this, package visibility on Android 11+ hides every
+         browser from canLaunchUrl, and the About screen's links to
+         GitHub and to the developers' LinkedIn silently do nothing. -->
+    <intent>
+      <action android:name="android.intent.action.VIEW" />
+      <category android:name="android.intent.category.BROWSABLE" />
+      <data android:scheme="https" />
+    </intent>
   </queries>
 
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />

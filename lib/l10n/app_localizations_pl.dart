@@ -111,6 +111,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get developers => 'Twórcy';
 
   @override
+  String get view_on_linkedin => 'Zobacz na LinkedIn';
+
+  @override
   String get tutorial_title => 'Jak korzystać z aplikacji?';
 
   @override

@@ -111,6 +111,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get developers => 'Fejlesztők';
 
   @override
+  String get view_on_linkedin => 'Megtekintés a LinkedIn-en';
+
+  @override
   String get tutorial_title => 'Hogyan használható az alkalmazás?';
 
   @override
