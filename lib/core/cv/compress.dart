@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:image/image.dart' as img;
 
 /// Entry point designed to be run via `compute()`. Re-encodes the JPEG at
-/// `params['src']` at `params['quality']` and writes it to a new file
-/// under `params['dest']`, mirroring the old native `compress` channel
-/// method (including its `<dest>/<timestamp>.jpg` naming).
+/// `params['src']` at `params['quality']` and writes it to the exact path
+/// `params['dest']` — the caller picks that name, since several of these
+/// now run concurrently and a name generated in here (like the old
+/// `<dest-dir>/<timestamp>.jpg` scheme) can collide when two finish in the
+/// same millisecond.
 /// An optional `params['maxEdge']` caps the long edge first: an export
 /// preset gets small by shedding pixels as well as JPEG quality, and past
 /// a point the pixels are where the bytes actually are.
@@ -22,9 +24,8 @@ Future<String> compressImageIsolateEntry(Map<String, dynamic> params) async {
   }
 
   final jpg = img.encodeJpg(fitToMaxEdge(decoded, maxEdge), quality: quality);
-  final outPath = '$dest/${DateTime.now().millisecondsSinceEpoch}.jpg';
-  await File(outPath).writeAsBytes(jpg, flush: true);
-  return outPath;
+  await File(dest).writeAsBytes(jpg, flush: true);
+  return dest;
 }
 
 /// Long edge, in pixels, a stored page is capped at. 2400px is ~200 DPI

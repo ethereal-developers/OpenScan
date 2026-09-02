@@ -5,9 +5,10 @@ import 'package:image/image.dart' as img;
 import 'package:openscan/core/cv/compress.dart';
 
 void main() {
-  test('compresses a JPEG into a new file under dest', () async {
+  test('compresses a JPEG into the exact file at dest', () async {
     final tempDir = Directory.systemTemp.createTempSync('compress_test');
     final srcPath = '${tempDir.path}/src.jpg';
+    final destPath = '${tempDir.path}/out.jpg';
 
     final image = img.Image(width: 200, height: 200);
     img.fill(image, color: img.ColorRgb8(200, 100, 50));
@@ -15,13 +16,12 @@ void main() {
 
     final outPath = await compressImageIsolateEntry({
       'src': srcPath,
-      'dest': tempDir.path,
+      'dest': destPath,
       'quality': 40,
     });
 
+    expect(outPath, destPath);
     expect(File(outPath).existsSync(), isTrue);
-    expect(outPath, startsWith(tempDir.path));
-    expect(outPath, endsWith('.jpg'));
 
     final decoded = img.decodeImage(File(outPath).readAsBytesSync());
     expect(decoded, isNotNull);
@@ -45,7 +45,7 @@ void main() {
     await expectLater(
       compressImageIsolateEntry({
         'src': badPath,
-        'dest': tempDir.path,
+        'dest': '${tempDir.path}/out.jpg',
         'quality': 90,
       }),
       throwsA(anything),
@@ -66,7 +66,7 @@ void main() {
 
     final capped = await compressImageIsolateEntry({
       'src': srcPath,
-      'dest': tempDir.path,
+      'dest': '${tempDir.path}/capped.jpg',
       'quality': 80,
       'maxEdge': 900,
     });
@@ -78,7 +78,7 @@ void main() {
     // scaling it up to meet the number.
     final untouched = await compressImageIsolateEntry({
       'src': srcPath,
-      'dest': tempDir.path,
+      'dest': '${tempDir.path}/untouched.jpg',
       'quality': 80,
       'maxEdge': 4000,
     });
@@ -89,4 +89,32 @@ void main() {
     tempDir.deleteSync(recursive: true);
   });
 
+  test('concurrent compressions into the same dest dir do not collide',
+      () async {
+    // The bug this guards against: the old scheme named the output file
+    // from the current timestamp, so two calls finishing within the same
+    // millisecond overwrote each other. Naming is now the caller's job.
+    final tempDir = Directory.systemTemp.createTempSync('compress_concurrent');
+    final srcPath = '${tempDir.path}/src.jpg';
+
+    final image = img.Image(width: 100, height: 100);
+    img.fill(image, color: img.ColorRgb8(10, 20, 30));
+    File(srcPath).writeAsBytesSync(img.encodeJpg(image, quality: 90));
+
+    final outPaths = await Future.wait([
+      for (int i = 0; i < 5; i++)
+        compressImageIsolateEntry({
+          'src': srcPath,
+          'dest': '${tempDir.path}/$i.jpg',
+          'quality': 80,
+        }),
+    ]);
+
+    expect(outPaths.toSet().length, 5);
+    for (final path in outPaths) {
+      expect(File(path).existsSync(), isTrue);
+    }
+
+    tempDir.deleteSync(recursive: true);
+  });
 }

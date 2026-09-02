@@ -524,25 +524,93 @@ class FileOperations {
   /// The copies it did manage to write are cleaned up there and then.
   Future<({List<ImageOS> images, List<String> staged})> _compressedForPdf(
       List<ImageOS> images, int quality, int? maxEdge) async {
-    final stagingDir = await _stagingDirectory('pdf');
-    final staged = <String>[];
-    try {
-      for (ImageOS image in images) {
-        staged.add(await compute(compressImageIsolateEntry, {
-          'src': image.imgPath,
-          'dest': stagingDir.path,
-          'quality': quality,
-          'maxEdge': maxEdge,
-        }));
-      }
-      return (
-        images: [for (final path in staged) ImageOS(imgPath: path)],
-        staged: staged,
-      );
-    } catch (e) {
-      debugPrint('Could not compress pages for the PDF: $e');
-      await _deleteStaged(staged);
+    // Pages are already stored at exactly this quality/maxEdge, so
+    // decoding and re-encoding them would just burn time to reproduce the
+    // same bytes: use the stored files as-is.
+    if (quality == kStoredPageQuality && maxEdge == kStoredPageMaxEdge) {
       return (images: images, staged: const <String>[]);
+    }
+
+    final stagingDir = await _stagingDirectory('pdf');
+    // Compressed in parallel rather than one page at a time: the platform
+    // decode below only blocks the calling isolate for as long as it takes
+    // to kick off (the actual decode runs on the engine's own threads), and
+    // each subsequent encode is its own compute() isolate, so starting all
+    // of these together lets the work overlap instead of running as N
+    // sequential passes. Each future catches its own failure so one bad
+    // page doesn't strand the staged files the others already finished
+    // writing.
+    final results = await Future.wait([
+      for (int i = 0; i < images.length; i++)
+        _compressOneForPdf(
+          images[i],
+          quality,
+          maxEdge,
+          '${stagingDir.path}/$i.jpg',
+        ),
+    ]);
+
+    if (results.contains(null)) {
+      await _deleteStaged([for (final path in results) if (path != null) path]);
+      return (images: images, staged: const <String>[]);
+    }
+
+    final staged = results.cast<String>();
+    return (
+      images: [for (final path in staged) ImageOS(imgPath: path)],
+      staged: staged,
+    );
+  }
+
+  /// Compresses one page for [_compressedForPdf], writing to the exact
+  /// path [dest].
+  ///
+  /// Tries the platform decoder first — the same ~10x-faster path
+  /// [_writeCaptureNatively] uses for storing a capture — and falls back to
+  /// the pure-Dart `package:image` pipeline only when that decoder can't
+  /// read the file, or the encode isolate reports a failure. Returns null
+  /// when both paths fail.
+  Future<String?> _compressOneForPdf(
+    ImageOS image,
+    int quality,
+    int? maxEdge,
+    String dest,
+  ) async {
+    try {
+      final bytes = await File(image.imgPath).readAsBytes();
+      final decoded = await decodeScaled(
+        bytes,
+        // No cap at all is `maxEdge: null`; the platform decoder wants an
+        // int, so hand it a size nothing scans at.
+        maxEdge: maxEdge ?? 1 << 20,
+        label: image.imgPath,
+      );
+      if (decoded != null) {
+        final wrote = await compute(encodeStoredPageIsolateEntry, {
+          'rgba': decoded.rgba,
+          'width': decoded.width,
+          'height': decoded.height,
+          'dest': dest,
+          'quality': quality,
+          'maxEdge': maxEdge ?? decoded.width,
+          'quad': null,
+        });
+        if (wrote) return dest;
+      }
+    } catch (e) {
+      debugPrint('Native compression failed for ${image.imgPath}: $e');
+    }
+
+    try {
+      return await compute(compressImageIsolateEntry, {
+        'src': image.imgPath,
+        'dest': dest,
+        'quality': quality,
+        'maxEdge': maxEdge,
+      });
+    } catch (e) {
+      debugPrint('Could not compress ${image.imgPath} for the PDF: $e');
+      return null;
     }
   }
 
