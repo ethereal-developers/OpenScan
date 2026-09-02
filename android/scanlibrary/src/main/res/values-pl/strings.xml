@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ScanLibrary</string>
+    <string name="hello_world">Witaj!</string>
+    <string name="action_settings">Ustawienia</string>
+    <string name="scanning">Skanowanie</string>
+    <string name="done">Zapisz</string>
+    <string name="scan">Następny</string>
+    <string name="cantCrop">Nie można wykadrować, zmień punkty.</string>
+    <string name="ok">Ok</string>
+    <string name="loading">Ładowanie</string>
+    <string name="applying_filter">Stosowanie filtra</string>
+    <string name="low_memory">Mało pamięci</string>
+    <string name="low_memory_message">W telefonie brakuje pamięci, możesz odczuwać pewne opóźnienia podczas edycji zdjęć.</string>
+    <string name="rotate_left">Obróć w lewo</string>
+    <string name="rotate_right">Obróć w prawo</string>
+</resources>
