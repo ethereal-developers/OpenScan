@@ -29,6 +29,9 @@ class DetectionFailure extends DetectionResult {
   final String message;
 
   const DetectionFailure(this.message);
+
+  @override
+  String toString() => 'DetectionFailure($message)';
 }
 
 /// Result of running the perspective crop.
@@ -40,10 +43,16 @@ class CropSuccess extends CropResult {
   final String path;
 
   const CropSuccess(this.path);
+
+  @override
+  String toString() => 'CropSuccess($path)';
 }
 
 class CropFailure extends CropResult {
   final String message;
 
   const CropFailure(this.message);
+
+  @override
+  String toString() => 'CropFailure($message)';
 }

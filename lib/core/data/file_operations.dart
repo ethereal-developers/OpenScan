@@ -477,6 +477,7 @@ class FileOperations {
       output.writeAsBytesSync(dataToSave.toList());
       return fileNameWithPath;
     } catch (e) {
+      debugPrint('Could not create PDF $fileName: $e');
       return null;
     }
   }

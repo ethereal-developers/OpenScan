@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
 import 'models/quad.dart';
@@ -55,7 +56,8 @@ Future<bool> encodeStoredPageIsolateEntry(Map<String, dynamic> params) async {
       flush: true,
     );
     return true;
-  } catch (_) {
+  } catch (e) {
+    debugPrint('Could not encode stored page $dest: $e');
     return false;
   }
 }
@@ -128,7 +130,8 @@ Future<Map<String, bool>> storeCaptureIsolateEntry(
       'cropped': cropped,
       'decoded': true,
     };
-  } catch (_) {
+  } catch (e) {
+    debugPrint('Could not decode/warp capture $src; copying through raw: $e');
     final page = await _copyThrough(src, pageDest);
     final original =
         originalDest == null ? false : await _copyThrough(src, originalDest);
@@ -159,7 +162,8 @@ Future<bool> _copyThrough(String src, String dest) async {
   try {
     await File(src).copy(dest);
     return true;
-  } catch (_) {
+  } catch (e) {
+    debugPrint('Could not copy $src to $dest: $e');
     return false;
   }
 }

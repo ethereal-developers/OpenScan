@@ -245,7 +245,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           _minZoom = await controller.getMinZoomLevel();
           _maxZoom = await controller.getMaxZoomLevel();
           _currentZoom.value = _minZoom;
-        } catch (_) {
+        } catch (e) {
+          debugPrint('Could not read zoom range: $e');
           _minZoom = _maxZoom = 1.0;
         }
         await controller.startImageStream(_onFrame);
@@ -258,6 +259,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         // just as long. Let it resolve in the background instead.
         // ignore: unawaited_futures
         controller.dispose();
+        debugPrint('Camera init failed (attempt $attempt): $e');
         if (attempt == 0) {
           await Future.delayed(const Duration(milliseconds: 1000));
         } else if (mounted) {
@@ -443,6 +445,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       await controller.startImageStream(_onFrame);
       _capturedFiles.add(await _prepareCapture(File(shot.path), quadAtCapture));
     } catch (e) {
+      debugPrint('Capture failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -541,6 +544,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       await controller.setFlashMode(newMode);
       if (mounted) setState(() => _torchOn = !_torchOn);
     } catch (e) {
+      debugPrint('Torch toggle failed: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -668,7 +672,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       try {
         await controller.setFocusMode(FocusMode.auto);
         await controller.setFocusPoint(normalized);
-      } catch (_) {
+      } catch (e) {
+        debugPrint('Tap-to-focus unsupported, disabling: $e');
         _focusSupported = false;
       }
     }
@@ -676,7 +681,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       try {
         await controller.setExposureMode(ExposureMode.auto);
         await controller.setExposurePoint(normalized);
-      } catch (_) {
+      } catch (e) {
+        debugPrint('Tap-to-expose unsupported, disabling: $e');
         _exposureSupported = false;
       }
     }
