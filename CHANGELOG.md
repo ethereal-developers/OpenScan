@@ -39,7 +39,8 @@ A full rewrite of the scanning pipeline, the camera, and the UI.
   `pages`, migrated automatically on first launch.
 - Export quality is now a compression scale, and an export is named after
   its document.
-- Rebuilt the interface on a warm-white, single-accent design system.
+- Rebuilt the interface on a warm-white, single-accent design system, with
+  matching light and dark themes and a system/light/dark switch in Settings.
 - targetSdk 36, scoped storage, Java 17.
 
 ### Fixed

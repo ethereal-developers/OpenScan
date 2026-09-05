@@ -68,7 +68,7 @@ Set up your editor of choice. [Official Flutter Docs for setting up editor](http
   - Open the project in Android Studio.
   - Make sure that you have your cursor has focused on lib/main.dart (or any other dart file) i.e. just open one of the dart files and click on the (dart) file once.
   - Click on Build > Flutter > Build APK in the menubar at the top of Android Studio.
-  - Once the build finshes successfully, in the project folder, go to build > app > outputs > apk > release > app-release.apk
+  - Once the build finishes successfully, in the project folder, go to build > app > outputs > apk > release > app-release.apk
   - This will be your generated apk file which you can install on your phone.
 
 ### Using terminal:
@@ -76,13 +76,13 @@ Set up your editor of choice. [Official Flutter Docs for setting up editor](http
 - Using the terminal or cmd
   - Make sure you are in the project directory where the pubspec.yaml is present and open your terminal or cmd.
   - Run `flutter build apk`
-  - Once the build finshes successfully, in the project folder, go to build > app > outputs > apk > release > app-release.apk
+  - Once the build finishes successfully, in the project folder, go to build > app > outputs > apk > release > app-release.apk
   - This will be your generated apk file which you can install on your phone.
 
 # SCREENSHOTS
 
 <p align="center">
-  <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/home.jpg" height=400>
-  <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/view_doc_01.jpg" height=400>
-  <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/assets/view_doc_04.jpg" height=400>
+  <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" height=400>
+  <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" height=400>
+  <img src="https://github.com/Ethereal-Developers-Inc/OpenScan/blob/master/fastlane/metadata/android/en-US/images/phoneScreenshots/6.png" height=400>
 </p>
