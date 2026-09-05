@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.ethereal.openscan">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools" package="com.ethereal.openscan">
   <!-- io.flutter.app.FlutterApplication is an android.app.Application that
          calls FlutterMain.startInitialization(this); in its onCreate method.
          In most cases you can leave this as-is, but you if you want to provide
@@ -37,10 +38,33 @@
     <intent>
       <action android:name="android.media.action.IMAGE_CAPTURE" />
     </intent>
+    <!-- Without this, package visibility on Android 11+ hides every
+         browser from canLaunchUrl, and the About screen's links to
+         GitHub and to the developers' LinkedIn silently do nothing. -->
+    <intent>
+      <action android:name="android.intent.action.VIEW" />
+      <category android:name="android.intent.category.BROWSABLE" />
+      <data android:scheme="https" />
+    </intent>
   </queries>
 
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.CAMERA" />
+
+  <!-- Google Play's Photo and Video Permissions policy: gallery imports go
+       through the system picker (image_picker), and every file the app
+       reads or writes lives in its own private directories, so no storage
+       permission is ever needed at runtime. Declared with
+       tools:node="remove" so they are stripped from the merged manifest
+       even if a dependency tries to merge them in. -->
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+
+  <!-- Pulled in by dependencies, never used by OpenScan: the camera is
+       opened with enableAudio:false, and open_filex only ever opens an
+       export this app just wrote via its own FileProvider. -->
+  <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
+  <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove" />
+  <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
+  <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove" />
 
 </manifest>

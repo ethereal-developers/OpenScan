@@ -1,19 +1,19 @@
-buildscript {
-    ext.kotlin_version = '1.9.10'
-    repositories {
-        google()
-        jcenter()
-    }
-
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+// Fix namespace for old plugins that don't declare one (required for AGP 8+)
+subprojects {
+    afterEvaluate { project ->
+        if (project.plugins.hasPlugin('com.android.library') &&
+            project.android.hasProperty('namespace') &&
+            !project.android.namespace) {
+            project.android.namespace = project.group
+        }
     }
 }
 
