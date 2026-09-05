@@ -2,12 +2,12 @@ apply plugin: 'com.android.library'
 import org.apache.tools.ant.taskdefs.condition.Os
 
 android {
-    compileSdkVersion 34
-    buildToolsVersion "29.0.3"
+    namespace 'com.scanlibrary'
+    compileSdk 34
 
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 34
+        minSdk 19
+        targetSdk 34
         versionCode 1
         versionName "1.0"
         ndk {
