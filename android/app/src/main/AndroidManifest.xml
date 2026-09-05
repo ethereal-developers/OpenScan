@@ -48,9 +48,16 @@
     </intent>
   </queries>
 
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
   <uses-permission android:name="android.permission.CAMERA" />
+
+  <!-- Google Play's Photo and Video Permissions policy: gallery imports go
+       through the system picker (image_picker), and every file the app
+       reads or writes lives in its own private directories, so no storage
+       permission is ever needed at runtime. Declared with
+       tools:node="remove" so they are stripped from the merged manifest
+       even if a dependency tries to merge them in. -->
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
 
   <!-- Pulled in by dependencies, never used by OpenScan: the camera is
        opened with enableAudio:false, and open_filex only ever opens an
