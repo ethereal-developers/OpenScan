@@ -617,4 +617,62 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get couldnt_launch_url => 'लिंक नहीं खोला जा सका';
+
+  @override
+  String get extract_text => 'टेक्स्ट निकालें';
+
+  @override
+  String get text_title => 'टेक्स्ट';
+
+  @override
+  String get reading_text => 'टेक्स्ट पढ़ा जा रहा है…';
+
+  @override
+  String get copy => 'कॉपी करें';
+
+  @override
+  String get copied_to_clipboard => 'क्लिपबोर्ड पर कॉपी किया गया';
+
+  @override
+  String get share_as_text => 'टेक्स्ट के रूप में साझा करें';
+
+  @override
+  String get no_text_title => 'कोई टेक्स्ट नहीं मिला';
+
+  @override
+  String get no_text_body =>
+      'इन पेजों पर कुछ भी टेक्स्ट के रूप में नहीं पढ़ा जा सका। आमतौर पर बेहतर स्कैन से मदद मिलती है।';
+
+  @override
+  String get searchable_pdf => 'खोजने योग्य PDF';
+
+  @override
+  String get searchable_pdf_hint => 'एक अदृश्य टेक्स्ट परत जोड़ता है';
+
+  @override
+  String get couldnt_read_text => 'टेक्स्ट नहीं पढ़ा जा सका';
+
+  @override
+  String get search_documents_and_text => 'दस्तावेज़ और टेक्स्ट खोजें';
+
+  @override
+  String pages_read(int done, int total) {
+    return '$total में से $done पेज पढ़े गए';
+  }
+
+  @override
+  String text_from_pages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count पेजों से',
+      one: '1 पेज से',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String page_number(int number) {
+    return 'पेज $number';
+  }
 }

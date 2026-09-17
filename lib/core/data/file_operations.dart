@@ -15,6 +15,7 @@ import 'package:openscan/core/cv/perspective_crop.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/models.dart';
+import 'package:openscan/core/ocr/ocr_models.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -450,6 +451,11 @@ class FileOperations {
     // Page size is a user-visible export choice, so it is passed in
     // rather than left to the pdf package's A4 default.
     PdfPageFormat pageFormat = params['pageFormat'] ?? PdfPageFormat.a4;
+    // Recognized words per page, positionally aligned with [images]. Empty
+    // or absent for a plain image-only PDF.
+    final List<List<OcrWord>> ocrWords =
+        (params['ocrWords'] as List?)?.cast<List<OcrWord>>() ??
+            const <List<OcrWord>>[];
 
     try {
       String fileNameWithPath = "${selectedDirectory.path}/$fileName.pdf";
@@ -459,16 +465,13 @@ class FileOperations {
         final image = pw.MemoryImage(
           File(images[i].imgPath).readAsBytesSync(),
         );
+        final words = i < ocrWords.length ? ocrWords[i] : const <OcrWord>[];
 
         doc.addPage(
           pw.Page(
             pageFormat: pageFormat,
-            build: (pw.Context context) {
-              return pw.Center(
-                child: pw.Image(image),
-              );
-            },
-            margin: pw.EdgeInsets.all(5.0),
+            build: (pw.Context context) => _pdfPage(image, words),
+            margin: pw.EdgeInsets.all(_pdfMargin),
           ),
         );
       }
@@ -480,6 +483,102 @@ class FileOperations {
       debugPrint('Could not create PDF $fileName: $e');
       return null;
     }
+  }
+
+  static const double _pdfMargin = 5.0;
+
+  /// One PDF page: the scan, with its recognized words laid invisibly on
+  /// top of the glyphs they were read from.
+  ///
+  /// The words are real text in the PDF's content stream, drawn at zero
+  /// opacity. That is what makes the export searchable and selectable in
+  /// any reader — the reader finds the text, and the rectangle it
+  /// highlights lands on the part of the picture the word came from —
+  /// while what a human sees is still only the scan.
+  ///
+  /// The page is laid out explicitly rather than by centring the image and
+  /// letting it size itself, because a word's position is only meaningful
+  /// relative to where the image actually got drawn. [OcrWord] stores
+  /// fractions of the page, so this works out the drawn rectangle once and
+  /// multiplies through it; nothing here depends on the pixel size the
+  /// image was recognized at, which is just as well, since the copy going
+  /// into the PDF has usually been re-encoded smaller since.
+  static pw.Widget _pdfPage(pw.MemoryImage image, List<OcrWord> words) {
+    if (words.isEmpty) return pw.Center(child: pw.Image(image));
+
+    return pw.LayoutBuilder(builder: (context, constraints) {
+      final availableWidth = constraints?.maxWidth ?? 0;
+      final availableHeight = constraints?.maxHeight ?? 0;
+      // An image whose dimensions the decoder could not report gives
+      // nothing to scale the word boxes by, so that page falls back to the
+      // picture alone rather than scattering text across it.
+      final imageWidth = image.width ?? 0;
+      final imageHeight = image.height ?? 0;
+      if (availableWidth <= 0 ||
+          availableHeight <= 0 ||
+          imageWidth <= 0 ||
+          imageHeight <= 0) {
+        return pw.Center(child: pw.Image(image));
+      }
+
+      // Contain, matching what pw.Image does on its own: the whole page is
+      // visible and its aspect ratio is kept.
+      final scale =
+          min(availableWidth / imageWidth, availableHeight / imageHeight);
+      final width = imageWidth * scale;
+      final height = imageHeight * scale;
+
+      return pw.Center(
+        child: pw.SizedBox(
+          width: width,
+          height: height,
+          child: pw.Stack(
+            children: [
+              pw.Positioned.fill(
+                child: pw.Image(image, fit: pw.BoxFit.fill),
+              ),
+              for (final word in words)
+                if (_pdfSafe(word.text).isNotEmpty)
+                  pw.Positioned(
+                    left: word.left * width,
+                    top: word.top * height,
+                    child: pw.Opacity(
+                      opacity: 0,
+                      child: pw.Text(
+                        _pdfSafe(word.text),
+                        // Sized from the word's own box so a reader's
+                        // selection rectangle roughly covers the ink it
+                        // belongs to. Clamped at the bottom because a
+                        // zero or negative size is an error in the pdf
+                        // package, not a very small word.
+                        style: pw.TextStyle(
+                          fontSize: max(word.height * height, 1.0),
+                        ),
+                      ),
+                    ),
+                  ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  /// [text] reduced to what the PDF's built-in Helvetica can encode.
+  ///
+  /// The standard fonts are Latin-1 only, and handing them a character
+  /// outside that throws while saving — which would lose the entire
+  /// export over one mis-recognized glyph. The layer is invisible, so
+  /// dropping those characters costs nothing a reader can see; it only
+  /// makes that one word unsearchable. Embedding a Unicode font instead
+  /// would fix the encoding but add its own megabytes to every page of
+  /// every PDF, which is a poor trade for text nobody looks at.
+  static String _pdfSafe(String text) {
+    final buffer = StringBuffer();
+    for (final rune in text.runes) {
+      if (rune >= 0x20 && rune <= 0xFF) buffer.writeCharCode(rune);
+    }
+    return buffer.toString().trim();
   }
 
   /// Saves PDF to Internal storage
@@ -497,7 +596,9 @@ class FileOperations {
       required List<ImageOS> images,
       PdfPageFormat pageFormat = PdfPageFormat.a4,
       int quality = kStoredPageQuality,
-      int? maxEdge = kStoredPageMaxEdge}) async {
+      int? maxEdge = kStoredPageMaxEdge,
+      Map<String, List<OcrWord>>? ocrWords}) async {
+    final words = _alignWords(images, ocrWords);
     final source = await _compressedForPdf(images, quality, maxEdge);
     try {
       return await compute(createPdf, {
@@ -505,12 +606,33 @@ class FileOperations {
         'fileName': fileName,
         'images': source.images,
         'pageFormat': pageFormat,
+        'ocrWords': words,
       });
     } finally {
       // finally, not after: a PDF that throws half way has still written
       // every page copy that got it that far.
       await _deleteStaged(source.staged);
     }
+  }
+
+  /// Recognized words for [pages], as a list positionally aligned with
+  /// them.
+  ///
+  /// Callers hold their text keyed by page image path, which is the only
+  /// stable handle they have: by the time the PDF is written the pages
+  /// have been re-encoded into staging under names like `0.jpg`, and the
+  /// records handed to the isolate no longer resemble the ones that were
+  /// recognized. Aligning here, against the exact list about to be
+  /// staged, is what keeps page three's words on page three.
+  ///
+  /// Returns an empty list when nothing was recognized, which
+  /// [createPdf] reads as "image-only PDF".
+  static List<List<OcrWord>> _alignWords(
+      List<ImageOS> pages, Map<String, List<OcrWord>>? words) {
+    if (words == null || words.isEmpty) return const <List<OcrWord>>[];
+    return [
+      for (final page in pages) words[page.imgPath] ?? const <OcrWord>[],
+    ];
   }
 
   /// Re-encodes every page at [quality], capped at [maxEdge] pixels on its
@@ -631,6 +753,7 @@ class FileOperations {
       PdfPageFormat pageFormat = PdfPageFormat.a4,
       int quality = kStoredPageQuality,
       int? maxEdge = kStoredPageMaxEdge,
+      Map<String, List<OcrWord>>? ocrWords,
       required bool imagesSelected}) async {
     final selectedDirectory = await shareDirectory();
     List<ImageOS> selected = [
@@ -638,14 +761,16 @@ class FileOperations {
         if (image.selected || !imagesSelected) image,
     ];
 
-    final source = await _compressedForPdf(
-        selected.isEmpty ? images : selected, quality, maxEdge);
+    final pages = selected.isEmpty ? images : selected;
+    final words = _alignWords(pages, ocrWords);
+    final source = await _compressedForPdf(pages, quality, maxEdge);
     try {
       return await compute(createPdf, {
         'selectedDirectory': selectedDirectory,
         'fileName': fileName,
         'images': source.images,
         'pageFormat': pageFormat,
+        'ocrWords': words,
       });
     } finally {
       await _deleteStaged(source.staged);

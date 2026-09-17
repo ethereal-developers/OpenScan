@@ -34,6 +34,8 @@ We _differentiate_ our self from the rest of the apps in the market by:
 - Scan your documents, notes, business cards.
 - Simple and powerful cropping features.
 - Share as PDF/JPGs.
+- Extract text from your scans with on-device OCR, export searchable PDFs,
+  and search inside your documents — all without anything leaving the phone.
 
 ### WORK PRODUCTIVITY:
 

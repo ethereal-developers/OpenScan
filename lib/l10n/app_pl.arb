@@ -179,5 +179,20 @@
   "app_description": "to aplikacja o otwartym kodzie źródłowym, która umożliwia skanowanie papierowych dokumentów i przekształcanie ich w plik PDF.",
   "app_description_2": "Bez reklam. Nie zbieramy żadnych danych.\n Szanujemy Twoją prywatność.",
   "open_source_github": "Otwarty kod na GitHubie",
-  "couldnt_launch_url": "Nie udało się otworzyć adresu URL"
+  "couldnt_launch_url": "Nie udało się otworzyć adresu URL",
+  "extract_text": "Wyodrębnij tekst",
+  "text_title": "Tekst",
+  "reading_text": "Odczytywanie tekstu…",
+  "copy": "Kopiuj",
+  "copied_to_clipboard": "Skopiowano do schowka",
+  "share_as_text": "Udostępnij jako tekst",
+  "no_text_title": "Nie znaleziono tekstu",
+  "no_text_body": "Na tych stronach nie udało się odczytać żadnego tekstu. Zwykle pomaga wyraźniejszy skan.",
+  "searchable_pdf": "PDF z wyszukiwaniem",
+  "searchable_pdf_hint": "Dodaje niewidoczną warstwę tekstu",
+  "couldnt_read_text": "Nie udało się odczytać tekstu",
+  "search_documents_and_text": "Szukaj dokumentów i tekstu",
+  "pages_read": "Odczytano {done} z {total} stron",
+  "text_from_pages": "{count, plural, =1{Z 1 strony} other{Z {count} stron}}",
+  "page_number": "Strona {number}"
 }

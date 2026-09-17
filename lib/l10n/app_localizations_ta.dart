@@ -620,4 +620,63 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get couldnt_launch_url => 'இணைப்பைத் திறக்க முடியவில்லை';
+
+  @override
+  String get extract_text => 'உரையைப் பிரித்தெடு';
+
+  @override
+  String get text_title => 'உரை';
+
+  @override
+  String get reading_text => 'உரை படிக்கப்படுகிறது…';
+
+  @override
+  String get copy => 'நகலெடு';
+
+  @override
+  String get copied_to_clipboard => 'கிளிப்போர்டுக்கு நகலெடுக்கப்பட்டது';
+
+  @override
+  String get share_as_text => 'உரையாகப் பகிர்';
+
+  @override
+  String get no_text_title => 'உரை எதுவும் கிடைக்கவில்லை';
+
+  @override
+  String get no_text_body =>
+      'இந்தப் பக்கங்களில் எதையும் உரையாகப் படிக்க முடியவில்லை. தெளிவான ஸ்கேன் பொதுவாக உதவும்.';
+
+  @override
+  String get searchable_pdf => 'தேடக்கூடிய PDF';
+
+  @override
+  String get searchable_pdf_hint =>
+      'கண்ணுக்குத் தெரியாத உரை அடுக்கைச் சேர்க்கிறது';
+
+  @override
+  String get couldnt_read_text => 'உரையைப் படிக்க முடியவில்லை';
+
+  @override
+  String get search_documents_and_text => 'ஆவணங்கள் மற்றும் உரையைத் தேடு';
+
+  @override
+  String pages_read(int done, int total) {
+    return '$total பக்கங்களில் $done படிக்கப்பட்டன';
+  }
+
+  @override
+  String text_from_pages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count பக்கங்களிலிருந்து',
+      one: '1 பக்கத்திலிருந்து',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String page_number(int number) {
+    return 'பக்கம் $number';
+  }
 }

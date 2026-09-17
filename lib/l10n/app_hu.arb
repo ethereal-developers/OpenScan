@@ -179,5 +179,20 @@
   "app_description": "egy nyílt forráskódú alkalmazás, amely lehetővé teszi a papíralapú dokumentumok beszkennelését és PDF-fájllá alakítását.",
   "app_description_2": "Nincsenek hirdetések. Nem gyűjtünk adatokat.\n Tiszteletben tartjuk a magánszféráját.",
   "open_source_github": "Nyílt forráskód a GitHubon",
-  "couldnt_launch_url": "A hivatkozás megnyitása nem sikerült"
+  "couldnt_launch_url": "A hivatkozás megnyitása nem sikerült",
+  "extract_text": "Szöveg kinyerése",
+  "text_title": "Szöveg",
+  "reading_text": "Szöveg olvasása…",
+  "copy": "Másolás",
+  "copied_to_clipboard": "Vágólapra másolva",
+  "share_as_text": "Megosztás szövegként",
+  "no_text_title": "Nem található szöveg",
+  "no_text_body": "Ezeken az oldalakon semmit sem sikerült szövegként beolvasni. Egy élesebb beolvasás általában segít.",
+  "searchable_pdf": "Kereshető PDF",
+  "searchable_pdf_hint": "Láthatatlan szövegréteget ad hozzá",
+  "couldnt_read_text": "A szöveg nem olvasható be",
+  "search_documents_and_text": "Dokumentumok és szöveg keresése",
+  "pages_read": "{total} oldalból {done} beolvasva",
+  "text_from_pages": "{count, plural, =1{1 oldalról} other{{count} oldalról}}",
+  "page_number": "{number}. oldal"
 }

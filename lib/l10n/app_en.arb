@@ -344,5 +344,45 @@
   "app_description": "is an open-source app which enables users to scan hard copies of documents and convert it into a PDF file.",
   "app_description_2": "No ads. We don't collect any data.\n We respect your privacy.",
   "open_source_github": "Open source on GitHub",
-  "couldnt_launch_url": "Couldn't launch the url"
+  "couldnt_launch_url": "Couldn't launch the url",
+  "extract_text": "Extract text",
+  "text_title": "Text",
+  "reading_text": "Reading text…",
+  "copy": "Copy",
+  "copied_to_clipboard": "Copied to clipboard",
+  "share_as_text": "Share as text",
+  "no_text_title": "No text found",
+  "no_text_body": "Nothing on these pages could be read as text. A sharper scan usually helps.",
+  "searchable_pdf": "Searchable PDF",
+  "searchable_pdf_hint": "Adds an invisible text layer",
+  "couldnt_read_text": "Could not read text",
+  "search_documents_and_text": "Search documents and text",
+  "pages_read": "{done} of {total} pages read",
+  "@pages_read": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "text_from_pages": "{count, plural, =1{From 1 page} other{From {count} pages}}",
+  "@text_from_pages": {
+    "description": "Subtitle on the extracted-text screen",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "page_number": "Page {number}",
+  "@page_number": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -622,4 +622,62 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get couldnt_launch_url => 'Δεν ήταν δυνατό το άνοιγμα του συνδέσμου';
+
+  @override
+  String get extract_text => 'Εξαγωγή κειμένου';
+
+  @override
+  String get text_title => 'Κείμενο';
+
+  @override
+  String get reading_text => 'Ανάγνωση κειμένου…';
+
+  @override
+  String get copy => 'Αντιγραφή';
+
+  @override
+  String get copied_to_clipboard => 'Αντιγράφηκε στο πρόχειρο';
+
+  @override
+  String get share_as_text => 'Κοινή χρήση ως κείμενο';
+
+  @override
+  String get no_text_title => 'Δεν βρέθηκε κείμενο';
+
+  @override
+  String get no_text_body =>
+      'Τίποτα σε αυτές τις σελίδες δεν μπόρεσε να διαβαστεί ως κείμενο. Μια πιο καθαρή σάρωση συνήθως βοηθά.';
+
+  @override
+  String get searchable_pdf => 'PDF με δυνατότητα αναζήτησης';
+
+  @override
+  String get searchable_pdf_hint => 'Προσθέτει ένα αόρατο επίπεδο κειμένου';
+
+  @override
+  String get couldnt_read_text => 'Δεν ήταν δυνατή η ανάγνωση κειμένου';
+
+  @override
+  String get search_documents_and_text => 'Αναζήτηση εγγράφων και κειμένου';
+
+  @override
+  String pages_read(int done, int total) {
+    return '$done από $total σελίδες αναγνώστηκαν';
+  }
+
+  @override
+  String text_from_pages(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Από $count σελίδες',
+      one: 'Από 1 σελίδα',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String page_number(int number) {
+    return 'Σελίδα $number';
+  }
 }
