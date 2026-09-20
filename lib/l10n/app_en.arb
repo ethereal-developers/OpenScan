@@ -279,6 +279,8 @@
     "description": "Section heading in the export sheet, shown in caps"
   },
   "page_size": "Page size",
+  "page_size_letter": "Letter",
+  "page_size_legal": "Legal",
   "all_pages": "All pages",
   "selected_pages": "Selected pages",
   "page_x_of_y": "Page {current} of {total}",

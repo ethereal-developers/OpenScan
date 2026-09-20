@@ -1,0 +1,352 @@
+
+{
+  "@@locale": "zh",
+  "about": "关于",
+  "cancel": "取消",
+  "save": "保存",
+  "open": "打开",
+  "share": "分享",
+  "export": "导出",
+  "clear": "清除",
+  "delete": "删除",
+  "rename": "重命名",
+  "crop": "裁剪",
+  "done": "完成",
+  "next": "下一步",
+  "skip": "跳过",
+  "loading": "正在加载",
+  "home": "首页",
+  "demo": "使用教程",
+  "quality": "质量",
+  "version": "版本",
+  "select": "选择",
+  "select_all": "全选",
+  "select_pages": "选择页面",
+  "try_again": "重试",
+  "undo": "撤销",
+  "@undo": {
+    "description": "Snackbar undo action, shown in caps"
+  },
+  "not_now": "暂不",
+  "open_settings": "打开设置",
+  "more": "更多",
+  "sort": "排序",
+  "settings": "设置",
+  "tutorial": "使用教程",
+  "library": "文档库",
+  "scan": "扫描",
+  "image": "图像",
+  "images": "图像",
+  "developers": "开发者",
+  "view_on_linkedin": "在 LinkedIn 上查看",
+  "tutorial_title": "如何使用本应用？",
+  "cant_be_undone": "此操作无法撤销。",
+  "rotate": "旋转",
+  "rotate_left": "向左旋转",
+  "rotate_right": "向右旋转",
+  "pages_count": "{count} 页",
+  "@pages_count": {
+    "description": "Page count for a document",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "scan_options": "扫描选项",
+  "@scan_options": {
+    "description": "Scan button tooltip"
+  },
+  "live_scan": "实时扫描",
+  "import_from_gallery": "从相册导入",
+  "import_from_gallery_short": "从相册导入",
+  "@import_from_gallery_short": {
+    "description": "Toolbar tooltip and menu row"
+  },
+  "refresh": "下拉刷新",
+  "last_updated": "最近更新",
+  "sort_order": "排序方式",
+  "search_documents": "搜索文档",
+  "no_documents_yet": "暂无文档",
+  "no_documents_body": "扫描第一页只需约两秒，文档仅保存在此设备上。",
+  "start_scanning": "开始扫描",
+  "no_results_for": "未找到“{query}”的搜索结果",
+  "@no_results_for": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "refreshing": "正在刷新…",
+  "exporting": "正在导出…",
+  "n_selected": "已选择 {count} 项",
+  "@n_selected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "delete_document_q": "删除文档？",
+  "delete_n_documents_q": "删除 {count} 份文档？",
+  "@delete_n_documents_q": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "document_deleted": "文档已删除",
+  "n_documents_deleted": "已删除 {count} 份文档",
+  "@n_documents_deleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "saved_n_to_device": "已将 {count} 项保存到设备",
+  "@saved_n_to_device": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "couldnt_export_n": "有 {count} 项无法导出",
+  "@couldnt_export_n": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "date_and_pages": "{date} · {pages}",
+  "@date_and_pages": {
+    "description": "Library card subtitle: a short date and a page count",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "sort_last_modified": "最近修改",
+  "sort_date_created": "创建日期",
+  "sort_name": "名称（A–Z）",
+  "sort_page_count": "页数",
+  "scanning": "正在扫描",
+  "auto_capture": "自动拍摄",
+  "auto_capture_desc": "页面保持稳定时自动拍摄。",
+  "capture_sound": "拍摄提示音",
+  "keep_original": "保留原始图像",
+  "keep_original_desc": "保留未裁剪的照片，以便之后从完整原图重新裁剪页面。文档占用的空间大约会翻倍。",
+  "avoid_gesture_strip": "避开返回手势区域",
+  "avoid_gesture_strip_desc": "使裁剪角点远离屏幕边缘，避免拖动时误触系统返回手势。页面显示宽度会略微减小。",
+  "default_filter": "默认滤镜",
+  "appearance": "外观",
+  "theme": "主题",
+  "language": "语言",
+  "accent_color": "强调色",
+  "privacy_storage": "隐私与存储",
+  "privacy_body": "OpenScan 不会将你的文档发送到任何地方。无需账号，不使用云端服务，也不收集遥测数据。",
+  "cache": "缓存",
+  "clear_cache_q": "清除缓存？",
+  "clear_cache_body": "将释放 {size} 的缩略图数据，不会影响你的文档。",
+  "@clear_cache_body": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cache_clear_action": "{size} · 清除",
+  "@cache_clear_action": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cache_cleared": "缓存已清除",
+  "couldnt_clear_cache": "无法清除缓存",
+  "theme_system": "跟随系统",
+  "theme_light": "浅色",
+  "theme_dark": "深色",
+  "filters": "滤镜",
+  "filter_original": "原图",
+  "filter_auto": "自动",
+  "filter_lighten": "提亮",
+  "filter_grayscale": "灰度",
+  "filter_bw": "黑白",
+  "filter_whiteboard": "白板",
+  "filter_action": "滤镜",
+  "@filter_action": {
+    "description": "Preview toolbar button that opens the filter picker"
+  },
+  "apply_to_all_pages": "应用到所有页面",
+  "apply_to_all_n_pages": "应用到全部 {count} 页",
+  "@apply_to_all_n_pages": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adjust_edges": "调整边缘",
+  "automatic_crop": "自动裁剪",
+  "no_crop": "不裁剪",
+  "rescan": "重新扫描",
+  "couldnt_crop": "无法裁剪图像，请重试。",
+  "looking_for_document": "正在寻找文档…",
+  "document_detected": "已检测到文档",
+  "hold_still": "请保持稳定…",
+  "auto_on": "自动 · 开",
+  "auto_off": "自动 · 关",
+  "low_light": "光线不足，请保持稳定或打开闪光灯",
+  "torch_on": "打开闪光灯",
+  "torch_off": "关闭闪光灯",
+  "torch_unavailable": "此设备不支持闪光灯。",
+  "auto_capture_on": "自动拍摄已开启",
+  "auto_capture_off": "自动拍摄已关闭",
+  "undo_last_capture": "撤销上一次拍摄",
+  "composition_grid": "构图网格",
+  "switch_camera": "切换摄像头",
+  "couldnt_capture": "拍摄失败，请重试。",
+  "couldnt_open_gallery": "无法打开相册。",
+  "couldnt_start_camera": "无法启动摄像头，请返回后重试。",
+  "camera_access_needed": "需要摄像头权限",
+  "camera_access_body": "OpenScan 仅使用摄像头扫描页面，内容不会离开你的设备。请在设置中开启摄像头权限以继续。",
+  "done_count": "完成 · {count}",
+  "@done_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "delete_document": "删除文档",
+  "delete_document_body": "该文档的所有页面也将一并删除，且无法撤销。",
+  "delete_page_q": "删除页面？",
+  "delete_n_pages_q": "删除 {count} 页？",
+  "@delete_n_pages_q": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "no_pages_title": "此文档暂无页面",
+  "no_pages_body": "文档会以第一页命名，之后可随时点击标题重命名。",
+  "continue_scanning": "继续扫描",
+  "add_pages": "添加页面",
+  "export_selected": "导出所选内容",
+  "export_n_selected": "导出选中的 {count} 项",
+  "@export_n_selected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "skipped_files": "已跳过 {count} 个本应用无法读取的文件。",
+  "@skipped_files": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hold_to_reorder": "{pages} · 长按页面可调整顺序",
+  "@hold_to_reorder": {
+    "placeholders": {
+      "pages": {
+        "type": "String"
+      }
+    }
+  },
+  "export_title": "导出 · {name}",
+  "@export_title": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quality_caps": "质量",
+  "@quality_caps": {
+    "description": "Section heading in the export sheet, shown in caps"
+  },
+  "page_size": "纸张大小",
+  "page_size_letter": "美式信纸",
+  "page_size_legal": "美式法律用纸",
+  "all_pages": "所有页面",
+  "selected_pages": "所选页面",
+  "page_x_of_y": "第 {current} 页，共 {total} 页",
+  "@page_x_of_y": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "exported": "已导出",
+  "export_failed": "导出失败",
+  "no_pages_to_export": "没有可导出的页面。",
+  "pdf_not_written": "无法写入 PDF 文件",
+  "not_enough_storage": "此设备的存储空间不足。",
+  "export_went_wrong": "导出时发生错误。",
+  "couldnt_open_file": "无法打开文件：{message}",
+  "@couldnt_open_file": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "no_app_opens_file": "此手机上没有能够打开该类型文件的应用",
+  "quality_ultra_low": "极低",
+  "quality_low": "低",
+  "quality_medium": "中",
+  "quality_high": "高",
+  "result_and_more": "{name}，另有 {count} 项",
+  "@result_and_more": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rename_file": "重命名文件",
+  "file_name_empty": "文件名不能为空",
+  "special_chars_not_allowed": "不允许使用特殊字符",
+  "save_to_device": "保存到设备",
+  "share_pdf": "分享 PDF",
+  "share_images": "分享图像",
+  "demo_scan_title": "将镜头对准页面",
+  "demo_scan_body": "OpenScan 会自动识别页面边缘，并在画面稳定时拍摄；你也可以点击快门手动拍摄。",
+  "demo_pages_title": "继续扫描更多页面",
+  "demo_pages_body": "每次拍摄的页面都会加入同一文档。全部拍完后，点击“完成”。",
+  "demo_adjust_title": "校正与优化页面",
+  "demo_adjust_body": "如果边缘不准确，可拖动角点进行调整，再选择“自动”“灰度”或“黑白”等滤镜。",
+  "demo_organise_title": "调整顺序并添加页面",
+  "demo_organise_body": "长按页面可调整顺序，也可以随时向文档添加更多页面。",
+  "demo_export_title": "保存或分享为 PDF",
+  "demo_export_body": "选择质量和纸张大小，然后保存到手机或分享出去。",
+  "demo_privacy_title": "文档始终保留在手机上",
+  "demo_privacy_body": "无需账号，不使用云端服务，没有广告，也不追踪用户。摄像头仅用于扫描。",
+  "allow_camera_access": "允许使用摄像头",
+  "app_description": "是一款开源应用，可扫描纸质文档并将其转换为 PDF 文件。",
+  "app_description_2": "无广告。我们不会收集任何数据。\n我们尊重你的隐私。",
+  "open_source_github": "GitHub 开源项目",
+  "couldnt_launch_url": "无法打开链接"
+}

@@ -442,6 +442,8 @@ extension on Locale {
         return 'தமிழ்';
       case 'hi':
         return 'हिन्दी';
+      case 'zh':
+        return '简体中文';
       default:
         return 'English';
     }
