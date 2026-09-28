@@ -514,6 +514,18 @@ abstract class AppLocalizations {
   /// **'Scanning'**
   String get scanning;
 
+  /// No description provided for @live_detection.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect document edges'**
+  String get live_detection;
+
+  /// No description provided for @live_detection_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Outlines the page in the camera and crops each shot to it. Turn off to take plain photos and crop them afterwards.'**
+  String get live_detection_desc;
+
   /// No description provided for @auto_capture.
   ///
   /// In en, this message translates to:

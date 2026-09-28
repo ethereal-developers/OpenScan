@@ -137,6 +137,8 @@
   "sort_name": "Name (A–Z)",
   "sort_page_count": "Page count",
   "scanning": "Scanning",
+  "live_detection": "Detect document edges",
+  "live_detection_desc": "Outlines the page in the camera and crops each shot to it. Turn off to take plain photos and crop them afterwards.",
   "auto_capture": "Auto-capture",
   "auto_capture_desc": "Take the shot as soon as the page holds still.",
   "capture_sound": "Capture sound",

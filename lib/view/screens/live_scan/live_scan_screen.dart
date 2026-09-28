@@ -126,6 +126,11 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   Directory? _stagingDir;
   final FileOperations _fileOperations = FileOperations();
 
+  /// Whether this session looks for the page at all (see
+  /// [AppSettings.liveDetection]). Read once on open: off, no frame reaches
+  /// the detector, so no outline, no auto-capture, and every shot is stored
+  /// whole for cropping afterwards.
+  bool _detectionEnabled = true;
   bool _autoCaptureEnabled = true;
   bool _autoCaptureImminent = false;
   bool _torchOn = false;
@@ -200,10 +205,11 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
   Future<void> _initialize() async {
     final prefs = await SharedPreferences.getInstance();
+    _detectionEnabled = AppSettings.instance.liveDetection;
     _autoCaptureEnabled = prefs.getBool(_kAutoCapturePrefKey) ?? true;
     // Same preference the Settings screen writes — the camera's long-press
     // and the settings row are two doors onto one switch.
-    _autoCaptureDetector.enabled = _autoCaptureEnabled;
+    _autoCaptureDetector.enabled = _autoCaptureEnabled && _detectionEnabled;
 
     if (!await Permission.camera.isGranted) {
       final status = await Permission.camera.request();
@@ -213,7 +219,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       }
     }
 
-    await _liveScanController.start();
+    // Without detection the worker isolate would never be sent a frame.
+    if (_detectionEnabled) await _liveScanController.start();
     await _initializeCamera();
   }
 
@@ -287,7 +294,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       targetLongEdge: kLiveDetectionMaxDimension,
     );
     if (gray == null) return;
+    // The low-light warning still applies to a plain photo, so the frame
+    // is sampled for it either way; only detection is skipped.
     _updateLowLight(gray);
+    if (!_detectionEnabled) return;
 
     final scale = kLiveDetectionMaxDimension /
         (image.width > image.height ? image.width : image.height);
@@ -531,6 +541,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   }
 
   Future<void> _toggleAutoCapture() async {
+    if (!_detectionEnabled) return;
     setState(() => _autoCaptureEnabled = !_autoCaptureEnabled);
     _autoCaptureDetector.enabled = _autoCaptureEnabled;
     await AppSettings.instance.setAutoCapture(_autoCaptureEnabled);
@@ -907,15 +918,17 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             highlightColor: _lowLight && !_torchOn ? context.os.warning : null,
             onPressed: canTorch ? _toggleTorch : null,
           ),
-          const SizedBox(width: OSSpace.xs),
-          _ChromeButton(
-            icon: Icons.auto_awesome_rounded,
-            tooltip: _autoCaptureEnabled
-                ? l10n.auto_capture_on
-                : l10n.auto_capture_off,
-            highlight: _autoCaptureEnabled,
-            onPressed: _toggleAutoCapture,
-          ),
+          if (_detectionEnabled) ...[
+            const SizedBox(width: OSSpace.xs),
+            _ChromeButton(
+              icon: Icons.auto_awesome_rounded,
+              tooltip: _autoCaptureEnabled
+                  ? l10n.auto_capture_on
+                  : l10n.auto_capture_off,
+              highlight: _autoCaptureEnabled,
+              onPressed: _toggleAutoCapture,
+            ),
+          ],
           const Spacer(),
           if (_capturedFiles.isNotEmpty) ...[
             _ChromeButton(
@@ -975,45 +988,46 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                   ),
                 ),
               const SizedBox(height: OSSpace.xs),
-              ValueListenableBuilder(
-                valueListenable: _quadSmoother.smoothedQuad,
-                builder: (context, quad, _) {
-                  if (quad == null) {
-                    return Text(
-                      l10n.looking_for_document,
-                      style: OSTypography.caption.copyWith(
-                        color: OSColors.chromeOnBackground,
-                        fontWeight: FontWeight.w600,
-                        shadows: const [
-                          Shadow(blurRadius: 4, color: Color(0x990A0908)),
+              if (_detectionEnabled)
+                ValueListenableBuilder(
+                  valueListenable: _quadSmoother.smoothedQuad,
+                  builder: (context, quad, _) {
+                    if (quad == null) {
+                      return Text(
+                        l10n.looking_for_document,
+                        style: OSTypography.caption.copyWith(
+                          color: OSColors.chromeOnBackground,
+                          fontWeight: FontWeight.w600,
+                          shadows: const [
+                            Shadow(blurRadius: 4, color: Color(0x990A0908)),
+                          ],
+                        ),
+                      );
+                    }
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: OSSpace.sm, vertical: OSSpace.xxs + 2),
+                      decoration: BoxDecoration(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(OSRadius.sheet),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_rounded, size: 14, color: onAccent),
+                          const SizedBox(width: OSSpace.xxs + 1),
+                          Text(
+                            l10n.document_detected,
+                            style: OSTypography.caption.copyWith(
+                              color: onAccent,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ],
                       ),
                     );
-                  }
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: OSSpace.sm, vertical: OSSpace.xxs + 2),
-                    decoration: BoxDecoration(
-                      color: accent,
-                      borderRadius: BorderRadius.circular(OSRadius.sheet),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_rounded, size: 14, color: onAccent),
-                        const SizedBox(width: OSSpace.xxs + 1),
-                        Text(
-                          l10n.document_detected,
-                          style: OSTypography.caption.copyWith(
-                            color: onAccent,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                  },
+                ),
             ],
           ),
         ),
@@ -1032,22 +1046,24 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            _autoCaptureImminent
-                ? l10n.hold_still
-                : _autoCaptureEnabled
-                    ? l10n.auto_on
-                    : l10n.auto_off,
-            style: OSTypography.caption.copyWith(
-              fontWeight: FontWeight.w700,
-              color: _autoCaptureImminent
-                  ? OSColors.chromeOnBackground
+          if (_detectionEnabled) ...[
+            Text(
+              _autoCaptureImminent
+                  ? l10n.hold_still
                   : _autoCaptureEnabled
-                      ? accent
-                      : OSColors.chromeMuted,
+                      ? l10n.auto_on
+                      : l10n.auto_off,
+              style: OSTypography.caption.copyWith(
+                fontWeight: FontWeight.w700,
+                color: _autoCaptureImminent
+                    ? OSColors.chromeOnBackground
+                    : _autoCaptureEnabled
+                        ? accent
+                        : OSColors.chromeMuted,
+              ),
             ),
-          ),
-          const SizedBox(height: OSSpace.sm),
+            const SizedBox(height: OSSpace.sm),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,

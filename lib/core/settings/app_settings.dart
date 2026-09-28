@@ -18,6 +18,7 @@ class AppSettings extends ChangeNotifier {
 
   static const _kThemeMode = 'themeMode';
   static const _kAccent = 'accentId';
+  static const _kLiveDetection = 'liveScanDetectionEnabled';
   static const _kAutoCapture = 'liveScanAutoCaptureEnabled';
   static const _kCaptureSound = 'captureSound';
   static const _kKeepOriginal = 'keepOriginal';
@@ -29,6 +30,7 @@ class AppSettings extends ChangeNotifier {
 
   ThemeMode _themeMode = ThemeMode.system;
   OSAccentFamily _accent = OSAccents.ember;
+  bool _liveDetection = true;
   bool _autoCapture = true;
   bool _captureSound = true;
   bool _keepOriginal = true;
@@ -38,6 +40,13 @@ class AppSettings extends ChangeNotifier {
 
   ThemeMode get themeMode => _themeMode;
   OSAccentFamily get accent => _accent;
+
+  /// Whether the camera looks for the page's edges while framing: the
+  /// outline over the preview, auto-capture, and cropping each shot to that
+  /// outline all hang off it. Off, the camera takes plain photos, stored
+  /// whole and cropped afterwards on the crop screen — which runs its own
+  /// detection on the still, so it keeps its suggested corners either way.
+  bool get liveDetection => _liveDetection;
   bool get autoCapture => _autoCapture;
   bool get captureSound => _captureSound;
   bool get keepOriginal => _keepOriginal;
@@ -63,6 +72,7 @@ class AppSettings extends ChangeNotifier {
     // predates this class — the two are the same setting, now surfaced in
     // Settings as well as behind the camera's long-press.
     _autoCapture = prefs.getBool(_kAutoCapture) ?? true;
+    _liveDetection = prefs.getBool(_kLiveDetection) ?? true;
     _captureSound = prefs.getBool(_kCaptureSound) ?? true;
     // On by default: a capture is cropped to its detected edges on the way
     // into the document, in place, so without a kept original the full
@@ -88,6 +98,12 @@ class AppSettings extends ChangeNotifier {
     _accent = accent;
     notifyListeners();
     await _prefs?.setString(_kAccent, accent.id);
+  }
+
+  Future<void> setLiveDetection(bool value) async {
+    _liveDetection = value;
+    notifyListeners();
+    await _prefs?.setBool(_kLiveDetection, value);
   }
 
   Future<void> setAutoCapture(bool value) async {

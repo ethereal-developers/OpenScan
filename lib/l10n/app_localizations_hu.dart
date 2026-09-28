@@ -236,6 +236,13 @@ class AppLocalizationsHu extends AppLocalizations {
   String get scanning => 'Szkennelés';
 
   @override
+  String get live_detection => 'Detect document edges';
+
+  @override
+  String get live_detection_desc =>
+      'Outlines the page in the camera and crops each shot to it. Turn off to take plain photos and crop them afterwards.';
+
+  @override
   String get auto_capture => 'Automatikus rögzítés';
 
   @override
