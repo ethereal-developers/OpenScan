@@ -179,20 +179,5 @@
   "app_description": "एक ओपन-सोर्स ऐप है जो उपयोगकर्ताओं को कागज़ी दस्तावेज़ स्कैन करके उन्हें PDF फ़ाइल में बदलने देता है।",
   "app_description_2": "कोई विज्ञापन नहीं। हम कोई डेटा एकत्र नहीं करते।\n हम आपकी गोपनीयता का सम्मान करते हैं।",
   "open_source_github": "GitHub पर ओपन सोर्स",
-  "couldnt_launch_url": "लिंक नहीं खोला जा सका",
-  "extract_text": "टेक्स्ट निकालें",
-  "text_title": "टेक्स्ट",
-  "reading_text": "टेक्स्ट पढ़ा जा रहा है…",
-  "copy": "कॉपी करें",
-  "copied_to_clipboard": "क्लिपबोर्ड पर कॉपी किया गया",
-  "share_as_text": "टेक्स्ट के रूप में साझा करें",
-  "no_text_title": "कोई टेक्स्ट नहीं मिला",
-  "no_text_body": "इन पेजों पर कुछ भी टेक्स्ट के रूप में नहीं पढ़ा जा सका। आमतौर पर बेहतर स्कैन से मदद मिलती है।",
-  "searchable_pdf": "खोजने योग्य PDF",
-  "searchable_pdf_hint": "एक अदृश्य टेक्स्ट परत जोड़ता है",
-  "couldnt_read_text": "टेक्स्ट नहीं पढ़ा जा सका",
-  "search_documents_and_text": "दस्तावेज़ और टेक्स्ट खोजें",
-  "pages_read": "{total} में से {done} पेज पढ़े गए",
-  "text_from_pages": "{count, plural, =1{1 पेज से} other{{count} पेजों से}}",
-  "page_number": "पेज {number}"
+  "couldnt_launch_url": "लिंक नहीं खोला जा सका"
 }

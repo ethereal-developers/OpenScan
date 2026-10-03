@@ -61,30 +61,12 @@ android {
        release {
            signingConfig signingConfigs.release
            minifyEnabled true
-           proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
-               'proguard-rules.pro'
        }
    }
 }
 
 flutter {
     source '../..'
-}
-
-dependencies {
-    // Tesseract's LSTM engine, built for Android by the Tesseract4Android
-    // project (Apache-2.0). Bound directly rather than through a pub
-    // plugin: flutter_tesseract_ocr wraps this same library, but its Gradle
-    // script is AGP 7-era -- it calls jcenter() and compileSdkVersion from
-    // its own buildscript, neither of which survives AGP 9 -- so the plugin
-    // cannot be evaluated by this build at all. See OcrChannel.kt for the
-    // binding this replaces it with.
-    //
-    // The non-openmp variant: OpenMP buys parallelism within a single page,
-    // but pages are already recognized one-per-background-thread off the
-    // platform thread, and the openmp build has a history of crashing on
-    // some ARM devices when its thread pool is torn down.
-    implementation 'com.github.adaptech-cz.Tesseract4Android:tesseract4android:4.8.0'
 }
 
 kotlin {

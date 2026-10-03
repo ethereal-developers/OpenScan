@@ -1,31 +1,3 @@
-# Unreleased
-
-### Added
-
-- On-device text recognition (OCR), built on Tesseract's LSTM engine with
-  the English model bundled in the app. Nothing is uploaded and no network
-  permission is involved: pages are read locally and the text is stored in
-  the app's own database.
-  - **Extract text** on a document (or on the pages you have selected)
-    opens the recognized text page by page, selectable, with copy and
-    share.
-  - **Searchable PDF** in the export sheet adds an invisible text layer
-    over each page, so the exported PDF can be searched and selected in
-    any reader while looking exactly as it did before.
-  - The library's search box now matches the text inside documents as well
-    as their names.
-- Recognized pages are cached, so a page is only ever read once. Re-cropping
-  or re-filtering a page invalidates its text, since it no longer describes
-  what the page contains.
-
-### Notes
-
-- Tesseract is bound directly to the app rather than through the
-  `flutter_tesseract_ocr` plugin, whose Gradle script predates AGP 8 and
-  cannot be evaluated under this project's AGP 9.
-- The English model and Tesseract's native libraries add roughly 7 MB to a
-  per-architecture install, or about 24 MB to the universal APK.
-
 # v3.0.0
 
 A full rewrite of the scanning pipeline, the camera, and the UI.

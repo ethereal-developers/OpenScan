@@ -6,8 +6,6 @@ import 'package:openscan/core/cv/compress.dart';
 import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
-import 'package:openscan/core/ocr/ocr_models.dart';
-import 'package:openscan/core/ocr/ocr_service.dart';
 import 'package:openscan/core/theme/os_colors.dart';
 import 'package:openscan/core/theme/os_tokens.dart';
 import 'package:openscan/core/theme/os_typography.dart';
@@ -24,11 +22,7 @@ enum ExportQuality { ultraLow, low, medium, high }
 
 enum ExportPageSize { a4, letter, legal }
 
-/// [_Stage.reading] is recognition, which only a searchable PDF reaches.
-/// Kept apart from [_Stage.exporting] because it is the slow half by a
-/// wide margin, and a progress bar that says "Exporting" for ninety
-/// seconds and then finishes in two looks broken.
-enum _Stage { idle, reading, exporting, success, failure }
+enum _Stage { idle, exporting, success, failure }
 
 extension on ExportFormat {
   String get label => name.toUpperCase();
@@ -143,17 +137,6 @@ class _ExportSheetState extends State<ExportSheet> {
   ExportQuality _quality = ExportQuality.medium;
   ExportPageSize _pageSize = ExportPageSize.a4;
 
-  /// Whether the PDF gets an invisible text layer. Off by default: it
-  /// costs seconds per page, and most exports are a picture of a receipt
-  /// nobody will ever search.
-  bool _searchable = false;
-
-  /// Set when the user cancels out of the recognition stage, so the export
-  /// that recognition was feeding stops too. Without it, cancelling only
-  /// ends the reading: [_run] is still inside its own await and would go
-  /// straight on to write the PDF the user just backed out of.
-  bool _readingCancelled = false;
-
   _Stage _stage = _Stage.idle;
   int _progressPage = 0;
   String? _resultPath;
@@ -195,40 +178,14 @@ class _ExportSheetState extends State<ExportSheet> {
       return;
     }
 
-    _readingCancelled = false;
+    setState(() {
+      _stage = _Stage.exporting;
+      _progressPage = 0;
+    });
 
     try {
       final name = _fileName(state);
       List<String> written;
-
-      // Recognition first, and only for a PDF: the text layer has to exist
-      // before the page it is drawn onto is written.
-      Map<String, List<OcrWord>>? words;
-      if (_format == ExportFormat.pdf && _searchable) {
-        setState(() {
-          _stage = _Stage.reading;
-          _progressPage = 0;
-        });
-        final recognized = await OcrService.instance.recognizeAll(
-          tableName: state.dirName!,
-          images: pages,
-          onProgress: (progress) {
-            if (!mounted) return;
-            setState(() =>
-                _progressPage = progress.completed + progress.failed);
-          },
-        );
-        if (!mounted || _readingCancelled) return;
-        words = {
-          for (final entry in recognized.entries)
-            if (entry.value.words.isNotEmpty) entry.key: entry.value.words,
-        };
-      }
-
-      setState(() {
-        _stage = _Stage.exporting;
-        _progressPage = 0;
-      });
 
       if (_format == ExportFormat.pdf) {
         // The PDF is produced in one pass off the UI isolate, so the
@@ -243,7 +200,6 @@ class _ExportSheetState extends State<ExportSheet> {
                 pageFormat: _pageSize.format,
                 quality: _quality.encodeQuality,
                 maxEdge: _quality.maxEdge,
-                ocrWords: words,
                 imagesSelected: false,
               )
             : await fileOperations.saveToDevice(
@@ -252,7 +208,6 @@ class _ExportSheetState extends State<ExportSheet> {
                 pageFormat: _pageSize.format,
                 quality: _quality.encodeQuality,
                 maxEdge: _quality.maxEdge,
-                ocrWords: words,
               );
         if (path == null) throw StateError('PDF could not be written');
         written = [path];
@@ -317,8 +272,6 @@ class _ExportSheetState extends State<ExportSheet> {
         switch (_stage) {
           case _Stage.idle:
             return _idle(state);
-          case _Stage.reading:
-            return _reading(state);
           case _Stage.exporting:
             return _exporting(state);
           case _Stage.success:
@@ -375,7 +328,7 @@ class _ExportSheetState extends State<ExportSheet> {
           ],
         ),
         const SizedBox(height: OSSpace.sm),
-        if (_format == ExportFormat.pdf) ...[
+        if (_format == ExportFormat.pdf)
           _MetaRow(
             label: l10n.page_size,
             value: _pageSize.label,
@@ -384,13 +337,6 @@ class _ExportSheetState extends State<ExportSheet> {
                   (_pageSize.index + 1) % ExportPageSize.values.length];
             }),
           ),
-          _ToggleRow(
-            label: l10n.searchable_pdf,
-            hint: l10n.searchable_pdf_hint,
-            value: _searchable,
-            onChanged: (value) => setState(() => _searchable = value),
-          ),
-        ],
         _MetaRow(
           label: widget.imagesSelected ? l10n.selected_pages : l10n.all_pages,
           value: l10n.pages_count(pages.length),
@@ -431,52 +377,6 @@ class _ExportSheetState extends State<ExportSheet> {
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-
-  /// Recognition progress, counted in pages actually finished.
-  ///
-  /// Unlike the export below this is a real per-page count: each page is
-  /// a separate call that either lands or fails, and the run can take long
-  /// enough that a bar which does not move would read as a hang.
-  Widget _reading(DirectoryState state) {
-    final os = context.os;
-    final l10n = AppLocalizations.of(context)!;
-    final total = _pages(state).length;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(l10n.reading_text,
-            style: OSTypography.subtitle.copyWith(color: os.onSurface)),
-        const SizedBox(height: OSSpace.md),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            minHeight: 6,
-            value: total == 0 ? null : _progressPage / total,
-            backgroundColor: os.surfaceVariant,
-            color: os.accent,
-          ),
-        ),
-        const SizedBox(height: OSSpace.xs),
-        Text(l10n.pages_read(_progressPage, total),
-            style: OSTypography.caption.copyWith(color: os.onSurfaceVariant)),
-        const SizedBox(height: OSSpace.md),
-        OSButton(
-          label: l10n.cancel,
-          kind: OSButtonKind.tonal,
-          expand: true,
-          // Stops recognition and leaves the sheet where it started. Pages
-          // already read stay cached, so a second attempt picks up from
-          // here rather than from the beginning.
-          onPressed: () async {
-            _readingCancelled = true;
-            await OcrService.instance.cancel();
-            if (mounted) setState(() => _stage = _Stage.idle);
-          },
         ),
       ],
     );
@@ -711,56 +611,6 @@ class _MetaRow extends StatelessWidget {
             if (onTap != null)
               Icon(Icons.chevron_right_rounded,
                   size: 18, color: os.onSurfaceVariant),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A labelled switch row, sized and spaced like [_MetaRow] so the two
-/// stack without a seam.
-class _ToggleRow extends StatelessWidget {
-  const _ToggleRow({
-    required this.label,
-    required this.hint,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final String label;
-  final String hint;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final os = context.os;
-    return InkWell(
-      onTap: () => onChanged(!value),
-      borderRadius: BorderRadius.circular(OSRadius.chip),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 48),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(label,
-                      style: OSTypography.body.copyWith(color: os.onSurface)),
-                  Text(hint,
-                      style: OSTypography.caption
-                          .copyWith(color: os.onSurfaceVariant)),
-                ],
-              ),
-            ),
-            Switch(
-              value: value,
-              onChanged: onChanged,
-              activeThumbColor: os.accent,
-            ),
           ],
         ),
       ),

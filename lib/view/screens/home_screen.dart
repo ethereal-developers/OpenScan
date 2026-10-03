@@ -10,7 +10,6 @@ import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/data/file_operations.dart';
 import 'package:openscan/core/models.dart';
-import 'package:openscan/core/ocr/ocr_service.dart';
 import 'package:openscan/core/settings/app_settings.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/core/theme/os_colors.dart';
@@ -42,19 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<DirectoryOS> _documents = [];
   bool _loading = true;
   String _query = '';
-
-  /// Directory names whose recognized text matches [_query].
-  ///
-  /// Held separately from the documents themselves because it is answered
-  /// by the database rather than by anything already in memory: page text
-  /// is deliberately not loaded with the library, so matching it means a
-  /// query per search term.
-  Set<String> _textMatches = const {};
-
-  /// Guards against an earlier, slower search overwriting a later one —
-  /// typing "tax" fires three queries and they need not come back in
-  /// order.
-  int _searchGeneration = 0;
 
   /// Selection lives here rather than in a cubit: it is per-screen state
   /// that never outlives this route, and keying it by directory path keeps
@@ -187,32 +173,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (_query.isEmpty) return documents;
     final query = _query.toLowerCase();
-    // A title match or a match anywhere in the document's recognized text.
-    // Order is untouched by which of the two matched: a document is a
-    // result or it isn't, and re-ranking by match kind would make the
-    // user's chosen sort mean nothing.
     return documents
-        .where((doc) =>
-            _titleOf(doc).toLowerCase().contains(query) ||
-            _textMatches.contains(doc.dirName))
+        .where((doc) => _titleOf(doc).toLowerCase().contains(query))
         .toList();
-  }
-
-  /// Runs the text side of the search and, if it is still the current
-  /// query by the time it answers, folds the result into the grid.
-  Future<void> _searchText(String query) async {
-    final generation = ++_searchGeneration;
-    if (query.isEmpty) {
-      if (mounted) setState(() => _textMatches = const {});
-      return;
-    }
-    try {
-      final matches = await OcrService.instance.search(query);
-      if (!mounted || generation != _searchGeneration) return;
-      setState(() => _textMatches = matches);
-    } catch (e) {
-      debugPrint('Could not search page text: $e');
-    }
   }
 
   // <========================= Navigation =========================>
@@ -691,14 +654,10 @@ class _HomeScreenState extends State<HomeScreen> {
           OSSpace.md + 2, 0, OSSpace.md + 2, OSSpace.sm),
       child: TextField(
         controller: _searchController,
-        onChanged: (value) {
-          final query = value.trim();
-          setState(() => _query = query);
-          _searchText(query);
-        },
+        onChanged: (value) => setState(() => _query = value.trim()),
         style: OSTypography.body.copyWith(color: os.onSurface),
         decoration: InputDecoration(
-          hintText: l10n.search_documents_and_text,
+          hintText: l10n.search_documents,
           prefixIcon:
               Icon(Icons.search_rounded, size: 20, color: os.onSurfaceVariant),
           prefixIconConstraints:
@@ -709,11 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: const Icon(Icons.close_rounded, size: 18),
                   onPressed: () {
                     _searchController.clear();
-                    setState(() {
-                      _query = '';
-                      _textMatches = const {};
-                    });
-                    _searchGeneration++;
+                    setState(() => _query = '');
                   },
                 ),
         ),

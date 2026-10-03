@@ -24,11 +24,10 @@ class DatabaseHelper {
 
   static final instance = DatabaseHelper._privateConstructor();
   static const _dbName = "OpenScan.db";
-  static const _dbVersion = 3;
+  static const _dbVersion = 2;
 
   static const _documentsTable = 'documents';
   static const _pagesTable = 'pages';
-  static const _pageTextTable = 'page_text';
 
   /// The table-per-document era's master table, read once by the migration
   /// and dropped after.
@@ -82,44 +81,10 @@ class DatabaseHelper {
     // Every page read is "this document's pages, in order".
     await db.execute(
         'CREATE INDEX pages_by_document ON $_pagesTable(document_id, idx)');
-    await _createPageTextTable(db);
-  }
-
-  /// Recognized text, one row per page that has been through OCR.
-  ///
-  /// A table of its own rather than columns on `pages`: most pages never
-  /// get recognized, the text and its word boxes are far larger than the
-  /// rest of a page row put together, and every existing page read would
-  /// otherwise start dragging them along. The cascade means deleting a
-  /// page or a document takes its text with it.
-  ///
-  /// `source_img_path` is what the text was actually read from. A page is
-  /// re-cropped and re-filtered in place, so the image behind it changes;
-  /// comparing that column against the page's current image is how a read
-  /// tells live text from text describing a picture that is gone.
-  ///
-  /// `IF NOT EXISTS` because two upgrade steps can reach it on the same
-  /// open: a database still on version 1 runs the table-per-document
-  /// migration, which rebuilds the whole schema including this table, and
-  /// then falls through to the version 3 step below.
-  Future<void> _createPageTextTable(Database db) async {
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS $_pageTextTable(
-        page_id INTEGER PRIMARY KEY
-          REFERENCES $_pagesTable(id) ON DELETE CASCADE,
-        source_img_path TEXT NOT NULL,
-        text TEXT NOT NULL,
-        words TEXT,
-        language TEXT,
-        updated_at TEXT)
-      ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) await _migrateFromTablePerDocument(db);
-    // Nothing to backfill: no page has been recognized yet, and OCR runs
-    // on demand, so an empty table is the correct starting state.
-    if (oldVersion < 3) await _createPageTextTable(db);
   }
 
   // <========================= Migration =========================>
@@ -377,136 +342,6 @@ class DatabaseHelper {
       where: 'document_id = ? AND img_path = ?',
       whereArgs: [documentId, imgPath],
     );
-  }
-
-  // <===================== Recognized text =====================>
-
-  /// Stores (or replaces) the text recognized for one page.
-  ///
-  /// Keyed off the page's current image path, so a page that has since been
-  /// re-cropped is simply not found and nothing is written — the alternative
-  /// would be filing text under a page whose picture has moved on.
-  Future<int> savePageText({
-    required String tableName,
-    required String imgPath,
-    required String text,
-    required String words,
-    required String language,
-  }) async {
-    Database db = await database;
-    final pageId = await _pageId(db, tableName, imgPath);
-    if (pageId == null) return 0;
-
-    await db.insert(
-      _pageTextTable,
-      {
-        'page_id': pageId,
-        'source_img_path': imgPath,
-        'text': text,
-        'words': words,
-        'language': language,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    return pageId;
-  }
-
-  /// The stored text for one page, or null if it has never been recognized.
-  ///
-  /// `source_img_path` comes back with it rather than being filtered on
-  /// here: the caller decides what to do about text that describes an older
-  /// version of the page, and "stale" is a different answer from "none".
-  Future<Map<String, dynamic>?> getPageText({
-    required String tableName,
-    required String imgPath,
-  }) async {
-    Database db = await database;
-    final rows = await db.rawQuery('''
-      SELECT t.source_img_path, t.text, t.words, t.language, t.updated_at
-      FROM $_pageTextTable t
-      JOIN $_pagesTable p ON p.id = t.page_id
-      JOIN $_documentsTable d ON d.id = p.document_id
-      WHERE d.dir_name = ? AND p.img_path = ?
-      LIMIT 1
-      ''', [tableName, imgPath]);
-    return rows.isEmpty ? null : rows.first;
-  }
-
-  /// Every stored page text for a document, keyed by the image path it was
-  /// read from, in page order.
-  ///
-  /// One query rather than one per page: the export path needs the whole
-  /// document's text at once to build a searchable PDF, and a forty-page
-  /// document should not cost forty round trips.
-  Future<Map<String, Map<String, dynamic>>> getDocumentText(
-      String tableName) async {
-    Database db = await database;
-    final rows = await db.rawQuery('''
-      SELECT t.source_img_path, t.text, t.words, t.language
-      FROM $_pageTextTable t
-      JOIN $_pagesTable p ON p.id = t.page_id
-      JOIN $_documentsTable d ON d.id = p.document_id
-      WHERE d.dir_name = ?
-      ORDER BY p.idx
-      ''', [tableName]);
-    return {
-      for (final row in rows) row['source_img_path'] as String: row,
-    };
-  }
-
-  /// How many of a document's pages have text on record that still matches
-  /// the image the page currently points at.
-  ///
-  /// The join on `img_path = source_img_path` is what makes it "still
-  /// matches": a re-cropped page keeps its stale row but stops counting,
-  /// which is exactly what a "12 of 20 pages recognized" line should say.
-  Future<int> recognizedPageCount(String tableName) async {
-    Database db = await database;
-    final rows = await db.rawQuery('''
-      SELECT COUNT(*) AS n
-      FROM $_pageTextTable t
-      JOIN $_pagesTable p
-        ON p.id = t.page_id AND p.img_path = t.source_img_path
-      JOIN $_documentsTable d ON d.id = p.document_id
-      WHERE d.dir_name = ?
-      ''', [tableName]);
-    return Sqflite.firstIntValue(rows) ?? 0;
-  }
-
-  /// Directory names of documents whose recognized text contains [query].
-  ///
-  /// Matching is left to SQLite's LIKE, which is ASCII-case-insensitive
-  /// only. Good enough for the English model shipped today, and the
-  /// alternative — pulling every page's text into Dart to lowercase it —
-  /// scales with the whole library on every keystroke.
-  Future<Set<String>> searchDocumentText(String query) async {
-    final trimmed = query.trim();
-    if (trimmed.isEmpty) return const {};
-    Database db = await database;
-    // LIKE's own wildcards have to survive being typed as literal text.
-    final escaped = trimmed
-        .replaceAll(r'\', r'\\')
-        .replaceAll('%', r'\%')
-        .replaceAll('_', r'\_');
-    final rows = await db.rawQuery('''
-      SELECT DISTINCT d.dir_name
-      FROM $_pageTextTable t
-      JOIN $_pagesTable p ON p.id = t.page_id
-      JOIN $_documentsTable d ON d.id = p.document_id
-      WHERE t.text LIKE ? ESCAPE ?
-      ''', ['%$escaped%', r'\']);
-    return {for (final row in rows) row['dir_name'] as String};
-  }
-
-  Future<int?> _pageId(Database db, String dirName, String imgPath) async {
-    final rows = await db.rawQuery('''
-      SELECT p.id FROM $_pagesTable p
-      JOIN $_documentsTable d ON d.id = p.document_id
-      WHERE d.dir_name = ? AND p.img_path = ?
-      LIMIT 1
-      ''', [dirName, imgPath]);
-    return rows.isEmpty ? null : rows.first['id'] as int;
   }
 
   Future<int?> _documentId(Database db, String dirName) async {

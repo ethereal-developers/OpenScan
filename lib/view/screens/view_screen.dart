@@ -15,7 +15,6 @@ import 'package:openscan/view/Widgets/os/os_components.dart';
 import 'package:openscan/view/Widgets/renameDialog.dart';
 import 'package:openscan/view/Widgets/view/export_bottomsheet.dart';
 import 'package:openscan/view/screens/preview_screen.dart';
-import 'package:openscan/view/screens/text_screen.dart';
 import 'package:reorderables/reorderables.dart';
 
 /// Document detail: where every scan session lands.
@@ -120,30 +119,6 @@ class _ViewScreenState extends State<ViewScreen> {
     );
   }
 
-  /// Opens the recognized text for this document, reading whichever pages
-  /// have not been read yet.
-  ///
-  /// Pages the user has ticked win over the whole document, matching what
-  /// export does with a selection: having picked three pages out of forty,
-  /// nobody means "now read all forty".
-  void _openText(DirectoryState state, {required bool imagesSelected}) {
-    final images = state.images ?? const <ImageOS>[];
-    final selected = [for (final image in images) if (image.selected) image];
-    final pages = imagesSelected && selected.isNotEmpty ? selected : images;
-    if (pages.isEmpty) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => TextScreen(
-          tableName: state.dirName!,
-          documentName: state.newName ?? state.dirName ?? '',
-          images: pages,
-        ),
-      ),
-    );
-  }
-
   void _openExport({required bool imagesSelected}) {
     OSSheet.show(
       context: context,
@@ -210,14 +185,6 @@ class _ViewScreenState extends State<ViewScreen> {
             onTap: () {
               Navigator.pop(sheetContext);
               _addPages(fromGallery: true);
-            },
-          ),
-          OSSheetAction(
-            icon: Icons.text_fields_rounded,
-            label: l10n.extract_text,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _openText(state, imagesSelected: false);
             },
           ),
           OSSheetAction(
