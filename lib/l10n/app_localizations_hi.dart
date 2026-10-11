@@ -529,6 +529,20 @@ class AppLocalizationsHi extends AppLocalizations {
   String get exported => 'निर्यात हो गया';
 
   @override
+  String saved_to_folder(String folder) {
+    return '$folder में सहेजा गया';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return '$count $folder में सहेजे गए';
+  }
+
+  @override
+  String get saved_privately =>
+      'OpenScan के अंदर सहेजा गया, जहाँ दूसरे ऐप इसे नहीं देख सकते। इसे कहीं और भेजने के लिए साझा करें का उपयोग करें।';
+
+  @override
   String get export_failed => 'निर्यात विफल';
 
   @override

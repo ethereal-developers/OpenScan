@@ -276,6 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ));
 
     int exported = 0;
+    String? lastPath;
     for (final doc in documents) {
       final rows = await database.getImageData(doc.dirName);
       final images = <ImageOS>[
@@ -287,7 +288,10 @@ class _HomeScreenState extends State<HomeScreen> {
         fileName: exportFileName(_titleOf(doc)),
         images: images,
       );
-      if (path != null) exported++;
+      if (path != null) {
+        exported++;
+        lastPath = path;
+      }
     }
 
     if (!mounted) return;
@@ -297,7 +301,15 @@ class _HomeScreenState extends State<HomeScreen> {
     messenger.hideCurrentSnackBar();
     final l10n = AppLocalizations.of(context)!;
     if (exported == documents.length) {
-      OSSnack.success(context, l10n.saved_n_to_device(exported));
+      // Every document goes to the same folder, so any one path says
+      // where they all are.
+      final folder =
+          lastPath == null ? null : FileOperations.sharedFolderOf(lastPath);
+      OSSnack.success(
+          context,
+          folder == null
+              ? l10n.saved_privately
+              : l10n.saved_n_to_folder(exported, folder));
     } else {
       OSSnack.error(
           context, l10n.couldnt_export_n(documents.length - exported));

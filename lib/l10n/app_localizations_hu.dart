@@ -530,6 +530,20 @@ class AppLocalizationsHu extends AppLocalizations {
   String get exported => 'Exportálva';
 
   @override
+  String saved_to_folder(String folder) {
+    return 'Mentve ide: $folder';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return '$count mentve ide: $folder';
+  }
+
+  @override
+  String get saved_privately =>
+      'Az OpenScanen belül mentve, ahol más alkalmazások nem látják. A Megosztással máshová küldheti.';
+
+  @override
   String get export_failed => 'Az exportálás sikertelen';
 
   @override

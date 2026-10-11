@@ -464,6 +464,10 @@ class _ExportSheetState extends State<ExportSheet> {
           maxLines: 2,
           style: OSTypography.caption.copyWith(color: os.onSurfaceVariant),
         ),
+        if (path != null) ...[
+          const SizedBox(height: OSSpace.sm),
+          _savedLocation(path),
+        ],
         const SizedBox(height: OSSpace.md),
         Row(
           children: [
@@ -484,6 +488,37 @@ class _ExportSheetState extends State<ExportSheet> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  /// Where the export went, said in the panel itself rather than in a
+  /// toast: it is the one thing the user needs once the sheet is gone,
+  /// and it stays up for as long as they need to read it. An export that
+  /// fell back to the app's own storage is called out in the warning
+  /// colour — the file is fine, but it is not where anyone would look.
+  Widget _savedLocation(String path) {
+    final l10n = AppLocalizations.of(context)!;
+    final os = context.os;
+    final folder = FileOperations.sharedFolderOf(path);
+    final color = folder == null ? os.warning : os.onSurface;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          folder == null ? Icons.lock_outline_rounded : Icons.folder_rounded,
+          size: 18,
+          color: color,
+        ),
+        const SizedBox(width: OSSpace.xs),
+        Expanded(
+          child: Text(
+            folder == null
+                ? l10n.saved_privately
+                : l10n.saved_to_folder(folder),
+            style: OSTypography.body.copyWith(color: color),
+          ),
         ),
       ],
     );

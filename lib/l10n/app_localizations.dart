@@ -1035,6 +1035,24 @@ abstract class AppLocalizations {
   /// **'Exported'**
   String get exported;
 
+  /// No description provided for @saved_to_folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to {folder}'**
+  String saved_to_folder(String folder);
+
+  /// No description provided for @saved_n_to_folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved {count} to {folder}'**
+  String saved_n_to_folder(int count, String folder);
+
+  /// No description provided for @saved_privately.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved inside OpenScan, where other apps can\'t see it. Use Share to send it somewhere else.'**
+  String get saved_privately;
+
   /// No description provided for @export_failed.
   ///
   /// In en, this message translates to:

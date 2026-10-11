@@ -534,6 +534,20 @@ class AppLocalizationsEl extends AppLocalizations {
   String get exported => 'Εξήχθη';
 
   @override
+  String saved_to_folder(String folder) {
+    return 'Αποθηκεύτηκε στο $folder';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return 'Αποθηκεύτηκαν $count στο $folder';
+  }
+
+  @override
+  String get saved_privately =>
+      'Αποθηκεύτηκε μέσα στο OpenScan, όπου άλλες εφαρμογές δεν το βλέπουν. Χρησιμοποιήστε την Κοινοποίηση για να το στείλετε αλλού.';
+
+  @override
   String get export_failed => 'Η εξαγωγή απέτυχε';
 
   @override

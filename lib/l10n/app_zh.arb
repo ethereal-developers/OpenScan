@@ -303,6 +303,9 @@
     }
   },
   "exported": "已导出",
+  "saved_to_folder": "已保存到 {folder}",
+  "saved_n_to_folder": "已将 {count} 个保存到 {folder}",
+  "saved_privately": "已保存在 OpenScan 内部，其他应用无法看到。请使用“分享”将其发送到其他位置。",
   "export_failed": "导出失败",
   "no_pages_to_export": "没有可导出的页面。",
   "pdf_not_written": "无法写入 PDF 文件",

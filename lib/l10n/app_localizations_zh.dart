@@ -510,6 +510,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get exported => '已导出';
 
   @override
+  String saved_to_folder(String folder) {
+    return '已保存到 $folder';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return '已将 $count 个保存到 $folder';
+  }
+
+  @override
+  String get saved_privately => '已保存在 OpenScan 内部，其他应用无法看到。请使用“分享”将其发送到其他位置。';
+
+  @override
   String get export_failed => '导出失败';
 
   @override

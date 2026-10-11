@@ -302,6 +302,11 @@
     }
   },
   "exported": "Exported",
+  "saved_to_folder": "Saved to {folder}",
+  "@saved_to_folder": {"placeholders": {"folder": {"type": "String"}}},
+  "saved_n_to_folder": "Saved {count} to {folder}",
+  "@saved_n_to_folder": {"placeholders": {"count": {"type": "int"}, "folder": {"type": "String"}}},
+  "saved_privately": "Saved inside OpenScan, where other apps can't see it. Use Share to send it somewhere else.",
   "export_failed": "Export failed",
   "no_pages_to_export": "There are no pages to export.",
   "pdf_not_written": "PDF could not be written",

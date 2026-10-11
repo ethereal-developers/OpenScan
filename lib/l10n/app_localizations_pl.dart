@@ -566,6 +566,20 @@ class AppLocalizationsPl extends AppLocalizations {
   String get exported => 'Wyeksportowano';
 
   @override
+  String saved_to_folder(String folder) {
+    return 'Zapisano w $folder';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return 'Zapisano $count w $folder';
+  }
+
+  @override
+  String get saved_privately =>
+      'Zapisano wewnątrz OpenScan, gdzie inne aplikacje go nie widzą. Użyj Udostępnij, aby wysłać go gdzie indziej.';
+
+  @override
   String get export_failed => 'Eksport nie powiódł się';
 
   @override

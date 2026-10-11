@@ -532,6 +532,20 @@ class AppLocalizationsTa extends AppLocalizations {
   String get exported => 'ஏற்றுமதி செய்யப்பட்டது';
 
   @override
+  String saved_to_folder(String folder) {
+    return '$folder இல் சேமிக்கப்பட்டது';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return '$count $folder இல் சேமிக்கப்பட்டன';
+  }
+
+  @override
+  String get saved_privately =>
+      'OpenScan உள்ளே சேமிக்கப்பட்டது, மற்ற செயலிகள் இதைப் பார்க்க முடியாது. வேறு எங்காவது அனுப்ப பகிர் என்பதைப் பயன்படுத்தவும்.';
+
+  @override
   String get export_failed => 'ஏற்றுமதி தோல்வியடைந்தது';
 
   @override

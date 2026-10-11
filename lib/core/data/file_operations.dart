@@ -845,6 +845,21 @@ class FileOperations {
       return await getApplicationDocumentsDirectory();
     }
   }
+
+  /// The folder [path] was saved in, as a file manager shows it — e.g.
+  /// `Download/OpenScan` — or null when it is somewhere only this app can
+  /// see: [exportDirectory]'s fallback, which is where an export lands on
+  /// a device that won't let the app write to shared storage (no write
+  /// permission is requested, so Android 10 and older). An export there
+  /// is still a good file, but nobody will find it by looking, so the
+  /// caller has to say so rather than report it like any other save.
+  static String? sharedFolderOf(String path) {
+    const root = '/storage/emulated/0/';
+    if (!path.startsWith(root)) return null;
+    final relative = path.substring(root.length);
+    final slash = relative.lastIndexOf('/');
+    return slash <= 0 ? null : relative.substring(0, slash);
+  }
 }
 
 /// Entry point designed to be run via `compute()`. Re-encodes each source
