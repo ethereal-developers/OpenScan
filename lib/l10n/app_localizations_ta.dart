@@ -249,6 +249,19 @@ class AppLocalizationsTa extends AppLocalizations {
   String get auto_capture_desc => 'பக்கம் நிலையானதும் உடனே படம் எடுக்கும்.';
 
   @override
+  String get batch_capture => 'தொகுப்பு முறை';
+
+  @override
+  String get batch_capture_desc =>
+      'பல பக்கங்களுக்கு கேமரா திறந்தே இருக்கும், வெட்டுதலை பின்னர் சரிசெய்யலாம். அணைத்தால், ஒவ்வொரு படமும் சேமிக்கும் முன் வெட்டும் திரையைத் திறக்கும்.';
+
+  @override
+  String get scan_mode_single => 'ஒற்றை';
+
+  @override
+  String get scan_mode_batch => 'தொகுப்பு';
+
+  @override
   String get capture_sound => 'படமெடுப்பு ஒலி';
 
   @override

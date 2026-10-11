@@ -159,6 +159,22 @@ class CropScreenState {
     }
   }
 
+  /// Starts the corners from [normalized] — a boundary in fractional
+  /// portrait-overlay coordinates, the one the live-scan viewfinder was
+  /// showing as the shutter fired — instead of detecting afresh on the
+  /// still. The user has just watched that outline sit on the page; a
+  /// second detection could land somewhere else, and would make them wait
+  /// for it besides.
+  Future<void> useQuad(Quad normalized) async {
+    await getSize();
+    detectedQuad = quadInPixelsOf(
+      normalized,
+      imageSize!.width.round(),
+      imageSize!.height.round(),
+    );
+    detectionState.value = CropDetectionState.detected;
+  }
+
   /// Sets detected points on canvas
   initPoints() {
     double polygonArea = 0;

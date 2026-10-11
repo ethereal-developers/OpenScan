@@ -250,6 +250,19 @@ class AppLocalizationsEs extends AppLocalizations {
       'Hace la foto en cuanto la página se queda quieta.';
 
   @override
+  String get batch_capture => 'Modo por lotes';
+
+  @override
+  String get batch_capture_desc =>
+      'Mantiene la cámara abierta para varias páginas y el recorte se ajusta después. Desactivado, cada foto abre la pantalla de recorte antes de guardarse.';
+
+  @override
+  String get scan_mode_single => 'Una';
+
+  @override
+  String get scan_mode_batch => 'Lote';
+
+  @override
   String get capture_sound => 'Sonido de captura';
 
   @override

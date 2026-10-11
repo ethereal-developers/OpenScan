@@ -249,6 +249,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get auto_capture_desc => 'पृष्ठ स्थिर होते ही तस्वीर ले लें।';
 
   @override
+  String get batch_capture => 'बैच मोड';
+
+  @override
+  String get batch_capture_desc =>
+      'कई पृष्ठों के लिए कैमरा खुला रखें और क्रॉप बाद में ठीक करें। बंद होने पर, हर तस्वीर सहेजने से पहले क्रॉप स्क्रीन खोलती है।';
+
+  @override
+  String get scan_mode_single => 'एकल';
+
+  @override
+  String get scan_mode_batch => 'बैच';
+
+  @override
   String get capture_sound => 'कैप्चर ध्वनि';
 
   @override

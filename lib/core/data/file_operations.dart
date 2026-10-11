@@ -280,27 +280,67 @@ class FileOperations {
     // An original that failed to write is simply not recorded, rather than
     // leaving the page pointing at a file that isn't there. The page is
     // already stored and readable, so this is never a reason to fall back.
-    String? storedOriginal;
-    if (originalPath != null) {
-      final original = await decodeScaled(encoded,
-          maxEdge: kStoredOriginalMaxEdge, label: source.path);
-      if (original != null &&
-          await compute(encodeStoredPageIsolateEntry, {
-            'rgba': original.rgba,
-            'width': original.width,
-            'height': original.height,
-            'dest': originalPath,
-            'quality': kStoredOriginalQuality,
-            'maxEdge': kStoredOriginalMaxEdge,
-            'quad': null,
-          })) {
-        storedOriginal = originalPath;
-      } else {
-        _deleteIfPresent(originalPath);
-      }
-    }
+    final storedOriginal = originalPath != null &&
+            await _writeOriginalNatively(encoded, originalPath,
+                label: source.path)
+        ? originalPath
+        : null;
 
     return (pagePath: pagePath, originalPath: storedOriginal);
+  }
+
+  /// Writes the uncropped [encoded] capture to [dest] at original size.
+  /// Returns false, leaving nothing at [dest], when it could not.
+  Future<bool> _writeOriginalNatively(Uint8List encoded, String dest,
+      {required String label}) async {
+    final original = await decodeScaled(encoded,
+        maxEdge: kStoredOriginalMaxEdge, label: label);
+    if (original != null &&
+        await compute(encodeStoredPageIsolateEntry, {
+          'rgba': original.rgba,
+          'width': original.width,
+          'height': original.height,
+          'dest': dest,
+          'quality': kStoredOriginalQuality,
+          'maxEdge': kStoredOriginalMaxEdge,
+          'quad': null,
+        })) {
+      return true;
+    }
+    _deleteIfPresent(dest);
+    return false;
+  }
+
+  /// Stages a page the user cropped by hand on the way in: [cropped] is
+  /// what the crop screen wrote, already cut to the corners the user
+  /// settled on (and turned, if they turned it), and [shot] the photo it
+  /// was cut from.
+  ///
+  /// [writeCapture] can't do this on its own — its original comes out of
+  /// the same source as its page, and here that would make the original
+  /// the cropped page, leaving a later re-crop nothing to widen back out
+  /// to. So the page is written from [cropped] and the original from
+  /// [shot].
+  Future<({String pagePath, String? originalPath})?> writeReviewedCapture({
+    required File cropped,
+    required File shot,
+    required String dir,
+    required String stamp,
+    bool keepOriginal = false,
+  }) async {
+    final page = await writeCapture(source: cropped, dir: dir, stamp: stamp);
+    if (page == null || !keepOriginal) return page;
+
+    final originalPath = '$dir/orig_$stamp.jpg';
+    try {
+      if (await _writeOriginalNatively(await shot.readAsBytes(), originalPath,
+          label: shot.path)) {
+        return (pagePath: page.pagePath, originalPath: originalPath);
+      }
+    } catch (e) {
+      debugPrint("Couldn't keep the original of ${shot.path}: $e");
+    }
+    return page;
   }
 
   /// The capture decoded at the smallest size that still fills a stored

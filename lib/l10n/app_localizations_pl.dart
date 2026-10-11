@@ -266,6 +266,19 @@ class AppLocalizationsPl extends AppLocalizations {
       'Zrób zdjęcie, gdy tylko strona się ustabilizuje.';
 
   @override
+  String get batch_capture => 'Tryb seryjny';
+
+  @override
+  String get batch_capture_desc =>
+      'Aparat pozostaje otwarty dla wielu stron, a kadrowanie poprawiasz później. Wyłączony — każde zdjęcie otwiera ekran kadrowania przed zapisaniem.';
+
+  @override
+  String get scan_mode_single => 'Pojedyncze';
+
+  @override
+  String get scan_mode_batch => 'Seria';
+
+  @override
   String get capture_sound => 'Dźwięk migawki';
 
   @override

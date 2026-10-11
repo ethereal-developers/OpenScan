@@ -543,6 +543,30 @@ abstract class AppLocalizations {
   /// **'Take the shot as soon as the page holds still.'**
   String get auto_capture_desc;
 
+  /// No description provided for @batch_capture.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch mode'**
+  String get batch_capture;
+
+  /// No description provided for @batch_capture_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the camera open for several pages and fix crops afterwards. Off, each shot opens the crop screen before it is saved.'**
+  String get batch_capture_desc;
+
+  /// No description provided for @scan_mode_single.
+  ///
+  /// In en, this message translates to:
+  /// **'Single'**
+  String get scan_mode_single;
+
+  /// No description provided for @scan_mode_batch.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch'**
+  String get scan_mode_batch;
+
   /// No description provided for @capture_sound.
   ///
   /// In en, this message translates to:

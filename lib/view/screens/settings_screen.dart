@@ -187,6 +187,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   settings.liveDetection ? settings.setAutoCapture : null,
             ),
             _SwitchRow(
+              label: l10n.batch_capture,
+              description: l10n.batch_capture_desc,
+              value: settings.batchCapture,
+              onChanged: settings.setBatchCapture,
+            ),
+            _SwitchRow(
               label: l10n.capture_sound,
               value: settings.captureSound,
               onChanged: settings.setCaptureSound,

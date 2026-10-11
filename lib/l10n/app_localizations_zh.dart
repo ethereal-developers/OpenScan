@@ -241,6 +241,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get auto_capture_desc => '页面保持稳定时自动拍摄。';
 
   @override
+  String get batch_capture => '批量模式';
+
+  @override
+  String get batch_capture_desc =>
+      '相机保持打开以连续拍摄多页，之后再调整裁剪。关闭时，每次拍摄都会先打开裁剪界面再保存。';
+
+  @override
+  String get scan_mode_single => '单页';
+
+  @override
+  String get scan_mode_batch => '批量';
+
+  @override
   String get capture_sound => '拍摄提示音';
 
   @override

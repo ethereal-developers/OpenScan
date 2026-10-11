@@ -249,6 +249,19 @@ class AppLocalizationsEl extends AppLocalizations {
   String get auto_capture_desc => 'Λήψη μόλις η σελίδα σταθεροποιηθεί.';
 
   @override
+  String get batch_capture => 'Λειτουργία δέσμης';
+
+  @override
+  String get batch_capture_desc =>
+      'Η κάμερα μένει ανοιχτή για πολλές σελίδες και διορθώνετε την περικοπή μετά. Ανενεργή, κάθε λήψη ανοίγει την οθόνη περικοπής πριν αποθηκευτεί.';
+
+  @override
+  String get scan_mode_single => 'Μονή';
+
+  @override
+  String get scan_mode_batch => 'Δέσμη';
+
+  @override
   String get capture_sound => 'Ήχος λήψης';
 
   @override

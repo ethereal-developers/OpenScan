@@ -14,6 +14,7 @@ import 'package:openscan/core/theme/os_tokens.dart';
 import 'package:openscan/core/theme/os_typography.dart';
 import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/view/Widgets/live_scan/live_quad_painter.dart';
+import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:openscan/view/screens/live_scan/auto_capture_detector.dart';
 import 'package:openscan/view/screens/live_scan/live_scan_controller.dart';
 import 'package:openscan/view/screens/live_scan/quad_smoother.dart';
@@ -31,11 +32,12 @@ const double _kSideControlSize = 60;
 /// (fractional [0,1] portrait-overlay coordinates — see
 /// `rotateQuadForPortrait`), or null if nothing was detected then.
 ///
-/// A page is cropped to [quad] on the way into the document — those are
-/// the edges the user was looking at when the shutter fired, by hand or by
-/// auto-capture — and stored whole when there is no [quad]. Nothing here
-/// opens the crop screen; cropping by hand is a deliberate act afterwards,
-/// from the page's own Crop button.
+/// In batch mode a page is cropped to [quad] on the way into the document
+/// — those are the edges the user was looking at when the shutter fired,
+/// by hand or by auto-capture — and stored whole when there is no [quad];
+/// fixing a crop is a deliberate act afterwards, from the page's own Crop
+/// button. In single mode the shot goes through the crop screen first,
+/// starting from that same [quad], and arrives already cropped.
 ///
 /// [prepared] marks a page that has already been through the storage
 /// pipeline here in the session — cropped to its boundary, downscaled and
@@ -126,13 +128,22 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   Directory? _stagingDir;
   final FileOperations _fileOperations = FileOperations();
 
-  /// Whether this session looks for the page at all (see
-  /// [AppSettings.liveDetection]). Read once on open: off, no frame reaches
-  /// the detector, so no outline, no auto-capture, and every shot is stored
-  /// whole for cropping afterwards.
+  /// Whether the camera looks for the page at all (see
+  /// [AppSettings.liveDetection]), switched from the top bar's ✨ button.
+  /// Off, no frame reaches the detector, so no outline, no auto-capture,
+  /// and every shot is stored whole for cropping afterwards.
   bool _detectionEnabled = true;
+
+  /// Whether the detection worker has been spawned. Not until detection is
+  /// first wanted: a session that never turns it on never pays for it.
+  bool _detectorStarted = false;
   bool _autoCaptureEnabled = true;
   bool _autoCaptureImminent = false;
+
+  /// Batch keeps the camera open for page after page; single (off) sends
+  /// each shot through the crop screen and ends the session with it. See
+  /// [AppSettings.batchCapture].
+  bool _batchMode = AppSettings.instance.batchCapture;
   bool _torchOn = false;
 
   /// True while the scene is too dark for detection to be reliable. Derived
@@ -220,7 +231,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     }
 
     // Without detection the worker isolate would never be sent a frame.
-    if (_detectionEnabled) await _liveScanController.start();
+    if (_detectionEnabled) await _startDetector();
     await _initializeCamera();
   }
 
@@ -327,7 +338,16 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     }
   }
 
+  Future<void> _startDetector() async {
+    if (_detectorStarted) return;
+    _detectorStarted = true;
+    await _liveScanController.start();
+  }
+
   void _onLatestQuadChanged() {
+    // A frame already in the worker when detection was switched off still
+    // reports back; it mustn't put the outline back up.
+    if (!_detectionEnabled) return;
     // Raw per-frame detections are noisy (see quad_smoother.dart's doc
     // comment) — route them through QuadSmoother first; the painter and
     // AutoCaptureDetector both consume its smoothed output instead of this
@@ -449,6 +469,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         _capturedFiles.add(LiveCapture(file: File(shot.path), quad: quadAtCapture));
         return;
       }
+      if (!_batchMode) {
+        await _reviewCapture(File(shot.path), quadAtCapture);
+        return;
+      }
       // The feed comes back before the page is processed: only the shutter
       // waits on the encode, so the viewfinder is live and detecting again
       // while the last page finishes in the background.
@@ -505,6 +529,68 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     return LiveCapture(file: shot, quad: quad);
   }
 
+  /// Single mode's second half: the shot goes to the crop screen, its
+  /// corners starting where the viewfinder had them, and the session ends
+  /// with the page the user settles on there. Backing out of the crop
+  /// screen is a retake — the shot is dropped and the camera picks up
+  /// where it left off.
+  ///
+  /// The feed stays stopped while the crop screen is up, so nothing is
+  /// detected (or auto-captured) behind it.
+  Future<void> _reviewCapture(File shot, Quad? quad) async {
+    final dir = _stagingDir ??= await _fileOperations.captureDirectory();
+    final stamp = DateTime.now().microsecondsSinceEpoch.toString();
+    // The crop screen writes in place, so it gets a copy: the shot itself
+    // is what the kept original is made from.
+    final working = await shot.copy('${dir.path}/review_$stamp.jpg');
+    if (!mounted) return;
+    final cropped = await imageCropper(context, working, initialQuad: quad);
+    if (!mounted) return;
+
+    if (cropped == null) {
+      if (working.existsSync()) working.deleteSync();
+      // A pause while the crop screen was up already replaced the
+      // controller, and the new one opened with its feed running.
+      final controller = _cameraController;
+      if (controller != null &&
+          controller.value.isInitialized &&
+          !controller.value.isStreamingImages) {
+        await controller.startImageStream(_onFrame);
+      }
+      return;
+    }
+
+    LiveCapture page = LiveCapture(file: cropped);
+    try {
+      final written = await _fileOperations.writeReviewedCapture(
+        cropped: cropped,
+        shot: shot,
+        dir: dir.path,
+        stamp: stamp,
+        keepOriginal: AppSettings.instance.keepOriginal,
+      );
+      if (written != null) {
+        final original = written.originalPath;
+        page = LiveCapture(
+          file: File(written.pagePath),
+          original: original == null ? null : File(original),
+          prepared: true,
+        );
+      }
+    } catch (e) {
+      // The cropped file is still a good page; the document stores it the
+      // ordinary way, just without an original to re-crop from.
+      debugPrint('Could not stage reviewed capture ${shot.path}: $e');
+    }
+    if (mounted) Navigator.pop(context, [page]);
+  }
+
+  Future<void> _setBatchMode(bool value) async {
+    if (value == _batchMode) return;
+    setState(() => _batchMode = value);
+    await AppSettings.instance.setBatchCapture(value);
+  }
+
   void _onDonePressed() {
     Navigator.pop(
       context,
@@ -524,6 +610,14 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     try {
       final picked = await FileOperations().openGallery();
       if (picked.isEmpty || !mounted) return;
+      // Single mode is one trip through the camera: whatever was picked
+      // is what this session adds.
+      if (!_batchMode) {
+        Navigator.pop(context, [
+          for (final file in picked) LiveCapture(file: file, imported: true)
+        ]);
+        return;
+      }
       setState(() {
         for (final file in picked) {
           _capturedFiles.add(LiveCapture(file: file, imported: true));
@@ -538,6 +632,25 @@ class _LiveScanScreenState extends State<LiveScanScreen>
                 Text(AppLocalizations.of(context)!.couldnt_open_gallery)),
       );
     }
+  }
+
+  /// The ✨ button: edge detection, and with it the outline, auto-capture
+  /// and cropping each shot to the page. One switch for "the camera finds
+  /// the page for me", so turning it off leaves a plain camera rather than
+  /// one that still outlines a page it has been told not to look for.
+  Future<void> _toggleDetection() async {
+    final enabled = !_detectionEnabled;
+    setState(() {
+      _detectionEnabled = enabled;
+      if (!enabled) _autoCaptureImminent = false;
+    });
+    _autoCaptureDetector.enabled = enabled && _autoCaptureEnabled;
+    if (enabled) {
+      unawaited(_startDetector());
+    } else {
+      _quadSmoother.reset();
+    }
+    await AppSettings.instance.setLiveDetection(enabled);
   }
 
   Future<void> _toggleAutoCapture() async {
@@ -896,8 +1009,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
   // <========================= Chrome =========================>
 
-  /// Every camera control on one row above the viewfinder: torch, the
-  /// auto-capture toggle, the composition grid, the lens switch, and undo
+  /// Every camera control on one row above the viewfinder: torch, edge
+  /// detection, the composition grid, the lens switch, and undo
   /// once there is something to undo. Nothing hides behind a caret — the
   /// row is short enough to show all of it at once.
   Widget _topChrome(Color accent) {
@@ -918,17 +1031,13 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             highlightColor: _lowLight && !_torchOn ? context.os.warning : null,
             onPressed: canTorch ? _toggleTorch : null,
           ),
-          if (_detectionEnabled) ...[
-            const SizedBox(width: OSSpace.xs),
-            _ChromeButton(
-              icon: Icons.auto_awesome_rounded,
-              tooltip: _autoCaptureEnabled
-                  ? l10n.auto_capture_on
-                  : l10n.auto_capture_off,
-              highlight: _autoCaptureEnabled,
-              onPressed: _toggleAutoCapture,
-            ),
-          ],
+          const SizedBox(width: OSSpace.xs),
+          _ChromeButton(
+            icon: Icons.auto_awesome_rounded,
+            tooltip: l10n.live_detection,
+            highlight: _detectionEnabled,
+            onPressed: _toggleDetection,
+          ),
           const Spacer(),
           if (_capturedFiles.isNotEmpty) ...[
             _ChromeButton(
@@ -1046,24 +1155,43 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (_detectionEnabled) ...[
-            Text(
-              _autoCaptureImminent
-                  ? l10n.hold_still
-                  : _autoCaptureEnabled
-                      ? l10n.auto_on
-                      : l10n.auto_off,
-              style: OSTypography.caption.copyWith(
-                fontWeight: FontWeight.w700,
-                color: _autoCaptureImminent
-                    ? OSColors.chromeOnBackground
-                    : _autoCaptureEnabled
-                        ? accent
-                        : OSColors.chromeMuted,
+          _modeSwitch(accent, onAccent),
+          const SizedBox(height: OSSpace.sm),
+          // Auto-capture only means anything while the page is being
+          // looked for, so it lives under detection rather than beside it.
+          // Tapping the label toggles it, as long-pressing the shutter does.
+          // Its row is kept with detection off, so switching ✨ doesn't
+          // resize the viewfinder above it.
+          Visibility(
+            visible: _detectionEnabled,
+            maintainSize: true,
+            maintainAnimation: true,
+            maintainState: true,
+            child: InkWell(
+              onTap: _toggleAutoCapture,
+              borderRadius: BorderRadius.circular(OSRadius.pill),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: OSSpace.sm, vertical: OSSpace.xxs),
+                child: Text(
+                  _autoCaptureImminent
+                      ? l10n.hold_still
+                      : _autoCaptureEnabled
+                          ? l10n.auto_capture_on
+                          : l10n.auto_capture_off,
+                  style: OSTypography.caption.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: _autoCaptureImminent
+                        ? OSColors.chromeOnBackground
+                        : _autoCaptureEnabled
+                            ? accent
+                            : OSColors.chromeMuted,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: OSSpace.sm),
-          ],
+          ),
+          const SizedBox(height: OSSpace.xs),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1079,6 +1207,56 @@ class _LiveScanScreenState extends State<LiveScanScreen>
               _doneButton(accent, onAccent),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Single | Batch, the way a phone camera switches between photo and
+  /// video: on the screen, right above the shutter, where the choice
+  /// matters. Locked once a batch has pages in it — switching to single
+  /// then would strand them.
+  Widget _modeSwitch(Color accent, Color onAccent) {
+    final l10n = AppLocalizations.of(context)!;
+    final locked = _capturing || _capturedFiles.isNotEmpty;
+    Widget option(String label, bool batch) {
+      final selected = _batchMode == batch;
+      return Material(
+        color: selected ? accent : Colors.transparent,
+        borderRadius: BorderRadius.circular(OSRadius.pill),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: locked ? null : () => _setBatchMode(batch),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: OSSpace.md, vertical: OSSpace.xs),
+            child: Text(
+              label,
+              style: OSTypography.caption.copyWith(
+                fontWeight: FontWeight.w700,
+                color: selected
+                    ? onAccent
+                    : locked
+                        ? OSColors.chromeMuted
+                        : OSColors.chromeOnBackground,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(OSSpace.xxs),
+      decoration: BoxDecoration(
+        color: OSColors.chromeScrim,
+        borderRadius: BorderRadius.circular(OSRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          option(l10n.scan_mode_single, false),
+          option(l10n.scan_mode_batch, true),
         ],
       ),
     );

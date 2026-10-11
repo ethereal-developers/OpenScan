@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:openscan/core/cv/models/detection_result.dart';
+import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/core/settings/app_settings.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/core/theme/os_colors.dart';
@@ -20,12 +21,18 @@ import 'package:openscan/view/screens/crop/crop_screen_state.dart';
 /// want "unchanged image" semantics on cancel can fall back to [image]
 /// themselves; callers re-cropping an existing page use the null to leave
 /// that page alone.
-Future<File?> imageCropper(BuildContext context, File image) async {
+///
+/// [initialQuad], in the live-scan overlay's fractional portrait
+/// coordinates, places the corners where the viewfinder had them instead
+/// of detecting the page again on the still.
+Future<File?> imageCropper(BuildContext context, File image,
+    {Quad? initialQuad}) async {
   return await Navigator.push<File?>(
     context,
     MaterialPageRoute(
       builder: (context) => CropImage(
         file: image,
+        initialQuad: initialQuad,
       ),
     ),
   );
@@ -47,8 +54,9 @@ const double _kMagnifierGap = 40.0;
 
 class CropImage extends StatefulWidget {
   final File? file;
+  final Quad? initialQuad;
 
-  CropImage({this.file});
+  CropImage({this.file, this.initialQuad});
 
   _CropImageState createState() => _CropImageState();
 }
@@ -83,11 +91,15 @@ class _CropImageState extends State<CropImage>
     super.initState();
     _cropScreen.imageFile = widget.file;
 
-    /// Runs detection, then waits for the next frame (so the image is
+    /// Runs detection (or takes the viewfinder's corners), then waits for the next frame (so the image is
     /// guaranteed to be laid out) before computing canvas geometry and
     /// initial points exactly once — replacing the old pattern of doing
     /// this inside the widget's build() callback on every rebuild.
-    _cropScreen.detectDocument().then((_) {
+    final initialQuad = widget.initialQuad;
+    (initialQuad != null
+            ? _cropScreen.useQuad(initialQuad)
+            : _cropScreen.detectDocument())
+        .then((_) {
       if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;

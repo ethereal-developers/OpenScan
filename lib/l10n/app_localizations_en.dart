@@ -250,6 +250,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Take the shot as soon as the page holds still.';
 
   @override
+  String get batch_capture => 'Batch mode';
+
+  @override
+  String get batch_capture_desc =>
+      'Keep the camera open for several pages and fix crops afterwards. Off, each shot opens the crop screen before it is saved.';
+
+  @override
+  String get scan_mode_single => 'Single';
+
+  @override
+  String get scan_mode_batch => 'Batch';
+
+  @override
   String get capture_sound => 'Capture sound';
 
   @override

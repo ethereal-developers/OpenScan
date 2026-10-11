@@ -249,6 +249,19 @@ class AppLocalizationsHu extends AppLocalizations {
   String get auto_capture_desc => 'Rögzítés, amint az oldal megáll.';
 
   @override
+  String get batch_capture => 'Kötegelt mód';
+
+  @override
+  String get batch_capture_desc =>
+      'A kamera nyitva marad több oldalhoz, a vágást utólag igazíthatja. Kikapcsolva minden felvétel mentés előtt megnyitja a vágás képernyőt.';
+
+  @override
+  String get scan_mode_single => 'Egy';
+
+  @override
+  String get scan_mode_batch => 'Köteg';
+
+  @override
   String get capture_sound => 'Rögzítés hangja';
 
   @override
