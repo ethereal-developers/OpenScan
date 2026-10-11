@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -253,11 +252,11 @@ class AppLocalizationsPl extends AppLocalizations {
   String get scanning => 'Skanowanie';
 
   @override
-  String get live_detection => 'Detect document edges';
+  String get live_detection => 'Wykrywaj krawędzie dokumentu';
 
   @override
   String get live_detection_desc =>
-      'Outlines the page in the camera and crops each shot to it. Turn off to take plain photos and crop them afterwards.';
+      'Obrysowuje stronę w podglądzie aparatu i przycina do niej każde zdjęcie. Wyłącz, aby robić zwykłe zdjęcia i przycinać je później.';
 
   @override
   String get auto_capture => 'Automatyczne zdjęcie';

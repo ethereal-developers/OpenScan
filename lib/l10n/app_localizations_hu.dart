@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -237,11 +236,11 @@ class AppLocalizationsHu extends AppLocalizations {
   String get scanning => 'Szkennelés';
 
   @override
-  String get live_detection => 'Detect document edges';
+  String get live_detection => 'Dokumentumszélek felismerése';
 
   @override
   String get live_detection_desc =>
-      'Outlines the page in the camera and crops each shot to it. Turn off to take plain photos and crop them afterwards.';
+      'Kijelöli az oldalt a kameraképen, és minden felvételt arra vág. Kapcsold ki, ha sima fényképeket készítenél, és később vágnád őket.';
 
   @override
   String get auto_capture => 'Automatikus rögzítés';

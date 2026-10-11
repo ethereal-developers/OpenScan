@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -228,6 +227,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get scanning => '正在扫描';
+
+  @override
+  String get live_detection => '检测文档边缘';
+
+  @override
+  String get live_detection_desc => '在相机画面中框出页面，并按页面裁剪每张照片。关闭后可拍摄普通照片，之后再裁剪。';
 
   @override
   String get auto_capture => '自动拍摄';

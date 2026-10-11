@@ -446,6 +446,8 @@ extension on Locale {
     switch (languageCode) {
       case 'el':
         return 'Ελληνικά';
+      case 'es':
+        return 'Español';
       case 'hu':
         return 'Magyar';
       case 'pl':

@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -237,11 +236,11 @@ class AppLocalizationsEl extends AppLocalizations {
   String get scanning => 'Σάρωση';
 
   @override
-  String get live_detection => 'Detect document edges';
+  String get live_detection => 'Ανίχνευση άκρων εγγράφου';
 
   @override
   String get live_detection_desc =>
-      'Outlines the page in the camera and crops each shot to it. Turn off to take plain photos and crop them afterwards.';
+      'Περιγράφει τη σελίδα στην κάμερα και περικόπτει κάθε λήψη σε αυτήν. Απενεργοποιήστε το για απλές φωτογραφίες που θα περικόψετε αργότερα.';
 
   @override
   String get auto_capture => 'Αυτόματη λήψη';

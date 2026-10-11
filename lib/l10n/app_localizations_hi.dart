@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -237,11 +236,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get scanning => 'स्कैनिंग';
 
   @override
-  String get live_detection => 'Detect document edges';
+  String get live_detection => 'दस्तावेज़ के किनारे पहचानें';
 
   @override
   String get live_detection_desc =>
-      'Outlines the page in the camera and crops each shot to it. Turn off to take plain photos and crop them afterwards.';
+      'कैमरे में पृष्ठ की रूपरेखा दिखाता है और हर तस्वीर को उसी के अनुसार काटता है। सामान्य तस्वीरें लेकर बाद में काटने के लिए इसे बंद करें।';
 
   @override
   String get auto_capture => 'स्वतः कैप्चर';
@@ -494,10 +493,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get page_size => 'पृष्ठ आकार';
 
   @override
-  String get page_size_letter => 'Letter';
+  String get page_size_letter => 'लेटर';
 
   @override
-  String get page_size_legal => 'Legal';
+  String get page_size_legal => 'लीगल';
 
   @override
   String get all_pages => 'सभी पृष्ठ';
