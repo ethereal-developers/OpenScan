@@ -31,11 +31,11 @@ Future<String> compressImageIsolateEntry(Map<String, dynamic> params) async {
 /// Long edge, in pixels, a stored page is capped at. 2400px is ~200 DPI
 /// across an A4 page — the resolution document scanners settle on, and
 /// past which a photo of paper carries no more readable detail, only
-/// bytes. Kept originals get a looser cap since they exist to be
-/// re-cropped down.
+/// bytes. Kept originals share the cap: one is only ever re-cropped down
+/// to a page, and at 3200px it cost three times the page's own space.
 const int kStoredPageMaxEdge = 2400;
 const int kStoredPageQuality = 85;
-const int kStoredOriginalMaxEdge = 3200;
+const int kStoredOriginalMaxEdge = 2400;
 const int kStoredOriginalQuality = 80;
 
 /// Entry point designed to be run via `compute()`. Downscales the image at

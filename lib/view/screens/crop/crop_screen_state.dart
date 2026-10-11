@@ -9,6 +9,8 @@ import 'package:openscan/core/cv/models/detection_result.dart';
 import 'package:openscan/core/cv/models/point.dart';
 import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/core/cv/perspective_crop.dart';
+import 'package:openscan/core/cv/platform_store.dart';
+import 'package:openscan/core/cv/compress.dart';
 
 /// UI-facing detection state: loading while the isolate is running,
 /// detected once a quad was found, notFound when detection completed
@@ -411,6 +413,37 @@ class CropScreenState {
       bottomRight: scalePoint(br),
       bottomLeft: scalePoint(bl),
     );
+
+    // On the platform first: a full-resolution photo straight off the
+    // camera takes many seconds to decode, warp and encode in Dart. Every
+    // caller normalizes this result down to a stored page afterwards, so
+    // it is written at that size — at a quality high enough that the
+    // second encode costs nothing visible.
+    // Written beside the photo and moved over it once it is whole, so a
+    // native failure part way leaves the photo intact for the Dart path.
+    final natural = outputSize(quad);
+    final fitted =
+        fitWithin(natural.width, natural.height, kStoredPageMaxEdge);
+    final staged = '${imageFile!.path}.crop.jpg';
+    if (await storeOnPlatform(
+      src: imageFile!.path,
+      quarterTurns: quarterTurns,
+      outputs: [
+        PlatformOutput(
+          dest: staged,
+          corners: quad.scaled(1 / imageSize!.width, 1 / imageSize!.height),
+          width: fitted.width,
+          height: fitted.height,
+          quality: 95,
+        ),
+      ],
+    )) {
+      await File(staged).rename(imageFile!.path);
+      // Same path, new pixels: drop the decoded copy Flutter cached for
+      // the old ones, or the next screen to show this file shows those.
+      PaintingBinding.instance.imageCache.evict(FileImage(imageFile!));
+      return CropSuccess(imageFile!.path);
+    }
 
     try {
       final result = await compute(cropImageIsolateEntry, {

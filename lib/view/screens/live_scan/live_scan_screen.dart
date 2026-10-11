@@ -272,9 +272,15 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
 
     for (int attempt = 0; attempt < 2; attempt++) {
+      // The preset sizes the still as well as the preview, so anything
+      // short of max caps every page at the preset: `high` meant 0.9MP
+      // 16:9 photos. Max is the sensor's full 4:3 frame; the detection
+      // stream comes along at a size CameraX can sustain beside it
+      // (1600x1200 at ~27fps on a moto g71), and is scaled down to
+      // kLiveDetectionMaxDimension before detection anyway.
       final controller = CameraController(
         camera,
-        ResolutionPreset.high,
+        ResolutionPreset.max,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.yuv420,
       );

@@ -12,6 +12,7 @@ import 'package:openscan/core/cv/compress.dart';
 import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/core/cv/native_decode.dart';
 import 'package:openscan/core/cv/perspective_crop.dart';
+import 'package:openscan/core/cv/platform_store.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/models.dart';
@@ -159,9 +160,19 @@ class FileOperations {
       );
     }
 
-    // The fast path: let the platform decode the capture, and leave the
-    // isolate only the encoding. Falls through to the pure-Dart pipeline
-    // below when the platform decoder cannot read these bytes at all.
+    // Fastest: decode, warp and encode all on the platform.
+    final platform = await _writeCaptureOnPlatform(
+      source: source,
+      pagePath: pagePath,
+      originalPath: originalPath,
+      quad: quad,
+      quarterTurns: quarterTurns,
+    );
+    if (platform != null) return platform;
+
+    // Next: let the platform decode the capture, and leave the isolate
+    // only the encoding. Falls through to the pure-Dart pipeline below
+    // when the platform decoder cannot read these bytes at all.
     final native = await _writeCaptureNatively(
       source: source,
       pagePath: pagePath,
@@ -301,6 +312,61 @@ class FileOperations {
     return (pagePath: pagePath, originalPath: storedOriginal);
   }
 
+  /// [writeCapture] done entirely by the platform (see
+  /// `platform_store.dart`): page and original from one native decode, in
+  /// well under a second where the Dart encoders take the best part of
+  /// fifteen on a full-resolution capture. Null when the platform can't —
+  /// not Android, or the native side gave up — leaving the caller to go the
+  /// Dart way.
+  Future<({String pagePath, String? originalPath})?> _writeCaptureOnPlatform({
+    required File source,
+    required String pagePath,
+    required String? originalPath,
+    required Quad? quad,
+    int quarterTurns = 0,
+  }) async {
+    if (!Platform.isAndroid) return null;
+    final ({int width, int height})? size;
+    try {
+      size = await decodedSize(await source.readAsBytes(), label: source.path);
+    } catch (e) {
+      return null;
+    }
+    if (size == null) return null;
+    final w = size.width.toDouble(), h = size.height.toDouble();
+
+    final pixels = quad == null
+        ? PlatformOutput.wholeFrame.scaled(w, h)
+        : quadInPixelsOf(quad, size.width, size.height);
+    final natural = outputSize(pixels);
+    final page = fitWithin(natural.width, natural.height, kStoredPageMaxEdge);
+    final original =
+        fitWithin(size.width, size.height, kStoredOriginalMaxEdge);
+
+    final stored = await storeOnPlatform(
+      src: source.path,
+      quarterTurns: quarterTurns,
+      outputs: [
+        PlatformOutput(
+          dest: pagePath,
+          corners: pixels.scaled(1 / w, 1 / h),
+          width: page.width,
+          height: page.height,
+          quality: kStoredPageQuality,
+        ),
+        if (originalPath != null)
+          PlatformOutput(
+            dest: originalPath,
+            corners: PlatformOutput.wholeFrame,
+            width: original.width,
+            height: original.height,
+            quality: kStoredOriginalQuality,
+          ),
+      ],
+    );
+    return stored ? (pagePath: pagePath, originalPath: originalPath) : null;
+  }
+
   /// Writes the uncropped [encoded] capture to [dest] at original size.
   /// Returns false, leaving nothing at [dest], when it could not.
   Future<bool> _writeOriginalNatively(Uint8List encoded, String dest,
@@ -351,7 +417,28 @@ class FileOperations {
 
     final originalPath = '$dir/orig_$stamp.jpg';
     try {
-      if (await _writeOriginalNatively(await shot.readAsBytes(), originalPath,
+      final bytes = await shot.readAsBytes();
+      final size = await decodedSize(bytes, label: shot.path);
+      if (size != null) {
+        final fitted =
+            fitWithin(size.width, size.height, kStoredOriginalMaxEdge);
+        if (await storeOnPlatform(
+          src: shot.path,
+          quarterTurns: originalTurns,
+          outputs: [
+            PlatformOutput(
+              dest: originalPath,
+              corners: PlatformOutput.wholeFrame,
+              width: fitted.width,
+              height: fitted.height,
+              quality: kStoredOriginalQuality,
+            ),
+          ],
+        )) {
+          return (pagePath: page.pagePath, originalPath: originalPath);
+        }
+      }
+      if (await _writeOriginalNatively(bytes, originalPath,
           quarterTurns: originalTurns, label: shot.path)) {
         return (pagePath: page.pagePath, originalPath: originalPath);
       }
