@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -485,6 +486,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get page_size => 'Page size';
+
+  @override
+  String get page_size_letter => 'Letter';
+
+  @override
+  String get page_size_legal => 'Legal';
 
   @override
   String get all_pages => 'All pages';

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -484,6 +485,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get page_size => 'पृष्ठ आकार';
+
+  @override
+  String get page_size_letter => 'Letter';
+
+  @override
+  String get page_size_legal => 'Legal';
 
   @override
   String get all_pages => 'सभी पृष्ठ';
