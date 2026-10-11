@@ -607,7 +607,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'OpenScan finds the edges and takes the shot by itself when you hold still — or tap the shutter to take it yourself.';
+      'OpenScan finds the edges of the page — tap the shutter to take it. Turn on Auto-capture and it takes the shot by itself when you hold still.';
 
   @override
   String get demo_pages_title => 'Keep going for more pages';

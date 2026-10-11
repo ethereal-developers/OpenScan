@@ -342,7 +342,7 @@
   "share_pdf": "分享 PDF",
   "share_images": "分享图像",
   "demo_scan_title": "将镜头对准页面",
-  "demo_scan_body": "OpenScan 会自动识别页面边缘，并在画面稳定时拍摄；你也可以点击快门手动拍摄。",
+  "demo_scan_body": "OpenScan 会自动识别页面边缘，点击快门即可拍摄。开启“自动拍摄”后，画面稳定时会自动拍摄。",
   "demo_pages_title": "继续扫描更多页面",
   "demo_pages_body": "每次拍摄的页面都会加入同一文档。全部拍完后，点击“完成”。",
   "demo_adjust_title": "校正与优化页面",

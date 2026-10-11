@@ -176,7 +176,7 @@
   "share_pdf": "Udostępnij PDF",
   "share_images": "Udostępnij obrazy",
   "demo_scan_title": "Skieruj na stronę",
-  "demo_scan_body": "OpenScan znajduje krawędzie i sam robi zdjęcie, gdy nie poruszasz telefonem — albo dotknij migawki, by zrobić je samodzielnie.",
+  "demo_scan_body": "OpenScan znajduje krawędzie strony — dotknij migawki, by zrobić zdjęcie. Włącz Automatyczne zdjęcie, a zrobi je sam, gdy nie poruszasz telefonem.",
   "demo_pages_title": "Rób dalej, by dodać strony",
   "demo_pages_body": "Każde zdjęcie trafia do tego samego dokumentu. Gdy masz już wszystkie, dotknij Gotowe.",
   "demo_adjust_title": "Wyprostuj i oczyść",

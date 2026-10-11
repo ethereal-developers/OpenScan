@@ -343,7 +343,7 @@
   "share_pdf": "Share PDF",
   "share_images": "Share images",
   "demo_scan_title": "Point at the page",
-  "demo_scan_body": "OpenScan finds the edges and takes the shot by itself when you hold still — or tap the shutter to take it yourself.",
+  "demo_scan_body": "OpenScan finds the edges of the page — tap the shutter to take it. Turn on Auto-capture and it takes the shot by itself when you hold still.",
   "demo_pages_title": "Keep going for more pages",
   "demo_pages_body": "Every shot joins the same document. Tap Done when you have them all.",
   "demo_adjust_title": "Straighten and clean up",

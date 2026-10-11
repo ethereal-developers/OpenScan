@@ -1170,7 +1170,7 @@ abstract class AppLocalizations {
   /// No description provided for @demo_scan_body.
   ///
   /// In en, this message translates to:
-  /// **'OpenScan finds the edges and takes the shot by itself when you hold still — or tap the shutter to take it yourself.'**
+  /// **'OpenScan finds the edges of the page — tap the shutter to take it. Turn on Auto-capture and it takes the shot by itself when you hold still.'**
   String get demo_scan_body;
 
   /// No description provided for @demo_pages_title.

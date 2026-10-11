@@ -176,7 +176,7 @@
   "share_pdf": "Compartir PDF",
   "share_images": "Compartir imágenes",
   "demo_scan_title": "Apunta a la página",
-  "demo_scan_body": "OpenScan encuentra los bordes y hace la foto solo cuando te quedas quieto, o toca el disparador para hacerla tú.",
+  "demo_scan_body": "OpenScan encuentra los bordes de la página: toca el disparador para hacer la foto. Activa la Captura automática y la hará sola cuando te quedes quieto.",
   "demo_pages_title": "Sigue para añadir más páginas",
   "demo_pages_body": "Cada foto se añade al mismo documento. Toca Listo cuando las tengas todas.",
   "demo_adjust_title": "Endereza y limpia",

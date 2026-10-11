@@ -32,7 +32,7 @@ class AppSettings extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
   OSAccentFamily _accent = OSAccents.ember;
   bool _liveDetection = true;
-  bool _autoCapture = true;
+  bool _autoCapture = false;
   bool _batchCapture = false;
   bool _captureSound = true;
   bool _keepOriginal = true;
@@ -77,10 +77,11 @@ class AppSettings extends ChangeNotifier {
       orElse: () => ThemeMode.system,
     );
     _accent = OSAccents.byId(prefs.getString(_kAccent));
-    // Shares its key with the live-scan screen's own preference, which
-    // predates this class — the two are the same setting, now surfaced in
-    // Settings as well as behind the camera's long-press.
-    _autoCapture = prefs.getBool(_kAutoCapture) ?? true;
+    // Off unless the user turns it on: a shot that takes itself before the
+    // page is framed was the most common complaint about 3.0, and a user
+    // who hasn't asked for it doesn't know to look for the switch. The
+    // key predates this class — it was the live-scan screen's own.
+    _autoCapture = prefs.getBool(_kAutoCapture) ?? false;
     _liveDetection = prefs.getBool(_kLiveDetection) ?? true;
     _batchCapture = prefs.getBool(_kBatchCapture) ?? false;
     _captureSound = prefs.getBool(_kCaptureSound) ?? true;

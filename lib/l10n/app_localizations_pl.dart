@@ -643,7 +643,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'OpenScan znajduje krawędzie i sam robi zdjęcie, gdy nie poruszasz telefonem — albo dotknij migawki, by zrobić je samodzielnie.';
+      'OpenScan znajduje krawędzie strony — dotknij migawki, by zrobić zdjęcie. Włącz Automatyczne zdjęcie, a zrobi je sam, gdy nie poruszasz telefonem.';
 
   @override
   String get demo_pages_title => 'Rób dalej, by dodać strony';

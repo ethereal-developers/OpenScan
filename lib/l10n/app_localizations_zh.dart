@@ -584,7 +584,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get demo_scan_title => '将镜头对准页面';
 
   @override
-  String get demo_scan_body => 'OpenScan 会自动识别页面边缘，并在画面稳定时拍摄；你也可以点击快门手动拍摄。';
+  String get demo_scan_body =>
+      'OpenScan 会自动识别页面边缘，点击快门即可拍摄。开启“自动拍摄”后，画面稳定时会自动拍摄。';
 
   @override
   String get demo_pages_title => '继续扫描更多页面';

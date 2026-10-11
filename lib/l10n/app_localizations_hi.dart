@@ -607,7 +607,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'फ़ोन स्थिर रखें तो OpenScan किनारे ढूँढ़कर खुद ही तस्वीर ले लेता है — या शटर दबाकर खुद तस्वीर लें।';
+      'OpenScan पृष्ठ के किनारे ढूँढ़ता है — तस्वीर लेने के लिए शटर दबाएँ। स्वतः कैप्चर चालू करें, तो फ़ोन स्थिर रखने पर यह खुद तस्वीर ले लेगा।';
 
   @override
   String get demo_pages_title => 'और पृष्ठों के लिए जारी रखें';

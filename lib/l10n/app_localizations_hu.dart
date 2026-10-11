@@ -608,7 +608,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'Az OpenScan megtalálja a széleket, és magától elkészíti a felvételt, ha mozdulatlanul tartja — vagy koppintson az exponálógombra, és elkészítheti maga.';
+      'Az OpenScan megtalálja az oldal széleit — koppintson az exponálógombra a felvételhez. Kapcsolja be az Automatikus rögzítést, és magától fényképez, ha mozdulatlanul tartja.';
 
   @override
   String get demo_pages_title => 'Folytassa a további oldalakkal';

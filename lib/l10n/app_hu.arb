@@ -176,7 +176,7 @@
   "share_pdf": "PDF megosztása",
   "share_images": "Képek megosztása",
   "demo_scan_title": "Irányítsa az oldalra",
-  "demo_scan_body": "Az OpenScan megtalálja a széleket, és magától elkészíti a felvételt, ha mozdulatlanul tartja — vagy koppintson az exponálógombra, és elkészítheti maga.",
+  "demo_scan_body": "Az OpenScan megtalálja az oldal széleit — koppintson az exponálógombra a felvételhez. Kapcsolja be az Automatikus rögzítést, és magától fényképez, ha mozdulatlanul tartja.",
   "demo_pages_title": "Folytassa a további oldalakkal",
   "demo_pages_body": "Minden felvétel ugyanabba a dokumentumba kerül. Ha megvan mind, koppintson a Kész gombra.",
   "demo_adjust_title": "Igazítás és tisztítás",

@@ -611,7 +611,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'OpenScan encuentra los bordes y hace la foto solo cuando te quedas quieto, o toca el disparador para hacerla tú.';
+      'OpenScan encuentra los bordes de la página: toca el disparador para hacer la foto. Activa la Captura automática y la hará sola cuando te quedes quieto.';
 
   @override
   String get demo_pages_title => 'Sigue para añadir más páginas';

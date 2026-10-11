@@ -20,9 +20,7 @@ import 'package:openscan/view/screens/live_scan/capture_orientation.dart';
 import 'package:openscan/view/screens/live_scan/live_scan_controller.dart';
 import 'package:openscan/view/screens/live_scan/quad_smoother.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-const _kAutoCapturePrefKey = 'liveScanAutoCaptureEnabled';
 
 /// Height of the two controls flanking the shutter — big enough to sit as
 /// peers of the 70px shutter rather than as afterthoughts beside it.
@@ -152,7 +150,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// Whether the detection worker has been spawned. Not until detection is
   /// first wanted: a session that never turns it on never pays for it.
   bool _detectorStarted = false;
-  bool _autoCaptureEnabled = true;
+  bool _autoCaptureEnabled = false;
   bool _autoCaptureImminent = false;
 
   /// Batch keeps the camera open for page after page; single (off) sends
@@ -241,11 +239,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   }
 
   Future<void> _initialize() async {
-    final prefs = await SharedPreferences.getInstance();
     _detectionEnabled = AppSettings.instance.liveDetection;
-    _autoCaptureEnabled = prefs.getBool(_kAutoCapturePrefKey) ?? true;
-    // Same preference the Settings screen writes — the camera's long-press
-    // and the settings row are two doors onto one switch.
+    // Same setting the Settings screen writes — the camera's switch and
+    // the settings row are two doors onto one preference.
+    _autoCaptureEnabled = AppSettings.instance.autoCapture;
     _autoCaptureDetector.enabled = _autoCaptureEnabled && _detectionEnabled;
 
     if (!await Permission.camera.isGranted) {
@@ -1219,7 +1216,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           const SizedBox(height: OSSpace.sm),
           // Auto-capture only means anything while the page is being
           // looked for, so it lives under detection rather than beside it.
-          // Tapping the label toggles it, as long-pressing the shutter does.
           // Its row is kept with detection off, so switching ✨ doesn't
           // resize the viewfinder above it.
           Visibility(
@@ -1227,29 +1223,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             maintainSize: true,
             maintainAnimation: true,
             maintainState: true,
-            child: InkWell(
-              onTap: _toggleAutoCapture,
-              borderRadius: BorderRadius.circular(OSRadius.pill),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: OSSpace.sm, vertical: OSSpace.xxs),
-                child: Text(
-                  _autoCaptureImminent
-                      ? l10n.hold_still
-                      : _autoCaptureEnabled
-                          ? l10n.auto_capture_on
-                          : l10n.auto_capture_off,
-                  style: OSTypography.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: _autoCaptureImminent
-                        ? OSColors.chromeOnBackground
-                        : _autoCaptureEnabled
-                            ? accent
-                            : OSColors.chromeMuted,
-                  ),
-                ),
-              ),
-            ),
+            child: _autoCaptureSwitch(accent, onAccent),
           ),
           const SizedBox(height: OSSpace.xs),
           Row(
@@ -1269,6 +1243,61 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// Auto-capture, as a switch that looks like one: a chip that is
+  /// outlined while off and filled while on, with the state in words.
+  /// It used to be a line of caption text that happened to be tappable,
+  /// and nobody found it — so a shot that took itself before the page was
+  /// framed read as the app misbehaving rather than a setting to turn
+  /// off. Long-pressing the shutter still toggles it too.
+  Widget _autoCaptureSwitch(Color accent, Color onAccent) {
+    final l10n = AppLocalizations.of(context)!;
+    final on = _autoCaptureEnabled;
+    final ink = on ? onAccent : OSColors.chromeOnBackground;
+    return Semantics(
+      toggled: on,
+      button: true,
+      child: Material(
+        color: on ? accent : Colors.transparent,
+        shape: StadiumBorder(
+          side: BorderSide(
+            color: on ? accent : OSColors.chromeMuted,
+            width: 1.5,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: _toggleAutoCapture,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: OSSpace.md, vertical: OSSpace.xs),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  on ? Icons.timer_rounded : Icons.timer_off_outlined,
+                  size: 16,
+                  color: ink,
+                ),
+                const SizedBox(width: OSSpace.xs),
+                Text(
+                  _autoCaptureImminent
+                      ? l10n.hold_still
+                      : on
+                          ? l10n.auto_capture_on
+                          : l10n.auto_capture_off,
+                  style: OSTypography.caption.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: ink,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
