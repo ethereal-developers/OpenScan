@@ -97,24 +97,27 @@ class _CropImageState extends State<CropImage>
     _cropScreen.turns = widget.initialTurns;
     _turnAnimation = AlwaysStoppedAnimation(widget.initialTurns.toDouble());
 
-    /// Runs detection (or takes the viewfinder's corners), then waits for
-    /// the page to be decoded and laid out before computing canvas
-    /// geometry and initial points exactly once — replacing the old
-    /// pattern of doing this inside the widget's build() callback on every
-    /// rebuild.
+    /// Takes the viewfinder's corners, or measures the page so detection
+    /// can run behind it, then waits for the page to be decoded and laid
+    /// out before computing canvas geometry and initial points exactly once
+    /// — replacing the old pattern of doing this inside the widget's
+    /// build() callback on every rebuild.
     ///
     /// The wait for the decode matters: an [Image] that hasn't loaded yet
     /// lays out at zero size, and measured then, every corner lands on the
-    /// same point. Detection on the still used to take long enough to hide
-    /// that; the viewfinder's corners arrive at once, and didn't.
+    /// same point.
+    ///
+    /// Detection doesn't hold the screen up: the page is shown with its
+    /// corners at the edges, and they move to the page once it is found —
+    /// unless the user has started moving them first.
     final initialQuad = widget.initialQuad;
     (initialQuad != null
             ? _cropScreen.useQuad(initialQuad)
-            : _cropScreen.detectDocument())
+            : _cropScreen.prepareForSearch())
         .then((_) async {
       if (!mounted) return;
       try {
-        await precacheImage(FileImage(_cropScreen.imageFile!), context);
+        await precacheImage(_cropScreen.displayImage, context);
       } catch (e) {
         debugPrint('Could not preload ${_cropScreen.imageFile}: $e');
       }
@@ -127,6 +130,7 @@ class _CropImageState extends State<CropImage>
           _cropScreen.getRenderedBoxSize();
           _cropScreen.initPoints();
         });
+        if (initialQuad == null) _detectBehindPage();
       });
     });
 
@@ -216,8 +220,10 @@ class _CropImageState extends State<CropImage>
                 localPosition:
                     _cropScreen.fromDisplay(startDetails.localPosition),
               ));
-              if (_cropScreen.movingPoint.name != 'none')
+              if (_cropScreen.movingPoint.name != 'none') {
+                _cropScreen.userAdjusted = true;
                 _cropScreen.showMagnifier.value = true;
+              }
             },
             onPanEnd: (details) {
               _cropScreen.movingPoint.name = 'none';
@@ -244,7 +250,7 @@ class _CropImageState extends State<CropImage>
                                       _cropScreen.scaleForTurns(_animatedTurns),
                                   child: Image(
                                     key: _cropScreen.imageKey,
-                                    image: FileImage(_cropScreen.imageFile!),
+                                    image: _cropScreen.displayImage,
                                     loadingBuilder:
                                         ((context, child, loadingProgress) {
                                       if (loadingProgress == null) return child;
@@ -402,6 +408,16 @@ class _CropImageState extends State<CropImage>
     );
   }
 
+  /// Runs detection with the page already on screen, and moves the corners
+  /// to what it finds if the user hasn't moved them in the meantime.
+  Future<void> _detectBehindPage() async {
+    await _cropScreen.detectDocument();
+    if (!mounted || _cropScreen.userAdjusted) return;
+    if (_cropScreen.detectedQuad != null) {
+      setState(_cropScreen.initPoints);
+    }
+  }
+
   /// The primary action, in the app bar rather than the bottom row: the
   /// row below is for adjusting the quad, and Next is the thing you press
   /// when you are done adjusting it.
@@ -473,12 +489,20 @@ class _CropImageState extends State<CropImage>
                 icon: Icons.auto_awesome_rounded,
                 label: AppLocalizations.of(context)!.automatic_crop,
                 accent: true,
-                onPressed: () => setState(_cropScreen.initPoints),
+                // Asking for the automatic crop is asking for detection's
+                // corners, including ones that arrive after the tap.
+                onPressed: () => setState(() {
+                  _cropScreen.userAdjusted = false;
+                  _cropScreen.initPoints();
+                }),
               ),
               _CropAction(
                 icon: Icons.crop_free_rounded,
                 label: AppLocalizations.of(context)!.no_crop,
-                onPressed: () => setState(_cropScreen.resetPointsToCorners),
+                onPressed: () => setState(() {
+                  _cropScreen.userAdjusted = true;
+                  _cropScreen.resetPointsToCorners();
+                }),
               ),
               _CropAction(
                 icon: Icons.rotate_right_rounded,

@@ -9,14 +9,17 @@ import 'package:openscan/core/cv/models/detection_result.dart';
 import 'package:openscan/core/cv/models/point.dart';
 import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/core/cv/perspective_crop.dart';
+import 'package:openscan/core/cv/native_decode.dart';
 import 'package:openscan/core/cv/platform_store.dart';
 import 'package:openscan/core/cv/compress.dart';
 
-/// UI-facing detection state: loading while the isolate is running,
-/// detected once a quad was found, notFound when detection completed
-/// without finding a suitable quad OR threw/timed out (both cases fall
-/// back to the same "adjust manually" UI rather than spinning forever).
-enum CropDetectionState { loading, detected, notFound }
+/// UI-facing detection state: loading until the page can be shown,
+/// searching while detection runs behind a page that is already on screen
+/// with its corners at the edges, detected once a quad was found, notFound
+/// when detection completed without finding a suitable quad OR threw/timed
+/// out (both cases fall back to the same "adjust manually" UI rather than
+/// spinning forever).
+enum CropDetectionState { loading, searching, detected, notFound }
 
 class CropScreenState {
   GlobalKey imageKey = GlobalKey();
@@ -133,16 +136,28 @@ class CropScreenState {
   ValueNotifier<DragUpdateDetails> updatedPoint =
       ValueNotifier(DragUpdateDetails(globalPosition: Offset.zero));
 
-  /// Detects the document boundary (pure-Dart, off the UI thread) and
-  /// plots it on the canvas. Never leaves [detectionState] stuck on
-  /// [CropDetectionState.loading]: any exception or timeout resolves to
+  /// Whether the user has moved the corners themselves — dragged one, or
+  /// picked No crop — so a detection that finishes afterwards doesn't
+  /// snap them somewhere else.
+  bool userAdjusted = false;
+
+  /// Measures the page, so it can be shown, and leaves detection to
+  /// [detectDocument]: the screen comes up with the corners at the page's
+  /// edges rather than staying blank until detection is done.
+  Future<void> prepareForSearch() async {
+    await getSize();
+    detectionState.value = CropDetectionState.searching;
+  }
+
+  /// Detects the document boundary (off the UI thread) into
+  /// [detectedQuad]. Run after [prepareForSearch]. Never leaves
+  /// [detectionState] stuck: any exception or timeout resolves to
   /// [CropDetectionState.notFound] so the user can still crop manually.
   Future<void> detectDocument() async {
-    await getSize();
-
     try {
-      final result = await compute(detectDocumentIsolateEntry, imageFile!.path)
-          .timeout(const Duration(seconds: 8));
+      final result = await _detectFromScaledDecode() ??
+          await compute(detectDocumentIsolateEntry, imageFile!.path)
+              .timeout(const Duration(seconds: 8));
 
       if (result is DetectionSuccess) {
         detectedQuad = result.quad;
@@ -160,6 +175,41 @@ class CropScreenState {
       detectionState.value = CropDetectionState.notFound;
     }
   }
+
+  /// Detection on a copy the platform decoder has already shrunk to the
+  /// size detection works at: decoding a full-resolution capture in pure
+  /// Dart first kept the crop screen blank for over five seconds. Null
+  /// when the platform can't decode the file, leaving the Dart path to try.
+  Future<DetectionResult?> _detectFromScaledDecode() async {
+    final pixels = await decodeScaled(await imageFile!.readAsBytes(),
+        maxEdge: kDetectionMaxDimension, label: imageFile!.path);
+    if (pixels == null) return null;
+    final quad = await compute(detectQuadInRgbaIsolateEntry, {
+      'rgba': pixels.rgba,
+      'width': pixels.width,
+      'height': pixels.height,
+    }).timeout(const Duration(seconds: 8));
+    final width = imageSize!.width, height = imageSize!.height;
+    if (quad == null) {
+      return DetectionNotFound(width.round(), height.round());
+    }
+    return DetectionSuccess(
+      quad.scaled(width / pixels.width, height / pixels.height),
+      width.round(),
+      height.round(),
+    );
+  }
+
+  /// The page as drawn on screen: decoded at no more than 1600px on its
+  /// long side, plenty for a phone-sized view of it. Decoding the full
+  /// 12MP capture just to show it cost most of a second. The crop itself
+  /// works off [imageSize], the file's real dimensions, so nothing is lost.
+  ImageProvider get displayImage => ResizeImage(
+        FileImage(imageFile!),
+        width: 1600,
+        height: 1600,
+        policy: ResizeImagePolicy.fit,
+      );
 
   /// Starts the corners from [normalized] — a boundary in fractional
   /// portrait-overlay coordinates, the one the live-scan viewfinder was
@@ -439,9 +489,10 @@ class CropScreenState {
       ],
     )) {
       await File(staged).rename(imageFile!.path);
-      // Same path, new pixels: drop the decoded copy Flutter cached for
+      // Same path, new pixels: drop the decoded copies Flutter cached for
       // the old ones, or the next screen to show this file shows those.
       PaintingBinding.instance.imageCache.evict(FileImage(imageFile!));
+      await displayImage.evict();
       return CropSuccess(imageFile!.path);
     }
 
@@ -602,9 +653,17 @@ class CropScreenState {
 
   /// Reads image size from file
   getSize() async {
-    var decodedImage = await decodeImageFromList(imageFile!.readAsBytesSync());
-    imageSize =
-        Size(decodedImage.width.toDouble(), decodedImage.height.toDouble());
+    final bytes = await imageFile!.readAsBytes();
+    // The header is enough to say how big the page is; decoding all of a
+    // 12MP capture to find out took most of a second, on the UI thread.
+    final size = await decodedSize(bytes, label: imageFile!.path);
+    if (size != null) {
+      imageSize = Size(size.width.toDouble(), size.height.toDouble());
+    } else {
+      final decodedImage = await decodeImageFromList(bytes);
+      imageSize =
+          Size(decodedImage.width.toDouble(), decodedImage.height.toDouble());
+    }
     aspectRatio = imageSize!.width / imageSize!.height;
     debugPrint(
         'Orginal Image=> ${imageSize!.width} / ${imageSize!.height} = $aspectRatio');
