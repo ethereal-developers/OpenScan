@@ -38,6 +38,13 @@ const double _kCanvasPadding = 20.0;
 /// padding can keep the whole dot out of the system gesture strip.
 const double _kHandleRadius = 10.0;
 
+/// Side of the square loupe shown while a corner is being dragged.
+const double _kMagnifierSize = 80.0;
+
+/// Space between the dragged corner and the nearest edge of the loupe, so
+/// the finger doesn't cover it.
+const double _kMagnifierGap = 40.0;
+
 class CropImage extends StatefulWidget {
   final File? file;
 
@@ -305,9 +312,26 @@ class _CropImageState extends State<CropImage>
                               (context, DragUpdateDetails _updatedPoint, _) {
                             final at = _cropScreen
                                 .toDisplay(_cropScreen.movingPoint.offset!);
+                            final bounds = _cropScreen.bodySize;
+                            // Sits above the finger by default, flips below
+                            // when there is no room above, and is clamped so
+                            // it never slides off the body and gets clipped.
+                            // The focal offset follows wherever the loupe
+                            // ended up, so it still shows the dragged corner.
+                            double top =
+                                at.dy - _kMagnifierGap - _kMagnifierSize;
+                            if (top < 0) top = at.dy + _kMagnifierGap;
+                            top = top.clamp(0.0,
+                                max(0.0, bounds.height - _kMagnifierSize));
+                            final double left =
+                                (at.dx - _kMagnifierSize / 2).clamp(0.0,
+                                    max(0.0, bounds.width - _kMagnifierSize));
+                            final focalPointOffset = at -
+                                Offset(left + _kMagnifierSize / 2,
+                                    top + _kMagnifierSize / 2);
                             return Positioned(
-                              left: at.dx - 40,
-                              top: at.dy - 120,
+                              left: left,
+                              top: top,
                               child: RawMagnifier(
                                 decoration: MagnifierDecoration(
                                   shadows: const <BoxShadow>[
@@ -326,9 +350,9 @@ class _CropImageState extends State<CropImage>
                                     ),
                                   ),
                                 ),
-                                size: Size(80, 80),
+                                size: Size.square(_kMagnifierSize),
                                 magnificationScale: 1.5,
-                                focalPointOffset: Offset(0, 80),
+                                focalPointOffset: focalPointOffset,
                               ),
                             );
                           },

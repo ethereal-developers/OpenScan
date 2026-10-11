@@ -19,6 +19,13 @@ enum CropDetectionState { loading, detected, notFound }
 class CropScreenState {
   GlobalKey imageKey = GlobalKey();
   GlobalKey bodyKey = GlobalKey();
+
+  /// Current size of the crop body, the space the polygon and magnifier
+  /// are laid out in. Falls back to the screen size before first layout.
+  Size get bodySize {
+    final box = bodyKey.currentContext?.findRenderObject() as RenderBox?;
+    return box?.hasSize == true ? box!.size : screenSize;
+  }
   File? imageFile;
   Size? imageSize;
   Quad? detectedQuad;
