@@ -23,7 +23,8 @@ import 'perspective_crop.dart';
 /// Parameters: `rgba` (a [TransferableTypedData] of 8-bit RGBA pixels),
 /// their `width` and `height`, `dest`, `quality`, `maxEdge`, and `quad` —
 /// the boundary in fractional [0,1] portrait-overlay coordinates, or null
-/// to store the pixels whole.
+/// to store the pixels whole — and optionally `quarterTurns`, clockwise
+/// turns applied after the warp.
 ///
 /// Returns whether the file was written.
 Future<bool> encodeStoredPageIsolateEntry(Map<String, dynamic> params) async {
@@ -50,6 +51,7 @@ Future<bool> encodeStoredPageIsolateEntry(Map<String, dynamic> params) async {
               maxEdge: params['maxEdge'] as int) ??
           page;
     }
+    page = _turned(page, params['quarterTurns'] as int? ?? 0);
 
     await File(dest).writeAsBytes(
       img.encodeJpg(page, quality: params['quality'] as int),
@@ -77,7 +79,9 @@ Future<bool> encodeStoredPageIsolateEntry(Map<String, dynamic> params) async {
 /// point: `src` (the capture), `pageDest`, `pageMaxEdge`, `pageQuality`,
 /// `quad` (the boundary to crop to, in fractional [0,1] portrait-overlay
 /// coordinates, or null to store the photo whole), and optionally
-/// `originalDest` with `originalMaxEdge` and `originalQuality`.
+/// `originalDest` with `originalMaxEdge` and `originalQuality`, and
+/// `quarterTurns` — clockwise turns applied to both files once the warp
+/// is done.
 ///
 /// Never throws: a capture that cannot be decoded or re-encoded is copied
 /// through as-is instead, since an oversized page — or one in a format
@@ -94,6 +98,7 @@ Future<Map<String, bool>> storeCaptureIsolateEntry(
   final pageQuality = params['pageQuality'] as int;
   final quad = params['quad'] as Quad?;
   final originalDest = params['originalDest'] as String?;
+  final quarterTurns = params['quarterTurns'] as int? ?? 0;
 
   try {
     final decoded = img.decodeImage(await File(src).readAsBytes());
@@ -105,7 +110,8 @@ Future<Map<String, bool>> storeCaptureIsolateEntry(
       // anything: this is what the page would have been uncropped.
       await File(originalDest).writeAsBytes(
         img.encodeJpg(
-          _fit(decoded, params['originalMaxEdge'] as int),
+          _turned(_fit(decoded, params['originalMaxEdge'] as int),
+              quarterTurns),
           quality: params['originalQuality'] as int,
         ),
         flush: true,
@@ -120,6 +126,7 @@ Future<Map<String, bool>> storeCaptureIsolateEntry(
     }
     final cropped = page != null;
     page ??= _fit(decoded, pageMaxEdge);
+    page = _turned(page, quarterTurns);
 
     await File(pageDest)
         .writeAsBytes(img.encodeJpg(page, quality: pageQuality), flush: true);
@@ -143,6 +150,13 @@ Future<Map<String, bool>> storeCaptureIsolateEntry(
     };
   }
 }
+
+/// [image] turned [quarterTurns] clockwise — how a page shot with the
+/// phone on its side is stood upright (see `capture_orientation.dart`).
+img.Image _turned(img.Image image, int quarterTurns) =>
+    quarterTurns % 4 == 0
+        ? image
+        : img.copyRotate(image, angle: 90 * (quarterTurns % 4));
 
 /// [image] scaled down to fit [maxEdge] on its long side, or itself if it
 /// already does — a stored page is never upscaled to meet the cap.

@@ -189,6 +189,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
             quad: capture.quad,
             prepared: capture.prepared,
             original: capture.original,
+            quarterTurns: capture.quarterTurns,
           ));
         }
       }
@@ -234,6 +235,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
       quad: pending.quad,
       prepared: pending.prepared,
       preparedOriginal: pending.original,
+      quarterTurns: pending.quarterTurns,
       keepOriginal: AppSettings.instance.keepOriginal,
       index: state.images!.length + 1,
       dirPath: state.dirPath!,
@@ -294,6 +296,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         quad: replacement.quad,
         prepared: replacement.prepared,
         preparedOriginal: replacement.original,
+        quarterTurns: replacement.quarterTurns,
         keepOriginal: AppSettings.instance.keepOriginal,
       );
 
@@ -343,6 +346,7 @@ class DirectoryCubit extends Cubit<DirectoryState> {
         quad: capture.quad,
         prepared: capture.prepared,
         original: capture.original,
+        quarterTurns: capture.quarterTurns,
       ));
     }
 
@@ -676,11 +680,13 @@ class _PendingCapture {
   final Quad? quad;
   final bool prepared;
   final File? original;
+  final int quarterTurns;
 
   const _PendingCapture({
     required this.file,
     this.quad,
     this.prepared = false,
     this.original,
+    this.quarterTurns = 0,
   });
 }

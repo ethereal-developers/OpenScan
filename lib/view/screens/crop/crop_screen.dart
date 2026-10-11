@@ -24,15 +24,18 @@ import 'package:openscan/view/screens/crop/crop_screen_state.dart';
 ///
 /// [initialQuad], in the live-scan overlay's fractional portrait
 /// coordinates, places the corners where the viewfinder had them instead
-/// of detecting the page again on the still.
+/// of detecting the page again on the still. [initialTurns] opens the page
+/// already turned that many quarter turns clockwise, as if Rotate had been
+/// pressed — the corners stay on the page either way.
 Future<File?> imageCropper(BuildContext context, File image,
-    {Quad? initialQuad}) async {
+    {Quad? initialQuad, int initialTurns = 0}) async {
   return await Navigator.push<File?>(
     context,
     MaterialPageRoute(
       builder: (context) => CropImage(
         file: image,
         initialQuad: initialQuad,
+        initialTurns: initialTurns,
       ),
     ),
   );
@@ -55,8 +58,9 @@ const double _kMagnifierGap = 40.0;
 class CropImage extends StatefulWidget {
   final File? file;
   final Quad? initialQuad;
+  final int initialTurns;
 
-  CropImage({this.file, this.initialQuad});
+  CropImage({this.file, this.initialQuad, this.initialTurns = 0});
 
   _CropImageState createState() => _CropImageState();
 }
@@ -90,6 +94,8 @@ class _CropImageState extends State<CropImage>
   initState() {
     super.initState();
     _cropScreen.imageFile = widget.file;
+    _cropScreen.turns = widget.initialTurns;
+    _turnAnimation = AlwaysStoppedAnimation(widget.initialTurns.toDouble());
 
     /// Runs detection (or takes the viewfinder's corners), then waits for the next frame (so the image is
     /// guaranteed to be laid out) before computing canvas geometry and

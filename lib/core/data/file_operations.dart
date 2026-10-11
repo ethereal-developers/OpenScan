@@ -76,6 +76,7 @@ class FileOperations {
     int? index,
     bool prepared = false,
     File? preparedOriginal,
+    int quarterTurns = 0,
   }) async {
     await _ensureDirectory(dirPath);
 
@@ -88,6 +89,7 @@ class FileOperations {
       keepOriginal: keepOriginal,
       prepared: prepared,
       preparedOriginal: preparedOriginal,
+      quarterTurns: quarterTurns,
     );
     if (written == null) return null;
 
@@ -128,6 +130,11 @@ class FileOperations {
   /// next page — and only has to be moved into the document. [source] is
   /// then the finished page and [preparedOriginal] its uncropped
   /// companion, so [quad] is not applied a second time.
+  ///
+  /// [quarterTurns] turns both files clockwise after the crop: a page shot
+  /// with the phone on its side is stored upright (see
+  /// `capture_orientation.dart`). A prepared page has had it applied
+  /// already.
   Future<({String pagePath, String? originalPath})?> writeCapture({
     required File source,
     required String dir,
@@ -136,6 +143,7 @@ class FileOperations {
     bool keepOriginal = false,
     bool prepared = false,
     File? preparedOriginal,
+    int quarterTurns = 0,
   }) async {
     final pagePath = '$dir/$stamp.jpg';
     final originalPath = keepOriginal ? '$dir/orig_$stamp.jpg' : null;
@@ -159,6 +167,7 @@ class FileOperations {
       pagePath: pagePath,
       originalPath: originalPath,
       quad: quad,
+      quarterTurns: quarterTurns,
     );
     if (native != null) return native;
 
@@ -171,6 +180,7 @@ class FileOperations {
       'originalDest': originalPath,
       'originalMaxEdge': kStoredOriginalMaxEdge,
       'originalQuality': kStoredOriginalQuality,
+      'quarterTurns': quarterTurns,
     });
 
     final wrotePage = result['page'] ?? false;
@@ -251,6 +261,7 @@ class FileOperations {
     required String pagePath,
     required String? originalPath,
     required Quad? quad,
+    int quarterTurns = 0,
   }) async {
     final Uint8List encoded;
     try {
@@ -271,6 +282,7 @@ class FileOperations {
       'quality': kStoredPageQuality,
       'maxEdge': kStoredPageMaxEdge,
       'quad': quad,
+      'quarterTurns': quarterTurns,
     });
     if (!wrotePage) {
       _deleteIfPresent(pagePath);
@@ -282,7 +294,7 @@ class FileOperations {
     // already stored and readable, so this is never a reason to fall back.
     final storedOriginal = originalPath != null &&
             await _writeOriginalNatively(encoded, originalPath,
-                label: source.path)
+                quarterTurns: quarterTurns, label: source.path)
         ? originalPath
         : null;
 
@@ -292,7 +304,7 @@ class FileOperations {
   /// Writes the uncropped [encoded] capture to [dest] at original size.
   /// Returns false, leaving nothing at [dest], when it could not.
   Future<bool> _writeOriginalNatively(Uint8List encoded, String dest,
-      {required String label}) async {
+      {int quarterTurns = 0, required String label}) async {
     final original = await decodeScaled(encoded,
         maxEdge: kStoredOriginalMaxEdge, label: label);
     if (original != null &&
@@ -304,6 +316,7 @@ class FileOperations {
           'quality': kStoredOriginalQuality,
           'maxEdge': kStoredOriginalMaxEdge,
           'quad': null,
+          'quarterTurns': quarterTurns,
         })) {
       return true;
     }
@@ -321,12 +334,17 @@ class FileOperations {
   /// the cropped page, leaving a later re-crop nothing to widen back out
   /// to. So the page is written from [cropped] and the original from
   /// [shot].
+  ///
+  /// [originalTurns] stands the original upright the way [cropped] already
+  /// is: the crop screen bakes its rotation into the page it writes, but
+  /// [shot] is still the way the camera wrote it.
   Future<({String pagePath, String? originalPath})?> writeReviewedCapture({
     required File cropped,
     required File shot,
     required String dir,
     required String stamp,
     bool keepOriginal = false,
+    int originalTurns = 0,
   }) async {
     final page = await writeCapture(source: cropped, dir: dir, stamp: stamp);
     if (page == null || !keepOriginal) return page;
@@ -334,7 +352,7 @@ class FileOperations {
     final originalPath = '$dir/orig_$stamp.jpg';
     try {
       if (await _writeOriginalNatively(await shot.readAsBytes(), originalPath,
-          label: shot.path)) {
+          quarterTurns: originalTurns, label: shot.path)) {
         return (pagePath: page.pagePath, originalPath: originalPath);
       }
     } catch (e) {

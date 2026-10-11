@@ -16,6 +16,7 @@ import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/view/Widgets/live_scan/live_quad_painter.dart';
 import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:openscan/view/screens/live_scan/auto_capture_detector.dart';
+import 'package:openscan/view/screens/live_scan/capture_orientation.dart';
 import 'package:openscan/view/screens/live_scan/live_scan_controller.dart';
 import 'package:openscan/view/screens/live_scan/quad_smoother.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -51,6 +52,10 @@ const double _kSideControlSize = 60;
 /// capture with its [quad] intact, and the document processes it the old
 /// way.
 ///
+/// [quarterTurns] stands a raw capture upright — clockwise turns applied
+/// after the crop, for a page shot with the phone on its side. A prepared
+/// page has had it applied already.
+///
 /// [imported] marks a page picked from the gallery rather than shot here.
 /// An imported picture is already whatever the user wants it to be — it
 /// was never framed through this viewfinder — so it goes straight into
@@ -61,6 +66,7 @@ class LiveCapture {
   final bool imported;
   final bool prepared;
   final File? original;
+  final int quarterTurns;
 
   const LiveCapture({
     required this.file,
@@ -68,6 +74,7 @@ class LiveCapture {
     this.imported = false,
     this.prepared = false,
     this.original,
+    this.quarterTurns = 0,
   });
 }
 
@@ -104,6 +111,14 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   final LiveScanController _liveScanController = LiveScanController();
   final QuadSmoother _quadSmoother = QuadSmoother();
   late final AutoCaptureDetector _autoCaptureDetector;
+  final CaptureOrientation _orientation = CaptureOrientation();
+
+  /// The camera's icons, turned to stay upright as the phone turns — the
+  /// cue that a sideways hold has been noticed, and the page will be too.
+  /// Accumulated rather than derived from [CaptureOrientation.deviceTurns]
+  /// so that going from 3 to 0 animates a quarter turn, not three.
+  double _iconTurns = 0;
+  int _lastDeviceTurns = 0;
 
   CameraController? _cameraController;
   Future<void>? _initializeFuture;
@@ -211,7 +226,18 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
     _liveScanController.latestQuad.addListener(_onLatestQuadChanged);
     _quadSmoother.smoothedQuad.addListener(_onSmoothedQuadChanged);
+    _orientation.deviceTurns.addListener(_onDeviceTurned);
+    _orientation.start();
     _initializeFuture = _initialize();
+  }
+
+  void _onDeviceTurned() {
+    final turns = _orientation.deviceTurns.value;
+    // Shortest way round, in quarter turns: -1, 1 or 2.
+    final delta = (turns - _lastDeviceTurns + 5) % 4 - 1;
+    _lastDeviceTurns = turns;
+    // Icons turn against the phone to stay level with the world.
+    if (mounted) setState(() => _iconTurns -= delta / 4);
   }
 
   Future<void> _initialize() async {
@@ -434,6 +460,12 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     final quadAtCapture = _lensDirection == CameraLensDirection.back
         ? _quadSmoother.smoothedQuad.value
         : null;
+    // Read with the quad, as the shutter fires, for the same reason. Back
+    // camera only: the front one is mirrored, so its turns run the other
+    // way, and a selfie of a page is rare enough to leave as shot.
+    final turnsAtCapture = _lensDirection == CameraLensDirection.back
+        ? _orientation.uprightTurns
+        : 0;
     setState(() {
       _capturing = true;
       // With a page on screen the capture is acknowledged inside that
@@ -466,18 +498,22 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       if (!mounted) {
         // Nothing left to process into, but the photo is on disk and the
         // session may still be read by whoever popped this route.
-        _capturedFiles.add(LiveCapture(file: File(shot.path), quad: quadAtCapture));
+        _capturedFiles.add(LiveCapture(
+            file: File(shot.path),
+            quad: quadAtCapture,
+            quarterTurns: turnsAtCapture));
         return;
       }
       if (!_batchMode) {
-        await _reviewCapture(File(shot.path), quadAtCapture);
+        await _reviewCapture(File(shot.path), quadAtCapture, turnsAtCapture);
         return;
       }
       // The feed comes back before the page is processed: only the shutter
       // waits on the encode, so the viewfinder is live and detecting again
       // while the last page finishes in the background.
       await controller.startImageStream(_onFrame);
-      _capturedFiles.add(await _prepareCapture(File(shot.path), quadAtCapture));
+      _capturedFiles.add(await _prepareCapture(
+          File(shot.path), quadAtCapture, turnsAtCapture));
     } catch (e) {
       debugPrint('Capture failed: $e');
       if (!mounted) return;
@@ -504,7 +540,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// A capture that could not be processed — unreadable bytes, a full
   /// disk — is returned raw, with its quad intact, and the document
   /// processes it the way it always did.
-  Future<LiveCapture> _prepareCapture(File shot, Quad? quad) async {
+  Future<LiveCapture> _prepareCapture(
+      File shot, Quad? quad, int quarterTurns) async {
     try {
       final dir = _stagingDir ??= await _fileOperations.captureDirectory();
       final written = await _fileOperations.writeCapture(
@@ -513,6 +550,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         stamp: DateTime.now().microsecondsSinceEpoch.toString(),
         quad: quad,
         keepOriginal: AppSettings.instance.keepOriginal,
+        quarterTurns: quarterTurns,
       );
       if (written != null) {
         final original = written.originalPath;
@@ -526,25 +564,27 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     } catch (e) {
       debugPrint('Could not process capture ${shot.path}: $e');
     }
-    return LiveCapture(file: shot, quad: quad);
+    return LiveCapture(file: shot, quad: quad, quarterTurns: quarterTurns);
   }
 
   /// Single mode's second half: the shot goes to the crop screen, its
   /// corners starting where the viewfinder had them, and the session ends
   /// with the page the user settles on there. Backing out of the crop
   /// screen is a retake — the shot is dropped and the camera picks up
-  /// where it left off.
+  /// where it left off. A shot taken with the phone on its side opens
+  /// already turned upright, by [quarterTurns].
   ///
   /// The feed stays stopped while the crop screen is up, so nothing is
   /// detected (or auto-captured) behind it.
-  Future<void> _reviewCapture(File shot, Quad? quad) async {
+  Future<void> _reviewCapture(File shot, Quad? quad, int quarterTurns) async {
     final dir = _stagingDir ??= await _fileOperations.captureDirectory();
     final stamp = DateTime.now().microsecondsSinceEpoch.toString();
     // The crop screen writes in place, so it gets a copy: the shot itself
     // is what the kept original is made from.
     final working = await shot.copy('${dir.path}/review_$stamp.jpg');
     if (!mounted) return;
-    final cropped = await imageCropper(context, working, initialQuad: quad);
+    final cropped = await imageCropper(context, working,
+        initialQuad: quad, initialTurns: quarterTurns);
     if (!mounted) return;
 
     if (cropped == null) {
@@ -568,6 +608,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         dir: dir.path,
         stamp: stamp,
         keepOriginal: AppSettings.instance.keepOriginal,
+        originalTurns: quarterTurns,
       );
       if (written != null) {
         final original = written.originalPath;
@@ -819,6 +860,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     WidgetsBinding.instance.removeObserver(this);
     _liveScanController.latestQuad.removeListener(_onLatestQuadChanged);
     _quadSmoother.smoothedQuad.removeListener(_onSmoothedQuadChanged);
+    _orientation.deviceTurns.removeListener(_onDeviceTurned);
+    _orientation.dispose();
     // _onCapturePressed already stops the stream before takePicture(); a
     // second stopImageStream() call throws CameraException since the
     // plugin doesn't allow stopping an already-stopped stream.
@@ -1023,6 +1066,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       child: Row(
         children: [
           _ChromeButton(
+            turns: _iconTurns,
             icon: _torchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
             tooltip: _torchOn ? l10n.torch_on : l10n.torch_off,
             // The torch is the fix for the low-light warning, so it
@@ -1033,6 +1077,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           ),
           const SizedBox(width: OSSpace.xs),
           _ChromeButton(
+            turns: _iconTurns,
             icon: Icons.auto_awesome_rounded,
             tooltip: l10n.live_detection,
             highlight: _detectionEnabled,
@@ -1041,6 +1086,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           const Spacer(),
           if (_capturedFiles.isNotEmpty) ...[
             _ChromeButton(
+              turns: _iconTurns,
               icon: Icons.undo_rounded,
               tooltip: l10n.undo_last_capture,
               onPressed: _onUndoLastPressed,
@@ -1048,6 +1094,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             const SizedBox(width: OSSpace.xs),
           ],
           _ChromeButton(
+            turns: _iconTurns,
             icon: Icons.grid_3x3_rounded,
             tooltip: l10n.composition_grid,
             highlight: _gridVisible,
@@ -1055,6 +1102,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           ),
           const SizedBox(width: OSSpace.xs),
           _ChromeButton(
+            turns: _iconTurns,
             icon: Icons.cameraswitch_rounded,
             tooltip: l10n.switch_camera,
             onPressed: (_cameraController != null && Globals.cameras.length > 1)
@@ -1197,6 +1245,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _ChromeButton(
+                turns: _iconTurns,
                 icon: Icons.photo_library_rounded,
                 tooltip: l10n.import_from_gallery_short,
                 size: _kSideControlSize,
@@ -1492,6 +1541,7 @@ class _ChromeButton extends StatelessWidget {
     this.highlightColor,
     this.size = 48,
     this.iconSize = 26,
+    this.turns = 0,
   });
 
   final IconData icon;
@@ -1501,6 +1551,10 @@ class _ChromeButton extends StatelessWidget {
   final Color? highlightColor;
   final double size;
   final double iconSize;
+
+  /// How far the icon is turned, in full turns — the camera turns its
+  /// icons to stay upright as the phone does.
+  final double turns;
 
   @override
   Widget build(BuildContext context) {
@@ -1515,14 +1569,19 @@ class _ChromeButton extends StatelessWidget {
         child: SizedBox(
           height: size,
           width: size,
-          child: Icon(
-            icon,
-            size: iconSize,
-            color: highlight
-                ? Theme.of(context).colorScheme.onPrimary
-                : enabled
-                    ? OSColors.chromeOnBackground
-                    : OSColors.chromeMuted,
+          child: AnimatedRotation(
+            turns: turns,
+            duration: OSMotion.standard,
+            curve: OSMotion.emphasizedDecel,
+            child: Icon(
+              icon,
+              size: iconSize,
+              color: highlight
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : enabled
+                      ? OSColors.chromeOnBackground
+                      : OSColors.chromeMuted,
+            ),
           ),
         ),
       ),
