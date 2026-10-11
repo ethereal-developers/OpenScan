@@ -97,16 +97,30 @@ class _CropImageState extends State<CropImage>
     _cropScreen.turns = widget.initialTurns;
     _turnAnimation = AlwaysStoppedAnimation(widget.initialTurns.toDouble());
 
-    /// Runs detection (or takes the viewfinder's corners), then waits for the next frame (so the image is
-    /// guaranteed to be laid out) before computing canvas geometry and
-    /// initial points exactly once — replacing the old pattern of doing
-    /// this inside the widget's build() callback on every rebuild.
+    /// Runs detection (or takes the viewfinder's corners), then waits for
+    /// the page to be decoded and laid out before computing canvas
+    /// geometry and initial points exactly once — replacing the old
+    /// pattern of doing this inside the widget's build() callback on every
+    /// rebuild.
+    ///
+    /// The wait for the decode matters: an [Image] that hasn't loaded yet
+    /// lays out at zero size, and measured then, every corner lands on the
+    /// same point. Detection on the still used to take long enough to hide
+    /// that; the viewfinder's corners arrive at once, and didn't.
     final initialQuad = widget.initialQuad;
     (initialQuad != null
             ? _cropScreen.useQuad(initialQuad)
             : _cropScreen.detectDocument())
-        .then((_) {
+        .then((_) async {
       if (!mounted) return;
+      try {
+        await precacheImage(FileImage(_cropScreen.imageFile!), context);
+      } catch (e) {
+        debugPrint('Could not preload ${_cropScreen.imageFile}: $e');
+      }
+      if (!mounted) return;
+      // A frame with the decoded page in it, then measure.
+      setState(() {});
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         setState(() {

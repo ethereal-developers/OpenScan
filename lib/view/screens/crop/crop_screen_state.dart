@@ -585,11 +585,16 @@ class CropScreenState {
     debugPrint(
         'Renderbox=> $canvasSize=> ${canvasSize.width / canvasSize.height}');
 
-    canvasOffset = imageBox.localToGlobal(
-      Offset.zero,
+    // Measured through the page's centre, not its corner: the page may
+    // already be shown turned (a sideways capture opens upright), and the
+    // turn and its scale both pivot on the centre, so that is the one
+    // point whose position doesn't depend on them. The canvas is the
+    // page's unturned layout box around it.
+    final centre = imageBox.localToGlobal(
+      imageBox.size.center(Offset.zero),
       ancestor: bodyKey.currentContext!.findRenderObject() as RenderBox,
     );
-    canvasOffset = Offset(canvasOffset.dx, canvasOffset.dy);
+    canvasOffset = centre - imageBox.size.center(Offset.zero);
     debugPrint('Canvas Offset => $canvasOffset');
 
     verticalScaleFactor = screenSize.height / imageBox.size.width;

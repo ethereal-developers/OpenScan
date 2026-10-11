@@ -589,6 +589,12 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
     if (cropped == null) {
       if (working.existsSync()) working.deleteSync();
+      // A retake starts the auto-capture wait over, as a capture does: the
+      // cooldown from the shot just dropped ran out while the crop screen
+      // was up, and the page is still in frame, so without this it fires
+      // again the moment the camera is back.
+      _autoCaptureDetector.notifyCaptured();
+      _quadSmoother.reset();
       // A pause while the crop screen was up already replaced the
       // controller, and the new one opened with its feed running.
       final controller = _cameraController;
