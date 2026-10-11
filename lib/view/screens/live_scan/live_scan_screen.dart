@@ -126,6 +126,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   // the shutter's place: one page is finished before the next is framed,
   // so a session's pages are ready by the time the user is.
   bool _capturing = false;
+
+  /// Back was pressed while a page was still being processed: leave, with
+  /// it, once it is ready (see [_onBackWithPages]).
+  bool _leaveWhenReady = false;
   bool _permissionDenied = false;
   bool _cameraError = false;
 
@@ -531,6 +535,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       );
     } finally {
       if (mounted) setState(() => _capturing = false);
+      if (_leaveWhenReady && mounted) {
+        _leaveWhenReady = false;
+        _onDonePressed();
+      }
     }
   }
 
@@ -653,9 +661,17 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
-  void _onUndoLastPressed() {
-    if (_capturedFiles.isEmpty) return;
-    setState(() => _capturedFiles.removeLast());
+  /// Back, with pages taken: they are kept, not thrown away. Leaving the
+  /// camera is how people say they are done at least as often as the
+  /// thumbnail is — a batch dropped because Back was the button to hand
+  /// is a scan the user has to do again. A page still being processed is
+  /// waited for, so even a single shot just taken makes it in.
+  void _onBackWithPages() {
+    if (_capturing) {
+      _leaveWhenReady = true;
+      return;
+    }
+    _onDonePressed();
   }
 
   /// Imports pages from the gallery without leaving the session: picked
@@ -934,37 +950,44 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         systemNavigationBarColor: OSColors.chromeBackground,
         systemNavigationBarIconBrightness: Brightness.light,
       ),
-      child: Scaffold(
-        // The viewfinder is fixed-dark in both app themes: it is already
-        // the darkest, highest-contrast context there is.
-        backgroundColor: OSColors.chromeBackground,
-        body: _permissionDenied
-            ? _permissionDeniedState(accent, onAccent)
-            : _cameraError
-                ? _buildMessage(l10n.couldnt_start_camera)
-                : Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // The viewfinder is a bounded box with the controls
-                      // laid out around it, rather than one full-bleed
-                      // feed with buttons floating on top: nothing the
-                      // camera sees ends up underneath a button.
-                      SafeArea(
-                        child: Column(
-                          children: [
-                            _topChrome(accent),
-                            Expanded(child: _previewBox(accent, onAccent)),
-                            _bottomChrome(accent, onAccent),
-                          ],
+      child: PopScope(
+        // With nothing taken, Back just leaves; with pages, it finishes.
+        canPop: _capturedFiles.isEmpty && !_capturing,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _onBackWithPages();
+        },
+        child: Scaffold(
+          // The viewfinder is fixed-dark in both app themes: it is already
+          // the darkest, highest-contrast context there is.
+          backgroundColor: OSColors.chromeBackground,
+          body: _permissionDenied
+              ? _permissionDeniedState(accent, onAccent)
+              : _cameraError
+                  ? _buildMessage(l10n.couldnt_start_camera)
+                  : Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // The viewfinder is a bounded box with the controls
+                        // laid out around it, rather than one full-bleed
+                        // feed with buttons floating on top: nothing the
+                        // camera sees ends up underneath a button.
+                        SafeArea(
+                          child: Column(
+                            children: [
+                              _topChrome(accent),
+                              Expanded(child: _previewBox(accent, onAccent)),
+                              _bottomChrome(accent, onAccent),
+                            ],
+                          ),
                         ),
-                      ),
-                      if (_flashing)
-                        IgnorePointer(
-                          child: Container(
-                              color: Colors.white.withValues(alpha: 0.85)),
-                        ),
-                    ],
-                  ),
+                        if (_flashing)
+                          IgnorePointer(
+                            child: Container(
+                                color: Colors.white.withValues(alpha: 0.85)),
+                          ),
+                      ],
+                    ),
+        ),
       ),
     );
   }
@@ -1115,9 +1138,9 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   // <========================= Chrome =========================>
 
   /// Every camera control on one row above the viewfinder: torch, edge
-  /// detection and auto-capture, the composition grid, the lens switch,
-  /// and undo once there is something to undo. Nothing hides behind a
-  /// caret — the row is short enough to show all of it at once.
+  /// detection and auto-capture, the composition grid and the lens switch.
+  /// Nothing hides behind a caret — the row is short enough to show all of
+  /// it at once.
   ///
   /// Auto-capture sits beside edge detection because it depends on it:
   /// it waits for the page detection finds. Apart, one switch made the
@@ -1163,15 +1186,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             onPressed: _onAutoCapturePressed,
           ),
           const Spacer(),
-          if (_capturedFiles.isNotEmpty) ...[
-            _ChromeButton(
-              turns: _iconTurns,
-              icon: Icons.undo_rounded,
-              tooltip: l10n.undo_last_capture,
-              onPressed: _onUndoLastPressed,
-            ),
-            const SizedBox(width: OSSpace.xs),
-          ],
           _ChromeButton(
             turns: _iconTurns,
             icon: Icons.grid_3x3_rounded,
