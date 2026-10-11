@@ -11,6 +11,7 @@ import 'app_localizations_hi.dart';
 import 'app_localizations_hu.dart';
 import 'app_localizations_pl.dart';
 import 'app_localizations_ta.dart';
+import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
 
@@ -104,6 +105,8 @@ abstract class AppLocalizations {
     Locale('hu'),
     Locale('pl'),
     Locale('ta'),
+    Locale('zh'),
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
   /// No description provided for @about.
@@ -964,6 +967,18 @@ abstract class AppLocalizations {
   /// **'Page size'**
   String get page_size;
 
+  /// No description provided for @page_size_letter.
+  ///
+  /// In en, this message translates to:
+  /// **'Letter'**
+  String get page_size_letter;
+
+  /// No description provided for @page_size_legal.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal'**
+  String get page_size_legal;
+
   /// No description provided for @all_pages.
   ///
   /// In en, this message translates to:
@@ -1216,6 +1231,7 @@ class _AppLocalizationsDelegate
     'hu',
     'pl',
     'ta',
+    'zh',
   ].contains(locale.languageCode);
 
   @override
@@ -1223,6 +1239,18 @@ class _AppLocalizationsDelegate
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when language+script codes are specified.
+  switch (locale.languageCode) {
+    case 'zh':
+      {
+        switch (locale.scriptCode) {
+          case 'Hans':
+            return AppLocalizationsZhHans();
+        }
+        break;
+      }
+  }
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
     case 'el':
@@ -1237,6 +1265,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsPl();
     case 'ta':
       return AppLocalizationsTa();
+    case 'zh':
+      return AppLocalizationsZh();
   }
 
   throw FlutterError(

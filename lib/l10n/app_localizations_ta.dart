@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -494,6 +495,12 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get page_size => 'பக்க அளவு';
+
+  @override
+  String get page_size_letter => 'Letter';
+
+  @override
+  String get page_size_legal => 'Legal';
 
   @override
   String get all_pages => 'அனைத்துப் பக்கங்களும்';

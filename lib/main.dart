@@ -69,6 +69,7 @@ class OpenScan extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: L10n.all,
+          localeListResolutionCallback: L10n.resolveLocales,
           builder: (context, child) {
             // Covers routes with no AppBar of their own; every AppBar
             // re-applies the same style via AppBarTheme.systemOverlayStyle,
