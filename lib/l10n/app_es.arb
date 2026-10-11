@@ -124,6 +124,7 @@
   "torch_unavailable": "La linterna no está disponible en este dispositivo.",
   "auto_capture_on": "Captura automática activada",
   "auto_capture_off": "Captura automática desactivada",
+  "auto_capture_needs_detection": "Activa primero la detección de bordes: la captura automática espera a la página que encuentra.",
   "undo_last_capture": "Deshacer última captura",
   "composition_grid": "Cuadrícula de composición",
   "switch_camera": "Cambiar cámara",

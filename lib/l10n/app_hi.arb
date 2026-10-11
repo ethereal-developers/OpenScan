@@ -124,6 +124,7 @@
   "torch_unavailable": "इस डिवाइस पर टॉर्च उपलब्ध नहीं है।",
   "auto_capture_on": "स्वतः कैप्चर चालू",
   "auto_capture_off": "स्वतः कैप्चर बंद",
+  "auto_capture_needs_detection": "पहले किनारा पहचान चालू करें — स्वतः कैप्चर उसी पृष्ठ का इंतज़ार करता है जो यह ढूँढ़ती है।",
   "undo_last_capture": "अंतिम कैप्चर पूर्ववत करें",
   "composition_grid": "संयोजन ग्रिड",
   "switch_camera": "कैमरा बदलें",

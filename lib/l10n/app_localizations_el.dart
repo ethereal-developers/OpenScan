@@ -419,6 +419,10 @@ class AppLocalizationsEl extends AppLocalizations {
   String get auto_capture_off => 'Αυτόματη λήψη ανενεργή';
 
   @override
+  String get auto_capture_needs_detection =>
+      'Ενεργοποιήστε πρώτα τον εντοπισμό άκρων — η αυτόματη λήψη περιμένει τη σελίδα που βρίσκει.';
+
+  @override
   String get undo_last_capture => 'Αναίρεση τελευταίας λήψης';
 
   @override

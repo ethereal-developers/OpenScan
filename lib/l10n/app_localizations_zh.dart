@@ -405,6 +405,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get auto_capture_off => '自动拍摄已关闭';
 
   @override
+  String get auto_capture_needs_detection => '请先开启边缘检测——自动拍摄会等待它识别到的页面。';
+
+  @override
   String get undo_last_capture => '撤销上一次拍摄';
 
   @override

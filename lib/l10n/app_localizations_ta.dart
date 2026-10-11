@@ -417,6 +417,10 @@ class AppLocalizationsTa extends AppLocalizations {
   String get auto_capture_off => 'தானியங்கு படமெடுப்பு நிறுத்தத்தில்';
 
   @override
+  String get auto_capture_needs_detection =>
+      'முதலில் விளிம்பு கண்டறிதலை இயக்கவும் — அது கண்டறியும் பக்கத்திற்காக தானியங்கு படமெடுப்பு காத்திருக்கும்.';
+
+  @override
   String get undo_last_capture => 'கடைசிப் படத்தை நீக்கு';
 
   @override

@@ -855,6 +855,12 @@ abstract class AppLocalizations {
   /// **'Auto-capture off'**
   String get auto_capture_off;
 
+  /// No description provided for @auto_capture_needs_detection.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on edge detection first — auto-capture waits for the page it finds.'**
+  String get auto_capture_needs_detection;
+
   /// No description provided for @undo_last_capture.
   ///
   /// In en, this message translates to:

@@ -416,6 +416,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get auto_capture_off => 'Auto-capture off';
 
   @override
+  String get auto_capture_needs_detection =>
+      'Turn on edge detection first — auto-capture waits for the page it finds.';
+
+  @override
   String get undo_last_capture => 'Undo last capture';
 
   @override

@@ -124,6 +124,7 @@
   "torch_unavailable": "Latarka nie jest dostępna na tym urządzeniu.",
   "auto_capture_on": "Automatyczne zdjęcie włączone",
   "auto_capture_off": "Automatyczne zdjęcie wyłączone",
+  "auto_capture_needs_detection": "Najpierw włącz wykrywanie krawędzi — automatyczne zdjęcie czeka na znalezioną stronę.",
   "undo_last_capture": "Cofnij ostatnie zdjęcie",
   "composition_grid": "Siatka kompozycji",
   "switch_camera": "Przełącz aparat",

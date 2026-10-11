@@ -217,6 +217,7 @@
   "torch_unavailable": "Torch isn't available on this device.",
   "auto_capture_on": "Auto-capture on",
   "auto_capture_off": "Auto-capture off",
+  "auto_capture_needs_detection": "Turn on edge detection first — auto-capture waits for the page it finds.",
   "undo_last_capture": "Undo last capture",
   "composition_grid": "Composition grid",
   "switch_camera": "Switch camera",

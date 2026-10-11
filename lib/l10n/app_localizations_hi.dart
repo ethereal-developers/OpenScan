@@ -415,6 +415,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get auto_capture_off => 'स्वतः कैप्चर बंद';
 
   @override
+  String get auto_capture_needs_detection =>
+      'पहले किनारा पहचान चालू करें — स्वतः कैप्चर उसी पृष्ठ का इंतज़ार करता है जो यह ढूँढ़ती है।';
+
+  @override
   String get undo_last_capture => 'अंतिम कैप्चर पूर्ववत करें';
 
   @override

@@ -124,6 +124,7 @@
   "torch_unavailable": "A lámpa nem érhető el ezen az eszközön.",
   "auto_capture_on": "Automatikus rögzítés be",
   "auto_capture_off": "Automatikus rögzítés ki",
+  "auto_capture_needs_detection": "Először kapcsolja be a szélkeresést — az automatikus rögzítés az általa talált oldalra vár.",
   "undo_last_capture": "Utolsó rögzítés visszavonása",
   "composition_grid": "Kompozíciós rács",
   "switch_camera": "Kamera váltása",

@@ -442,6 +442,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get auto_capture_off => 'Automatyczne zdjęcie wyłączone';
 
   @override
+  String get auto_capture_needs_detection =>
+      'Najpierw włącz wykrywanie krawędzi — automatyczne zdjęcie czeka na znalezioną stronę.';
+
+  @override
   String get undo_last_capture => 'Cofnij ostatnie zdjęcie';
 
   @override

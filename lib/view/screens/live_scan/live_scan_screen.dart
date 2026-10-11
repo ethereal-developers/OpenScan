@@ -153,6 +153,11 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   bool _autoCaptureEnabled = false;
   bool _autoCaptureImminent = false;
 
+  /// A passing message in the guidance line — what a control just did, or
+  /// why it couldn't — cleared by [_noticeTimer].
+  String? _notice;
+  Timer? _noticeTimer;
+
   /// Batch keeps the camera open for page after page; single (off) sends
   /// each shot through the crop screen and ends the session with it. See
   /// [AppSettings.batchCapture].
@@ -703,6 +708,36 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     await AppSettings.instance.setLiveDetection(enabled);
   }
 
+  /// The top bar's auto-capture button: toggles it and says which way it
+  /// went, since an icon's highlight alone is easy to misread on a
+  /// viewfinder — or explains why it can't, with detection off. Said in
+  /// the viewfinder's guidance line, not a snackbar: one would cover the
+  /// shutter, and with it the countdown the user has just turned on.
+  Future<void> _onAutoCapturePressed() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (!_detectionEnabled) {
+      _showNotice(l10n.auto_capture_needs_detection,
+          const Duration(seconds: 3));
+      return;
+    }
+    await _toggleAutoCapture();
+    if (!mounted) return;
+    _showNotice(
+      _autoCaptureEnabled ? l10n.auto_capture_on : l10n.auto_capture_off,
+      const Duration(milliseconds: 1500),
+    );
+  }
+
+  /// Puts [message] in the guidance line for [duration], ahead of
+  /// everything but the low-light warning.
+  void _showNotice(String message, Duration duration) {
+    _noticeTimer?.cancel();
+    setState(() => _notice = message);
+    _noticeTimer = Timer(duration, () {
+      if (mounted) setState(() => _notice = null);
+    });
+  }
+
   Future<void> _toggleAutoCapture() async {
     if (!_detectionEnabled) return;
     setState(() => _autoCaptureEnabled = !_autoCaptureEnabled);
@@ -866,6 +901,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   void dispose() {
     _focusHideTimer?.cancel();
     _zoomThrottleTimer?.cancel();
+    _noticeTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _liveScanController.latestQuad.removeListener(_onLatestQuadChanged);
     _quadSmoother.smoothedQuad.removeListener(_onSmoothedQuadChanged);
@@ -938,17 +974,34 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// The viewfinder itself: a rounded, bounded box that owns the feed, the
   /// detection overlay, the status line and the zoom rail — and nothing
   /// else. Every button lives outside it.
+  ///
+  /// Once the camera is open the box takes the preview's own shape, so its
+  /// rounded frame is the edge of what the camera sees rather than a taller
+  /// box with dark bands inside it: the 4:3 full-resolution feed doesn't
+  /// fill a phone-shaped box, and the bands read as part of the picture.
   Widget _previewBox(Color accent, Color onAccent) {
+    final controller = _cameraController;
+    Widget box = ClipRRect(
+      borderRadius: BorderRadius.circular(OSRadius.card),
+      child: Container(
+        color: const Color(0xFF0A0908),
+        child: _preview(accent, onAccent),
+      ),
+    );
+    if (controller != null && controller.value.isInitialized) {
+      // The plugin reports the sensor's landscape ratio; the UI is
+      // portrait.
+      box = Center(
+        child: AspectRatio(
+          aspectRatio: 1 / controller.value.aspectRatio,
+          child: box,
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: OSSpace.md, vertical: OSSpace.xs),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(OSRadius.card),
-        child: Container(
-          color: const Color(0xFF0A0908),
-          child: _preview(accent, onAccent),
-        ),
-      ),
+      child: box,
     );
   }
 
@@ -1062,9 +1115,13 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   // <========================= Chrome =========================>
 
   /// Every camera control on one row above the viewfinder: torch, edge
-  /// detection, the composition grid, the lens switch, and undo
-  /// once there is something to undo. Nothing hides behind a caret — the
-  /// row is short enough to show all of it at once.
+  /// detection and auto-capture, the composition grid, the lens switch,
+  /// and undo once there is something to undo. Nothing hides behind a
+  /// caret — the row is short enough to show all of it at once.
+  ///
+  /// Auto-capture sits beside edge detection because it depends on it:
+  /// it waits for the page detection finds. Apart, one switch made the
+  /// other appear and disappear at the far end of the screen.
   Widget _topChrome(Color accent) {
     final l10n = AppLocalizations.of(context)!;
     final canTorch = _cameraController != null &&
@@ -1091,6 +1148,19 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             tooltip: l10n.live_detection,
             highlight: _detectionEnabled,
             onPressed: _toggleDetection,
+          ),
+          const SizedBox(width: OSSpace.xs),
+          _ChromeButton(
+            turns: _iconTurns,
+            icon: Icons.motion_photos_auto_rounded,
+            tooltip: _autoCaptureEnabled
+                ? l10n.auto_capture_on
+                : l10n.auto_capture_off,
+            highlight: _detectionEnabled && _autoCaptureEnabled,
+            // Still tappable with detection off — greyed, and it says why —
+            // rather than dead, which would leave the user guessing.
+            dimmed: !_detectionEnabled,
+            onPressed: _onAutoCapturePressed,
           ),
           const Spacer(),
           if (_capturedFiles.isNotEmpty) ...[
@@ -1123,87 +1193,111 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
-  /// The detection state, spelled out in words as well as colour: the quad
-  /// turning accent is never the only signal that a page was found.
+  /// The one line of guidance over the viewfinder, in words as well as
+  /// colour: the quad turning accent is never the only signal that a page
+  /// was found. One place, one message at a time — the most pressing
+  /// first: too dark to scan, then a passing notice from a control the
+  /// user just touched, then hold still (auto-capture is about to fire),
+  /// then whether a page has been found.
   Widget _statusOverlay(Color accent, Color onAccent) {
     final l10n = AppLocalizations.of(context)!;
+    Widget pill({
+      required String text,
+      required Color background,
+      required Color ink,
+      IconData? icon,
+      Color? border,
+    }) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: OSSpace.md),
+        padding: const EdgeInsets.symmetric(
+            horizontal: OSSpace.sm, vertical: OSSpace.xxs + 2),
+        decoration: BoxDecoration(
+          color: background,
+          border: border == null ? null : Border.all(color: border),
+          borderRadius: BorderRadius.circular(OSRadius.sheet),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: ink),
+              const SizedBox(width: OSSpace.xxs + 1),
+            ],
+            Flexible(
+              child: Text(
+                text,
+                textAlign: TextAlign.center,
+                style: OSTypography.caption
+                    .copyWith(color: ink, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return IgnorePointer(
       child: Padding(
         padding: const EdgeInsets.only(top: OSSpace.sm),
         child: Align(
           alignment: Alignment.topCenter,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_lowLight)
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: OSSpace.md),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: OSSpace.sm, vertical: OSSpace.xs),
-                  decoration: BoxDecoration(
-                    color: context.os.warning.withValues(alpha: 0.16),
-                    border: Border.all(color: context.os.warning),
-                    borderRadius: BorderRadius.circular(OSRadius.card),
+          child: ValueListenableBuilder(
+            valueListenable: _quadSmoother.smoothedQuad,
+            builder: (context, quad, _) {
+              if (_lowLight) {
+                return pill(
+                  text: l10n.low_light,
+                  background: context.os.warning.withValues(alpha: 0.16),
+                  border: context.os.warning,
+                  ink: context.os.warning,
+                );
+              }
+              final notice = _notice;
+              if (notice != null) {
+                return pill(
+                  text: notice,
+                  background: OSColors.chromeScrim,
+                  ink: OSColors.chromeOnBackground,
+                );
+              }
+              if (!_detectionEnabled) return const SizedBox.shrink();
+              if (_autoCaptureImminent) {
+                return pill(
+                  text: l10n.hold_still,
+                  icon: Icons.motion_photos_auto_rounded,
+                  background: accent,
+                  ink: onAccent,
+                );
+              }
+              if (quad == null) {
+                return Text(
+                  l10n.looking_for_document,
+                  style: OSTypography.caption.copyWith(
+                    color: OSColors.chromeOnBackground,
+                    fontWeight: FontWeight.w600,
+                    shadows: const [
+                      Shadow(blurRadius: 4, color: Color(0x990A0908)),
+                    ],
                   ),
-                  child: Text(
-                    l10n.low_light,
-                    style: OSTypography.caption.copyWith(
-                      color: context.os.warning,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: OSSpace.xs),
-              if (_detectionEnabled)
-                ValueListenableBuilder(
-                  valueListenable: _quadSmoother.smoothedQuad,
-                  builder: (context, quad, _) {
-                    if (quad == null) {
-                      return Text(
-                        l10n.looking_for_document,
-                        style: OSTypography.caption.copyWith(
-                          color: OSColors.chromeOnBackground,
-                          fontWeight: FontWeight.w600,
-                          shadows: const [
-                            Shadow(blurRadius: 4, color: Color(0x990A0908)),
-                          ],
-                        ),
-                      );
-                    }
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: OSSpace.sm, vertical: OSSpace.xxs + 2),
-                      decoration: BoxDecoration(
-                        color: accent,
-                        borderRadius: BorderRadius.circular(OSRadius.sheet),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check_rounded, size: 14, color: onAccent),
-                          const SizedBox(width: OSSpace.xxs + 1),
-                          Text(
-                            l10n.document_detected,
-                            style: OSTypography.caption.copyWith(
-                              color: onAccent,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-            ],
+                );
+              }
+              return pill(
+                text: l10n.document_detected,
+                icon: Icons.check_rounded,
+                background: accent,
+                ink: onAccent,
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  /// The one row of controls under the viewfinder: gallery, shutter and
-  /// done, all on the same centre line and evenly spaced, with the
-  /// auto-capture state spelled out above them.
+  /// The controls under the viewfinder: the scan mode, then gallery,
+  /// shutter and the batch's pages, all on the same centre line and evenly
+  /// spaced.
   Widget _bottomChrome(Color accent, Color onAccent) {
     final l10n = AppLocalizations.of(context)!;
     return Padding(
@@ -1213,19 +1307,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           _modeSwitch(accent, onAccent),
-          const SizedBox(height: OSSpace.sm),
-          // Auto-capture only means anything while the page is being
-          // looked for, so it lives under detection rather than beside it.
-          // Its row is kept with detection off, so switching ✨ doesn't
-          // resize the viewfinder above it.
-          Visibility(
-            visible: _detectionEnabled,
-            maintainSize: true,
-            maintainAnimation: true,
-            maintainState: true,
-            child: _autoCaptureSwitch(accent, onAccent),
-          ),
-          const SizedBox(height: OSSpace.xs),
+          const SizedBox(height: OSSpace.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -1243,61 +1325,6 @@ class _LiveScanScreenState extends State<LiveScanScreen>
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  /// Auto-capture, as a switch that looks like one: a chip that is
-  /// outlined while off and filled while on, with the state in words.
-  /// It used to be a line of caption text that happened to be tappable,
-  /// and nobody found it — so a shot that took itself before the page was
-  /// framed read as the app misbehaving rather than a setting to turn
-  /// off. Long-pressing the shutter still toggles it too.
-  Widget _autoCaptureSwitch(Color accent, Color onAccent) {
-    final l10n = AppLocalizations.of(context)!;
-    final on = _autoCaptureEnabled;
-    final ink = on ? onAccent : OSColors.chromeOnBackground;
-    return Semantics(
-      toggled: on,
-      button: true,
-      child: Material(
-        color: on ? accent : Colors.transparent,
-        shape: StadiumBorder(
-          side: BorderSide(
-            color: on ? accent : OSColors.chromeMuted,
-            width: 1.5,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: _toggleAutoCapture,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: OSSpace.md, vertical: OSSpace.xs),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  on ? Icons.timer_rounded : Icons.timer_off_outlined,
-                  size: 16,
-                  color: ink,
-                ),
-                const SizedBox(width: OSSpace.xs),
-                Text(
-                  _autoCaptureImminent
-                      ? l10n.hold_still
-                      : on
-                          ? l10n.auto_capture_on
-                          : l10n.auto_capture_off,
-                  style: OSTypography.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: ink,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -1352,40 +1379,84 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
-  /// The session's exit, carrying its page count: nothing captured yet
-  /// means nothing to finish, so it sits inert rather than disappearing
-  /// and shifting the row around the shutter. Sized to match the gallery
-  /// button on the other side of the shutter.
+  /// The session's exit, in batch mode: the last page taken, with the
+  /// count on it, the way scanner apps show a stack of pages — proof each
+  /// shot landed, and the thing to tap when the batch is done. Empty until
+  /// there is a page, and in single mode, which ends through the crop
+  /// screen and has nothing to finish here; the slot keeps its width
+  /// either way, so the shutter never moves.
   Widget _doneButton(Color accent, Color onAccent) {
     final l10n = AppLocalizations.of(context)!;
     final count = _capturedFiles.length;
+    const slot = SizedBox(width: _kSideControlSize, height: _kSideControlSize);
+    if (!_batchMode || count == 0) return slot;
+
     // Inert while a page is still being processed: the shot in flight is
     // not in the list yet, and leaving on it would drop it.
-    final enabled = count > 0 && !_capturing;
-    final ink = enabled ? onAccent : OSColors.chromeMuted;
-    return Material(
-      color: enabled ? accent : OSColors.chromeScrim,
-      borderRadius: BorderRadius.circular(OSRadius.pill),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: enabled ? _onDonePressed : null,
-        child: SizedBox(
-          height: _kSideControlSize,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: OSSpace.md),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  enabled ? l10n.done_count(count) : l10n.done,
-                  style: OSTypography.label.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: ink,
+    final enabled = !_capturing;
+    return Semantics(
+      button: true,
+      label: l10n.done_count(count),
+      child: Tooltip(
+        message: l10n.done_count(count),
+        child: GestureDetector(
+          onTap: enabled ? _onDonePressed : null,
+          child: AnimatedRotation(
+            turns: _iconTurns,
+            duration: OSMotion.standard,
+            curve: OSMotion.emphasizedDecel,
+            child: SizedBox(
+              width: _kSideControlSize,
+              height: _kSideControlSize,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(OSRadius.card),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(OSRadius.card - 2),
+                        child: Opacity(
+                          opacity: enabled ? 1 : 0.5,
+                          child: Image.file(
+                            _capturedFiles.last.file,
+                            key: ValueKey(_capturedFiles.last.file.path),
+                            fit: BoxFit.cover,
+                            cacheWidth: 180,
+                            errorBuilder: (_, __, ___) =>
+                                const ColoredBox(color: OSColors.chromeScrim),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: OSSpace.xxs),
-                Icon(Icons.check_rounded, size: 20, color: ink),
-              ],
+                  Positioned(
+                    top: -6,
+                    right: -6,
+                    child: Container(
+                      constraints:
+                          const BoxConstraints(minWidth: 22, minHeight: 22),
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(OSRadius.pill),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: OSTypography.caption.copyWith(
+                          color: onAccent,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1394,7 +1465,9 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   }
 
   /// The shutter. Its ring is the auto-capture state: accent when a page is
-  /// locked, pulsing when a capture is about to fire on its own.
+  /// locked, and filling up while a capture is about to fire on its own —
+  /// the countdown sits on the button it replaces, where tapping takes the
+  /// shot now and long-pressing turns auto-capture off.
   Widget _shutter(Color accent) {
     if (_capturing) {
       return SizedBox(
@@ -1416,7 +1489,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           alignment: Alignment.center,
           children: [
             if (_autoCaptureImminent)
-              _PulseRing(color: accent),
+              _CountdownRing(
+                color: accent,
+                duration: AutoCaptureDetector.kMinStableDuration,
+              ),
             GestureDetector(
               onTap: _cameraController != null ? _onCapturePressed : null,
               child: Container(
@@ -1583,6 +1659,7 @@ class _ChromeButton extends StatelessWidget {
     this.size = 48,
     this.iconSize = 26,
     this.turns = 0,
+    this.dimmed = false,
   });
 
   final IconData icon;
@@ -1597,10 +1674,14 @@ class _ChromeButton extends StatelessWidget {
   /// icons to stay upright as the phone does.
   final double turns;
 
+  /// Drawn as unavailable while staying tappable, for a control that can
+  /// explain why it doesn't apply rather than just ignoring the tap.
+  final bool dimmed;
+
   @override
   Widget build(BuildContext context) {
     final active = highlightColor ?? Theme.of(context).colorScheme.primary;
-    final enabled = onPressed != null;
+    final enabled = onPressed != null && !dimmed;
     final button = Material(
       color: highlight ? active : OSColors.chromeScrim,
       shape: const CircleBorder(),
@@ -1631,24 +1712,22 @@ class _ChromeButton extends StatelessWidget {
   }
 }
 
-/// The 900ms ring that expands out of the shutter while an auto-capture is
-/// about to fire — the "something is about to happen" cue that pairs with
-/// the HOLD STILL label.
-class _PulseRing extends StatefulWidget {
-  const _PulseRing({required this.color});
+/// The ring that fills around the shutter while an auto-capture counts
+/// down: empty when the page first holds still, full when the shot fires.
+class _CountdownRing extends StatefulWidget {
+  const _CountdownRing({required this.color, required this.duration});
 
   final Color color;
+  final Duration duration;
 
   @override
-  State<_PulseRing> createState() => _PulseRingState();
+  State<_CountdownRing> createState() => _CountdownRingState();
 }
 
-class _PulseRingState extends State<_PulseRing>
+class _CountdownRingState extends State<_CountdownRing>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat();
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: widget.duration)..forward();
 
   @override
   void dispose() {
@@ -1658,25 +1737,20 @@ class _PulseRingState extends State<_PulseRing>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final t = _controller.value;
-        return Transform.scale(
-          scale: 0.9 + t * 0.45,
-          child: Opacity(
-            opacity: (1 - t / 0.7).clamp(0.0, 0.9),
-            child: Container(
-              height: 70,
-              width: 70,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: widget.color, width: 3),
-              ),
-            ),
+    return IgnorePointer(
+      child: SizedBox(
+        height: 82,
+        width: 82,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) => CircularProgressIndicator(
+            value: _controller.value,
+            strokeWidth: 4,
+            color: widget.color,
+            backgroundColor: Colors.white.withValues(alpha: 0.15),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

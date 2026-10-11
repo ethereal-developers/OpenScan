@@ -416,6 +416,10 @@ class AppLocalizationsHu extends AppLocalizations {
   String get auto_capture_off => 'Automatikus rögzítés ki';
 
   @override
+  String get auto_capture_needs_detection =>
+      'Először kapcsolja be a szélkeresést — az automatikus rögzítés az általa talált oldalra vár.';
+
+  @override
   String get undo_last_capture => 'Utolsó rögzítés visszavonása';
 
   @override

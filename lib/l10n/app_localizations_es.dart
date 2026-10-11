@@ -418,6 +418,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get auto_capture_off => 'Captura automática desactivada';
 
   @override
+  String get auto_capture_needs_detection =>
+      'Activa primero la detección de bordes: la captura automática espera a la página que encuentra.';
+
+  @override
   String get undo_last_capture => 'Deshacer última captura';
 
   @override
