@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 const String _repositoryUrl =
     'https://github.com/Ethereal-Developers-Inc/OpenScan';
-const String _appVersion = '3.0.0';
+const String _appVersion = '3.1.0';
 
 /// The two people who wrote the app, as the v2 About screen had them.
 /// Names are not localised: they are names.
