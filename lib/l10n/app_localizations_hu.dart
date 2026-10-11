@@ -72,6 +72,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get select_pages => 'Oldalak kijelölése';
 
   @override
+  String get reorder_pages => 'Oldalak átrendezése';
+
+  @override
   String get try_again => 'Próbálja újra';
 
   @override
@@ -491,8 +494,8 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · tartson nyomva egy oldalt az átrendezéshez';
+  String hold_to_select(String pages) {
+    return '$pages · tartson nyomva egy oldalt a kijelöléshez';
   }
 
   @override
@@ -612,7 +615,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'Tartsa nyomva az oldalt az áthelyezéshez, és bármikor adhat hozzá további oldalakat.';
+      'Tartsa nyomva az oldalt a kijelöléshez, rendezze át az oldalakat a ⋮ menüből, és bármikor adhat hozzá további oldalakat.';
 
   @override
   String get demo_export_title => 'Mentés vagy megosztás PDF-ként';

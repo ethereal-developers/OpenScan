@@ -20,6 +20,7 @@
   "select": "Select",
   "select_all": "Select all",
   "select_pages": "Select pages",
+  "reorder_pages": "Reorder pages",
   "try_again": "Try again",
   "undo": "UNDO",
   "@undo": {
@@ -264,8 +265,8 @@
       }
     }
   },
-  "hold_to_reorder": "{pages} · hold a page to reorder",
-  "@hold_to_reorder": {
+  "hold_to_select": "{pages} · hold a page to select it",
+  "@hold_to_select": {
     "placeholders": {
       "pages": {
         "type": "String"
@@ -343,7 +344,7 @@
   "demo_adjust_title": "Straighten and clean up",
   "demo_adjust_body": "Drag the corners if the edges are off, then pick a filter — Auto, Grayscale or B&W.",
   "demo_organise_title": "Reorder and add pages",
-  "demo_organise_body": "Hold a page to move it, and add more pages to a document whenever you like.",
+  "demo_organise_body": "Hold a page to select it, reorder pages from the ⋮ menu, and add more pages whenever you like.",
   "demo_export_title": "Save or share as PDF",
   "demo_export_body": "Choose a quality and page size, then save it to your phone or send it anywhere.",
   "demo_privacy_title": "It never leaves your phone",

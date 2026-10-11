@@ -72,6 +72,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get select_pages => 'Zaznacz strony';
 
   @override
+  String get reorder_pages => 'Zmień kolejność stron';
+
+  @override
   String get try_again => 'Spróbuj ponownie';
 
   @override
@@ -527,8 +530,8 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · przytrzymaj stronę, aby zmienić kolejność';
+  String hold_to_select(String pages) {
+    return '$pages · przytrzymaj stronę, aby ją zaznaczyć';
   }
 
   @override
@@ -647,7 +650,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'Przytrzymaj stronę, aby ją przenieść, i dodawaj kolejne strony, kiedy zechcesz.';
+      'Przytrzymaj stronę, aby ją zaznaczyć, zmieniaj kolejność stron z menu ⋮ i dodawaj kolejne strony, kiedy zechcesz.';
 
   @override
   String get demo_export_title => 'Zapisz lub udostępnij jako PDF';

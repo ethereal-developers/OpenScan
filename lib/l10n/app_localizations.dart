@@ -237,6 +237,12 @@ abstract class AppLocalizations {
   /// **'Select pages'**
   String get select_pages;
 
+  /// No description provided for @reorder_pages.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder pages'**
+  String get reorder_pages;
+
   /// No description provided for @try_again.
   ///
   /// In en, this message translates to:
@@ -969,11 +975,11 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Skipped 1 file this app can\'t read.} other{Skipped {count} files this app can\'t read.}}'**
   String skipped_files(int count);
 
-  /// No description provided for @hold_to_reorder.
+  /// No description provided for @hold_to_select.
   ///
   /// In en, this message translates to:
-  /// **'{pages} · hold a page to reorder'**
-  String hold_to_reorder(String pages);
+  /// **'{pages} · hold a page to select it'**
+  String hold_to_select(String pages);
 
   /// No description provided for @export_title.
   ///
@@ -1182,7 +1188,7 @@ abstract class AppLocalizations {
   /// No description provided for @demo_organise_body.
   ///
   /// In en, this message translates to:
-  /// **'Hold a page to move it, and add more pages to a document whenever you like.'**
+  /// **'Hold a page to select it, reorder pages from the ⋮ menu, and add more pages whenever you like.'**
   String get demo_organise_body;
 
   /// No description provided for @demo_export_title.

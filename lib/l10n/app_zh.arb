@@ -21,6 +21,7 @@
   "select": "选择",
   "select_all": "全选",
   "select_pages": "选择页面",
+  "reorder_pages": "调整页面顺序",
   "try_again": "重试",
   "undo": "撤销",
   "@undo": {
@@ -265,8 +266,8 @@
       }
     }
   },
-  "hold_to_reorder": "{pages} · 长按页面可调整顺序",
-  "@hold_to_reorder": {
+  "hold_to_select": "{pages} · 长按页面可选择",
+  "@hold_to_select": {
     "placeholders": {
       "pages": {
         "type": "String"
@@ -344,7 +345,7 @@
   "demo_adjust_title": "校正与优化页面",
   "demo_adjust_body": "如果边缘不准确，可拖动角点进行调整，再选择“自动”“灰度”或“黑白”等滤镜。",
   "demo_organise_title": "调整顺序并添加页面",
-  "demo_organise_body": "长按页面可调整顺序，也可以随时向文档添加更多页面。",
+  "demo_organise_body": "长按页面可选择，在 ⋮ 菜单中调整页面顺序，也可以随时向文档添加更多页面。",
   "demo_export_title": "保存或分享为 PDF",
   "demo_export_body": "选择质量和纸张大小，然后保存到手机或分享出去。",
   "demo_privacy_title": "文档始终保留在手机上",

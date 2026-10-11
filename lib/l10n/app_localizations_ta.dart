@@ -72,6 +72,9 @@ class AppLocalizationsTa extends AppLocalizations {
   String get select_pages => 'பக்கங்களைத் தேர்ந்தெடு';
 
   @override
+  String get reorder_pages => 'பக்கங்களை வரிசைப்படுத்து';
+
+  @override
   String get try_again => 'மீண்டும் முயற்சிக்கவும்';
 
   @override
@@ -493,8 +496,8 @@ class AppLocalizationsTa extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · வரிசை மாற்ற ஒரு பக்கத்தை அழுத்திப் பிடிக்கவும்';
+  String hold_to_select(String pages) {
+    return '$pages · தேர்ந்தெடுக்க ஒரு பக்கத்தை அழுத்திப் பிடிக்கவும்';
   }
 
   @override
@@ -614,7 +617,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'ஒரு பக்கத்தை நீண்ட நேரம் அழுத்தி நகர்த்துங்கள், எப்போது வேண்டுமானாலும் புதிய பக்கங்களைச் சேருங்கள்.';
+      'தேர்ந்தெடுக்க ஒரு பக்கத்தை அழுத்திப் பிடிக்கவும், ⋮ மெனுவில் பக்கங்களை வரிசைப்படுத்துங்கள், எப்போது வேண்டுமானாலும் புதிய பக்கங்களைச் சேருங்கள்.';
 
   @override
   String get demo_export_title => 'PDF ஆகச் சேமிக்கவும் அல்லது பகிரவும்';

@@ -72,6 +72,9 @@ class AppLocalizationsEl extends AppLocalizations {
   String get select_pages => 'Επιλογή σελίδων';
 
   @override
+  String get reorder_pages => 'Αναδιάταξη σελίδων';
+
+  @override
   String get try_again => 'Δοκιμάστε ξανά';
 
   @override
@@ -495,8 +498,8 @@ class AppLocalizationsEl extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · κρατήστε πατημένη μια σελίδα για αναδιάταξη';
+  String hold_to_select(String pages) {
+    return '$pages · κρατήστε πατημένη μια σελίδα για επιλογή';
   }
 
   @override
@@ -616,7 +619,7 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'Κρατήστε πατημένη μια σελίδα για να τη μετακινήσετε και προσθέστε κι άλλες όποτε θέλετε.';
+      'Κρατήστε πατημένη μια σελίδα για να την επιλέξετε, αλλάξτε τη σειρά των σελίδων από το μενού ⋮ και προσθέστε κι άλλες όποτε θέλετε.';
 
   @override
   String get demo_export_title => 'Αποθήκευση ή κοινή χρήση ως PDF';

@@ -72,6 +72,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get select_pages => '选择页面';
 
   @override
+  String get reorder_pages => '调整页面顺序';
+
+  @override
   String get try_again => '重试';
 
   @override
@@ -471,8 +474,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · 长按页面可调整顺序';
+  String hold_to_select(String pages) {
+    return '$pages · 长按页面可选择';
   }
 
   @override
@@ -586,7 +589,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get demo_organise_title => '调整顺序并添加页面';
 
   @override
-  String get demo_organise_body => '长按页面可调整顺序，也可以随时向文档添加更多页面。';
+  String get demo_organise_body => '长按页面可选择，在 ⋮ 菜单中调整页面顺序，也可以随时向文档添加更多页面。';
 
   @override
   String get demo_export_title => '保存或分享为 PDF';

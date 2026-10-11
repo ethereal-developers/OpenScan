@@ -72,6 +72,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get select_pages => 'पृष्ठ चुनें';
 
   @override
+  String get reorder_pages => 'पृष्ठों का क्रम बदलें';
+
+  @override
   String get try_again => 'पुनः प्रयास करें';
 
   @override
@@ -490,8 +493,8 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · क्रम बदलने के लिए किसी पृष्ठ को दबाए रखें';
+  String hold_to_select(String pages) {
+    return '$pages · चुनने के लिए किसी पृष्ठ को दबाए रखें';
   }
 
   @override
@@ -611,7 +614,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'पृष्ठ को दबाकर रखें और खिसकाएँ, और जब चाहें दस्तावेज़ में नए पृष्ठ जोड़ें।';
+      'चुनने के लिए पृष्ठ को दबाकर रखें, ⋮ मेनू से पृष्ठों का क्रम बदलें, और जब चाहें नए पृष्ठ जोड़ें।';
 
   @override
   String get demo_export_title => 'PDF के रूप में सहेजें या साझा करें';

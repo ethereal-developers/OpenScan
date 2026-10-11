@@ -72,6 +72,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get select_pages => 'Select pages';
 
   @override
+  String get reorder_pages => 'Reorder pages';
+
+  @override
   String get try_again => 'Try again';
 
   @override
@@ -491,8 +494,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · hold a page to reorder';
+  String hold_to_select(String pages) {
+    return '$pages · hold a page to select it';
   }
 
   @override
@@ -611,7 +614,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'Hold a page to move it, and add more pages to a document whenever you like.';
+      'Hold a page to select it, reorder pages from the ⋮ menu, and add more pages whenever you like.';
 
   @override
   String get demo_export_title => 'Save or share as PDF';
