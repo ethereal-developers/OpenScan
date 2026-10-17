@@ -41,6 +41,10 @@ took themselves too early, and no way to fix a crop while scanning.
 ### Fixed
 
 - The crop magnifier no longer slides off screen near the image's edges.
+- Page thumbnails in a document and on the home screen are loaded at the
+  size they are shown rather than at full resolution, so long documents
+  no longer run low-memory phones out of memory (#107). A 60-page
+  document's grid went from a 727MB peak to 260MB on a moto g71.
 
 # v3.0.0
 
