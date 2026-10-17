@@ -574,6 +574,10 @@ class _PageTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final os = context.os;
     final selected = image.selected;
+    // The tile's long side in pixels, as a box the page is fitted inside,
+    // so a portrait page lands at exactly tile size under BoxFit.cover.
+    final decodeEdge =
+        (width * 4 / 3 * MediaQuery.of(context).devicePixelRatio).round();
 
     return GestureDetector(
       onTap: onTap,
@@ -597,8 +601,16 @@ class _PageTile extends StatelessWidget {
             children: [
               Hero(
                 tag: 'hero-image-${image.idx}',
-                child: Image.file(
-                  File(image.imgPath),
+                // Decoded to tile size, not the stored page's 2400px:
+                // at full size each tile held ~17MB, and a long document's
+                // grid ran low-memory phones out of it (#107).
+                child: Image(
+                  image: ResizeImage(
+                    FileImage(File(image.imgPath)),
+                    width: decodeEdge,
+                    height: decodeEdge,
+                    policy: ResizeImagePolicy.fit,
+                  ),
                   fit: BoxFit.cover,
                   alignment: Alignment.topCenter,
                   errorBuilder: (_, __, ___) => Icon(

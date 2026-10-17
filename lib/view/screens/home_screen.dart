@@ -800,11 +800,25 @@ class _DocumentCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   if (path != null && path.isNotEmpty && File(path).existsSync())
-                    Image.file(
-                      File(path),
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      errorBuilder: (_, __, ___) => _placeholder(os),
+                    // Decoded to card size rather than the stored page's
+                    // 2400px, which cost ~17MB per document on screen.
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final edge = (constraints.biggest.longestSide *
+                                MediaQuery.of(context).devicePixelRatio)
+                            .round();
+                        return Image(
+                          image: ResizeImage(
+                            FileImage(File(path)),
+                            width: edge,
+                            height: edge,
+                            policy: ResizeImagePolicy.fit,
+                          ),
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          errorBuilder: (_, __, ___) => _placeholder(os),
+                        );
+                      },
                     )
                   else
                     _placeholder(os),
