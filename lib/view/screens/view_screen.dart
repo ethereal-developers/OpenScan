@@ -37,6 +37,10 @@ class ViewScreen extends StatefulWidget {
 class _ViewScreenState extends State<ViewScreen> {
   bool _selectionMode = false;
 
+  /// Reordering is its own mode, entered from the overflow sheet, so that
+  /// long press can mean "select" on the grid without competing with drag.
+  bool _reorderMode = false;
+
   @override
   void initState() {
     super.initState();
@@ -97,6 +101,14 @@ class _ViewScreenState extends State<ViewScreen> {
 
   int _selectedCount(DirectoryState state) =>
       state.images?.where((image) => image.selected).length ?? 0;
+
+  /// Enters selection mode with the long-pressed [image] already ticked.
+  void _startSelection(ImageOS image) {
+    if (!image.selected) {
+      BlocProvider.of<DirectoryCubit>(context).selectImage(image);
+    }
+    setState(() => _selectionMode = true);
+  }
 
   void _exitSelection() {
     BlocProvider.of<DirectoryCubit>(context).resetSelection();
@@ -171,14 +183,15 @@ class _ViewScreenState extends State<ViewScreen> {
               _rename(state);
             },
           ),
-          OSSheetAction(
-            icon: Icons.checklist_rounded,
-            label: l10n.select_pages,
-            onTap: () {
-              Navigator.pop(sheetContext);
-              setState(() => _selectionMode = true);
-            },
-          ),
+          if (state.imageCount > 1)
+            OSSheetAction(
+              icon: Icons.swap_vert_rounded,
+              label: l10n.reorder_pages,
+              onTap: () {
+                Navigator.pop(sheetContext);
+                setState(() => _reorderMode = true);
+              },
+            ),
           OSSheetAction(
             icon: Icons.add_photo_alternate_outlined,
             label: l10n.import_from_gallery_short,
@@ -234,15 +247,22 @@ class _ViewScreenState extends State<ViewScreen> {
         final selectedCount = _selectedCount(state);
 
         return PopScope(
-          canPop: !_selectionMode,
+          canPop: !_selectionMode && !_reorderMode,
           onPopInvokedWithResult: (didPop, _) {
-            if (!didPop) _exitSelection();
+            if (didPop) return;
+            if (_reorderMode) {
+              setState(() => _reorderMode = false);
+            } else {
+              _exitSelection();
+            }
           },
           child: Scaffold(
             backgroundColor: os.surface,
             appBar: _selectionMode
                 ? _selectionAppBar(os, selectedCount, state)
-                : _documentAppBar(os, state),
+                : _reorderMode
+                    ? _reorderAppBar(os)
+                    : _documentAppBar(os, state),
             body: SafeArea(
               top: false,
               child: images.isEmpty && state.pendingPages.isEmpty
@@ -266,7 +286,7 @@ class _ViewScreenState extends State<ViewScreen> {
     final date = state.lastModified ?? state.created;
     final pages = l10n.pages_count(state.imageCount);
     final subtitle = state.imageCount > 1
-        ? l10n.hold_to_reorder(pages)
+        ? l10n.hold_to_select(pages)
         : date == null
             ? pages
             : l10n.date_and_pages(
@@ -327,6 +347,20 @@ class _ViewScreenState extends State<ViewScreen> {
     );
   }
 
+  PreferredSizeWidget _reorderAppBar(OSColors os) {
+    final l10n = AppLocalizations.of(context)!;
+    return AppBar(
+      backgroundColor: os.surface,
+      leading: IconButton(
+        icon: const Icon(Icons.close_rounded),
+        onPressed: () => setState(() => _reorderMode = false),
+      ),
+      titleSpacing: 0,
+      title: Text(l10n.reorder_pages,
+          style: OSTypography.subtitle.copyWith(color: os.onSurface)),
+    );
+  }
+
   PreferredSizeWidget _selectionAppBar(
       OSColors os, int count, DirectoryState state) {
     final l10n = AppLocalizations.of(context)!;
@@ -383,7 +417,16 @@ class _ViewScreenState extends State<ViewScreen> {
               image: image,
               width: tileWidth,
               selectionMode: _selectionMode,
-              onTap: () {
+              // In reorder mode the wrap owns every gesture on a tile.
+              onLongPress: _reorderMode
+                  ? null
+                  : () => _selectionMode
+                      ? BlocProvider.of<DirectoryCubit>(context)
+                          .selectImage(image)
+                      : _startSelection(image),
+              onTap: _reorderMode
+                  ? null
+                  : () {
                 if (_selectionMode) {
                   BlocProvider.of<DirectoryCubit>(context).selectImage(image);
                 } else {
@@ -409,12 +452,13 @@ class _ViewScreenState extends State<ViewScreen> {
             spacing: spacing,
             runSpacing: spacing,
             children: [
-              if (_selectionMode || pendingTiles.isNotEmpty)
+              if (!_reorderMode || pendingTiles.isNotEmpty)
                 ...tiles
               else
                 ReorderableWrap(
                   spacing: spacing,
                   runSpacing: spacing,
+                  // Hold then drag, so a swipe over the pages still scrolls.
                   needsLongPressDraggable: true,
                   children: tiles,
                   onReorder: (oldIndex, newIndex) {
@@ -442,6 +486,20 @@ class _ViewScreenState extends State<ViewScreen> {
             icon: Icons.add_rounded,
             expand: true,
             onPressed: _addPages,
+          ),
+        ),
+      );
+    }
+
+    if (_reorderMode) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              OSSpace.md + 2, OSSpace.xs, OSSpace.md + 2, OSSpace.md),
+          child: OSButton(
+            label: l10n.done,
+            expand: true,
+            onPressed: () => setState(() => _reorderMode = false),
           ),
         ),
       );
@@ -503,20 +561,27 @@ class _PageTile extends StatelessWidget {
     required this.width,
     required this.selectionMode,
     required this.onTap,
+    required this.onLongPress,
   }) : super(key: key);
 
   final ImageOS image;
   final double width;
   final bool selectionMode;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final os = context.os;
     final selected = image.selected;
+    // The tile's long side in pixels, as a box the page is fitted inside,
+    // so a portrait page lands at exactly tile size under BoxFit.cover.
+    final decodeEdge =
+        (width * 4 / 3 * MediaQuery.of(context).devicePixelRatio).round();
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: SizedBox(
         width: width,
         height: width * 4 / 3,
@@ -536,8 +601,16 @@ class _PageTile extends StatelessWidget {
             children: [
               Hero(
                 tag: 'hero-image-${image.idx}',
-                child: Image.file(
-                  File(image.imgPath),
+                // Decoded to tile size, not the stored page's 2400px:
+                // at full size each tile held ~17MB, and a long document's
+                // grid ran low-memory phones out of it (#107).
+                child: Image(
+                  image: ResizeImage(
+                    FileImage(File(image.imgPath)),
+                    width: decodeEdge,
+                    height: decodeEdge,
+                    policy: ResizeImagePolicy.fit,
+                  ),
                   fit: BoxFit.cover,
                   alignment: Alignment.topCenter,
                   errorBuilder: (_, __, ___) => Icon(

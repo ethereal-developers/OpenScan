@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -61,6 +62,21 @@ Future<DetectionResult> detectDocumentIsolateEntry(String path) async {
   } catch (e) {
     return DetectionFailure(e.toString());
   }
+}
+
+/// Entry point designed to be run via `compute()`: detection on pixels
+/// the platform decoder has already scaled down to [kDetectionMaxDimension]
+/// (see `native_decode.dart`), skipping [detectDocumentIsolateEntry]'s
+/// pure-Dart decode — which, on a full-resolution capture, is most of five
+/// seconds. Takes `rgba` (a [TransferableTypedData]), `width` and
+/// `height`; returns the quad in those pixels' coordinates, or null.
+Quad? detectQuadInRgbaIsolateEntry(Map<String, dynamic> params) {
+  final rgba =
+      (params['rgba'] as TransferableTypedData).materialize().asUint8List();
+  final width = params['width'] as int;
+  final height = params['height'] as int;
+  return detectQuadFromGrayscale(
+      rgbaToGrayscale(rgba, width, height), width, height);
 }
 
 /// Multipliers applied to the Otsu threshold to build several binarized

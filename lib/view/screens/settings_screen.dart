@@ -172,10 +172,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             OSSectionHeader(l10n.scanning),
             _SwitchRow(
+              label: l10n.live_detection,
+              description: l10n.live_detection_desc,
+              value: settings.liveDetection,
+              onChanged: settings.setLiveDetection,
+            ),
+            // Auto-capture fires on a detected page holding still, so with
+            // detection off there is nothing for it to wait on.
+            _SwitchRow(
               label: l10n.auto_capture,
               description: l10n.auto_capture_desc,
-              value: settings.autoCapture,
-              onChanged: settings.setAutoCapture,
+              value: settings.liveDetection && settings.autoCapture,
+              onChanged:
+                  settings.liveDetection ? settings.setAutoCapture : null,
+            ),
+            _SwitchRow(
+              label: l10n.batch_capture,
+              description: l10n.batch_capture_desc,
+              value: settings.batchCapture,
+              onChanged: settings.setBatchCapture,
             ),
             _SwitchRow(
               label: l10n.capture_sound,
@@ -326,15 +341,18 @@ class _SwitchRow extends StatelessWidget {
 
   final String label;
   final bool value;
-  final ValueChanged<bool> onChanged;
+
+  /// Null disables the row.
+  final ValueChanged<bool>? onChanged;
   final String? description;
 
   @override
   Widget build(BuildContext context) {
+    final onChanged = this.onChanged;
     return _SettingRow(
       label: label,
       description: description,
-      onTap: () => onChanged(!value),
+      onTap: onChanged == null ? null : () => onChanged(!value),
       trailing: Switch(value: value, onChanged: onChanged),
     );
   }
@@ -434,6 +452,8 @@ extension on Locale {
     switch (languageCode) {
       case 'el':
         return 'Ελληνικά';
+      case 'es':
+        return 'Español';
       case 'hu':
         return 'Magyar';
       case 'pl':

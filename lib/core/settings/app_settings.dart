@@ -18,7 +18,9 @@ class AppSettings extends ChangeNotifier {
 
   static const _kThemeMode = 'themeMode';
   static const _kAccent = 'accentId';
+  static const _kLiveDetection = 'liveScanDetectionEnabled';
   static const _kAutoCapture = 'liveScanAutoCaptureEnabled';
+  static const _kBatchCapture = 'liveScanBatchMode';
   static const _kCaptureSound = 'captureSound';
   static const _kKeepOriginal = 'keepOriginal';
   static const _kDefaultFilter = 'defaultFilter';
@@ -29,7 +31,9 @@ class AppSettings extends ChangeNotifier {
 
   ThemeMode _themeMode = ThemeMode.system;
   OSAccentFamily _accent = OSAccents.ember;
-  bool _autoCapture = true;
+  bool _liveDetection = true;
+  bool _autoCapture = false;
+  bool _batchCapture = false;
   bool _captureSound = true;
   bool _keepOriginal = true;
   String? _defaultFilter;
@@ -38,7 +42,21 @@ class AppSettings extends ChangeNotifier {
 
   ThemeMode get themeMode => _themeMode;
   OSAccentFamily get accent => _accent;
+
+  /// Whether the camera looks for the page's edges while framing: the
+  /// outline over the preview, auto-capture, and cropping each shot to that
+  /// outline all hang off it. Off, the camera takes plain photos, stored
+  /// whole and cropped afterwards on the crop screen — which runs its own
+  /// detection on the still, so it keeps its suggested corners either way.
+  bool get liveDetection => _liveDetection;
   bool get autoCapture => _autoCapture;
+
+  /// Whether the camera stays open for page after page, each cropped to
+  /// its detected edges and fixed afterwards. Off — the default — every
+  /// shot goes through the crop screen before it is kept, and the session
+  /// ends with that one page: the scan-then-crop flow the app had before
+  /// live scanning, which is what most people scanning a page or two want.
+  bool get batchCapture => _batchCapture;
   bool get captureSound => _captureSound;
   bool get keepOriginal => _keepOriginal;
 
@@ -59,10 +77,13 @@ class AppSettings extends ChangeNotifier {
       orElse: () => ThemeMode.system,
     );
     _accent = OSAccents.byId(prefs.getString(_kAccent));
-    // Shares its key with the live-scan screen's own preference, which
-    // predates this class — the two are the same setting, now surfaced in
-    // Settings as well as behind the camera's long-press.
-    _autoCapture = prefs.getBool(_kAutoCapture) ?? true;
+    // Off unless the user turns it on: a shot that takes itself before the
+    // page is framed was the most common complaint about 3.0, and a user
+    // who hasn't asked for it doesn't know to look for the switch. The
+    // key predates this class — it was the live-scan screen's own.
+    _autoCapture = prefs.getBool(_kAutoCapture) ?? false;
+    _liveDetection = prefs.getBool(_kLiveDetection) ?? true;
+    _batchCapture = prefs.getBool(_kBatchCapture) ?? false;
     _captureSound = prefs.getBool(_kCaptureSound) ?? true;
     // On by default: a capture is cropped to its detected edges on the way
     // into the document, in place, so without a kept original the full
@@ -90,10 +111,22 @@ class AppSettings extends ChangeNotifier {
     await _prefs?.setString(_kAccent, accent.id);
   }
 
+  Future<void> setLiveDetection(bool value) async {
+    _liveDetection = value;
+    notifyListeners();
+    await _prefs?.setBool(_kLiveDetection, value);
+  }
+
   Future<void> setAutoCapture(bool value) async {
     _autoCapture = value;
     notifyListeners();
     await _prefs?.setBool(_kAutoCapture, value);
+  }
+
+  Future<void> setBatchCapture(bool value) async {
+    _batchCapture = value;
+    notifyListeners();
+    await _prefs?.setBool(_kBatchCapture, value);
   }
 
   Future<void> setCaptureSound(bool value) async {

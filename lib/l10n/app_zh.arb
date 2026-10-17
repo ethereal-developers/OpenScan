@@ -1,4 +1,3 @@
-
 {
   "@@locale": "zh",
   "about": "关于",
@@ -22,6 +21,7 @@
   "select": "选择",
   "select_all": "全选",
   "select_pages": "选择页面",
+  "reorder_pages": "调整页面顺序",
   "try_again": "重试",
   "undo": "撤销",
   "@undo": {
@@ -139,8 +139,14 @@
   "sort_name": "名称（A–Z）",
   "sort_page_count": "页数",
   "scanning": "正在扫描",
+  "live_detection": "检测文档边缘",
+  "live_detection_desc": "在相机画面中框出页面，并按页面裁剪每张照片。关闭后可拍摄普通照片，之后再裁剪。",
   "auto_capture": "自动拍摄",
   "auto_capture_desc": "页面保持稳定时自动拍摄。",
+  "batch_capture": "批量模式",
+  "batch_capture_desc": "相机保持打开以连续拍摄多页，之后再调整裁剪。关闭时，每次拍摄都会先打开裁剪界面再保存。",
+  "scan_mode_single": "单页",
+  "scan_mode_batch": "批量",
   "capture_sound": "拍摄提示音",
   "keep_original": "保留原始图像",
   "keep_original_desc": "保留未裁剪的照片，以便之后从完整原图重新裁剪页面。文档占用的空间大约会翻倍。",
@@ -212,6 +218,7 @@
   "torch_unavailable": "此设备不支持闪光灯。",
   "auto_capture_on": "自动拍摄已开启",
   "auto_capture_off": "自动拍摄已关闭",
+  "auto_capture_needs_detection": "请先开启边缘检测——自动拍摄会等待它识别到的页面。",
   "undo_last_capture": "撤销上一次拍摄",
   "composition_grid": "构图网格",
   "switch_camera": "切换摄像头",
@@ -260,8 +267,8 @@
       }
     }
   },
-  "hold_to_reorder": "{pages} · 长按页面可调整顺序",
-  "@hold_to_reorder": {
+  "hold_to_select": "{pages} · 长按页面可选择",
+  "@hold_to_select": {
     "placeholders": {
       "pages": {
         "type": "String"
@@ -297,6 +304,9 @@
     }
   },
   "exported": "已导出",
+  "saved_to_folder": "已保存到 {folder}",
+  "saved_n_to_folder": "已将 {count} 个保存到 {folder}",
+  "saved_privately": "已保存在 OpenScan 内部，其他应用无法看到。请使用“分享”将其发送到其他位置。",
   "export_failed": "导出失败",
   "no_pages_to_export": "没有可导出的页面。",
   "pdf_not_written": "无法写入 PDF 文件",
@@ -333,13 +343,13 @@
   "share_pdf": "分享 PDF",
   "share_images": "分享图像",
   "demo_scan_title": "将镜头对准页面",
-  "demo_scan_body": "OpenScan 会自动识别页面边缘，并在画面稳定时拍摄；你也可以点击快门手动拍摄。",
+  "demo_scan_body": "OpenScan 会自动识别页面边缘，点击快门即可拍摄。开启“自动拍摄”后，画面稳定时会自动拍摄。",
   "demo_pages_title": "继续扫描更多页面",
   "demo_pages_body": "每次拍摄的页面都会加入同一文档。全部拍完后，点击“完成”。",
   "demo_adjust_title": "校正与优化页面",
   "demo_adjust_body": "如果边缘不准确，可拖动角点进行调整，再选择“自动”“灰度”或“黑白”等滤镜。",
   "demo_organise_title": "调整顺序并添加页面",
-  "demo_organise_body": "长按页面可调整顺序，也可以随时向文档添加更多页面。",
+  "demo_organise_body": "长按页面可选择，在 ⋮ 菜单中调整页面顺序，也可以随时向文档添加更多页面。",
   "demo_export_title": "保存或分享为 PDF",
   "demo_export_body": "选择质量和纸张大小，然后保存到手机或分享出去。",
   "demo_privacy_title": "文档始终保留在手机上",

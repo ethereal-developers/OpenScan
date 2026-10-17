@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -71,6 +70,9 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get select_pages => 'Επιλογή σελίδων';
+
+  @override
+  String get reorder_pages => 'Αναδιάταξη σελίδων';
 
   @override
   String get try_again => 'Δοκιμάστε ξανά';
@@ -237,10 +239,30 @@ class AppLocalizationsEl extends AppLocalizations {
   String get scanning => 'Σάρωση';
 
   @override
+  String get live_detection => 'Ανίχνευση άκρων εγγράφου';
+
+  @override
+  String get live_detection_desc =>
+      'Περιγράφει τη σελίδα στην κάμερα και περικόπτει κάθε λήψη σε αυτήν. Απενεργοποιήστε το για απλές φωτογραφίες που θα περικόψετε αργότερα.';
+
+  @override
   String get auto_capture => 'Αυτόματη λήψη';
 
   @override
   String get auto_capture_desc => 'Λήψη μόλις η σελίδα σταθεροποιηθεί.';
+
+  @override
+  String get batch_capture => 'Λειτουργία δέσμης';
+
+  @override
+  String get batch_capture_desc =>
+      'Η κάμερα μένει ανοιχτή για πολλές σελίδες και διορθώνετε την περικοπή μετά. Ανενεργή, κάθε λήψη ανοίγει την οθόνη περικοπής πριν αποθηκευτεί.';
+
+  @override
+  String get scan_mode_single => 'Μονή';
+
+  @override
+  String get scan_mode_batch => 'Δέσμη';
 
   @override
   String get capture_sound => 'Ήχος λήψης';
@@ -397,6 +419,10 @@ class AppLocalizationsEl extends AppLocalizations {
   String get auto_capture_off => 'Αυτόματη λήψη ανενεργή';
 
   @override
+  String get auto_capture_needs_detection =>
+      'Ενεργοποιήστε πρώτα τον εντοπισμό άκρων — η αυτόματη λήψη περιμένει τη σελίδα που βρίσκει.';
+
+  @override
   String get undo_last_capture => 'Αναίρεση τελευταίας λήψης';
 
   @override
@@ -476,8 +502,8 @@ class AppLocalizationsEl extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · κρατήστε πατημένη μια σελίδα για αναδιάταξη';
+  String hold_to_select(String pages) {
+    return '$pages · κρατήστε πατημένη μια σελίδα για επιλογή';
   }
 
   @override
@@ -510,6 +536,20 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get exported => 'Εξήχθη';
+
+  @override
+  String saved_to_folder(String folder) {
+    return 'Αποθηκεύτηκε στο $folder';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return 'Αποθηκεύτηκαν $count στο $folder';
+  }
+
+  @override
+  String get saved_privately =>
+      'Αποθηκεύτηκε μέσα στο OpenScan, όπου άλλες εφαρμογές δεν το βλέπουν. Χρησιμοποιήστε την Κοινοποίηση για να το στείλετε αλλού.';
 
   @override
   String get export_failed => 'Η εξαγωγή απέτυχε';
@@ -576,7 +616,7 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'Το OpenScan βρίσκει τις άκρες και τραβάει τη φωτογραφία μόνο του όταν κρατάτε το τηλέφωνο σταθερά — ή πατήστε το κλείστρο για να την τραβήξετε εσείς.';
+      'Το OpenScan βρίσκει τις άκρες της σελίδας — πατήστε το κλείστρο για λήψη. Ενεργοποιήστε την Αυτόματη λήψη και θα τραβάει μόνο του όταν κρατάτε σταθερά.';
 
   @override
   String get demo_pages_title => 'Συνεχίστε για κι άλλες σελίδες';
@@ -597,7 +637,7 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'Κρατήστε πατημένη μια σελίδα για να τη μετακινήσετε και προσθέστε κι άλλες όποτε θέλετε.';
+      'Κρατήστε πατημένη μια σελίδα για να την επιλέξετε, αλλάξτε τη σειρά των σελίδων από το μενού ⋮ και προσθέστε κι άλλες όποτε θέλετε.';
 
   @override
   String get demo_export_title => 'Αποθήκευση ή κοινή χρήση ως PDF';

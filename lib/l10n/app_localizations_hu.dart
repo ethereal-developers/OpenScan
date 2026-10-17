@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -71,6 +70,9 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get select_pages => 'Oldalak kijelölése';
+
+  @override
+  String get reorder_pages => 'Oldalak átrendezése';
 
   @override
   String get try_again => 'Próbálja újra';
@@ -237,10 +239,30 @@ class AppLocalizationsHu extends AppLocalizations {
   String get scanning => 'Szkennelés';
 
   @override
+  String get live_detection => 'Dokumentumszélek felismerése';
+
+  @override
+  String get live_detection_desc =>
+      'Kijelöli az oldalt a kameraképen, és minden felvételt arra vág. Kapcsold ki, ha sima fényképeket készítenél, és később vágnád őket.';
+
+  @override
   String get auto_capture => 'Automatikus rögzítés';
 
   @override
   String get auto_capture_desc => 'Rögzítés, amint az oldal megáll.';
+
+  @override
+  String get batch_capture => 'Kötegelt mód';
+
+  @override
+  String get batch_capture_desc =>
+      'A kamera nyitva marad több oldalhoz, a vágást utólag igazíthatja. Kikapcsolva minden felvétel mentés előtt megnyitja a vágás képernyőt.';
+
+  @override
+  String get scan_mode_single => 'Egy';
+
+  @override
+  String get scan_mode_batch => 'Köteg';
 
   @override
   String get capture_sound => 'Rögzítés hangja';
@@ -394,6 +416,10 @@ class AppLocalizationsHu extends AppLocalizations {
   String get auto_capture_off => 'Automatikus rögzítés ki';
 
   @override
+  String get auto_capture_needs_detection =>
+      'Először kapcsolja be a szélkeresést — az automatikus rögzítés az általa talált oldalra vár.';
+
+  @override
   String get undo_last_capture => 'Utolsó rögzítés visszavonása';
 
   @override
@@ -472,8 +498,8 @@ class AppLocalizationsHu extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · tartson nyomva egy oldalt az átrendezéshez';
+  String hold_to_select(String pages) {
+    return '$pages · tartson nyomva egy oldalt a kijelöléshez';
   }
 
   @override
@@ -506,6 +532,20 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get exported => 'Exportálva';
+
+  @override
+  String saved_to_folder(String folder) {
+    return 'Mentve ide: $folder';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return '$count mentve ide: $folder';
+  }
+
+  @override
+  String get saved_privately =>
+      'Az OpenScanen belül mentve, ahol más alkalmazások nem látják. A Megosztással máshová küldheti.';
 
   @override
   String get export_failed => 'Az exportálás sikertelen';
@@ -572,7 +612,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'Az OpenScan megtalálja a széleket, és magától elkészíti a felvételt, ha mozdulatlanul tartja — vagy koppintson az exponálógombra, és elkészítheti maga.';
+      'Az OpenScan megtalálja az oldal széleit — koppintson az exponálógombra a felvételhez. Kapcsolja be az Automatikus rögzítést, és magától fényképez, ha mozdulatlanul tartja.';
 
   @override
   String get demo_pages_title => 'Folytassa a további oldalakkal';
@@ -593,7 +633,7 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'Tartsa nyomva az oldalt az áthelyezéshez, és bármikor adhat hozzá további oldalakat.';
+      'Tartsa nyomva az oldalt a kijelöléshez, rendezze át az oldalakat a ⋮ menüből, és bármikor adhat hozzá további oldalakat.';
 
   @override
   String get demo_export_title => 'Mentés vagy megosztás PDF-ként';

@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -71,6 +70,9 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get select_pages => 'Zaznacz strony';
+
+  @override
+  String get reorder_pages => 'Zmień kolejność stron';
 
   @override
   String get try_again => 'Spróbuj ponownie';
@@ -253,11 +255,31 @@ class AppLocalizationsPl extends AppLocalizations {
   String get scanning => 'Skanowanie';
 
   @override
+  String get live_detection => 'Wykrywaj krawędzie dokumentu';
+
+  @override
+  String get live_detection_desc =>
+      'Obrysowuje stronę w podglądzie aparatu i przycina do niej każde zdjęcie. Wyłącz, aby robić zwykłe zdjęcia i przycinać je później.';
+
+  @override
   String get auto_capture => 'Automatyczne zdjęcie';
 
   @override
   String get auto_capture_desc =>
       'Zrób zdjęcie, gdy tylko strona się ustabilizuje.';
+
+  @override
+  String get batch_capture => 'Tryb seryjny';
+
+  @override
+  String get batch_capture_desc =>
+      'Aparat pozostaje otwarty dla wielu stron, a kadrowanie poprawiasz później. Wyłączony — każde zdjęcie otwiera ekran kadrowania przed zapisaniem.';
+
+  @override
+  String get scan_mode_single => 'Pojedyncze';
+
+  @override
+  String get scan_mode_batch => 'Seria';
 
   @override
   String get capture_sound => 'Dźwięk migawki';
@@ -420,6 +442,10 @@ class AppLocalizationsPl extends AppLocalizations {
   String get auto_capture_off => 'Automatyczne zdjęcie wyłączone';
 
   @override
+  String get auto_capture_needs_detection =>
+      'Najpierw włącz wykrywanie krawędzi — automatyczne zdjęcie czeka na znalezioną stronę.';
+
+  @override
   String get undo_last_capture => 'Cofnij ostatnie zdjęcie';
 
   @override
@@ -508,8 +534,8 @@ class AppLocalizationsPl extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · przytrzymaj stronę, aby zmienić kolejność';
+  String hold_to_select(String pages) {
+    return '$pages · przytrzymaj stronę, aby ją zaznaczyć';
   }
 
   @override
@@ -542,6 +568,20 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get exported => 'Wyeksportowano';
+
+  @override
+  String saved_to_folder(String folder) {
+    return 'Zapisano w $folder';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return 'Zapisano $count w $folder';
+  }
+
+  @override
+  String get saved_privately =>
+      'Zapisano wewnątrz OpenScan, gdzie inne aplikacje go nie widzą. Użyj Udostępnij, aby wysłać go gdzie indziej.';
 
   @override
   String get export_failed => 'Eksport nie powiódł się';
@@ -607,7 +647,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'OpenScan znajduje krawędzie i sam robi zdjęcie, gdy nie poruszasz telefonem — albo dotknij migawki, by zrobić je samodzielnie.';
+      'OpenScan znajduje krawędzie strony — dotknij migawki, by zrobić zdjęcie. Włącz Automatyczne zdjęcie, a zrobi je sam, gdy nie poruszasz telefonem.';
 
   @override
   String get demo_pages_title => 'Rób dalej, by dodać strony';
@@ -628,7 +668,7 @@ class AppLocalizationsPl extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'Przytrzymaj stronę, aby ją przenieść, i dodawaj kolejne strony, kiedy zechcesz.';
+      'Przytrzymaj stronę, aby ją zaznaczyć, zmieniaj kolejność stron z menu ⋮ i dodawaj kolejne strony, kiedy zechcesz.';
 
   @override
   String get demo_export_title => 'Zapisz lub udostępnij jako PDF';

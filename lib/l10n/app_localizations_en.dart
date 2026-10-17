@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -71,6 +70,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get select_pages => 'Select pages';
+
+  @override
+  String get reorder_pages => 'Reorder pages';
 
   @override
   String get try_again => 'Try again';
@@ -237,11 +239,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanning => 'Scanning';
 
   @override
+  String get live_detection => 'Detect document edges';
+
+  @override
+  String get live_detection_desc =>
+      'Outlines the page in the camera and crops each shot to it. Turn off to take plain photos and crop them afterwards.';
+
+  @override
   String get auto_capture => 'Auto-capture';
 
   @override
   String get auto_capture_desc =>
       'Take the shot as soon as the page holds still.';
+
+  @override
+  String get batch_capture => 'Batch mode';
+
+  @override
+  String get batch_capture_desc =>
+      'Keep the camera open for several pages and fix crops afterwards. Off, each shot opens the crop screen before it is saved.';
+
+  @override
+  String get scan_mode_single => 'Single';
+
+  @override
+  String get scan_mode_batch => 'Batch';
 
   @override
   String get capture_sound => 'Capture sound';
@@ -394,6 +416,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get auto_capture_off => 'Auto-capture off';
 
   @override
+  String get auto_capture_needs_detection =>
+      'Turn on edge detection first — auto-capture waits for the page it finds.';
+
+  @override
   String get undo_last_capture => 'Undo last capture';
 
   @override
@@ -472,8 +498,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · hold a page to reorder';
+  String hold_to_select(String pages) {
+    return '$pages · hold a page to select it';
   }
 
   @override
@@ -506,6 +532,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exported => 'Exported';
+
+  @override
+  String saved_to_folder(String folder) {
+    return 'Saved to $folder';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return 'Saved $count to $folder';
+  }
+
+  @override
+  String get saved_privately =>
+      'Saved inside OpenScan, where other apps can\'t see it. Use Share to send it somewhere else.';
 
   @override
   String get export_failed => 'Export failed';
@@ -571,7 +611,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'OpenScan finds the edges and takes the shot by itself when you hold still — or tap the shutter to take it yourself.';
+      'OpenScan finds the edges of the page — tap the shutter to take it. Turn on Auto-capture and it takes the shot by itself when you hold still.';
 
   @override
   String get demo_pages_title => 'Keep going for more pages';
@@ -592,7 +632,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'Hold a page to move it, and add more pages to a document whenever you like.';
+      'Hold a page to select it, reorder pages from the ⋮ menu, and add more pages whenever you like.';
 
   @override
   String get demo_export_title => 'Save or share as PDF';

@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -71,6 +70,9 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get select_pages => 'பக்கங்களைத் தேர்ந்தெடு';
+
+  @override
+  String get reorder_pages => 'பக்கங்களை வரிசைப்படுத்து';
 
   @override
   String get try_again => 'மீண்டும் முயற்சிக்கவும்';
@@ -237,10 +239,30 @@ class AppLocalizationsTa extends AppLocalizations {
   String get scanning => 'ஸ்கேனிங்';
 
   @override
+  String get live_detection => 'ஆவண ஓரங்களைக் கண்டறி';
+
+  @override
+  String get live_detection_desc =>
+      'கேமராவில் பக்கத்தின் வெளிக்கோட்டைக் காட்டி, ஒவ்வொரு படத்தையும் அதற்கேற்ப வெட்டும். சாதாரண படங்களை எடுத்து பின்னர் வெட்ட இதை அணைக்கவும்.';
+
+  @override
   String get auto_capture => 'தானியங்கு படமெடுப்பு';
 
   @override
   String get auto_capture_desc => 'பக்கம் நிலையானதும் உடனே படம் எடுக்கும்.';
+
+  @override
+  String get batch_capture => 'தொகுப்பு முறை';
+
+  @override
+  String get batch_capture_desc =>
+      'பல பக்கங்களுக்கு கேமரா திறந்தே இருக்கும், வெட்டுதலை பின்னர் சரிசெய்யலாம். அணைத்தால், ஒவ்வொரு படமும் சேமிக்கும் முன் வெட்டும் திரையைத் திறக்கும்.';
+
+  @override
+  String get scan_mode_single => 'ஒற்றை';
+
+  @override
+  String get scan_mode_batch => 'தொகுப்பு';
 
   @override
   String get capture_sound => 'படமெடுப்பு ஒலி';
@@ -395,6 +417,10 @@ class AppLocalizationsTa extends AppLocalizations {
   String get auto_capture_off => 'தானியங்கு படமெடுப்பு நிறுத்தத்தில்';
 
   @override
+  String get auto_capture_needs_detection =>
+      'முதலில் விளிம்பு கண்டறிதலை இயக்கவும் — அது கண்டறியும் பக்கத்திற்காக தானியங்கு படமெடுப்பு காத்திருக்கும்.';
+
+  @override
   String get undo_last_capture => 'கடைசிப் படத்தை நீக்கு';
 
   @override
@@ -474,8 +500,8 @@ class AppLocalizationsTa extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · வரிசை மாற்ற ஒரு பக்கத்தை அழுத்திப் பிடிக்கவும்';
+  String hold_to_select(String pages) {
+    return '$pages · தேர்ந்தெடுக்க ஒரு பக்கத்தை அழுத்திப் பிடிக்கவும்';
   }
 
   @override
@@ -490,10 +516,10 @@ class AppLocalizationsTa extends AppLocalizations {
   String get page_size => 'பக்க அளவு';
 
   @override
-  String get page_size_letter => 'Letter';
+  String get page_size_letter => 'லெட்டர்';
 
   @override
-  String get page_size_legal => 'Legal';
+  String get page_size_legal => 'லீகல்';
 
   @override
   String get all_pages => 'அனைத்துப் பக்கங்களும்';
@@ -508,6 +534,20 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get exported => 'ஏற்றுமதி செய்யப்பட்டது';
+
+  @override
+  String saved_to_folder(String folder) {
+    return '$folder இல் சேமிக்கப்பட்டது';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return '$count $folder இல் சேமிக்கப்பட்டன';
+  }
+
+  @override
+  String get saved_privately =>
+      'OpenScan உள்ளே சேமிக்கப்பட்டது, மற்ற செயலிகள் இதைப் பார்க்க முடியாது. வேறு எங்காவது அனுப்ப பகிர் என்பதைப் பயன்படுத்தவும்.';
 
   @override
   String get export_failed => 'ஏற்றுமதி தோல்வியடைந்தது';
@@ -574,7 +614,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'அசையாமல் பிடித்தால் OpenScan விளிம்புகளைக் கண்டறிந்து தானாகவே படம் எடுக்கும் — அல்லது ஷட்டரைத் தட்டி நீங்களே எடுக்கலாம்.';
+      'OpenScan பக்கத்தின் விளிம்புகளைக் கண்டறியும் — படம் எடுக்க ஷட்டரைத் தட்டவும். தானியங்கு படமெடுப்பை இயக்கினால், அசையாமல் பிடிக்கும்போது அதுவே படம் எடுக்கும்.';
 
   @override
   String get demo_pages_title => 'மேலும் பக்கங்களுக்குத் தொடருங்கள்';
@@ -595,7 +635,7 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'ஒரு பக்கத்தை நீண்ட நேரம் அழுத்தி நகர்த்துங்கள், எப்போது வேண்டுமானாலும் புதிய பக்கங்களைச் சேருங்கள்.';
+      'தேர்ந்தெடுக்க ஒரு பக்கத்தை அழுத்திப் பிடிக்கவும், ⋮ மெனுவில் பக்கங்களை வரிசைப்படுத்துங்கள், எப்போது வேண்டுமானாலும் புதிய பக்கங்களைச் சேருங்கள்.';
 
   @override
   String get demo_export_title => 'PDF ஆகச் சேமிக்கவும் அல்லது பகிரவும்';

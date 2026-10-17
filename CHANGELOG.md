@@ -1,3 +1,51 @@
+# v3.1.0
+
+Answers the most common complaints about 3.0: blurry exports, shots that
+took themselves too early, and no way to fix a crop while scanning.
+
+### Added
+
+- Single and Batch capture modes, switched above the shutter or in
+  Settings. Single, the default, sends every shot through the crop screen
+  before it is saved; Batch is the 3.0 flow.
+- A setting and an on-camera switch to turn off live document detection,
+  for a plain camera with corners suggested afterwards on the crop
+  screen (#124).
+- Pages shot with the phone held sideways are stored upright, and the
+  camera's icons turn to show the hold was picked up.
+- The export sheet says which folder an export was saved to, and says
+  plainly when it fell back to the app's private storage.
+- Spanish and Simplified Chinese translations (Chinese contributed by
+  @yk1234f), and the strings other languages were missing. Phones set to
+  Traditional Chinese fall through to their next language rather than
+  getting Simplified.
+
+### Changed
+
+- Pages are captured at the camera's full resolution (12.5MP on a moto
+  g71) instead of 1280x720, and cropped and encoded natively in about half
+  a second. Exports are much sharper; pages are larger, ~0.65MB each.
+- Auto-capture is off by default and shown as a switch in the top bar
+  beside edge detection, with a ring filling round the shutter as it
+  counts down.
+- The capture screen has one guidance line at the top of the viewfinder
+  instead of snackbars over the shutter, a 4:3 viewfinder without dark
+  bands, and in Batch the last page's thumbnail with a count in place of
+  the Done pill.
+- Back from the camera keeps the pages taken, finishing the batch, rather
+  than discarding them. The undo button is gone.
+- Holding a page in a document selects it; reordering moves to
+  ⋮ → Reorder pages.
+- Compiles against Android SDK 37; targetSdk stays 36.
+
+### Fixed
+
+- The crop magnifier no longer slides off screen near the image's edges.
+- Page thumbnails in a document and on the home screen are loaded at the
+  size they are shown rather than at full resolution, so long documents
+  no longer run low-memory phones out of memory (#107). A 60-page
+  document's grid went from a 727MB peak to 260MB on a moto g71.
+
 # v3.0.0
 
 A full rewrite of the scanning pipeline, the camera, and the UI.

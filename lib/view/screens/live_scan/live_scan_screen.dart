@@ -14,13 +14,13 @@ import 'package:openscan/core/theme/os_tokens.dart';
 import 'package:openscan/core/theme/os_typography.dart';
 import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/view/Widgets/live_scan/live_quad_painter.dart';
+import 'package:openscan/view/screens/crop/crop_screen.dart';
 import 'package:openscan/view/screens/live_scan/auto_capture_detector.dart';
+import 'package:openscan/view/screens/live_scan/capture_orientation.dart';
 import 'package:openscan/view/screens/live_scan/live_scan_controller.dart';
 import 'package:openscan/view/screens/live_scan/quad_smoother.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-const _kAutoCapturePrefKey = 'liveScanAutoCaptureEnabled';
 
 /// Height of the two controls flanking the shutter — big enough to sit as
 /// peers of the 70px shutter rather than as afterthoughts beside it.
@@ -31,11 +31,12 @@ const double _kSideControlSize = 60;
 /// (fractional [0,1] portrait-overlay coordinates — see
 /// `rotateQuadForPortrait`), or null if nothing was detected then.
 ///
-/// A page is cropped to [quad] on the way into the document — those are
-/// the edges the user was looking at when the shutter fired, by hand or by
-/// auto-capture — and stored whole when there is no [quad]. Nothing here
-/// opens the crop screen; cropping by hand is a deliberate act afterwards,
-/// from the page's own Crop button.
+/// In batch mode a page is cropped to [quad] on the way into the document
+/// — those are the edges the user was looking at when the shutter fired,
+/// by hand or by auto-capture — and stored whole when there is no [quad];
+/// fixing a crop is a deliberate act afterwards, from the page's own Crop
+/// button. In single mode the shot goes through the crop screen first,
+/// starting from that same [quad], and arrives already cropped.
 ///
 /// [prepared] marks a page that has already been through the storage
 /// pipeline here in the session — cropped to its boundary, downscaled and
@@ -49,6 +50,10 @@ const double _kSideControlSize = 60;
 /// capture with its [quad] intact, and the document processes it the old
 /// way.
 ///
+/// [quarterTurns] stands a raw capture upright — clockwise turns applied
+/// after the crop, for a page shot with the phone on its side. A prepared
+/// page has had it applied already.
+///
 /// [imported] marks a page picked from the gallery rather than shot here.
 /// An imported picture is already whatever the user wants it to be — it
 /// was never framed through this viewfinder — so it goes straight into
@@ -59,6 +64,7 @@ class LiveCapture {
   final bool imported;
   final bool prepared;
   final File? original;
+  final int quarterTurns;
 
   const LiveCapture({
     required this.file,
@@ -66,6 +72,7 @@ class LiveCapture {
     this.imported = false,
     this.prepared = false,
     this.original,
+    this.quarterTurns = 0,
   });
 }
 
@@ -102,6 +109,14 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   final LiveScanController _liveScanController = LiveScanController();
   final QuadSmoother _quadSmoother = QuadSmoother();
   late final AutoCaptureDetector _autoCaptureDetector;
+  final CaptureOrientation _orientation = CaptureOrientation();
+
+  /// The camera's icons, turned to stay upright as the phone turns — the
+  /// cue that a sideways hold has been noticed, and the page will be too.
+  /// Accumulated rather than derived from [CaptureOrientation.deviceTurns]
+  /// so that going from 3 to 0 animates a quarter turn, not three.
+  double _iconTurns = 0;
+  int _lastDeviceTurns = 0;
 
   CameraController? _cameraController;
   Future<void>? _initializeFuture;
@@ -111,6 +126,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   // the shutter's place: one page is finished before the next is framed,
   // so a session's pages are ready by the time the user is.
   bool _capturing = false;
+
+  /// Back was pressed while a page was still being processed: leave, with
+  /// it, once it is ready (see [_onBackWithPages]).
+  bool _leaveWhenReady = false;
   bool _permissionDenied = false;
   bool _cameraError = false;
 
@@ -126,8 +145,27 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   Directory? _stagingDir;
   final FileOperations _fileOperations = FileOperations();
 
-  bool _autoCaptureEnabled = true;
+  /// Whether the camera looks for the page at all (see
+  /// [AppSettings.liveDetection]), switched from the top bar's ✨ button.
+  /// Off, no frame reaches the detector, so no outline, no auto-capture,
+  /// and every shot is stored whole for cropping afterwards.
+  bool _detectionEnabled = true;
+
+  /// Whether the detection worker has been spawned. Not until detection is
+  /// first wanted: a session that never turns it on never pays for it.
+  bool _detectorStarted = false;
+  bool _autoCaptureEnabled = false;
   bool _autoCaptureImminent = false;
+
+  /// A passing message in the guidance line — what a control just did, or
+  /// why it couldn't — cleared by [_noticeTimer].
+  String? _notice;
+  Timer? _noticeTimer;
+
+  /// Batch keeps the camera open for page after page; single (off) sends
+  /// each shot through the crop screen and ends the session with it. See
+  /// [AppSettings.batchCapture].
+  bool _batchMode = AppSettings.instance.batchCapture;
   bool _torchOn = false;
 
   /// True while the scene is too dark for detection to be reliable. Derived
@@ -195,15 +233,26 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
     _liveScanController.latestQuad.addListener(_onLatestQuadChanged);
     _quadSmoother.smoothedQuad.addListener(_onSmoothedQuadChanged);
+    _orientation.deviceTurns.addListener(_onDeviceTurned);
+    _orientation.start();
     _initializeFuture = _initialize();
   }
 
+  void _onDeviceTurned() {
+    final turns = _orientation.deviceTurns.value;
+    // Shortest way round, in quarter turns: -1, 1 or 2.
+    final delta = (turns - _lastDeviceTurns + 5) % 4 - 1;
+    _lastDeviceTurns = turns;
+    // Icons turn against the phone to stay level with the world.
+    if (mounted) setState(() => _iconTurns -= delta / 4);
+  }
+
   Future<void> _initialize() async {
-    final prefs = await SharedPreferences.getInstance();
-    _autoCaptureEnabled = prefs.getBool(_kAutoCapturePrefKey) ?? true;
-    // Same preference the Settings screen writes — the camera's long-press
-    // and the settings row are two doors onto one switch.
-    _autoCaptureDetector.enabled = _autoCaptureEnabled;
+    _detectionEnabled = AppSettings.instance.liveDetection;
+    // Same setting the Settings screen writes — the camera's switch and
+    // the settings row are two doors onto one preference.
+    _autoCaptureEnabled = AppSettings.instance.autoCapture;
+    _autoCaptureDetector.enabled = _autoCaptureEnabled && _detectionEnabled;
 
     if (!await Permission.camera.isGranted) {
       final status = await Permission.camera.request();
@@ -213,7 +262,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       }
     }
 
-    await _liveScanController.start();
+    // Without detection the worker isolate would never be sent a frame.
+    if (_detectionEnabled) await _startDetector();
     await _initializeCamera();
   }
 
@@ -228,9 +278,15 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
 
     for (int attempt = 0; attempt < 2; attempt++) {
+      // The preset sizes the still as well as the preview, so anything
+      // short of max caps every page at the preset: `high` meant 0.9MP
+      // 16:9 photos. Max is the sensor's full 4:3 frame; the detection
+      // stream comes along at a size CameraX can sustain beside it
+      // (1600x1200 at ~27fps on a moto g71), and is scaled down to
+      // kLiveDetectionMaxDimension before detection anyway.
       final controller = CameraController(
         camera,
-        ResolutionPreset.high,
+        ResolutionPreset.max,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.yuv420,
       );
@@ -287,7 +343,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       targetLongEdge: kLiveDetectionMaxDimension,
     );
     if (gray == null) return;
+    // The low-light warning still applies to a plain photo, so the frame
+    // is sampled for it either way; only detection is skipped.
     _updateLowLight(gray);
+    if (!_detectionEnabled) return;
 
     final scale = kLiveDetectionMaxDimension /
         (image.width > image.height ? image.width : image.height);
@@ -317,7 +376,16 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     }
   }
 
+  Future<void> _startDetector() async {
+    if (_detectorStarted) return;
+    _detectorStarted = true;
+    await _liveScanController.start();
+  }
+
   void _onLatestQuadChanged() {
+    // A frame already in the worker when detection was switched off still
+    // reports back; it mustn't put the outline back up.
+    if (!_detectionEnabled) return;
     // Raw per-frame detections are noisy (see quad_smoother.dart's doc
     // comment) — route them through QuadSmoother first; the painter and
     // AutoCaptureDetector both consume its smoothed output instead of this
@@ -404,6 +472,12 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     final quadAtCapture = _lensDirection == CameraLensDirection.back
         ? _quadSmoother.smoothedQuad.value
         : null;
+    // Read with the quad, as the shutter fires, for the same reason. Back
+    // camera only: the front one is mirrored, so its turns run the other
+    // way, and a selfie of a page is rare enough to leave as shot.
+    final turnsAtCapture = _lensDirection == CameraLensDirection.back
+        ? _orientation.uprightTurns
+        : 0;
     setState(() {
       _capturing = true;
       // With a page on screen the capture is acknowledged inside that
@@ -436,14 +510,22 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       if (!mounted) {
         // Nothing left to process into, but the photo is on disk and the
         // session may still be read by whoever popped this route.
-        _capturedFiles.add(LiveCapture(file: File(shot.path), quad: quadAtCapture));
+        _capturedFiles.add(LiveCapture(
+            file: File(shot.path),
+            quad: quadAtCapture,
+            quarterTurns: turnsAtCapture));
+        return;
+      }
+      if (!_batchMode) {
+        await _reviewCapture(File(shot.path), quadAtCapture, turnsAtCapture);
         return;
       }
       // The feed comes back before the page is processed: only the shutter
       // waits on the encode, so the viewfinder is live and detecting again
       // while the last page finishes in the background.
       await controller.startImageStream(_onFrame);
-      _capturedFiles.add(await _prepareCapture(File(shot.path), quadAtCapture));
+      _capturedFiles.add(await _prepareCapture(
+          File(shot.path), quadAtCapture, turnsAtCapture));
     } catch (e) {
       debugPrint('Capture failed: $e');
       if (!mounted) return;
@@ -453,6 +535,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       );
     } finally {
       if (mounted) setState(() => _capturing = false);
+      if (_leaveWhenReady && mounted) {
+        _leaveWhenReady = false;
+        _onDonePressed();
+      }
     }
   }
 
@@ -470,7 +556,8 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// A capture that could not be processed — unreadable bytes, a full
   /// disk — is returned raw, with its quad intact, and the document
   /// processes it the way it always did.
-  Future<LiveCapture> _prepareCapture(File shot, Quad? quad) async {
+  Future<LiveCapture> _prepareCapture(
+      File shot, Quad? quad, int quarterTurns) async {
     try {
       final dir = _stagingDir ??= await _fileOperations.captureDirectory();
       final written = await _fileOperations.writeCapture(
@@ -479,6 +566,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         stamp: DateTime.now().microsecondsSinceEpoch.toString(),
         quad: quad,
         keepOriginal: AppSettings.instance.keepOriginal,
+        quarterTurns: quarterTurns,
       );
       if (written != null) {
         final original = written.originalPath;
@@ -492,7 +580,78 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     } catch (e) {
       debugPrint('Could not process capture ${shot.path}: $e');
     }
-    return LiveCapture(file: shot, quad: quad);
+    return LiveCapture(file: shot, quad: quad, quarterTurns: quarterTurns);
+  }
+
+  /// Single mode's second half: the shot goes to the crop screen, its
+  /// corners starting where the viewfinder had them, and the session ends
+  /// with the page the user settles on there. Backing out of the crop
+  /// screen is a retake — the shot is dropped and the camera picks up
+  /// where it left off. A shot taken with the phone on its side opens
+  /// already turned upright, by [quarterTurns].
+  ///
+  /// The feed stays stopped while the crop screen is up, so nothing is
+  /// detected (or auto-captured) behind it.
+  Future<void> _reviewCapture(File shot, Quad? quad, int quarterTurns) async {
+    final dir = _stagingDir ??= await _fileOperations.captureDirectory();
+    final stamp = DateTime.now().microsecondsSinceEpoch.toString();
+    // The crop screen writes in place, so it gets a copy: the shot itself
+    // is what the kept original is made from.
+    final working = await shot.copy('${dir.path}/review_$stamp.jpg');
+    if (!mounted) return;
+    final cropped = await imageCropper(context, working,
+        initialQuad: quad, initialTurns: quarterTurns);
+    if (!mounted) return;
+
+    if (cropped == null) {
+      if (working.existsSync()) working.deleteSync();
+      // A retake starts the auto-capture wait over, as a capture does: the
+      // cooldown from the shot just dropped ran out while the crop screen
+      // was up, and the page is still in frame, so without this it fires
+      // again the moment the camera is back.
+      _autoCaptureDetector.notifyCaptured();
+      _quadSmoother.reset();
+      // A pause while the crop screen was up already replaced the
+      // controller, and the new one opened with its feed running.
+      final controller = _cameraController;
+      if (controller != null &&
+          controller.value.isInitialized &&
+          !controller.value.isStreamingImages) {
+        await controller.startImageStream(_onFrame);
+      }
+      return;
+    }
+
+    LiveCapture page = LiveCapture(file: cropped);
+    try {
+      final written = await _fileOperations.writeReviewedCapture(
+        cropped: cropped,
+        shot: shot,
+        dir: dir.path,
+        stamp: stamp,
+        keepOriginal: AppSettings.instance.keepOriginal,
+        originalTurns: quarterTurns,
+      );
+      if (written != null) {
+        final original = written.originalPath;
+        page = LiveCapture(
+          file: File(written.pagePath),
+          original: original == null ? null : File(original),
+          prepared: true,
+        );
+      }
+    } catch (e) {
+      // The cropped file is still a good page; the document stores it the
+      // ordinary way, just without an original to re-crop from.
+      debugPrint('Could not stage reviewed capture ${shot.path}: $e');
+    }
+    if (mounted) Navigator.pop(context, [page]);
+  }
+
+  Future<void> _setBatchMode(bool value) async {
+    if (value == _batchMode) return;
+    setState(() => _batchMode = value);
+    await AppSettings.instance.setBatchCapture(value);
   }
 
   void _onDonePressed() {
@@ -502,9 +661,17 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
-  void _onUndoLastPressed() {
-    if (_capturedFiles.isEmpty) return;
-    setState(() => _capturedFiles.removeLast());
+  /// Back, with pages taken: they are kept, not thrown away. Leaving the
+  /// camera is how people say they are done at least as often as the
+  /// thumbnail is — a batch dropped because Back was the button to hand
+  /// is a scan the user has to do again. A page still being processed is
+  /// waited for, so even a single shot just taken makes it in.
+  void _onBackWithPages() {
+    if (_capturing) {
+      _leaveWhenReady = true;
+      return;
+    }
+    _onDonePressed();
   }
 
   /// Imports pages from the gallery without leaving the session: picked
@@ -514,6 +681,14 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     try {
       final picked = await FileOperations().openGallery();
       if (picked.isEmpty || !mounted) return;
+      // Single mode is one trip through the camera: whatever was picked
+      // is what this session adds.
+      if (!_batchMode) {
+        Navigator.pop(context, [
+          for (final file in picked) LiveCapture(file: file, imported: true)
+        ]);
+        return;
+      }
       setState(() {
         for (final file in picked) {
           _capturedFiles.add(LiveCapture(file: file, imported: true));
@@ -530,7 +705,57 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     }
   }
 
+  /// The ✨ button: edge detection, and with it the outline, auto-capture
+  /// and cropping each shot to the page. One switch for "the camera finds
+  /// the page for me", so turning it off leaves a plain camera rather than
+  /// one that still outlines a page it has been told not to look for.
+  Future<void> _toggleDetection() async {
+    final enabled = !_detectionEnabled;
+    setState(() {
+      _detectionEnabled = enabled;
+      if (!enabled) _autoCaptureImminent = false;
+    });
+    _autoCaptureDetector.enabled = enabled && _autoCaptureEnabled;
+    if (enabled) {
+      unawaited(_startDetector());
+    } else {
+      _quadSmoother.reset();
+    }
+    await AppSettings.instance.setLiveDetection(enabled);
+  }
+
+  /// The top bar's auto-capture button: toggles it and says which way it
+  /// went, since an icon's highlight alone is easy to misread on a
+  /// viewfinder — or explains why it can't, with detection off. Said in
+  /// the viewfinder's guidance line, not a snackbar: one would cover the
+  /// shutter, and with it the countdown the user has just turned on.
+  Future<void> _onAutoCapturePressed() async {
+    final l10n = AppLocalizations.of(context)!;
+    if (!_detectionEnabled) {
+      _showNotice(l10n.auto_capture_needs_detection,
+          const Duration(seconds: 3));
+      return;
+    }
+    await _toggleAutoCapture();
+    if (!mounted) return;
+    _showNotice(
+      _autoCaptureEnabled ? l10n.auto_capture_on : l10n.auto_capture_off,
+      const Duration(milliseconds: 1500),
+    );
+  }
+
+  /// Puts [message] in the guidance line for [duration], ahead of
+  /// everything but the low-light warning.
+  void _showNotice(String message, Duration duration) {
+    _noticeTimer?.cancel();
+    setState(() => _notice = message);
+    _noticeTimer = Timer(duration, () {
+      if (mounted) setState(() => _notice = null);
+    });
+  }
+
   Future<void> _toggleAutoCapture() async {
+    if (!_detectionEnabled) return;
     setState(() => _autoCaptureEnabled = !_autoCaptureEnabled);
     _autoCaptureDetector.enabled = _autoCaptureEnabled;
     await AppSettings.instance.setAutoCapture(_autoCaptureEnabled);
@@ -692,9 +917,12 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   void dispose() {
     _focusHideTimer?.cancel();
     _zoomThrottleTimer?.cancel();
+    _noticeTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _liveScanController.latestQuad.removeListener(_onLatestQuadChanged);
     _quadSmoother.smoothedQuad.removeListener(_onSmoothedQuadChanged);
+    _orientation.deviceTurns.removeListener(_onDeviceTurned);
+    _orientation.dispose();
     // _onCapturePressed already stops the stream before takePicture(); a
     // second stopImageStream() call throws CameraException since the
     // plugin doesn't allow stopping an already-stopped stream.
@@ -722,37 +950,44 @@ class _LiveScanScreenState extends State<LiveScanScreen>
         systemNavigationBarColor: OSColors.chromeBackground,
         systemNavigationBarIconBrightness: Brightness.light,
       ),
-      child: Scaffold(
-        // The viewfinder is fixed-dark in both app themes: it is already
-        // the darkest, highest-contrast context there is.
-        backgroundColor: OSColors.chromeBackground,
-        body: _permissionDenied
-            ? _permissionDeniedState(accent, onAccent)
-            : _cameraError
-                ? _buildMessage(l10n.couldnt_start_camera)
-                : Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // The viewfinder is a bounded box with the controls
-                      // laid out around it, rather than one full-bleed
-                      // feed with buttons floating on top: nothing the
-                      // camera sees ends up underneath a button.
-                      SafeArea(
-                        child: Column(
-                          children: [
-                            _topChrome(accent),
-                            Expanded(child: _previewBox(accent, onAccent)),
-                            _bottomChrome(accent, onAccent),
-                          ],
+      child: PopScope(
+        // With nothing taken, Back just leaves; with pages, it finishes.
+        canPop: _capturedFiles.isEmpty && !_capturing,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _onBackWithPages();
+        },
+        child: Scaffold(
+          // The viewfinder is fixed-dark in both app themes: it is already
+          // the darkest, highest-contrast context there is.
+          backgroundColor: OSColors.chromeBackground,
+          body: _permissionDenied
+              ? _permissionDeniedState(accent, onAccent)
+              : _cameraError
+                  ? _buildMessage(l10n.couldnt_start_camera)
+                  : Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // The viewfinder is a bounded box with the controls
+                        // laid out around it, rather than one full-bleed
+                        // feed with buttons floating on top: nothing the
+                        // camera sees ends up underneath a button.
+                        SafeArea(
+                          child: Column(
+                            children: [
+                              _topChrome(accent),
+                              Expanded(child: _previewBox(accent, onAccent)),
+                              _bottomChrome(accent, onAccent),
+                            ],
+                          ),
                         ),
-                      ),
-                      if (_flashing)
-                        IgnorePointer(
-                          child: Container(
-                              color: Colors.white.withValues(alpha: 0.85)),
-                        ),
-                    ],
-                  ),
+                        if (_flashing)
+                          IgnorePointer(
+                            child: Container(
+                                color: Colors.white.withValues(alpha: 0.85)),
+                          ),
+                      ],
+                    ),
+        ),
       ),
     );
   }
@@ -762,17 +997,34 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   /// The viewfinder itself: a rounded, bounded box that owns the feed, the
   /// detection overlay, the status line and the zoom rail — and nothing
   /// else. Every button lives outside it.
+  ///
+  /// Once the camera is open the box takes the preview's own shape, so its
+  /// rounded frame is the edge of what the camera sees rather than a taller
+  /// box with dark bands inside it: the 4:3 full-resolution feed doesn't
+  /// fill a phone-shaped box, and the bands read as part of the picture.
   Widget _previewBox(Color accent, Color onAccent) {
+    final controller = _cameraController;
+    Widget box = ClipRRect(
+      borderRadius: BorderRadius.circular(OSRadius.card),
+      child: Container(
+        color: const Color(0xFF0A0908),
+        child: _preview(accent, onAccent),
+      ),
+    );
+    if (controller != null && controller.value.isInitialized) {
+      // The plugin reports the sensor's landscape ratio; the UI is
+      // portrait.
+      box = Center(
+        child: AspectRatio(
+          aspectRatio: 1 / controller.value.aspectRatio,
+          child: box,
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: OSSpace.md, vertical: OSSpace.xs),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(OSRadius.card),
-        child: Container(
-          color: const Color(0xFF0A0908),
-          child: _preview(accent, onAccent),
-        ),
-      ),
+      child: box,
     );
   }
 
@@ -885,10 +1137,14 @@ class _LiveScanScreenState extends State<LiveScanScreen>
 
   // <========================= Chrome =========================>
 
-  /// Every camera control on one row above the viewfinder: torch, the
-  /// auto-capture toggle, the composition grid, the lens switch, and undo
-  /// once there is something to undo. Nothing hides behind a caret — the
-  /// row is short enough to show all of it at once.
+  /// Every camera control on one row above the viewfinder: torch, edge
+  /// detection and auto-capture, the composition grid and the lens switch.
+  /// Nothing hides behind a caret — the row is short enough to show all of
+  /// it at once.
+  ///
+  /// Auto-capture sits beside edge detection because it depends on it:
+  /// it waits for the page detection finds. Apart, one switch made the
+  /// other appear and disappear at the far end of the screen.
   Widget _topChrome(Color accent) {
     final l10n = AppLocalizations.of(context)!;
     final canTorch = _cameraController != null &&
@@ -899,6 +1155,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       child: Row(
         children: [
           _ChromeButton(
+            turns: _iconTurns,
             icon: _torchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
             tooltip: _torchOn ? l10n.torch_on : l10n.torch_off,
             // The torch is the fix for the low-light warning, so it
@@ -909,23 +1166,28 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           ),
           const SizedBox(width: OSSpace.xs),
           _ChromeButton(
+            turns: _iconTurns,
             icon: Icons.auto_awesome_rounded,
+            tooltip: l10n.live_detection,
+            highlight: _detectionEnabled,
+            onPressed: _toggleDetection,
+          ),
+          const SizedBox(width: OSSpace.xs),
+          _ChromeButton(
+            turns: _iconTurns,
+            icon: Icons.motion_photos_auto_rounded,
             tooltip: _autoCaptureEnabled
                 ? l10n.auto_capture_on
                 : l10n.auto_capture_off,
-            highlight: _autoCaptureEnabled,
-            onPressed: _toggleAutoCapture,
+            highlight: _detectionEnabled && _autoCaptureEnabled,
+            // Still tappable with detection off — greyed, and it says why —
+            // rather than dead, which would leave the user guessing.
+            dimmed: !_detectionEnabled,
+            onPressed: _onAutoCapturePressed,
           ),
           const Spacer(),
-          if (_capturedFiles.isNotEmpty) ...[
-            _ChromeButton(
-              icon: Icons.undo_rounded,
-              tooltip: l10n.undo_last_capture,
-              onPressed: _onUndoLastPressed,
-            ),
-            const SizedBox(width: OSSpace.xs),
-          ],
           _ChromeButton(
+            turns: _iconTurns,
             icon: Icons.grid_3x3_rounded,
             tooltip: l10n.composition_grid,
             highlight: _gridVisible,
@@ -933,6 +1195,7 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           ),
           const SizedBox(width: OSSpace.xs),
           _ChromeButton(
+            turns: _iconTurns,
             icon: Icons.cameraswitch_rounded,
             tooltip: l10n.switch_camera,
             onPressed: (_cameraController != null && Globals.cameras.length > 1)
@@ -944,86 +1207,111 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
-  /// The detection state, spelled out in words as well as colour: the quad
-  /// turning accent is never the only signal that a page was found.
+  /// The one line of guidance over the viewfinder, in words as well as
+  /// colour: the quad turning accent is never the only signal that a page
+  /// was found. One place, one message at a time — the most pressing
+  /// first: too dark to scan, then a passing notice from a control the
+  /// user just touched, then hold still (auto-capture is about to fire),
+  /// then whether a page has been found.
   Widget _statusOverlay(Color accent, Color onAccent) {
     final l10n = AppLocalizations.of(context)!;
+    Widget pill({
+      required String text,
+      required Color background,
+      required Color ink,
+      IconData? icon,
+      Color? border,
+    }) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: OSSpace.md),
+        padding: const EdgeInsets.symmetric(
+            horizontal: OSSpace.sm, vertical: OSSpace.xxs + 2),
+        decoration: BoxDecoration(
+          color: background,
+          border: border == null ? null : Border.all(color: border),
+          borderRadius: BorderRadius.circular(OSRadius.sheet),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: ink),
+              const SizedBox(width: OSSpace.xxs + 1),
+            ],
+            Flexible(
+              child: Text(
+                text,
+                textAlign: TextAlign.center,
+                style: OSTypography.caption
+                    .copyWith(color: ink, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return IgnorePointer(
       child: Padding(
         padding: const EdgeInsets.only(top: OSSpace.sm),
         child: Align(
           alignment: Alignment.topCenter,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_lowLight)
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: OSSpace.md),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: OSSpace.sm, vertical: OSSpace.xs),
-                  decoration: BoxDecoration(
-                    color: context.os.warning.withValues(alpha: 0.16),
-                    border: Border.all(color: context.os.warning),
-                    borderRadius: BorderRadius.circular(OSRadius.card),
+          child: ValueListenableBuilder(
+            valueListenable: _quadSmoother.smoothedQuad,
+            builder: (context, quad, _) {
+              if (_lowLight) {
+                return pill(
+                  text: l10n.low_light,
+                  background: context.os.warning.withValues(alpha: 0.16),
+                  border: context.os.warning,
+                  ink: context.os.warning,
+                );
+              }
+              final notice = _notice;
+              if (notice != null) {
+                return pill(
+                  text: notice,
+                  background: OSColors.chromeScrim,
+                  ink: OSColors.chromeOnBackground,
+                );
+              }
+              if (!_detectionEnabled) return const SizedBox.shrink();
+              if (_autoCaptureImminent) {
+                return pill(
+                  text: l10n.hold_still,
+                  icon: Icons.motion_photos_auto_rounded,
+                  background: accent,
+                  ink: onAccent,
+                );
+              }
+              if (quad == null) {
+                return Text(
+                  l10n.looking_for_document,
+                  style: OSTypography.caption.copyWith(
+                    color: OSColors.chromeOnBackground,
+                    fontWeight: FontWeight.w600,
+                    shadows: const [
+                      Shadow(blurRadius: 4, color: Color(0x990A0908)),
+                    ],
                   ),
-                  child: Text(
-                    l10n.low_light,
-                    style: OSTypography.caption.copyWith(
-                      color: context.os.warning,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: OSSpace.xs),
-              ValueListenableBuilder(
-                valueListenable: _quadSmoother.smoothedQuad,
-                builder: (context, quad, _) {
-                  if (quad == null) {
-                    return Text(
-                      l10n.looking_for_document,
-                      style: OSTypography.caption.copyWith(
-                        color: OSColors.chromeOnBackground,
-                        fontWeight: FontWeight.w600,
-                        shadows: const [
-                          Shadow(blurRadius: 4, color: Color(0x990A0908)),
-                        ],
-                      ),
-                    );
-                  }
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: OSSpace.sm, vertical: OSSpace.xxs + 2),
-                    decoration: BoxDecoration(
-                      color: accent,
-                      borderRadius: BorderRadius.circular(OSRadius.sheet),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_rounded, size: 14, color: onAccent),
-                        const SizedBox(width: OSSpace.xxs + 1),
-                        Text(
-                          l10n.document_detected,
-                          style: OSTypography.caption.copyWith(
-                            color: onAccent,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
+                );
+              }
+              return pill(
+                text: l10n.document_detected,
+                icon: Icons.check_rounded,
+                background: accent,
+                ink: onAccent,
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  /// The one row of controls under the viewfinder: gallery, shutter and
-  /// done, all on the same centre line and evenly spaced, with the
-  /// auto-capture state spelled out above them.
+  /// The controls under the viewfinder: the scan mode, then gallery,
+  /// shutter and the batch's pages, all on the same centre line and evenly
+  /// spaced.
   Widget _bottomChrome(Color accent, Color onAccent) {
     final l10n = AppLocalizations.of(context)!;
     return Padding(
@@ -1032,27 +1320,14 @@ class _LiveScanScreenState extends State<LiveScanScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            _autoCaptureImminent
-                ? l10n.hold_still
-                : _autoCaptureEnabled
-                    ? l10n.auto_on
-                    : l10n.auto_off,
-            style: OSTypography.caption.copyWith(
-              fontWeight: FontWeight.w700,
-              color: _autoCaptureImminent
-                  ? OSColors.chromeOnBackground
-                  : _autoCaptureEnabled
-                      ? accent
-                      : OSColors.chromeMuted,
-            ),
-          ),
-          const SizedBox(height: OSSpace.sm),
+          _modeSwitch(accent, onAccent),
+          const SizedBox(height: OSSpace.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _ChromeButton(
+                turns: _iconTurns,
                 icon: Icons.photo_library_rounded,
                 tooltip: l10n.import_from_gallery_short,
                 size: _kSideControlSize,
@@ -1068,40 +1343,134 @@ class _LiveScanScreenState extends State<LiveScanScreen>
     );
   }
 
-  /// The session's exit, carrying its page count: nothing captured yet
-  /// means nothing to finish, so it sits inert rather than disappearing
-  /// and shifting the row around the shutter. Sized to match the gallery
-  /// button on the other side of the shutter.
+  /// Single | Batch, the way a phone camera switches between photo and
+  /// video: on the screen, right above the shutter, where the choice
+  /// matters. Locked once a batch has pages in it — switching to single
+  /// then would strand them.
+  Widget _modeSwitch(Color accent, Color onAccent) {
+    final l10n = AppLocalizations.of(context)!;
+    final locked = _capturing || _capturedFiles.isNotEmpty;
+    Widget option(String label, bool batch) {
+      final selected = _batchMode == batch;
+      return Material(
+        color: selected ? accent : Colors.transparent,
+        borderRadius: BorderRadius.circular(OSRadius.pill),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: locked ? null : () => _setBatchMode(batch),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: OSSpace.md, vertical: OSSpace.xs),
+            child: Text(
+              label,
+              style: OSTypography.caption.copyWith(
+                fontWeight: FontWeight.w700,
+                color: selected
+                    ? onAccent
+                    : locked
+                        ? OSColors.chromeMuted
+                        : OSColors.chromeOnBackground,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(OSSpace.xxs),
+      decoration: BoxDecoration(
+        color: OSColors.chromeScrim,
+        borderRadius: BorderRadius.circular(OSRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          option(l10n.scan_mode_single, false),
+          option(l10n.scan_mode_batch, true),
+        ],
+      ),
+    );
+  }
+
+  /// The session's exit, in batch mode: the last page taken, with the
+  /// count on it, the way scanner apps show a stack of pages — proof each
+  /// shot landed, and the thing to tap when the batch is done. Empty until
+  /// there is a page, and in single mode, which ends through the crop
+  /// screen and has nothing to finish here; the slot keeps its width
+  /// either way, so the shutter never moves.
   Widget _doneButton(Color accent, Color onAccent) {
     final l10n = AppLocalizations.of(context)!;
     final count = _capturedFiles.length;
+    const slot = SizedBox(width: _kSideControlSize, height: _kSideControlSize);
+    if (!_batchMode || count == 0) return slot;
+
     // Inert while a page is still being processed: the shot in flight is
     // not in the list yet, and leaving on it would drop it.
-    final enabled = count > 0 && !_capturing;
-    final ink = enabled ? onAccent : OSColors.chromeMuted;
-    return Material(
-      color: enabled ? accent : OSColors.chromeScrim,
-      borderRadius: BorderRadius.circular(OSRadius.pill),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: enabled ? _onDonePressed : null,
-        child: SizedBox(
-          height: _kSideControlSize,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: OSSpace.md),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  enabled ? l10n.done_count(count) : l10n.done,
-                  style: OSTypography.label.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: ink,
+    final enabled = !_capturing;
+    return Semantics(
+      button: true,
+      label: l10n.done_count(count),
+      child: Tooltip(
+        message: l10n.done_count(count),
+        child: GestureDetector(
+          onTap: enabled ? _onDonePressed : null,
+          child: AnimatedRotation(
+            turns: _iconTurns,
+            duration: OSMotion.standard,
+            curve: OSMotion.emphasizedDecel,
+            child: SizedBox(
+              width: _kSideControlSize,
+              height: _kSideControlSize,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(OSRadius.card),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(OSRadius.card - 2),
+                        child: Opacity(
+                          opacity: enabled ? 1 : 0.5,
+                          child: Image.file(
+                            _capturedFiles.last.file,
+                            key: ValueKey(_capturedFiles.last.file.path),
+                            fit: BoxFit.cover,
+                            cacheWidth: 180,
+                            errorBuilder: (_, __, ___) =>
+                                const ColoredBox(color: OSColors.chromeScrim),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: OSSpace.xxs),
-                Icon(Icons.check_rounded, size: 20, color: ink),
-              ],
+                  Positioned(
+                    top: -6,
+                    right: -6,
+                    child: Container(
+                      constraints:
+                          const BoxConstraints(minWidth: 22, minHeight: 22),
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(OSRadius.pill),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: OSTypography.caption.copyWith(
+                          color: onAccent,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1110,7 +1479,9 @@ class _LiveScanScreenState extends State<LiveScanScreen>
   }
 
   /// The shutter. Its ring is the auto-capture state: accent when a page is
-  /// locked, pulsing when a capture is about to fire on its own.
+  /// locked, and filling up while a capture is about to fire on its own —
+  /// the countdown sits on the button it replaces, where tapping takes the
+  /// shot now and long-pressing turns auto-capture off.
   Widget _shutter(Color accent) {
     if (_capturing) {
       return SizedBox(
@@ -1132,7 +1503,10 @@ class _LiveScanScreenState extends State<LiveScanScreen>
           alignment: Alignment.center,
           children: [
             if (_autoCaptureImminent)
-              _PulseRing(color: accent),
+              _CountdownRing(
+                color: accent,
+                duration: AutoCaptureDetector.kMinStableDuration,
+              ),
             GestureDetector(
               onTap: _cameraController != null ? _onCapturePressed : null,
               child: Container(
@@ -1298,6 +1672,8 @@ class _ChromeButton extends StatelessWidget {
     this.highlightColor,
     this.size = 48,
     this.iconSize = 26,
+    this.turns = 0,
+    this.dimmed = false,
   });
 
   final IconData icon;
@@ -1308,10 +1684,18 @@ class _ChromeButton extends StatelessWidget {
   final double size;
   final double iconSize;
 
+  /// How far the icon is turned, in full turns — the camera turns its
+  /// icons to stay upright as the phone does.
+  final double turns;
+
+  /// Drawn as unavailable while staying tappable, for a control that can
+  /// explain why it doesn't apply rather than just ignoring the tap.
+  final bool dimmed;
+
   @override
   Widget build(BuildContext context) {
     final active = highlightColor ?? Theme.of(context).colorScheme.primary;
-    final enabled = onPressed != null;
+    final enabled = onPressed != null && !dimmed;
     final button = Material(
       color: highlight ? active : OSColors.chromeScrim,
       shape: const CircleBorder(),
@@ -1321,14 +1705,19 @@ class _ChromeButton extends StatelessWidget {
         child: SizedBox(
           height: size,
           width: size,
-          child: Icon(
-            icon,
-            size: iconSize,
-            color: highlight
-                ? Theme.of(context).colorScheme.onPrimary
-                : enabled
-                    ? OSColors.chromeOnBackground
-                    : OSColors.chromeMuted,
+          child: AnimatedRotation(
+            turns: turns,
+            duration: OSMotion.standard,
+            curve: OSMotion.emphasizedDecel,
+            child: Icon(
+              icon,
+              size: iconSize,
+              color: highlight
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : enabled
+                      ? OSColors.chromeOnBackground
+                      : OSColors.chromeMuted,
+            ),
           ),
         ),
       ),
@@ -1337,24 +1726,22 @@ class _ChromeButton extends StatelessWidget {
   }
 }
 
-/// The 900ms ring that expands out of the shutter while an auto-capture is
-/// about to fire — the "something is about to happen" cue that pairs with
-/// the HOLD STILL label.
-class _PulseRing extends StatefulWidget {
-  const _PulseRing({required this.color});
+/// The ring that fills around the shutter while an auto-capture counts
+/// down: empty when the page first holds still, full when the shot fires.
+class _CountdownRing extends StatefulWidget {
+  const _CountdownRing({required this.color, required this.duration});
 
   final Color color;
+  final Duration duration;
 
   @override
-  State<_PulseRing> createState() => _PulseRingState();
+  State<_CountdownRing> createState() => _CountdownRingState();
 }
 
-class _PulseRingState extends State<_PulseRing>
+class _CountdownRingState extends State<_CountdownRing>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat();
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: widget.duration)..forward();
 
   @override
   void dispose() {
@@ -1364,25 +1751,20 @@ class _PulseRingState extends State<_PulseRing>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final t = _controller.value;
-        return Transform.scale(
-          scale: 0.9 + t * 0.45,
-          child: Opacity(
-            opacity: (1 - t / 0.7).clamp(0.0, 0.9),
-            child: Container(
-              height: 70,
-              width: 70,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: widget.color, width: 3),
-              ),
-            ),
+    return IgnorePointer(
+      child: SizedBox(
+        height: 82,
+        width: 82,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) => CircularProgressIndicator(
+            value: _controller.value,
+            strokeWidth: 4,
+            color: widget.color,
+            backgroundColor: Colors.white.withValues(alpha: 0.15),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

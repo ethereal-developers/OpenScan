@@ -12,6 +12,7 @@ import 'package:openscan/core/cv/compress.dart';
 import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/core/cv/native_decode.dart';
 import 'package:openscan/core/cv/perspective_crop.dart';
+import 'package:openscan/core/cv/platform_store.dart';
 import 'package:openscan/core/data/database_helper.dart';
 import 'package:openscan/core/data/document_naming.dart';
 import 'package:openscan/core/models.dart';
@@ -76,6 +77,7 @@ class FileOperations {
     int? index,
     bool prepared = false,
     File? preparedOriginal,
+    int quarterTurns = 0,
   }) async {
     await _ensureDirectory(dirPath);
 
@@ -88,6 +90,7 @@ class FileOperations {
       keepOriginal: keepOriginal,
       prepared: prepared,
       preparedOriginal: preparedOriginal,
+      quarterTurns: quarterTurns,
     );
     if (written == null) return null;
 
@@ -128,6 +131,11 @@ class FileOperations {
   /// next page — and only has to be moved into the document. [source] is
   /// then the finished page and [preparedOriginal] its uncropped
   /// companion, so [quad] is not applied a second time.
+  ///
+  /// [quarterTurns] turns both files clockwise after the crop: a page shot
+  /// with the phone on its side is stored upright (see
+  /// `capture_orientation.dart`). A prepared page has had it applied
+  /// already.
   Future<({String pagePath, String? originalPath})?> writeCapture({
     required File source,
     required String dir,
@@ -136,6 +144,7 @@ class FileOperations {
     bool keepOriginal = false,
     bool prepared = false,
     File? preparedOriginal,
+    int quarterTurns = 0,
   }) async {
     final pagePath = '$dir/$stamp.jpg';
     final originalPath = keepOriginal ? '$dir/orig_$stamp.jpg' : null;
@@ -151,14 +160,25 @@ class FileOperations {
       );
     }
 
-    // The fast path: let the platform decode the capture, and leave the
-    // isolate only the encoding. Falls through to the pure-Dart pipeline
-    // below when the platform decoder cannot read these bytes at all.
+    // Fastest: decode, warp and encode all on the platform.
+    final platform = await _writeCaptureOnPlatform(
+      source: source,
+      pagePath: pagePath,
+      originalPath: originalPath,
+      quad: quad,
+      quarterTurns: quarterTurns,
+    );
+    if (platform != null) return platform;
+
+    // Next: let the platform decode the capture, and leave the isolate
+    // only the encoding. Falls through to the pure-Dart pipeline below
+    // when the platform decoder cannot read these bytes at all.
     final native = await _writeCaptureNatively(
       source: source,
       pagePath: pagePath,
       originalPath: originalPath,
       quad: quad,
+      quarterTurns: quarterTurns,
     );
     if (native != null) return native;
 
@@ -171,6 +191,7 @@ class FileOperations {
       'originalDest': originalPath,
       'originalMaxEdge': kStoredOriginalMaxEdge,
       'originalQuality': kStoredOriginalQuality,
+      'quarterTurns': quarterTurns,
     });
 
     final wrotePage = result['page'] ?? false;
@@ -251,6 +272,7 @@ class FileOperations {
     required String pagePath,
     required String? originalPath,
     required Quad? quad,
+    int quarterTurns = 0,
   }) async {
     final Uint8List encoded;
     try {
@@ -271,6 +293,7 @@ class FileOperations {
       'quality': kStoredPageQuality,
       'maxEdge': kStoredPageMaxEdge,
       'quad': quad,
+      'quarterTurns': quarterTurns,
     });
     if (!wrotePage) {
       _deleteIfPresent(pagePath);
@@ -280,27 +303,149 @@ class FileOperations {
     // An original that failed to write is simply not recorded, rather than
     // leaving the page pointing at a file that isn't there. The page is
     // already stored and readable, so this is never a reason to fall back.
-    String? storedOriginal;
-    if (originalPath != null) {
-      final original = await decodeScaled(encoded,
-          maxEdge: kStoredOriginalMaxEdge, label: source.path);
-      if (original != null &&
-          await compute(encodeStoredPageIsolateEntry, {
-            'rgba': original.rgba,
-            'width': original.width,
-            'height': original.height,
-            'dest': originalPath,
-            'quality': kStoredOriginalQuality,
-            'maxEdge': kStoredOriginalMaxEdge,
-            'quad': null,
-          })) {
-        storedOriginal = originalPath;
-      } else {
-        _deleteIfPresent(originalPath);
-      }
-    }
+    final storedOriginal = originalPath != null &&
+            await _writeOriginalNatively(encoded, originalPath,
+                quarterTurns: quarterTurns, label: source.path)
+        ? originalPath
+        : null;
 
     return (pagePath: pagePath, originalPath: storedOriginal);
+  }
+
+  /// [writeCapture] done entirely by the platform (see
+  /// `platform_store.dart`): page and original from one native decode, in
+  /// well under a second where the Dart encoders take the best part of
+  /// fifteen on a full-resolution capture. Null when the platform can't —
+  /// not Android, or the native side gave up — leaving the caller to go the
+  /// Dart way.
+  Future<({String pagePath, String? originalPath})?> _writeCaptureOnPlatform({
+    required File source,
+    required String pagePath,
+    required String? originalPath,
+    required Quad? quad,
+    int quarterTurns = 0,
+  }) async {
+    if (!Platform.isAndroid) return null;
+    final ({int width, int height})? size;
+    try {
+      size = await decodedSize(await source.readAsBytes(), label: source.path);
+    } catch (e) {
+      return null;
+    }
+    if (size == null) return null;
+    final w = size.width.toDouble(), h = size.height.toDouble();
+
+    final pixels = quad == null
+        ? PlatformOutput.wholeFrame.scaled(w, h)
+        : quadInPixelsOf(quad, size.width, size.height);
+    final natural = outputSize(pixels);
+    final page = fitWithin(natural.width, natural.height, kStoredPageMaxEdge);
+    final original =
+        fitWithin(size.width, size.height, kStoredOriginalMaxEdge);
+
+    final stored = await storeOnPlatform(
+      src: source.path,
+      quarterTurns: quarterTurns,
+      outputs: [
+        PlatformOutput(
+          dest: pagePath,
+          corners: pixels.scaled(1 / w, 1 / h),
+          width: page.width,
+          height: page.height,
+          quality: kStoredPageQuality,
+        ),
+        if (originalPath != null)
+          PlatformOutput(
+            dest: originalPath,
+            corners: PlatformOutput.wholeFrame,
+            width: original.width,
+            height: original.height,
+            quality: kStoredOriginalQuality,
+          ),
+      ],
+    );
+    return stored ? (pagePath: pagePath, originalPath: originalPath) : null;
+  }
+
+  /// Writes the uncropped [encoded] capture to [dest] at original size.
+  /// Returns false, leaving nothing at [dest], when it could not.
+  Future<bool> _writeOriginalNatively(Uint8List encoded, String dest,
+      {int quarterTurns = 0, required String label}) async {
+    final original = await decodeScaled(encoded,
+        maxEdge: kStoredOriginalMaxEdge, label: label);
+    if (original != null &&
+        await compute(encodeStoredPageIsolateEntry, {
+          'rgba': original.rgba,
+          'width': original.width,
+          'height': original.height,
+          'dest': dest,
+          'quality': kStoredOriginalQuality,
+          'maxEdge': kStoredOriginalMaxEdge,
+          'quad': null,
+          'quarterTurns': quarterTurns,
+        })) {
+      return true;
+    }
+    _deleteIfPresent(dest);
+    return false;
+  }
+
+  /// Stages a page the user cropped by hand on the way in: [cropped] is
+  /// what the crop screen wrote, already cut to the corners the user
+  /// settled on (and turned, if they turned it), and [shot] the photo it
+  /// was cut from.
+  ///
+  /// [writeCapture] can't do this on its own — its original comes out of
+  /// the same source as its page, and here that would make the original
+  /// the cropped page, leaving a later re-crop nothing to widen back out
+  /// to. So the page is written from [cropped] and the original from
+  /// [shot].
+  ///
+  /// [originalTurns] stands the original upright the way [cropped] already
+  /// is: the crop screen bakes its rotation into the page it writes, but
+  /// [shot] is still the way the camera wrote it.
+  Future<({String pagePath, String? originalPath})?> writeReviewedCapture({
+    required File cropped,
+    required File shot,
+    required String dir,
+    required String stamp,
+    bool keepOriginal = false,
+    int originalTurns = 0,
+  }) async {
+    final page = await writeCapture(source: cropped, dir: dir, stamp: stamp);
+    if (page == null || !keepOriginal) return page;
+
+    final originalPath = '$dir/orig_$stamp.jpg';
+    try {
+      final bytes = await shot.readAsBytes();
+      final size = await decodedSize(bytes, label: shot.path);
+      if (size != null) {
+        final fitted =
+            fitWithin(size.width, size.height, kStoredOriginalMaxEdge);
+        if (await storeOnPlatform(
+          src: shot.path,
+          quarterTurns: originalTurns,
+          outputs: [
+            PlatformOutput(
+              dest: originalPath,
+              corners: PlatformOutput.wholeFrame,
+              width: fitted.width,
+              height: fitted.height,
+              quality: kStoredOriginalQuality,
+            ),
+          ],
+        )) {
+          return (pagePath: page.pagePath, originalPath: originalPath);
+        }
+      }
+      if (await _writeOriginalNatively(bytes, originalPath,
+          quarterTurns: originalTurns, label: shot.path)) {
+        return (pagePath: page.pagePath, originalPath: originalPath);
+      }
+    } catch (e) {
+      debugPrint("Couldn't keep the original of ${shot.path}: $e");
+    }
+    return page;
   }
 
   /// The capture decoded at the smallest size that still fills a stored
@@ -804,6 +949,21 @@ class FileOperations {
       debugPrint('Falling back to app storage for export: $e');
       return await getApplicationDocumentsDirectory();
     }
+  }
+
+  /// The folder [path] was saved in, as a file manager shows it — e.g.
+  /// `Download/OpenScan` — or null when it is somewhere only this app can
+  /// see: [exportDirectory]'s fallback, which is where an export lands on
+  /// a device that won't let the app write to shared storage (no write
+  /// permission is requested, so Android 10 and older). An export there
+  /// is still a good file, but nobody will find it by looking, so the
+  /// caller has to say so rather than report it like any other save.
+  static String? sharedFolderOf(String path) {
+    const root = '/storage/emulated/0/';
+    if (!path.startsWith(root)) return null;
+    final relative = path.substring(root.length);
+    final slash = relative.lastIndexOf('/');
+    return slash <= 0 ? null : relative.substring(0, slash);
   }
 }
 

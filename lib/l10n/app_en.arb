@@ -20,6 +20,7 @@
   "select": "Select",
   "select_all": "Select all",
   "select_pages": "Select pages",
+  "reorder_pages": "Reorder pages",
   "try_again": "Try again",
   "undo": "UNDO",
   "@undo": {
@@ -137,8 +138,14 @@
   "sort_name": "Name (A–Z)",
   "sort_page_count": "Page count",
   "scanning": "Scanning",
+  "live_detection": "Detect document edges",
+  "live_detection_desc": "Outlines the page in the camera and crops each shot to it. Turn off to take plain photos and crop them afterwards.",
   "auto_capture": "Auto-capture",
   "auto_capture_desc": "Take the shot as soon as the page holds still.",
+  "batch_capture": "Batch mode",
+  "batch_capture_desc": "Keep the camera open for several pages and fix crops afterwards. Off, each shot opens the crop screen before it is saved.",
+  "scan_mode_single": "Single",
+  "scan_mode_batch": "Batch",
   "capture_sound": "Capture sound",
   "keep_original": "Keep original image",
   "keep_original_desc": "Keeps the uncropped photo so a page can be re-cropped from the full capture. Roughly doubles the space a document uses.",
@@ -210,6 +217,7 @@
   "torch_unavailable": "Torch isn't available on this device.",
   "auto_capture_on": "Auto-capture on",
   "auto_capture_off": "Auto-capture off",
+  "auto_capture_needs_detection": "Turn on edge detection first — auto-capture waits for the page it finds.",
   "undo_last_capture": "Undo last capture",
   "composition_grid": "Composition grid",
   "switch_camera": "Switch camera",
@@ -258,8 +266,8 @@
       }
     }
   },
-  "hold_to_reorder": "{pages} · hold a page to reorder",
-  "@hold_to_reorder": {
+  "hold_to_select": "{pages} · hold a page to select it",
+  "@hold_to_select": {
     "placeholders": {
       "pages": {
         "type": "String"
@@ -295,6 +303,11 @@
     }
   },
   "exported": "Exported",
+  "saved_to_folder": "Saved to {folder}",
+  "@saved_to_folder": {"placeholders": {"folder": {"type": "String"}}},
+  "saved_n_to_folder": "Saved {count} to {folder}",
+  "@saved_n_to_folder": {"placeholders": {"count": {"type": "int"}, "folder": {"type": "String"}}},
+  "saved_privately": "Saved inside OpenScan, where other apps can't see it. Use Share to send it somewhere else.",
   "export_failed": "Export failed",
   "no_pages_to_export": "There are no pages to export.",
   "pdf_not_written": "PDF could not be written",
@@ -331,13 +344,13 @@
   "share_pdf": "Share PDF",
   "share_images": "Share images",
   "demo_scan_title": "Point at the page",
-  "demo_scan_body": "OpenScan finds the edges and takes the shot by itself when you hold still — or tap the shutter to take it yourself.",
+  "demo_scan_body": "OpenScan finds the edges of the page — tap the shutter to take it. Turn on Auto-capture and it takes the shot by itself when you hold still.",
   "demo_pages_title": "Keep going for more pages",
   "demo_pages_body": "Every shot joins the same document. Tap Done when you have them all.",
   "demo_adjust_title": "Straighten and clean up",
   "demo_adjust_body": "Drag the corners if the edges are off, then pick a filter — Auto, Grayscale or B&W.",
   "demo_organise_title": "Reorder and add pages",
-  "demo_organise_body": "Hold a page to move it, and add more pages to a document whenever you like.",
+  "demo_organise_body": "Hold a page to select it, reorder pages from the ⋮ menu, and add more pages whenever you like.",
   "demo_export_title": "Save or share as PDF",
   "demo_export_body": "Choose a quality and page size, then save it to your phone or send it anywhere.",
   "demo_privacy_title": "It never leaves your phone",

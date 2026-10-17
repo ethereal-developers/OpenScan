@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -71,6 +70,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get select_pages => 'पृष्ठ चुनें';
+
+  @override
+  String get reorder_pages => 'पृष्ठों का क्रम बदलें';
 
   @override
   String get try_again => 'पुनः प्रयास करें';
@@ -237,10 +239,30 @@ class AppLocalizationsHi extends AppLocalizations {
   String get scanning => 'स्कैनिंग';
 
   @override
+  String get live_detection => 'दस्तावेज़ के किनारे पहचानें';
+
+  @override
+  String get live_detection_desc =>
+      'कैमरे में पृष्ठ की रूपरेखा दिखाता है और हर तस्वीर को उसी के अनुसार काटता है। सामान्य तस्वीरें लेकर बाद में काटने के लिए इसे बंद करें।';
+
+  @override
   String get auto_capture => 'स्वतः कैप्चर';
 
   @override
   String get auto_capture_desc => 'पृष्ठ स्थिर होते ही तस्वीर ले लें।';
+
+  @override
+  String get batch_capture => 'बैच मोड';
+
+  @override
+  String get batch_capture_desc =>
+      'कई पृष्ठों के लिए कैमरा खुला रखें और क्रॉप बाद में ठीक करें। बंद होने पर, हर तस्वीर सहेजने से पहले क्रॉप स्क्रीन खोलती है।';
+
+  @override
+  String get scan_mode_single => 'एकल';
+
+  @override
+  String get scan_mode_batch => 'बैच';
 
   @override
   String get capture_sound => 'कैप्चर ध्वनि';
@@ -393,6 +415,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get auto_capture_off => 'स्वतः कैप्चर बंद';
 
   @override
+  String get auto_capture_needs_detection =>
+      'पहले किनारा पहचान चालू करें — स्वतः कैप्चर उसी पृष्ठ का इंतज़ार करता है जो यह ढूँढ़ती है।';
+
+  @override
   String get undo_last_capture => 'अंतिम कैप्चर पूर्ववत करें';
 
   @override
@@ -471,8 +497,8 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · क्रम बदलने के लिए किसी पृष्ठ को दबाए रखें';
+  String hold_to_select(String pages) {
+    return '$pages · चुनने के लिए किसी पृष्ठ को दबाए रखें';
   }
 
   @override
@@ -487,10 +513,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get page_size => 'पृष्ठ आकार';
 
   @override
-  String get page_size_letter => 'Letter';
+  String get page_size_letter => 'लेटर';
 
   @override
-  String get page_size_legal => 'Legal';
+  String get page_size_legal => 'लीगल';
 
   @override
   String get all_pages => 'सभी पृष्ठ';
@@ -505,6 +531,20 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get exported => 'निर्यात हो गया';
+
+  @override
+  String saved_to_folder(String folder) {
+    return '$folder में सहेजा गया';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return '$count $folder में सहेजे गए';
+  }
+
+  @override
+  String get saved_privately =>
+      'OpenScan के अंदर सहेजा गया, जहाँ दूसरे ऐप इसे नहीं देख सकते। इसे कहीं और भेजने के लिए साझा करें का उपयोग करें।';
 
   @override
   String get export_failed => 'निर्यात विफल';
@@ -571,7 +611,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get demo_scan_body =>
-      'फ़ोन स्थिर रखें तो OpenScan किनारे ढूँढ़कर खुद ही तस्वीर ले लेता है — या शटर दबाकर खुद तस्वीर लें।';
+      'OpenScan पृष्ठ के किनारे ढूँढ़ता है — तस्वीर लेने के लिए शटर दबाएँ। स्वतः कैप्चर चालू करें, तो फ़ोन स्थिर रखने पर यह खुद तस्वीर ले लेगा।';
 
   @override
   String get demo_pages_title => 'और पृष्ठों के लिए जारी रखें';
@@ -592,7 +632,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get demo_organise_body =>
-      'पृष्ठ को दबाकर रखें और खिसकाएँ, और जब चाहें दस्तावेज़ में नए पृष्ठ जोड़ें।';
+      'चुनने के लिए पृष्ठ को दबाकर रखें, ⋮ मेनू से पृष्ठों का क्रम बदलें, और जब चाहें नए पृष्ठ जोड़ें।';
 
   @override
   String get demo_export_title => 'PDF के रूप में सहेजें या साझा करें';

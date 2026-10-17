@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -71,6 +70,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get select_pages => '选择页面';
+
+  @override
+  String get reorder_pages => '调整页面顺序';
 
   @override
   String get try_again => '重试';
@@ -230,10 +232,29 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scanning => '正在扫描';
 
   @override
+  String get live_detection => '检测文档边缘';
+
+  @override
+  String get live_detection_desc => '在相机画面中框出页面，并按页面裁剪每张照片。关闭后可拍摄普通照片，之后再裁剪。';
+
+  @override
   String get auto_capture => '自动拍摄';
 
   @override
   String get auto_capture_desc => '页面保持稳定时自动拍摄。';
+
+  @override
+  String get batch_capture => '批量模式';
+
+  @override
+  String get batch_capture_desc =>
+      '相机保持打开以连续拍摄多页，之后再调整裁剪。关闭时，每次拍摄都会先打开裁剪界面再保存。';
+
+  @override
+  String get scan_mode_single => '单页';
+
+  @override
+  String get scan_mode_batch => '批量';
 
   @override
   String get capture_sound => '拍摄提示音';
@@ -384,6 +405,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get auto_capture_off => '自动拍摄已关闭';
 
   @override
+  String get auto_capture_needs_detection => '请先开启边缘检测——自动拍摄会等待它识别到的页面。';
+
+  @override
   String get undo_last_capture => '撤销上一次拍摄';
 
   @override
@@ -453,8 +477,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String hold_to_reorder(String pages) {
-    return '$pages · 长按页面可调整顺序';
+  String hold_to_select(String pages) {
+    return '$pages · 长按页面可选择';
   }
 
   @override
@@ -487,6 +511,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get exported => '已导出';
+
+  @override
+  String saved_to_folder(String folder) {
+    return '已保存到 $folder';
+  }
+
+  @override
+  String saved_n_to_folder(int count, String folder) {
+    return '已将 $count 个保存到 $folder';
+  }
+
+  @override
+  String get saved_privately => '已保存在 OpenScan 内部，其他应用无法看到。请使用“分享”将其发送到其他位置。';
 
   @override
   String get export_failed => '导出失败';
@@ -550,7 +587,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get demo_scan_title => '将镜头对准页面';
 
   @override
-  String get demo_scan_body => 'OpenScan 会自动识别页面边缘，并在画面稳定时拍摄；你也可以点击快门手动拍摄。';
+  String get demo_scan_body =>
+      'OpenScan 会自动识别页面边缘，点击快门即可拍摄。开启“自动拍摄”后，画面稳定时会自动拍摄。';
 
   @override
   String get demo_pages_title => '继续扫描更多页面';
@@ -568,7 +606,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get demo_organise_title => '调整顺序并添加页面';
 
   @override
-  String get demo_organise_body => '长按页面可调整顺序，也可以随时向文档添加更多页面。';
+  String get demo_organise_body => '长按页面可选择，在 ⋮ 菜单中调整页面顺序，也可以随时向文档添加更多页面。';
 
   @override
   String get demo_export_title => '保存或分享为 PDF';

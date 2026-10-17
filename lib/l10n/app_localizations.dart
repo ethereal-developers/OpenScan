@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_el.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
 import 'app_localizations_hi.dart';
 import 'app_localizations_hu.dart';
 import 'app_localizations_pl.dart';
@@ -101,6 +102,7 @@ abstract class AppLocalizations {
   static const List<Locale> supportedLocales = <Locale>[
     Locale('el'),
     Locale('en'),
+    Locale('es'),
     Locale('hi'),
     Locale('hu'),
     Locale('pl'),
@@ -234,6 +236,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select pages'**
   String get select_pages;
+
+  /// No description provided for @reorder_pages.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder pages'**
+  String get reorder_pages;
 
   /// No description provided for @try_again.
   ///
@@ -517,6 +525,18 @@ abstract class AppLocalizations {
   /// **'Scanning'**
   String get scanning;
 
+  /// No description provided for @live_detection.
+  ///
+  /// In en, this message translates to:
+  /// **'Detect document edges'**
+  String get live_detection;
+
+  /// No description provided for @live_detection_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Outlines the page in the camera and crops each shot to it. Turn off to take plain photos and crop them afterwards.'**
+  String get live_detection_desc;
+
   /// No description provided for @auto_capture.
   ///
   /// In en, this message translates to:
@@ -528,6 +548,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Take the shot as soon as the page holds still.'**
   String get auto_capture_desc;
+
+  /// No description provided for @batch_capture.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch mode'**
+  String get batch_capture;
+
+  /// No description provided for @batch_capture_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the camera open for several pages and fix crops afterwards. Off, each shot opens the crop screen before it is saved.'**
+  String get batch_capture_desc;
+
+  /// No description provided for @scan_mode_single.
+  ///
+  /// In en, this message translates to:
+  /// **'Single'**
+  String get scan_mode_single;
+
+  /// No description provided for @scan_mode_batch.
+  ///
+  /// In en, this message translates to:
+  /// **'Batch'**
+  String get scan_mode_batch;
 
   /// No description provided for @capture_sound.
   ///
@@ -811,6 +855,12 @@ abstract class AppLocalizations {
   /// **'Auto-capture off'**
   String get auto_capture_off;
 
+  /// No description provided for @auto_capture_needs_detection.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on edge detection first — auto-capture waits for the page it finds.'**
+  String get auto_capture_needs_detection;
+
   /// No description provided for @undo_last_capture.
   ///
   /// In en, this message translates to:
@@ -931,11 +981,11 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{Skipped 1 file this app can\'t read.} other{Skipped {count} files this app can\'t read.}}'**
   String skipped_files(int count);
 
-  /// No description provided for @hold_to_reorder.
+  /// No description provided for @hold_to_select.
   ///
   /// In en, this message translates to:
-  /// **'{pages} · hold a page to reorder'**
-  String hold_to_reorder(String pages);
+  /// **'{pages} · hold a page to select it'**
+  String hold_to_select(String pages);
 
   /// No description provided for @export_title.
   ///
@@ -990,6 +1040,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Exported'**
   String get exported;
+
+  /// No description provided for @saved_to_folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to {folder}'**
+  String saved_to_folder(String folder);
+
+  /// No description provided for @saved_n_to_folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved {count} to {folder}'**
+  String saved_n_to_folder(int count, String folder);
+
+  /// No description provided for @saved_privately.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved inside OpenScan, where other apps can\'t see it. Use Share to send it somewhere else.'**
+  String get saved_privately;
 
   /// No description provided for @export_failed.
   ///
@@ -1108,7 +1176,7 @@ abstract class AppLocalizations {
   /// No description provided for @demo_scan_body.
   ///
   /// In en, this message translates to:
-  /// **'OpenScan finds the edges and takes the shot by itself when you hold still — or tap the shutter to take it yourself.'**
+  /// **'OpenScan finds the edges of the page — tap the shutter to take it. Turn on Auto-capture and it takes the shot by itself when you hold still.'**
   String get demo_scan_body;
 
   /// No description provided for @demo_pages_title.
@@ -1144,7 +1212,7 @@ abstract class AppLocalizations {
   /// No description provided for @demo_organise_body.
   ///
   /// In en, this message translates to:
-  /// **'Hold a page to move it, and add more pages to a document whenever you like.'**
+  /// **'Hold a page to select it, reorder pages from the ⋮ menu, and add more pages whenever you like.'**
   String get demo_organise_body;
 
   /// No description provided for @demo_export_title.
@@ -1215,6 +1283,7 @@ class _AppLocalizationsDelegate
   bool isSupported(Locale locale) => <String>[
     'el',
     'en',
+    'es',
     'hi',
     'hu',
     'pl',
@@ -1245,6 +1314,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEl();
     case 'en':
       return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
     case 'hi':
       return AppLocalizationsHi();
     case 'hu':

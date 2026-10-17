@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:openscan/core/cv/models/detection_result.dart';
+import 'package:openscan/core/cv/models/quad.dart';
 import 'package:openscan/core/settings/app_settings.dart';
 import 'package:openscan/core/theme/appTheme.dart';
 import 'package:openscan/core/theme/os_colors.dart';
@@ -20,12 +21,21 @@ import 'package:openscan/view/screens/crop/crop_screen_state.dart';
 /// want "unchanged image" semantics on cancel can fall back to [image]
 /// themselves; callers re-cropping an existing page use the null to leave
 /// that page alone.
-Future<File?> imageCropper(BuildContext context, File image) async {
+///
+/// [initialQuad], in the live-scan overlay's fractional portrait
+/// coordinates, places the corners where the viewfinder had them instead
+/// of detecting the page again on the still. [initialTurns] opens the page
+/// already turned that many quarter turns clockwise, as if Rotate had been
+/// pressed — the corners stay on the page either way.
+Future<File?> imageCropper(BuildContext context, File image,
+    {Quad? initialQuad, int initialTurns = 0}) async {
   return await Navigator.push<File?>(
     context,
     MaterialPageRoute(
       builder: (context) => CropImage(
         file: image,
+        initialQuad: initialQuad,
+        initialTurns: initialTurns,
       ),
     ),
   );
@@ -38,10 +48,19 @@ const double _kCanvasPadding = 20.0;
 /// padding can keep the whole dot out of the system gesture strip.
 const double _kHandleRadius = 10.0;
 
+/// Side of the square loupe shown while a corner is being dragged.
+const double _kMagnifierSize = 80.0;
+
+/// Space between the dragged corner and the nearest edge of the loupe, so
+/// the finger doesn't cover it.
+const double _kMagnifierGap = 40.0;
+
 class CropImage extends StatefulWidget {
   final File? file;
+  final Quad? initialQuad;
+  final int initialTurns;
 
-  CropImage({this.file});
+  CropImage({this.file, this.initialQuad, this.initialTurns = 0});
 
   _CropImageState createState() => _CropImageState();
 }
@@ -75,19 +94,43 @@ class _CropImageState extends State<CropImage>
   initState() {
     super.initState();
     _cropScreen.imageFile = widget.file;
+    _cropScreen.turns = widget.initialTurns;
+    _turnAnimation = AlwaysStoppedAnimation(widget.initialTurns.toDouble());
 
-    /// Runs detection, then waits for the next frame (so the image is
-    /// guaranteed to be laid out) before computing canvas geometry and
-    /// initial points exactly once — replacing the old pattern of doing
-    /// this inside the widget's build() callback on every rebuild.
-    _cropScreen.detectDocument().then((_) {
+    /// Takes the viewfinder's corners, or measures the page so detection
+    /// can run behind it, then waits for the page to be decoded and laid
+    /// out before computing canvas geometry and initial points exactly once
+    /// — replacing the old pattern of doing this inside the widget's
+    /// build() callback on every rebuild.
+    ///
+    /// The wait for the decode matters: an [Image] that hasn't loaded yet
+    /// lays out at zero size, and measured then, every corner lands on the
+    /// same point.
+    ///
+    /// Detection doesn't hold the screen up: the page is shown with its
+    /// corners at the edges, and they move to the page once it is found —
+    /// unless the user has started moving them first.
+    final initialQuad = widget.initialQuad;
+    (initialQuad != null
+            ? _cropScreen.useQuad(initialQuad)
+            : _cropScreen.prepareForSearch())
+        .then((_) async {
       if (!mounted) return;
+      try {
+        await precacheImage(_cropScreen.displayImage, context);
+      } catch (e) {
+        debugPrint('Could not preload ${_cropScreen.imageFile}: $e');
+      }
+      if (!mounted) return;
+      // A frame with the decoded page in it, then measure.
+      setState(() {});
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         setState(() {
           _cropScreen.getRenderedBoxSize();
           _cropScreen.initPoints();
         });
+        if (initialQuad == null) _detectBehindPage();
       });
     });
 
@@ -177,8 +220,10 @@ class _CropImageState extends State<CropImage>
                 localPosition:
                     _cropScreen.fromDisplay(startDetails.localPosition),
               ));
-              if (_cropScreen.movingPoint.name != 'none')
+              if (_cropScreen.movingPoint.name != 'none') {
+                _cropScreen.userAdjusted = true;
                 _cropScreen.showMagnifier.value = true;
+              }
             },
             onPanEnd: (details) {
               _cropScreen.movingPoint.name = 'none';
@@ -205,7 +250,7 @@ class _CropImageState extends State<CropImage>
                                       _cropScreen.scaleForTurns(_animatedTurns),
                                   child: Image(
                                     key: _cropScreen.imageKey,
-                                    image: FileImage(_cropScreen.imageFile!),
+                                    image: _cropScreen.displayImage,
                                     loadingBuilder:
                                         ((context, child, loadingProgress) {
                                       if (loadingProgress == null) return child;
@@ -305,9 +350,26 @@ class _CropImageState extends State<CropImage>
                               (context, DragUpdateDetails _updatedPoint, _) {
                             final at = _cropScreen
                                 .toDisplay(_cropScreen.movingPoint.offset!);
+                            final bounds = _cropScreen.bodySize;
+                            // Sits above the finger by default, flips below
+                            // when there is no room above, and is clamped so
+                            // it never slides off the body and gets clipped.
+                            // The focal offset follows wherever the loupe
+                            // ended up, so it still shows the dragged corner.
+                            double top =
+                                at.dy - _kMagnifierGap - _kMagnifierSize;
+                            if (top < 0) top = at.dy + _kMagnifierGap;
+                            top = top.clamp(0.0,
+                                max(0.0, bounds.height - _kMagnifierSize));
+                            final double left =
+                                (at.dx - _kMagnifierSize / 2).clamp(0.0,
+                                    max(0.0, bounds.width - _kMagnifierSize));
+                            final focalPointOffset = at -
+                                Offset(left + _kMagnifierSize / 2,
+                                    top + _kMagnifierSize / 2);
                             return Positioned(
-                              left: at.dx - 40,
-                              top: at.dy - 120,
+                              left: left,
+                              top: top,
                               child: RawMagnifier(
                                 decoration: MagnifierDecoration(
                                   shadows: const <BoxShadow>[
@@ -326,9 +388,9 @@ class _CropImageState extends State<CropImage>
                                     ),
                                   ),
                                 ),
-                                size: Size(80, 80),
+                                size: Size.square(_kMagnifierSize),
                                 magnificationScale: 1.5,
-                                focalPointOffset: Offset(0, 80),
+                                focalPointOffset: focalPointOffset,
                               ),
                             );
                           },
@@ -344,6 +406,16 @@ class _CropImageState extends State<CropImage>
         ),
       ),
     );
+  }
+
+  /// Runs detection with the page already on screen, and moves the corners
+  /// to what it finds if the user hasn't moved them in the meantime.
+  Future<void> _detectBehindPage() async {
+    await _cropScreen.detectDocument();
+    if (!mounted || _cropScreen.userAdjusted) return;
+    if (_cropScreen.detectedQuad != null) {
+      setState(_cropScreen.initPoints);
+    }
   }
 
   /// The primary action, in the app bar rather than the bottom row: the
@@ -417,12 +489,20 @@ class _CropImageState extends State<CropImage>
                 icon: Icons.auto_awesome_rounded,
                 label: AppLocalizations.of(context)!.automatic_crop,
                 accent: true,
-                onPressed: () => setState(_cropScreen.initPoints),
+                // Asking for the automatic crop is asking for detection's
+                // corners, including ones that arrive after the tap.
+                onPressed: () => setState(() {
+                  _cropScreen.userAdjusted = false;
+                  _cropScreen.initPoints();
+                }),
               ),
               _CropAction(
                 icon: Icons.crop_free_rounded,
                 label: AppLocalizations.of(context)!.no_crop,
-                onPressed: () => setState(_cropScreen.resetPointsToCorners),
+                onPressed: () => setState(() {
+                  _cropScreen.userAdjusted = true;
+                  _cropScreen.resetPointsToCorners();
+                }),
               ),
               _CropAction(
                 icon: Icons.rotate_right_rounded,
